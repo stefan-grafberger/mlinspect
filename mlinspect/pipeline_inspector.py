@@ -1,7 +1,7 @@
 """
 User-facing API for inspecting the pipeline
 """
-from mlinspect.instrumentation.pipeline_executor import PipelineExecutor
+from .instrumentation.pipeline_executor import PipelineExecutor
 
 
 class PipelineInspectorBuilder:

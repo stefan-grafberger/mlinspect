@@ -24,8 +24,7 @@ class PipelineExecutor:
     """
 
     # This is a bit ugly currently: we avoid to have to pass the class instance to the instrumented
-    # pipeline. This is a simple workaround for that. This keeps user pipeline code and our code
-    # as separate as possible to avoid scope problems etc.
+    # pipeline. This is a simple workaround for that. This keeps the DAG nodes to be inserted very simple.
     script_scope = {}
 
     def run(self, notebook_path: str or None, python_path: str or None):
