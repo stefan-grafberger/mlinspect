@@ -25,9 +25,9 @@ setup(
     long_description_content_type="text/markdown",
     packages=find_packages(),
     include_package_data=True,
-    install_requires=required,
     setup_requires=test_required,
     tests_require=test_required,
+    install_requires=required + test_required,  # TODO: remove this later, just for develop convenience
     license='Apache License 2.0',
     python_requires='>=3',
     classifiers=[
