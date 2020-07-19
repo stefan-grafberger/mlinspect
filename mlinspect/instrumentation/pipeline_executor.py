@@ -7,122 +7,87 @@ import astunparse
 import astpretty  # pylint: disable=unused-import
 import nbformat
 from nbconvert import PythonExporter
+from astmonkey import visitors, transformers
+from .call_capture_transformer import CallCaptureTransformer
 
-test_context = {}
 
-
-def print_and_exec(args, args_code, node, code):
+def instrumented_call_used(arg_values, args_code, node, code):
     """
-    This is the method we want to insert into the DAG
+    Method that gets injected into the pipeline code
     """
-    print(code)
-    if node is not None:
-        function = code.split("(", 1)[0]
-        print(eval("inspect.getmodule(" + function + ")", test_context))
-    print(len(args))
-    for arg_code in args_code:
-        print(arg_code)
-    print(node)
-    # return exec(compile(node, "test", mode="exec"))
-    # Maybe we also need to deal with subscripts
-    # Here we could replace function calls or replace return types, e.g. subclassing pandas.Dataframe orr
-    # sklearn pipeline functions that return special vectors
-    return node
+    return PipelineExecutor.instrumented_call_used(arg_values, args_code, node, code)
 
 
-class MyTransformer(ast.NodeTransformer):
+class PipelineExecutor:
     """
-    Inserts function call capturing into the DAG
+    Internal class to instrument and execute pipelines
     """
 
-    def visit_Call(self, node):
+    # This is a bit ugly currently: we avoid to have to pass the class instance to the instrumented
+    # pipeline. This is a simple workaround for that. This keeps user pipeline code and our code
+    # as separate as possible to avoid scope problems etc.
+    script_scope = {}
+
+    def run(self, notebook_path: str or None, python_path: str or None):
         """
-        Instrument all function calls
+        Instrument and execute the pipeline
         """
-        # pylint: disable=no-self-use, invalid-name
-        print("test")
-        if isinstance(node, ast.Call):
-            code = astunparse.unparse(node)
-            # name = node.func.id
-            # astpretty.pprint(node)
-            args = ast.List(node.args, ctx=ast.Load())
-            args_code = ast.List([ast.Str(astunparse.unparse(arg).split("\n", 1)[0]) for arg in node.args],
-                                 ctx=ast.Load())
+        PipelineExecutor.script_scope = {}
 
-            test = ast.Call(func=ast.Name(id='print_and_exec', ctx=ast.Load()),
-                            args=[args, args_code, node, ast.Str(s=code)], keywords=[])
-            # test = ast.Call(func=ast.Name(id='print_and_exec', ctx=ast.Load()), args=[ast.Str(s=code)],keywords=[])
-            # test = ast.Expr(value=ast.Call(id="print", func="print", args=[ast.Str(s='Hello World')], keywords=[]))
-            # ast.copy_location(test, node)
+        source_code = ""
+        assert (notebook_path is None or python_path is None)
+        if python_path is not None:
+            with open(python_path) as file:
+                source_code = file.read()
+        if notebook_path is not None:
+            with open(notebook_path) as file:
+                notebook = nbformat.reads(file.read(), nbformat.NO_CONVERT)
+                exporter = PythonExporter()
+                source_code, _ = exporter.from_notebook_node(notebook)
 
-            # to deal with both projections and joins as black-box operators, we need different
-            # storage formats. (alternatively, we could overwrite operators, but it would be better to avoid this)
-            # we want to store the annotations separately. but for joins and select, we need to add them to the
-            # dataframe, to discover input/output mappings quickly. for projects, nothing changes.
-            # in case of selects, deduplicates and joins no changes occur in input/output.
-            # because of this, input is the same as output if we remember which column belongs to which table
-            # only for extended projects do we need to scan the input again. to do this efficiently,
-            # we can add the old input as column to the table and remove it afterwards.
-            # basically, we want to add all information before the operation to the dataframe itself, and then
-            # delete it again afterwards and move it to a separate storage format. we do not want to have
-            # two dataframes in-memory at the same time.
+        parsed_ast = ast.parse(source_code)
+        parsed_ast = CallCaptureTransformer().visit(parsed_ast)
+        parsed_ast = ast.fix_missing_locations(parsed_ast)
 
-            # do we need to ensure that function calls that appear in parameters are visited again?
-            # example: print(income_pipeline.predict(data)): income_pipeline.predict(data)
-            # probably yes!
+        func_import_node = ast.ImportFrom(module='mlinspect.instrumentation.pipeline_executor',
+                                          names=[ast.alias(name='instrumented_call_used',
+                                                           asname=None)],
+                                          level=0)
+        parsed_ast.body.insert(2, func_import_node)
+        inspect_import_node = ast.Import(names=[ast.alias(name='inspect', asname=None)])
+        parsed_ast.body.insert(3, inspect_import_node)
+        parsed_ast = ast.fix_missing_locations(parsed_ast)
 
-            # todo: warn if unrecognized function call, if defined within same file, maybe inline this in some way?
-            return test
+        self.output_parsed_ast(parsed_ast)
+
+        exec(compile(parsed_ast, filename="<ast>", mode="exec"), PipelineExecutor.script_scope)
+
+        return "test"
+
+    @staticmethod
+    def instrumented_call_used(arg_values, args_code, node, code):
+        """
+        This is the method we want to insert into the DAG
+        """
+        print(code)
+        if node is not None:
+            function = code.split("(", 1)[0]
+            print(eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope))
+        print(len(arg_values))
+        for arg_code in args_code:
+            print(arg_code)
+        print(node)
+
         return node
 
-
-def run(notebook_path: str or None, python_path: str or None):
-    """
-    Instrument and execute the pipeline
-    """
-    source_code = ""
-    print("test")
-    assert (notebook_path is None or python_path is None)
-    if python_path is not None:
-        with open(python_path) as file:
-            source_code = file.read()
-    if notebook_path is not None:
-        with open(notebook_path) as file:
-            notebook = nbformat.reads(file.read(), nbformat.NO_CONVERT)
-            exporter = PythonExporter()
-            source_code, _ = exporter.from_notebook_node(notebook)
-
-    parsed_ast = ast.parse(source_code)
-    parsed_ast = MyTransformer().visit(parsed_ast)
-    # FuncLister().visit(parsed_ast)
-    # print(ast.dump(parsed_ast))
-    parsed_ast = ast.fix_missing_locations(parsed_ast)
-    # astpretty.pprint(parsed_ast)
-    func_import_node = ast.ImportFrom(module='mlinspect.instrumentation.pipeline_executor',
-                                      names=[ast.alias(name='print_and_exec', asname=None)], level=0)
-    parsed_ast.body.insert(2, func_import_node)
-    inspect_import_node = ast.Import(names=[ast.alias(name='inspect', asname=None)])
-    parsed_ast.body.insert(3, inspect_import_node)
-    parsed_ast = ast.fix_missing_locations(parsed_ast)
-    # astpretty.pprint(parsed_ast)
-    print(astunparse.unparse(parsed_ast))
-    exec(compile(parsed_ast, filename="<ast>", mode="exec"), test_context)
-    return "test"
-
-
-class FuncLister(ast.NodeVisitor):
-    """
-    NodeVisitor that lists function calls
-    """
-
-    def generic_visit(self, node):
+    @staticmethod
+    def output_parsed_ast(parsed_ast):
         """
-        Visit and analyze DAG nodes
+        Output the unparsed Dag, print the DAG and generate an image of it
         """
-        # print(type(node).__name__)
-        if isinstance(node, ast.Call):
-            if isinstance(node.func, ast.Attribute):
-                print(node.func.attr)  # we need to instrument call and determine module at runtime
-            if isinstance(node.func, ast.Name):
-                print(node.func.id)
-        ast.NodeVisitor.generic_visit(self, node)
+        astunparse.unparse(parsed_ast)  # TODO: Remove this
+        astpretty.pprint(parsed_ast)  # TODO: Remove this
+        parsed_ast_with_parent_childs = transformers.ParentChildNodeTransformer().visit(parsed_ast)
+        visitor = visitors.GraphNodeVisitor()
+        visitor.visit(parsed_ast_with_parent_childs)
+        visitor.graph.write_png('graph.png')  # TODO: Remove this # pylint: disable=no-member
