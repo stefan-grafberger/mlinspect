@@ -2,10 +2,13 @@
 Instrument and executes the pipeline
 """
 import ast
+
 import astunparse
-# import astpretty
+import astpretty  # pylint: disable=unused-import
 import nbformat
 from nbconvert import PythonExporter
+
+test_context = {}
 
 
 def print_and_exec(args, args_code, node, code):
@@ -15,11 +18,11 @@ def print_and_exec(args, args_code, node, code):
     print(code)
     if node is not None:
         function = code.split("(", 1)[0]
-        print(eval("inspect.getmodule(" + function + ")"))
+        print(eval("inspect.getmodule(" + function + ")", test_context))
     print(len(args))
     for arg_code in args_code:
-        print(eval(arg_code))
-    # print(node)
+        print(arg_code)
+    print(node)
     # return exec(compile(node, "test", mode="exec"))
     # Maybe we also need to deal with subscripts
     # Here we could replace function calls or replace return types, e.g. subclassing pandas.Dataframe orr
@@ -32,11 +35,11 @@ class MyTransformer(ast.NodeTransformer):
     Inserts function call capturing into the DAG
     """
 
-    def visit_call(self, node):
+    def visit_Call(self, node):
         """
         Instrument all function calls
         """
-        # pylint: disable=no-self-use
+        # pylint: disable=no-self-use, invalid-name
         print("test")
         if isinstance(node, ast.Call):
             code = astunparse.unparse(node)
@@ -50,7 +53,7 @@ class MyTransformer(ast.NodeTransformer):
                             args=[args, args_code, node, ast.Str(s=code)], keywords=[])
             # test = ast.Call(func=ast.Name(id='print_and_exec', ctx=ast.Load()), args=[ast.Str(s=code)],keywords=[])
             # test = ast.Expr(value=ast.Call(id="print", func="print", args=[ast.Str(s='Hello World')], keywords=[]))
-            ast.copy_location(test, node)
+            # ast.copy_location(test, node)
 
             # to deal with both projections and joins as black-box operators, we need different
             # storage formats. (alternatively, we could overwrite operators, but it would be better to avoid this)
@@ -90,13 +93,20 @@ def run(notebook_path: str or None, python_path: str or None):
             source_code, _ = exporter.from_notebook_node(notebook)
 
     parsed_ast = ast.parse(source_code)
-    transformer = MyTransformer()
-    parsed_ast = transformer.visit(parsed_ast)
+    parsed_ast = MyTransformer().visit(parsed_ast)
     # FuncLister().visit(parsed_ast)
     # print(ast.dump(parsed_ast))
     parsed_ast = ast.fix_missing_locations(parsed_ast)
     # astpretty.pprint(parsed_ast)
-    exec(compile(parsed_ast, filename="<ast>", mode="exec"))
+    func_import_node = ast.ImportFrom(module='mlinspect.instrumentation.pipeline_executor',
+                                      names=[ast.alias(name='print_and_exec', asname=None)], level=0)
+    parsed_ast.body.insert(2, func_import_node)
+    inspect_import_node = ast.Import(names=[ast.alias(name='inspect', asname=None)])
+    parsed_ast.body.insert(3, inspect_import_node)
+    parsed_ast = ast.fix_missing_locations(parsed_ast)
+    # astpretty.pprint(parsed_ast)
+    print(astunparse.unparse(parsed_ast))
+    exec(compile(parsed_ast, filename="<ast>", mode="exec"), test_context)
     return "test"
 
 
