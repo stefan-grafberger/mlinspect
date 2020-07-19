@@ -15,7 +15,7 @@ def test_py_pipeline_runs():
     """
     Tests whether the .py version of the pipeline works
     """
-    with open(FILE_PY) as file:  # Use file to refer to the file object
+    with open(FILE_PY) as file:
         text = file.read()
         parsed_ast = ast.parse(text)
         exec(compile(parsed_ast, filename="<ast>", mode="exec"))
@@ -25,7 +25,7 @@ def test_nb_pipeline_runs():
     """
     Tests whether the .ipynb version of the pipeline works
     """
-    with open(FILE_NB) as file:  # Use file to refer to the file object
+    with open(FILE_NB) as file:
         notebook = nbformat.reads(file.read(), nbformat.NO_CONVERT)
         exporter = PythonExporter()
 
