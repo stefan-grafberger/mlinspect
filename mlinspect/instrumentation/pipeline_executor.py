@@ -3,7 +3,7 @@ Instrument and executes the pipeline
 """
 import ast
 import astunparse
-import astpretty
+# import astpretty
 import nbformat
 from nbconvert import PythonExporter
 
@@ -32,11 +32,11 @@ class MyTransformer(ast.NodeTransformer):
     Inserts function call capturing into the DAG
     """
 
-    @staticmethod
-    def visit_call(node):
+    def visit_call(self, node):
         """
         Instrument all function calls
         """
+        # pylint: disable=no-self-use
         print("test")
         if isinstance(node, ast.Call):
             code = astunparse.unparse(node)
@@ -90,11 +90,12 @@ def run(notebook_path: str or None, python_path: str or None):
             source_code, _ = exporter.from_notebook_node(notebook)
 
     parsed_ast = ast.parse(source_code)
-    MyTransformer().visit(parsed_ast)
+    transformer = MyTransformer()
+    parsed_ast = transformer.visit(parsed_ast)
     # FuncLister().visit(parsed_ast)
     # print(ast.dump(parsed_ast))
     parsed_ast = ast.fix_missing_locations(parsed_ast)
-    astpretty.pprint(parsed_ast)
+    # astpretty.pprint(parsed_ast)
     exec(compile(parsed_ast, filename="<ast>", mode="exec"))
     return "test"
 
