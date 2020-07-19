@@ -89,4 +89,4 @@ class PipelineExecutor:
         parsed_ast_with_parent_childs = transformers.ParentChildNodeTransformer().visit(parsed_ast)
         visitor = visitors.GraphNodeVisitor()
         visitor.visit(parsed_ast_with_parent_childs)
-        visitor.graph.write_png('graph.png')  # TODO: Remove this # pylint: disable=no-member
+        # visitor.graph.write_png('graph.png')  # TODO: Remove this # pylint: disable=no-member
