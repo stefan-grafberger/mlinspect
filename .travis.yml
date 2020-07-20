@@ -4,4 +4,4 @@ python:
 install: pip install .[test]
 
 script: python -m pytest
-after_success: python  -m codecov
+after_success: bash <(curl -s https://codecov.io/bash)
