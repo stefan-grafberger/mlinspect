@@ -29,7 +29,7 @@ Prerequisite: python >=  3.7
     
 ## Vision
 Make it easy to analyze your pipeline and automatically check for common issues.
-```
+```python
 from mlinspect.pipeline_inspector import PipelineInspector
 
 IPYNB_PATH = ...
