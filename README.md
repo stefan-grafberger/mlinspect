@@ -1,8 +1,8 @@
-MLInspect
+mlinspect
 ================================
 
-[![GitHub license](https://img.shields.io/github/license/stefan-grafberger/mlinspect.svg)](https://github.com/stefan-grafberger/MLInspect/blob/master/LICENSE)
-[![GitHub issues](https://img.shields.io/github/issues/stefan-grafberger/mlinspect.svg)](https://github.com/stefan-grafberger/MLInspect/issues)
+[![mlinspect](https://img.shields.io/badge/🔎-mlinspect-green)](https://github.com/stefan-grafberger/MLInspect)
+[![GitHub license](https://img.shields.io/badge/License-Apache%202.0-yellowgreen.svg)](https://github.com/stefan-grafberger/MLInspect/blob/master/LICENSE)
 [![Build Status](https://travis-ci.com/stefan-grafberger/mlinspect.svg?token=x1zHsibRoiV8cZwxNVsj&branch=master)](https://travis-ci.com/stefan-grafberger/MLInspect)
 [![codecov](https://codecov.io/gh/stefan-grafberger/MLInspect/branch/master/graph/badge.svg?token=KTMNPBV1ZZ)](https://codecov.io/gh/stefan-grafberger/MLInspect)
 
