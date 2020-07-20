@@ -1,4 +1,4 @@
-MLInspec
+MLInspect
 ================================
 
 [![GitHub license](https://img.shields.io/github/license/stefan-grafberger/mlinspect.svg)](https://github.com/stefan-grafberger/MLInspect/blob/master/LICENSE)
