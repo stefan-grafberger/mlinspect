@@ -16,7 +16,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="MLInspect",
+    name="mlinspect",
     version="0.0.1",
     description="Inspect ML Pipelines in the form of a DAG",
     author='Stefan Grafberger',
