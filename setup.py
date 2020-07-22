@@ -25,9 +25,10 @@ setup(
     long_description_content_type="text/markdown",
     packages=find_packages(),
     include_package_data=True,
-    setup_requires=test_required,
+    install_requires=required,
     tests_require=test_required,
-    install_requires=required + test_required,  # FIXME: remove this later, just for develop convenience
+    extras_require={'test': test_required},
+    data_files=[('requirements', ['requirements/requirements.txt'])],
     license='Apache License 2.0',
     python_requires='>=3.8',
     classifiers=[
