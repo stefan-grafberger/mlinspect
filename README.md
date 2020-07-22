@@ -10,7 +10,7 @@ Inspect ML Pipelines in Python in the form of a DAG
 
 ## Run mlinspect locally
 
-Prerequisite: python >=  3.7
+Prerequisite: python >=  3.8
 
 1. Clone this repository
 2. Set up the environment

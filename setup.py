@@ -29,9 +29,12 @@ setup(
     tests_require=test_required,
     install_requires=required + test_required,  # FIXME: remove this later, just for develop convenience
     license='Apache License 2.0',
-    python_requires='>=3',
+    python_requires='>=3.8',
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3 :: Only'
     ]
 )
+
+if __name__ == "__main__":
+    setup()
