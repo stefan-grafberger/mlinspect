@@ -36,6 +36,3 @@ setup(
         'Programming Language :: Python :: 3 :: Only'
     ]
 )
-
-if __name__ == "__main__":
-    setup()
