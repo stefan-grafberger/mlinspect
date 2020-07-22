@@ -150,7 +150,7 @@ def test_import_from():
     assert extracted_dag == expected_graph
 
     # TODO: nested import-froms like 'from mlinspect.utils import get_project_root',
-    #  List-Constants, actual pipeline code, nested calls
+    #  List-Constants, actual pipeline code, nested calls, functions with multiple return values
     # Maybe mark caller explicitly?
 
     # We can also see if we really need runtime detection to check where a function comes from.
