@@ -63,8 +63,8 @@ class WirExtractor:
         """
         Recursively generates the WIR
         """
-        for child_ast_node in ast_node.children:
-            self.process_node(child_ast_node)
+        for child_ast in ast_node.children:
+            self.process_node(child_ast)
         if isinstance(ast_node, ast.Expr):
             pass  # probably nothing to do here
         elif isinstance(ast_node, ast.Assign):
@@ -78,9 +78,7 @@ class WirExtractor:
         elif isinstance(ast_node, ast.Attribute):
             pass  # maybe already done, need to check edge cases like member variables
         elif isinstance(ast_node, ast.keyword):  # TODO: test this
-            new_wir_node = Vertex(self.get_next_wir_id(), ast_node.arg, [], "Keyword")
-            self.graph.append(new_wir_node)
-            self.store_ast_node_wir_mapping(ast_node, new_wir_node)
+            self.extract_wir_keyword(ast_node)
         elif isinstance(ast_node, ast.Name):
             pass
         elif isinstance(ast_node, ast.Constant):
@@ -90,9 +88,19 @@ class WirExtractor:
             print(ast_node)
             # assert False
 
+    def extract_wir_keyword(self, ast_node):
+        """
+        Creates a keyword vertex. Keywords are named arguments in function calls.
+        """
+        child_ast = ast_node.children[0]
+        child_wir = self.get_wir_node_for_ast(child_ast)
+        new_wir_node = Vertex(self.get_next_wir_id(), ast_node.arg, [child_wir], "Keyword")
+        self.graph.append(new_wir_node)
+        self.store_ast_node_wir_mapping(ast_node, new_wir_node)
+
     def extract_wir_assign(self, ast_node):
         """
-        Creates an Assign vertex and saves the target variable mapping in the dict
+        Creates an assign vertex and saves the target variable mapping in the dict
         """
         assign_left_ast = ast_node.children[0]
         assign_right_ast = ast_node.children[1]
