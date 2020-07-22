@@ -116,15 +116,20 @@ class WirExtractor:
         """
         Creates a vertex for a function call in the code
         """
+        parent_in_wir_ast_nodes = ast_node.children[1:]
+        wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
+
         name_or_attribute_ast = ast_node.children[0]
         if isinstance(name_or_attribute_ast, ast.Name):
             name = name_or_attribute_ast.id
         elif isinstance(name_or_attribute_ast, ast.Attribute):
-            name = name_or_attribute_ast.attr  # FIXME: need to construct WIR parents correctly
+            name = name_or_attribute_ast.attr
+            object_with_that_func_ast = name_or_attribute_ast.children[0]
+            object_with_that_func_wir = self.get_wir_node_for_ast(object_with_that_func_ast)
+            wir_parents.insert(0, object_with_that_func_wir)
         else:
             assert False
-        parent_in_wir_ast_nodes = ast_node.children[1:]
-        wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
+
         new_wir_node = Vertex(self.get_next_wir_id(), name, wir_parents, "Call")
         self.graph.append(new_wir_node)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
