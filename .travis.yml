@@ -1,6 +1,7 @@
 language: python
 python:
 - '3.8'
+before_install: python setup.py egg_info
 install: python setup.py develop
 
 script: python setup.py test
