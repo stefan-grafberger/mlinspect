@@ -69,40 +69,13 @@ class WirExtractor:
             pass
             # process children, insert children nodes in graph, insert current nodes with children as parent nodes
         elif isinstance(ast_node, ast.Assign):
-            assign_left_ast = ast_node.children[0]
-            assign_right_ast = ast_node.children[1]
-            assign_right_wir = self.get_wir_node_for_ast(assign_right_ast)
-            var_name = assign_left_ast.id
-            new_wir_node = Vertex(self.get_next_wir_id(), var_name, [assign_right_wir], "Assign")
-            self.graph.append(new_wir_node)
-            self.store_variable_wir_mapping(var_name, new_wir_node)
+            self.extract_wir_assign(ast_node)
         elif isinstance(ast_node, ast.Load):
             pass
         elif isinstance(ast_node, ast.Name):
-            child_ast = ast_node.children[0]
-            if isinstance(child_ast, ast.Store):
-                pass  # Assign takes care of saving var then
-            elif isinstance(child_ast, ast.Load):
-                name = ast_node.id
-                wir_node_last_modification = self.get_wir_node_for_variable(name)
-                self.store_ast_node_wir_mapping(ast_node, wir_node_last_modification)
-            pass
+            self.extract_wir_name(ast_node)
         elif isinstance(ast_node, ast.Call):
-            name_or_attribute_ast = ast_node.children[0]
-            if isinstance(name_or_attribute_ast, ast.Name):
-                name = name_or_attribute_ast.id
-            elif isinstance(name_or_attribute_ast, ast.Attribute):
-                name = name_or_attribute_ast.attr  # FIXME: need to construct WIR parents correctly
-            else:
-                assert False
-            parent_in_wir_ast_nodes = ast_node.children[1:]
-
-            wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
-            new_wir_node = Vertex(self.get_next_wir_id(), name, wir_parents, "Call")
-            self.graph.append(new_wir_node)
-            self.store_ast_node_wir_mapping(ast_node, new_wir_node)
-
-            # process children, insert children nodes in graph, insert current nodes with children as parent nodes
+            self.extract_wir_call(ast_node)
         elif isinstance(ast_node, ast.Attribute):
             pass
             # can be from library or object. source is defined in value. process value and then use it as parent nodes
@@ -113,13 +86,64 @@ class WirExtractor:
         elif isinstance(ast_node, ast.Name):
             pass
         elif isinstance(ast_node, ast.Constant):
-            new_wir_node = Vertex(self.get_next_wir_id(), str(ast_node.n), [], "Constant_" + str(ast_node.kind))
-            self.graph.append(new_wir_node)
-            self.store_ast_node_wir_mapping(ast_node, new_wir_node)
+            self.extract_wir_constant(ast_node)
         else:
             print("node")
             print(ast_node)
             # assert False
+
+    def extract_wir_assign(self, ast_node):
+        """
+        Creates an Assign vertex and saves the target variable mapping in the dict
+        """
+        assign_left_ast = ast_node.children[0]
+        assign_right_ast = ast_node.children[1]
+        assign_right_wir = self.get_wir_node_for_ast(assign_right_ast)
+        var_name = assign_left_ast.id
+        new_wir_node = Vertex(self.get_next_wir_id(), var_name, [assign_right_wir], "Assign")
+        self.graph.append(new_wir_node)
+        self.store_variable_wir_mapping(var_name, new_wir_node)
+
+    def extract_wir_constant(self, ast_node):
+        """
+        Creates a vertex for a constant in the code like a String or number
+        """
+        new_wir_node = Vertex(self.get_next_wir_id(), str(ast_node.n), [], "Constant_" + str(ast_node.kind))
+        self.graph.append(new_wir_node)
+        self.store_ast_node_wir_mapping(ast_node, new_wir_node)
+
+    def extract_wir_call(self, ast_node):
+        """
+        Creates a vertex for a function call in the code
+        """
+        name_or_attribute_ast = ast_node.children[0]
+        if isinstance(name_or_attribute_ast, ast.Name):
+            name = name_or_attribute_ast.id
+        elif isinstance(name_or_attribute_ast, ast.Attribute):
+            name = name_or_attribute_ast.attr  # FIXME: need to construct WIR parents correctly
+        else:
+            assert False
+        parent_in_wir_ast_nodes = ast_node.children[1:]
+        wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
+        new_wir_node = Vertex(self.get_next_wir_id(), name, wir_parents, "Call")
+        self.graph.append(new_wir_node)
+        self.store_ast_node_wir_mapping(ast_node, new_wir_node)
+
+    def extract_wir_name(self, ast_node):
+        """
+        Does not create a vertex. A name node can be for loading or storing variables.
+        When storing, an Assign is used. The assign-extraction takes care of storing
+        variables/wir mapping in the dict, so we do not need to do it here.
+        For Loads, it does not create a new vertex but takes care of referencing the
+        correct wir vertex when e.g., a call uses this name ast node.
+        """
+        child_ast = ast_node.children[0]
+        if isinstance(child_ast, ast.Store):
+            pass  # Assign takes care of saving var then
+        elif isinstance(child_ast, ast.Load):
+            name = ast_node.id
+            wir_node_last_modification = self.get_wir_node_for_variable(name)
+            self.store_ast_node_wir_mapping(ast_node, wir_node_last_modification)
 
     def store_ast_node_wir_mapping(self, ast_entity_name, wir_node) -> None:
         """
