@@ -21,7 +21,7 @@ Prerequisite: python >=  3.8
 	
 3. Install dependencies 
 
-    `python setup.py develop` <br>
+    `pip install -e .[dev]` <br>
 
 3. Run the tests
 

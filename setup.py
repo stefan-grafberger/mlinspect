@@ -27,8 +27,7 @@ setup(
     include_package_data=True,
     install_requires=required,
     tests_require=test_required,
-    extras_require={'test': test_required},
-    data_files=[('requirements', ['requirements/requirements.txt'])],
+    extras_require={'dev': test_required},
     license='Apache License 2.0',
     python_requires='>=3.8',
     classifiers=[
