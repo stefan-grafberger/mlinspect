@@ -3,5 +3,5 @@ python:
 - '3.8'
 install: python setup.py develop
 
-script: python -m pytest
+script: python setup.py test
 after_success: bash <(curl -s https://codecov.io/bash) -t 94150045-9c0d-4b51-8116-e1606ab7a72e
