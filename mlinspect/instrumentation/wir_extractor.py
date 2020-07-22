@@ -63,6 +63,7 @@ class WirExtractor:
         """
         Recursively generates the WIR
         """
+        # pylint: disable=too-many-branches
         for child_ast in ast_node.children:
             self.process_node(child_ast)
         if isinstance(ast_node, ast.Expr):
@@ -77,16 +78,33 @@ class WirExtractor:
             self.extract_wir_call(ast_node)
         elif isinstance(ast_node, ast.Attribute):
             pass  # maybe already done, need to check edge cases like member variables
-        elif isinstance(ast_node, ast.keyword):  # TODO: test this
+        elif isinstance(ast_node, ast.keyword):
             self.extract_wir_keyword(ast_node)
         elif isinstance(ast_node, ast.Name):
             pass
         elif isinstance(ast_node, ast.Constant):
             self.extract_wir_constant(ast_node)
+        elif isinstance(ast_node, ast.Import):
+            self.extract_wir_import(ast_node)
         else:
             print("node")
             print(ast_node)
             # assert False
+
+    def extract_wir_import(self, ast_node):
+        """
+        Creates an import vertex. The actual module name and not the alias is used as vertex name.
+        """
+        alias_ast = ast_node.children[0]
+        assert isinstance(alias_ast, ast.alias)
+        module_name = alias_ast.name
+        if alias_ast.asname:
+            alias_name = alias_ast.asname
+        else:
+            alias_name = module_name
+        new_wir_node = Vertex(self.get_next_wir_id(), module_name, [], "Import")
+        self.graph.append(new_wir_node)
+        self.store_variable_wir_mapping(alias_name, new_wir_node)
 
     def extract_wir_keyword(self, ast_node):
         """
