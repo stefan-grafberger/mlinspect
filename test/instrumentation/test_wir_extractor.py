@@ -37,7 +37,7 @@ def test_print_var_usage():
     assert extracted_dag == expected_graph
 
 
-def test_string_call_attribute_():
+def test_string_call_attribute():
     """
     Tests whether the WIR Extraction works for a very simple attribute call
     """
@@ -51,4 +51,21 @@ def test_string_call_attribute_():
     expected_constant_two = Vertex(1, "world", [], "Constant_None")
     expected_attribute_call = Vertex(2, "join", [expected_constant_one, expected_constant_two], "Call")
     expected_graph = [expected_constant_one, expected_constant_two, expected_attribute_call]
+    assert extracted_dag == expected_graph
+
+
+def test_print_expressions():
+    """
+    Tests whether the WIR Extraction works for an expression with very simple nested calls
+    """
+    test_code = cleandoc("""
+        print("test".isupper())
+        """)
+    extractor = WirExtractor()
+    test_ast = ast.parse(test_code)
+    extracted_dag = extractor.extract_wir(test_ast)
+    expected_constant = Vertex(0, "test", [], "Constant_None")
+    expected_call_one = Vertex(1, "isupper", [expected_constant], "Call")
+    expected_call_two = Vertex(2, "print", [expected_call_one], "Call")
+    expected_graph = [expected_constant, expected_call_one, expected_call_two]
     assert extracted_dag == expected_graph

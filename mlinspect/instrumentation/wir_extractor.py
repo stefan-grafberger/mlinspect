@@ -65,9 +65,8 @@ class WirExtractor:
         """
         for child_ast_node in ast_node.children:
             self.process_node(child_ast_node)
-        if isinstance(ast_node, ast.Expr):  # maybe we can ignore them?
-            pass
-            # process children, insert children nodes in graph, insert current nodes with children as parent nodes
+        if isinstance(ast_node, ast.Expr):
+            pass  # probably nothing to do here
         elif isinstance(ast_node, ast.Assign):
             self.extract_wir_assign(ast_node)
         elif isinstance(ast_node, ast.Load):
@@ -77,9 +76,8 @@ class WirExtractor:
         elif isinstance(ast_node, ast.Call):
             self.extract_wir_call(ast_node)
         elif isinstance(ast_node, ast.Attribute):
-            pass
-            # can be from library or object. source is defined in value. process value and then use it as parent nodes
-        elif isinstance(ast_node, ast.keyword):
+            pass  # maybe already done, need to check edge cases like member variables
+        elif isinstance(ast_node, ast.keyword):  # TODO: test this
             new_wir_node = Vertex(self.get_next_wir_id(), ast_node.arg, [], "Keyword")
             self.graph.append(new_wir_node)
             self.store_ast_node_wir_mapping(ast_node, new_wir_node)
