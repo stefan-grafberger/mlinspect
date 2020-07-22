@@ -149,4 +149,14 @@ def test_import_from():
     expected_graph = [expected_import, expected_constant, expected_constant_call]
     assert extracted_dag == expected_graph
 
-    # TODO: List-Constants, actual pipeline code
+    # TODO: nested import-froms like 'from mlinspect.utils import get_project_root',
+    #  List-Constants, actual pipeline code, nested calls
+    # Maybe mark caller explicitly?
+
+    # We can also see if we really need runtime detection to check where a function comes from.
+    # Makes things a lot easier if we use it for class member variables however. Maybe in a later step.
+    # Also, maybe a knowledge base is possible. Then we can have a map from function
+    # to operator and mark which parameters contain important operator attributes
+    # Also: mark root nodes. then we can only list root nodes in graph. then we can
+    # calculate children from the parents. then we can update the
+    # print functions to print children.
