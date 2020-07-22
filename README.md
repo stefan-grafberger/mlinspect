@@ -43,3 +43,6 @@ extracted_annotated_dag = PipelineInspector\
 ## Notes
 * For debugging in PyCharm, set the pytest flag `--no-cov` ([Link](https://stackoverflow.com/questions/34870962/how-to-debug-py-test-in-pycharm-when-coverage-is-enabled))
 * This is a research project, so comprehensive coverage of all possible ML APIs will not be possible in the current initial step. We will try to tell you if we encounter APIs we can not handle yet.
+
+## License
+This library is licensed under the Apache 2.0 License.

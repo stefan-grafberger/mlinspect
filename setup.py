@@ -24,7 +24,6 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=find_packages(),
-    package_data={"": ["README.md", "LICENSE"]},
     include_package_data=True,
     setup_requires=test_required,
     tests_require=test_required,
