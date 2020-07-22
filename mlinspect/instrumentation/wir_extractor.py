@@ -5,9 +5,9 @@ import ast
 from astmonkey import transformers
 
 
-class Vertex():
+class Vertex:
     """
-    A WIR Verrtex
+    A WIR Vertex
     """
     def __init__(self, node_id, name, parent_vertices, operation):
         self.node_id = node_id
@@ -54,7 +54,6 @@ class WirExtractor:
         """
         # pylint: disable=no-self-use
         enriched_ast = transformers.ParentChildNodeTransformer().visit(ast_root)
-
         assert isinstance(enriched_ast, ast.Module)
         self.process_node(enriched_ast)
 
@@ -66,12 +65,28 @@ class WirExtractor:
         """
         for child_ast_node in ast_node.children:
             self.process_node(child_ast_node)
-        if isinstance(ast_node, ast.Expr): # maybe we can ignore them?
+        if isinstance(ast_node, ast.Expr):  # maybe we can ignore them?
             pass
             # process children, insert children nodes in graph, insert current nodes with children as parent nodes
         elif isinstance(ast_node, ast.Assign):
+            assign_left_ast = ast_node.children[0]
+            assign_right_ast = ast_node.children[1]
+            assign_right_wir = self.get_wir_node_for_ast(assign_right_ast)
+            var_name = assign_left_ast.id
+            new_wir_node = Vertex(self.get_next_wir_id(), var_name, [assign_right_wir], "Assign")
+            self.graph.append(new_wir_node)
+            self.store_variable_wir_mapping(var_name, new_wir_node)
+        elif isinstance(ast_node, ast.Load):
             pass
-            # process children[1], insert in graph, insert children[0] as current node with children as parent nodes
+        elif isinstance(ast_node, ast.Name):
+            child_ast = ast_node.children[0]
+            if isinstance(child_ast, ast.Store):
+                pass  # Assign takes care of saving var then
+            elif isinstance(child_ast, ast.Load):
+                name = ast_node.id
+                wir_node_last_modification = self.get_wir_node_for_variable(name)
+                self.store_ast_node_wir_mapping(ast_node, wir_node_last_modification)
+            pass
         elif isinstance(ast_node, ast.Call):
             name_or_attribute_ast = ast_node.children[0]
             if isinstance(name_or_attribute_ast, ast.Name):
