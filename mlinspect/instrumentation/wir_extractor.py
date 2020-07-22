@@ -42,6 +42,8 @@ class WirExtractor:
     Extract WIR (Workflow Intermediate Representation) from the AST
     """
 
+    NOT_FOUND_WIR = Vertex(-1, "FIXME", [], "FIXME")
+
     def __init__(self):
         self.ast_wir_map = {}
         self.variable_wir_map = {}
@@ -71,7 +73,7 @@ class WirExtractor:
         elif isinstance(ast_node, ast.Assign):
             self.extract_wir_assign(ast_node)
         elif isinstance(ast_node, ast.Load):
-            pass
+            pass  # probably nothing to do here
         elif isinstance(ast_node, ast.Name):
             self.extract_wir_name(ast_node)
         elif isinstance(ast_node, ast.Call):
@@ -86,10 +88,24 @@ class WirExtractor:
             self.extract_wir_constant(ast_node)
         elif isinstance(ast_node, ast.Import):
             self.extract_wir_import(ast_node)
+        elif isinstance(ast_node, ast.ImportFrom):
+            self.extract_wir_import_from(ast_node)
         else:
             print("node")
             print(ast_node)
             # assert False
+
+    def extract_wir_import_from(self, ast_node):
+        """
+        Creates an import vertex. Stores each imported entity in the dict.
+        """
+        module_name = ast_node.module
+        new_wir_node = Vertex(self.get_next_wir_id(), module_name, [], "Import")
+        self.graph.append(new_wir_node)
+        for imported_entity_ast in ast_node.children:
+            assert isinstance(imported_entity_ast, ast.alias)
+            entity_name = imported_entity_ast.name
+            self.store_variable_wir_mapping(entity_name, new_wir_node)
 
     def extract_wir_import(self, ast_node):
         """
@@ -146,6 +162,9 @@ class WirExtractor:
         name_or_attribute_ast = ast_node.children[0]
         if isinstance(name_or_attribute_ast, ast.Name):
             name = name_or_attribute_ast.id
+            possible_import_wir_node = self.get_wir_node_for_variable(name)
+            if possible_import_wir_node != WirExtractor.NOT_FOUND_WIR:
+                wir_parents.insert(0, possible_import_wir_node)
         elif isinstance(name_or_attribute_ast, ast.Attribute):
             name = name_or_attribute_ast.attr
             object_with_that_func_ast = name_or_attribute_ast.children[0]
@@ -184,7 +203,7 @@ class WirExtractor:
         """
         Get the current wir_node for a named_object
         """
-        return self.ast_wir_map.get(ast_entity_name, Vertex(-1, "FIXME", [], "FIXME"))
+        return self.ast_wir_map.get(ast_entity_name, WirExtractor.NOT_FOUND_WIR)
 
     def store_variable_wir_mapping(self, variable_name, wir_node) -> None:
         """
@@ -196,7 +215,7 @@ class WirExtractor:
         """
         Get the current wir_node for a named_object
         """
-        return self.variable_wir_map.get(variable_name, Vertex(-1, "FIXME", [], "FIXME"))
+        return self.variable_wir_map.get(variable_name, WirExtractor.NOT_FOUND_WIR)
 
     def get_next_wir_id(self):
         """

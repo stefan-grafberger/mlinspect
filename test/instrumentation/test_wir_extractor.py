@@ -95,7 +95,7 @@ def test_keyword():
 
 def test_import():
     """
-    Tests whether the WIR Extraction works imports
+    Tests whether the WIR Extraction works for imports
     """
     test_code = cleandoc("""
         import math 
@@ -114,7 +114,7 @@ def test_import():
 
 def test_import_as():
     """
-    Tests whether the WIR Extraction works imports
+    Tests whether the WIR Extraction works for imports as
     """
     test_code = cleandoc("""
             import math as test 
@@ -130,4 +130,23 @@ def test_import_as():
     expected_graph = [expected_import, expected_constant, expected_constant_call]
     assert extracted_dag == expected_graph
 
-    # TODO: List-Constants, Import from, actual pipeline code
+
+def test_import_from():
+    """
+    Tests whether the WIR Extraction works for from imports
+    """
+    test_code = cleandoc("""
+            from math import sqrt 
+
+            sqrt(4)
+            """)
+    extractor = WirExtractor()
+    test_ast = ast.parse(test_code)
+    extracted_dag = extractor.extract_wir(test_ast)
+    expected_import = Vertex(0, "math", [], "Import")
+    expected_constant = Vertex(1, "4", [], "Constant_None")
+    expected_constant_call = Vertex(2, "sqrt", [expected_import, expected_constant], "Call")
+    expected_graph = [expected_import, expected_constant, expected_constant_call]
+    assert extracted_dag == expected_graph
+
+    # TODO: List-Constants, actual pipeline code
