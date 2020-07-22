@@ -91,6 +91,7 @@ class WirExtractor:
             graph.append(new_wir_node)
             self.store_ast_node_wir_mapping(ast_node, new_wir_node)
         else:
+            print("node")
             print(ast_node)
             # assert False
 
