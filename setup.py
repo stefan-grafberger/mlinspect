@@ -33,7 +33,8 @@ setup(
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3 :: Only'
-    ]
+    ],
+    zip_safe=False
 )
 
 if __name__ == "__main__":
