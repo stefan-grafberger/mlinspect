@@ -14,7 +14,7 @@ def test_print_stmt():
     test_ast = ast.parse("print('test')")
     extracted_dag = extractor.extract_wir(test_ast)
 
-    expected_constant = Vertex(0, "test", [], "Constant_None")
+    expected_constant = Vertex(0, "test", [], "Constant")
     expected_call = Vertex(1, "print", [expected_constant], "Call")
     expected_graph = [expected_constant, expected_call]
     assert extracted_dag == expected_graph
@@ -30,7 +30,7 @@ def test_print_var_usage():
     extractor = WirExtractor()
     test_ast = ast.parse(test_code)
     extracted_dag = extractor.extract_wir(test_ast)
-    expected_constant = Vertex(0, "test", [], "Constant_None")
+    expected_constant = Vertex(0, "test", [], "Constant")
     expected_assign = Vertex(1, "test_var", [expected_constant], "Assign")
     expected_call = Vertex(2, "print", [expected_assign], "Call")
     expected_graph = [expected_constant, expected_assign, expected_call]
@@ -47,8 +47,8 @@ def test_string_call_attribute():
     extractor = WirExtractor()
     test_ast = ast.parse(test_code)
     extracted_dag = extractor.extract_wir(test_ast)
-    expected_constant_one = Vertex(0, "hello ", [], "Constant_None")
-    expected_constant_two = Vertex(1, "world", [], "Constant_None")
+    expected_constant_one = Vertex(0, "hello ", [], "Constant")
+    expected_constant_two = Vertex(1, "world", [], "Constant")
     expected_attribute_call = Vertex(2, "join", [expected_constant_one, expected_constant_two], "Call")
     expected_graph = [expected_constant_one, expected_constant_two, expected_attribute_call]
     assert extracted_dag == expected_graph
@@ -64,7 +64,7 @@ def test_print_expressions():
     extractor = WirExtractor()
     test_ast = ast.parse(test_code)
     extracted_dag = extractor.extract_wir(test_ast)
-    expected_constant = Vertex(0, "test", [], "Constant_None")
+    expected_constant = Vertex(0, "test", [], "Constant")
     expected_call_one = Vertex(1, "isupper", [expected_constant], "Call")
     expected_call_two = Vertex(2, "print", [expected_call_one], "Call")
     expected_graph = [expected_constant, expected_call_one, expected_call_two]
@@ -81,10 +81,10 @@ def test_keyword():
     extractor = WirExtractor()
     test_ast = ast.parse(test_code)
     extracted_dag = extractor.extract_wir(test_ast)
-    expected_constant_one = Vertex(0, "comma", [], "Constant_None")
-    expected_constant_two = Vertex(1, "separated", [], "Constant_None")
-    expected_constant_three = Vertex(2, "words", [], "Constant_None")
-    expected_constant_four = Vertex(3, ", ", [], "Constant_None")
+    expected_constant_one = Vertex(0, "comma", [], "Constant")
+    expected_constant_two = Vertex(1, "separated", [], "Constant")
+    expected_constant_three = Vertex(2, "words", [], "Constant")
+    expected_constant_four = Vertex(3, ", ", [], "Constant")
     expected_keyword = Vertex(4, "sep", [expected_constant_four], "Keyword")
     expected_call = Vertex(5, "print", [expected_constant_one, expected_constant_two, expected_constant_three,
                                         expected_keyword], "Call")
@@ -106,7 +106,7 @@ def test_import():
     test_ast = ast.parse(test_code)
     extracted_dag = extractor.extract_wir(test_ast)
     expected_import = Vertex(0, "math", [], "Import")
-    expected_constant = Vertex(1, "4", [], "Constant_None")
+    expected_constant = Vertex(1, "4", [], "Constant")
     expected_constant_call = Vertex(2, "sqrt", [expected_import, expected_constant], "Call")
     expected_graph = [expected_import, expected_constant, expected_constant_call]
     assert extracted_dag == expected_graph
@@ -125,7 +125,7 @@ def test_import_as():
     test_ast = ast.parse(test_code)
     extracted_dag = extractor.extract_wir(test_ast)
     expected_import = Vertex(0, "math", [], "Import")
-    expected_constant = Vertex(1, "4", [], "Constant_None")
+    expected_constant = Vertex(1, "4", [], "Constant")
     expected_constant_call = Vertex(2, "sqrt", [expected_import, expected_constant], "Call")
     expected_graph = [expected_import, expected_constant, expected_constant_call]
     assert extracted_dag == expected_graph
@@ -144,13 +144,49 @@ def test_import_from():
     test_ast = ast.parse(test_code)
     extracted_dag = extractor.extract_wir(test_ast)
     expected_import = Vertex(0, "math", [], "Import")
-    expected_constant = Vertex(1, "4", [], "Constant_None")
+    expected_constant = Vertex(1, "4", [], "Constant")
     expected_constant_call = Vertex(2, "sqrt", [expected_import, expected_constant], "Call")
     expected_graph = [expected_import, expected_constant, expected_constant_call]
     assert extracted_dag == expected_graph
 
-    # TODO: nested import-froms like 'from mlinspect.utils import get_project_root',
-    #  List-Constants, actual pipeline code, nested calls, functions with multiple return values
+
+def test_nested_import_from():
+    """
+    Tests whether the WIR Extraction works for nested from imports
+    """
+    test_code = cleandoc("""
+            from mlinspect.utils import get_project_root
+
+            print(get_project_root())
+            """)
+    extractor = WirExtractor()
+    test_ast = ast.parse(test_code)
+    extracted_dag = extractor.extract_wir(test_ast)
+    expected_import = Vertex(0, "mlinspect.utils", [], "Import")
+    expected_call_one = Vertex(1, "get_project_root", [expected_import], "Call")
+    expected_call_two = Vertex(2, "print", [expected_call_one], "Call")
+    expected_graph = [expected_import, expected_call_one, expected_call_two]
+    assert extracted_dag == expected_graph
+
+
+def test_list_creation():
+    """
+    Tests whether the WIR Extraction works for lists
+    """
+    test_code = cleandoc("""
+            print(["test1", "test2"])
+            """)
+    extractor = WirExtractor()
+    test_ast = ast.parse(test_code)
+    extracted_dag = extractor.extract_wir(test_ast)
+    expected_constant_one = Vertex(0, "test1", [], "Constant")
+    expected_constant_two = Vertex(1, "test2", [], "Constant")
+    expected_list = Vertex(2, "as_list", [expected_constant_one, expected_constant_two], "List")
+    expected_call = Vertex(3, "print", [expected_list], "Call")
+    expected_graph = [expected_constant_one, expected_constant_two, expected_list, expected_call]
+    assert extracted_dag == expected_graph
+
+    # TODO: actual pipeline code, nested calls, functions with multiple return values
     # Maybe mark caller explicitly?
 
     # We can also see if we really need runtime detection to check where a function comes from.

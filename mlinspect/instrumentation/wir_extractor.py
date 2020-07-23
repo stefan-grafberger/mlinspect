@@ -90,10 +90,22 @@ class WirExtractor:
             self.extract_wir_import(ast_node)
         elif isinstance(ast_node, ast.ImportFrom):
             self.extract_wir_import_from(ast_node)
+        elif isinstance(ast_node, ast.List):
+            self.extract_wir_list(ast_node)
         else:
             print("node")
             print(ast_node)
             # assert False
+
+    def extract_wir_list(self, ast_node):
+        """
+        Creates a list vertex.
+        """
+        parent_in_wir_ast_nodes = ast_node.children[:-1]
+        wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
+        new_wir_node = Vertex(self.get_next_wir_id(), "as_list", wir_parents, "List")
+        self.graph.append(new_wir_node)
+        self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
     def extract_wir_import_from(self, ast_node):
         """
@@ -148,7 +160,7 @@ class WirExtractor:
         """
         Creates a vertex for a constant in the code like a String or number
         """
-        new_wir_node = Vertex(self.get_next_wir_id(), str(ast_node.n), [], "Constant_" + str(ast_node.kind))
+        new_wir_node = Vertex(self.get_next_wir_id(), str(ast_node.n), [], "Constant")
         self.graph.append(new_wir_node)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
