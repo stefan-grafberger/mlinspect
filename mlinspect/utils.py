@@ -17,6 +17,6 @@ def simplify_ast_call_nodes(node: ast):
     """
     if not isinstance(node, ast.Call):
         return None
-    else:
-        id_tuple = (node.lineno, node.col_offset)
-        return id_tuple
+
+    id_tuple = (node.lineno, node.col_offset)
+    return id_tuple

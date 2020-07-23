@@ -46,20 +46,22 @@ class WirExtractor:
 
     NOT_FOUND_WIR = Vertex(-1, "FIXME", None, [], "FIXME")
 
-    def __init__(self, ast_root: ast.Module, ast_call_to_module):
+    def __init__(self, ast_root: ast.Module):
         self.ast_wir_map = {}
         self.variable_wir_map = {}
         self.graph = []
         self.next_node_id = 0
 
         self.ast_root = ast_root
-        self.ast_call_to_module = ast_call_to_module
+        self.ast_call_to_module = None
 
-    def extract_wir(self):
+    def extract_wir(self, ast_call_to_module=None):
         """
         Instrument all function calls
         """
         # pylint: disable=no-self-use
+        self.ast_call_to_module = ast_call_to_module
+
         enriched_ast = transformers.ParentChildNodeTransformer().visit(self.ast_root)
         assert isinstance(enriched_ast, ast.Module)
         self.process_node(enriched_ast)
@@ -217,8 +219,10 @@ class WirExtractor:
         else:
             assert False
 
-        ast_call_node_lookup_key = simplify_ast_call_nodes(ast_node)
-        module = self.ast_call_to_module[ast_call_node_lookup_key]
+        if self.ast_call_to_module:  # TODO: Test this and use it
+            ast_call_node_lookup_key = simplify_ast_call_nodes(ast_node)
+            module = self.ast_call_to_module[ast_call_node_lookup_key]
+            print(module)
         new_wir_node = Vertex(self.get_next_wir_id(), name, caller_parent, wir_parents, "Call")
         self.graph.append(new_wir_node)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)

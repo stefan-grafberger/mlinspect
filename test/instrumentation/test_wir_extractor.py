@@ -9,13 +9,15 @@ from mlinspect.instrumentation.wir_extractor import WirExtractor, Vertex
 
 FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 
+
 def test_print_stmt():
     """
     Tests whether the WIR Extraction works for a very simple print statement
     """
-    extractor = WirExtractor()
-    test_ast = ast.parse("print('test')")
-    extracted_wir = extractor.extract_wir(test_ast)
+    test_code = "print('test')"
+    test_ast = ast.parse(test_code)
+    extractor = WirExtractor(test_ast)
+    extracted_wir = extractor.extract_wir()
 
     expected_constant = Vertex(0, "test", None, [], "Constant")
     expected_call = Vertex(1, "print", None, [expected_constant], "Call")
@@ -30,9 +32,9 @@ def test_print_var_usage():
     test_code = cleandoc("""
         test_var = "test"
         print(test_var)""")
-    extractor = WirExtractor()
     test_ast = ast.parse(test_code)
-    extracted_wir = extractor.extract_wir(test_ast)
+    extractor = WirExtractor(test_ast)
+    extracted_wir = extractor.extract_wir()
     expected_constant = Vertex(0, "test", None, [], "Constant")
     expected_assign = Vertex(1, "test_var", None, [expected_constant], "Assign")
     expected_call = Vertex(2, "print", None, [expected_assign], "Call")
@@ -47,9 +49,9 @@ def test_string_call_attribute():
     test_code = cleandoc("""
         "hello ".join("world")
         """)
-    extractor = WirExtractor()
     test_ast = ast.parse(test_code)
-    extracted_wir = extractor.extract_wir(test_ast)
+    extractor = WirExtractor(test_ast)
+    extracted_wir = extractor.extract_wir()
     expected_constant_one = Vertex(0, "hello ", None, [], "Constant")
     expected_constant_two = Vertex(1, "world", None, [], "Constant")
     expected_attribute_call = Vertex(2, "join", expected_constant_one, [expected_constant_two], "Call")
@@ -64,9 +66,9 @@ def test_print_expressions():
     test_code = cleandoc("""
         print("test".isupper())
         """)
-    extractor = WirExtractor()
     test_ast = ast.parse(test_code)
-    extracted_wir = extractor.extract_wir(test_ast)
+    extractor = WirExtractor(test_ast)
+    extracted_wir = extractor.extract_wir()
     expected_constant = Vertex(0, "test", None, [], "Constant")
     expected_call_one = Vertex(1, "isupper", expected_constant, [], "Call")
     expected_call_two = Vertex(2, "print", None, [expected_call_one], "Call")
@@ -81,9 +83,9 @@ def test_keyword():
     test_code = cleandoc("""
         print('comma', 'separated', 'words', sep=', ')
         """)
-    extractor = WirExtractor()
     test_ast = ast.parse(test_code)
-    extracted_wir = extractor.extract_wir(test_ast)
+    extractor = WirExtractor(test_ast)
+    extracted_wir = extractor.extract_wir()
     expected_constant_one = Vertex(0, "comma", None, [], "Constant")
     expected_constant_two = Vertex(1, "separated", None, [], "Constant")
     expected_constant_three = Vertex(2, "words", None, [], "Constant")
@@ -105,9 +107,9 @@ def test_import():
         
         math.sqrt(4)
         """)
-    extractor = WirExtractor()
     test_ast = ast.parse(test_code)
-    extracted_wir = extractor.extract_wir(test_ast)
+    extractor = WirExtractor(test_ast)
+    extracted_wir = extractor.extract_wir()
     expected_import = Vertex(0, "math", None, [], "Import")
     expected_constant = Vertex(1, "4", None, [], "Constant")
     expected_constant_call = Vertex(2, "sqrt", expected_import, [expected_constant], "Call")
@@ -124,9 +126,9 @@ def test_import_as():
 
             test.sqrt(4)
             """)
-    extractor = WirExtractor()
     test_ast = ast.parse(test_code)
-    extracted_wir = extractor.extract_wir(test_ast)
+    extractor = WirExtractor(test_ast)
+    extracted_wir = extractor.extract_wir()
     expected_import = Vertex(0, "math", None, [], "Import")
     expected_constant = Vertex(1, "4", None, [], "Constant")
     expected_constant_call = Vertex(2, "sqrt", expected_import, [expected_constant], "Call")
@@ -143,9 +145,9 @@ def test_import_from():
 
             sqrt(4)
             """)
-    extractor = WirExtractor()
     test_ast = ast.parse(test_code)
-    extracted_wir = extractor.extract_wir(test_ast)
+    extractor = WirExtractor(test_ast)
+    extracted_wir = extractor.extract_wir()
     expected_import = Vertex(0, "math", None, [], "Import")
     expected_constant = Vertex(1, "4", None, [], "Constant")
     expected_constant_call = Vertex(2, "sqrt", expected_import, [expected_constant], "Call")
@@ -162,9 +164,9 @@ def test_nested_import_from():
 
             print(get_project_root())
             """)
-    extractor = WirExtractor()
     test_ast = ast.parse(test_code)
-    extracted_wir = extractor.extract_wir(test_ast)
+    extractor = WirExtractor(test_ast)
+    extracted_wir = extractor.extract_wir()
     expected_import = Vertex(0, "mlinspect.utils", None, [], "Import")
     expected_call_one = Vertex(1, "get_project_root", expected_import, [], "Call")
     expected_call_two = Vertex(2, "print", None, [expected_call_one], "Call")
@@ -179,9 +181,9 @@ def test_list_creation():
     test_code = cleandoc("""
             print(["test1", "test2"])
             """)
-    extractor = WirExtractor()
     test_ast = ast.parse(test_code)
-    extracted_wir = extractor.extract_wir(test_ast)
+    extractor = WirExtractor(test_ast)
+    extracted_wir = extractor.extract_wir()
     expected_constant_one = Vertex(0, "test1", None, [], "Constant")
     expected_constant_two = Vertex(1, "test2", None, [], "Constant")
     expected_list = Vertex(2, "as_list", None, [expected_constant_one, expected_constant_two], "List")
@@ -200,9 +202,9 @@ def test_index_subscript():
             data = pd.read_csv('test_path')
             data['income-per-year']
             """)
-    extractor = WirExtractor()
     test_ast = ast.parse(test_code)
-    extracted_wir = extractor.extract_wir(test_ast)
+    extractor = WirExtractor(test_ast)
+    extracted_wir = extractor.extract_wir()
     expected_import = Vertex(0, "pandas", None, [], "Import")
     expected_constant_one = Vertex(1, "test_path", None, [], "Constant")
     expected_call = Vertex(2, "read_csv", expected_import, [expected_constant_one], "Call")
@@ -223,9 +225,9 @@ def test_tuples():
 
             ('categorical', preprocessing.OneHotEncoder(handle_unknown='ignore'), ['education', 'workclass'])
             """)
-    extractor = WirExtractor()
     test_ast = ast.parse(test_code)
-    extracted_wir = extractor.extract_wir(test_ast)
+    extractor = WirExtractor(test_ast)
+    extracted_wir = extractor.extract_wir()
     expected_import_from = Vertex(0, "sklearn", None, [], "Import")
     expected_constant_one = Vertex(1, "categorical", None, [], "Constant")
     expected_constant_two = Vertex(2, "ignore", None, [], "Constant")
@@ -247,9 +249,9 @@ def test_adult_easy_pipeline():
     with open(FILE_PY) as file:
         test_code = file.read()
 
-        extractor = WirExtractor()
         test_ast = ast.parse(test_code)
-        extracted_wir = extractor.extract_wir(test_ast)
+        extractor = WirExtractor(test_ast)
+        extracted_wir = extractor.extract_wir()
 
         assert len(extracted_wir) == 59
 

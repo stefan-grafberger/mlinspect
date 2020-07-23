@@ -55,21 +55,28 @@ class PipelineExecutor:
 
         exec(compile(parsed_modified_ast, filename="<ast>", mode="exec"), PipelineExecutor.script_scope)
 
+        initial_wir = self.extract_wir(call_capture_transformer, parsed_ast)
+        print(initial_wir)
+
+        return "test"
+
+    def extract_wir(self, call_capture_transformer, parsed_ast):
+        """
+        Gets the WIR using the WirExtractor
+        """
         ast_calls_to_module = {}
         id_to_call_ast = call_capture_transformer.get_id_to_call_ast()
         for ast_call_id, module in self.ast_call_node_id_to_module.items():
             ast_node = id_to_call_ast[ast_call_id]
             ast_calls_to_module[ast_node] = module
-
-        initial_wir = WirExtractor(parsed_ast, ast_calls_to_module).extract_wir()
-        print(initial_wir)
-
-        return "test"
+        initial_wir = WirExtractor(parsed_ast).extract_wir(ast_calls_to_module)
+        return initial_wir
 
     def instrumented_call_used(self, arg_values, args_code, node, code, ast_node_id):
         """
         This is the method we want to insert into the DAG
         """
+        # pylint: disable=too-many-arguments
         print(code)
 
         function = code.split("(", 1)[0]

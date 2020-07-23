@@ -44,6 +44,9 @@ class CallCaptureTransformer(ast.NodeTransformer):
         return ast.copy_location(instrumented_call_node, node)
 
     def get_id_to_call_ast(self):
+        """
+        Get the dict from ast_node_number to ast_node (or something that can be used for eq comparisons)
+        """
         return self.id_to_call_ast
 
     def get_next_ast_node_id(self):
@@ -53,4 +56,3 @@ class CallCaptureTransformer(ast.NodeTransformer):
         ast_node_id = self.next_ast_node_id
         self.next_ast_node_id += 1
         return ast_node_id
-
