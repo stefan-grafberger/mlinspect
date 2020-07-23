@@ -20,9 +20,15 @@ class CallCaptureTransformer(ast.NodeTransformer):
         Instrument all function calls
         """
         # pylint: disable=no-self-use, invalid-name
-        node.args = [self.visit(arg_node) for arg_node in node.args]
+        # node.args = [self.visit(arg_node) for arg_node in node.args]
+        if hasattr(node.func, "id") and node.func.id == "instrumented_call_used":
+            return node
 
         code = astunparse.unparse(node)
+
+        node.args = [self.visit(arg_node) for arg_node in node.args]
+        node.keywords = [self.visit(keyword_node) for keyword_node in node.keywords]
+
         args = ast.List(node.args, ctx=ast.Load())
         args_code = ast.List([ast.Constant(n=astunparse.unparse(arg).split("\n", 1)[0], kind=None)
                               for arg in node.args], ctx=ast.Load())
@@ -34,8 +40,9 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                           args=[args, args_code, node, ast.Constant(n=code, kind=None),
                                                 ast.Constant(n=ast_node_id, kind=None)],
                                           keywords=[])
+
         # TODO: warn if unrecognized function call, expressions
-        return instrumented_call_node
+        return ast.copy_location(instrumented_call_node, node)
 
     def get_id_to_call_ast(self):
         return self.id_to_call_ast
