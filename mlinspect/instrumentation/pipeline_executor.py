@@ -99,10 +99,10 @@ class PipelineExecutor:
         astpretty.pprint(parsed_ast)  # TODO: Remove this
 
 
-# The function we add around each call
+# How we instrument the calls
 
-# This is a bit ugly currently: we avoid to have to pass the class instance to the instrumented
-# pipeline. This is a simple workaround for that. This keeps the DAG nodes to be inserted very simple.
+# This instance works as our singleton: we avoid to pass the class instance to the instrumented
+# pipeline. This keeps the DAG nodes to be inserted very simple.
 pipeline_executor = PipelineExecutor()
 
 
