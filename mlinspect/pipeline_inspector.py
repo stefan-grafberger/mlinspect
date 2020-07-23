@@ -1,7 +1,7 @@
 """
 User-facing API for inspecting the pipeline
 """
-from .instrumentation.pipeline_executor import PipelineExecutor
+from .instrumentation.pipeline_executor import pipeline_executor
 
 
 class PipelineInspectorBuilder:
@@ -24,7 +24,7 @@ class PipelineInspectorBuilder:
         """
         Instrument and execute the pipeline
         """
-        return PipelineExecutor().run(self.notebook_path, self.python_path)
+        return pipeline_executor.run(self.notebook_path, self.python_path)
 
 
 class PipelineInspector:

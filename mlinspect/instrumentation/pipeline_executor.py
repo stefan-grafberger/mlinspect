@@ -11,21 +11,14 @@ from .call_capture_transformer import CallCaptureTransformer
 from .wir_extractor import WirExtractor
 
 
-def instrumented_call_used(arg_values, args_code, node, code):
-    """
-    Method that gets injected into the pipeline code
-    """
-    return PipelineExecutor.instrumented_call_used(arg_values, args_code, node, code)
-
-
 class PipelineExecutor:
     """
     Internal class to instrument and execute pipelines
     """
-
-    # This is a bit ugly currently: we avoid to have to pass the class instance to the instrumented
-    # pipeline. This is a simple workaround for that. This keeps the DAG nodes to be inserted very simple.
     script_scope = {}
+
+    def __init__(self):
+        self.ast_call_node_id_to_module = {}
 
     def run(self, notebook_path: str or None, python_path: str or None):
         """
@@ -47,36 +40,42 @@ class PipelineExecutor:
 
         parsed_ast = ast.parse(source_code)
 
-        initial_wir = WirExtractor().extract_wir(parsed_ast)
-        print(initial_wir)
-
-        parsed_ast = CallCaptureTransformer().visit(parsed_ast)
-        parsed_ast = ast.fix_missing_locations(parsed_ast)
+        call_capture_transformer = CallCaptureTransformer()
+        parsed_modified_ast = call_capture_transformer.visit(parsed_ast)
+        parsed_modified_ast = ast.fix_missing_locations(parsed_modified_ast)
 
         func_import_node = ast.ImportFrom(module='mlinspect.instrumentation.pipeline_executor',
                                           names=[ast.alias(name='instrumented_call_used',
                                                            asname=None)],
                                           level=0)
-        parsed_ast.body.insert(2, func_import_node)
+        parsed_modified_ast.body.insert(2, func_import_node)
         inspect_import_node = ast.Import(names=[ast.alias(name='inspect', asname=None)])
-        parsed_ast.body.insert(3, inspect_import_node)
-        parsed_ast = ast.fix_missing_locations(parsed_ast)
+        parsed_modified_ast.body.insert(3, inspect_import_node)
+        parsed_modified_ast = ast.fix_missing_locations(parsed_modified_ast)
 
-        # self.output_parsed_ast(parsed_ast)
+        exec(compile(parsed_modified_ast, filename="<ast>", mode="exec"), PipelineExecutor.script_scope)
 
-        exec(compile(parsed_ast, filename="<ast>", mode="exec"), PipelineExecutor.script_scope)
+        ast_calls_to_module = {}
+        id_to_call_ast = call_capture_transformer.get_id_to_call_ast()
+        for ast_call_id, module in self.ast_call_node_id_to_module.items():
+            ast_node = id_to_call_ast[ast_call_id]
+            ast_calls_to_module[ast_node] = module
+
+        initial_wir = WirExtractor(parsed_ast, ast_calls_to_module).extract_wir()
+        print(initial_wir)
 
         return "test"
 
-    @staticmethod
-    def instrumented_call_used(arg_values, args_code, node, code):
+    def instrumented_call_used(self, arg_values, args_code, node, code, ast_node_id):
         """
         This is the method we want to insert into the DAG
         """
         print(code)
-        if node is not None:
-            function = code.split("(", 1)[0]
-            print(eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope))
+
+        function = code.split("(", 1)[0]
+        module = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
+        self.ast_call_node_id_to_module[ast_node_id] = module
+
         print(len(arg_values))
         for arg_code in args_code:
             print(arg_code)
@@ -91,3 +90,17 @@ class PipelineExecutor:
         """
         astunparse.unparse(parsed_ast)  # TODO: Remove this
         astpretty.pprint(parsed_ast)  # TODO: Remove this
+
+
+# The function we add around each call
+
+# This is a bit ugly currently: we avoid to have to pass the class instance to the instrumented
+# pipeline. This is a simple workaround for that. This keeps the DAG nodes to be inserted very simple.
+pipeline_executor = PipelineExecutor()
+
+
+def instrumented_call_used(arg_values, args_code, node, code, ast_node_id):
+    """
+    Method that gets injected into the pipeline code
+    """
+    return pipeline_executor.instrumented_call_used(arg_values, args_code, node, code, ast_node_id)
