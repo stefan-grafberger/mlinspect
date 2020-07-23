@@ -2,7 +2,7 @@
 Instrument and executes the pipeline
 """
 import ast
-
+import copy
 import astunparse
 import astpretty  # pylint: disable=unused-import
 import nbformat
@@ -39,6 +39,7 @@ class PipelineExecutor:
                 source_code, _ = exporter.from_notebook_node(notebook)
 
         parsed_ast = ast.parse(source_code)
+        parsed_ast_before_modifications = copy.deepcopy(parsed_ast)
 
         call_capture_transformer = CallCaptureTransformer()
         parsed_modified_ast = call_capture_transformer.visit(parsed_ast)
@@ -55,7 +56,7 @@ class PipelineExecutor:
 
         exec(compile(parsed_modified_ast, filename="<ast>", mode="exec"), PipelineExecutor.script_scope)
 
-        initial_wir = self.extract_wir(call_capture_transformer, parsed_ast)
+        initial_wir = self.extract_wir(call_capture_transformer, parsed_ast_before_modifications)
         print(initial_wir)
 
         return "test"
