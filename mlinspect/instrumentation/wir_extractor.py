@@ -68,22 +68,15 @@ class WirExtractor:
         # pylint: disable=too-many-branches
         for child_ast in ast_node.children:
             self.process_node(child_ast)
-        if isinstance(ast_node, ast.Expr):
-            pass  # probably nothing to do here
-        elif isinstance(ast_node, ast.Assign):
+
+        if isinstance(ast_node, ast.Assign):
             self.extract_wir_assign(ast_node)
-        elif isinstance(ast_node, ast.Load):
-            pass  # probably nothing to do here
         elif isinstance(ast_node, ast.Name):
             self.extract_wir_name(ast_node)
         elif isinstance(ast_node, ast.Call):
             self.extract_wir_call(ast_node)
-        elif isinstance(ast_node, ast.Attribute):
-            pass  # maybe already done, need to check edge cases like member variables
         elif isinstance(ast_node, ast.keyword):
             self.extract_wir_keyword(ast_node)
-        elif isinstance(ast_node, ast.Name):
-            pass
         elif isinstance(ast_node, ast.Constant):
             self.extract_wir_constant(ast_node)
         elif isinstance(ast_node, ast.Import):
@@ -92,10 +85,32 @@ class WirExtractor:
             self.extract_wir_import_from(ast_node)
         elif isinstance(ast_node, ast.List):
             self.extract_wir_list(ast_node)
+        elif isinstance(ast_node, ast.Subscript):
+            self.extract_wir_subscript(ast_node)
+        elif isinstance(ast_node, ast.alias) or isinstance(ast_node, ast.Name) or isinstance(ast_node, ast.Attribute) \
+                or isinstance(ast_node, ast.Expr) or isinstance(ast_node, ast.Store) or isinstance(ast_node, ast.Load) \
+                or isinstance(ast_node, ast.Module) or isinstance(ast_node, ast.Index):
+            pass  # TODO: Test if we really covered all necessary edge cases
         else:
-            print("node")
-            print(ast_node)
-            # assert False
+            print("AST Node Type not supported yet: {}!".format(str(ast_node)))
+            assert False
+
+    def extract_wir_subscript(self, ast_node):
+        """
+        Creates a subscript vertex. Currently only supports index subscripts.
+        """
+        name_ast = ast_node.children[0]
+        assert isinstance(name_ast, ast.Name)  # TODO: Cover other edge cases
+        name_name_ast = name_ast.id
+        name_wir = self.get_wir_node_for_variable(name_name_ast)
+        index_ast = ast_node.children[1]
+        assert isinstance(index_ast, ast.Index)
+        index_constant_ast = index_ast.children[0]
+        assert isinstance(index_constant_ast, ast.Constant)
+        constant_wir = self.get_wir_node_for_ast(index_constant_ast)
+        new_wir_node = Vertex(self.get_next_wir_id(), "Index-Subscript", [name_wir, constant_wir], "Subscript")
+        self.graph.append(new_wir_node)
+        self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
     def extract_wir_list(self, ast_node):
         """

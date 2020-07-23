@@ -186,6 +186,30 @@ def test_list_creation():
     expected_graph = [expected_constant_one, expected_constant_two, expected_list, expected_call]
     assert extracted_dag == expected_graph
 
+
+def test_index_subscript():
+    """
+    Tests whether the WIR Extraction works for lists
+    """
+    test_code = cleandoc("""
+            import pandas as pd
+            
+            data = pd.read_csv('test_path')
+            data['income-per-year']
+            """)
+    extractor = WirExtractor()
+    test_ast = ast.parse(test_code)
+    extracted_dag = extractor.extract_wir(test_ast)
+    expected_import = Vertex(0, "pandas", [], "Import")
+    expected_constant_one = Vertex(1, "test_path", [], "Constant")
+    expected_call = Vertex(2, "read_csv", [expected_import, expected_constant_one], "Call")
+    expected_assign = Vertex(3, "data", [expected_call], "Assign")
+    expected_constant_two = Vertex(4, "income-per-year", [], "Constant")
+    expected_index_subscript = Vertex(5, "Index-Subscript", [expected_assign, expected_constant_two], "Subscript")
+    expected_graph = [expected_import, expected_constant_one, expected_call, expected_assign,
+                      expected_constant_two, expected_index_subscript]
+    assert extracted_dag == expected_graph
+
     # TODO: actual pipeline code, nested calls, functions with multiple return values
     # Maybe mark caller explicitly?
 
