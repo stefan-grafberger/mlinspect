@@ -20,7 +20,6 @@ class CallCaptureTransformer(ast.NodeTransformer):
         Instrument all function calls
         """
         # pylint: disable=no-self-use, invalid-name
-        # node.args = [self.visit(arg_node) for arg_node in node.args]
         if hasattr(node.func, "id") and node.func.id == "instrumented_call_used":
             return node
 
