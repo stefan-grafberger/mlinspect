@@ -7,8 +7,8 @@ import astunparse
 import astpretty  # pylint: disable=unused-import
 import nbformat
 from nbconvert import PythonExporter
-from astmonkey import visitors, transformers
 from .call_capture_transformer import CallCaptureTransformer
+from .wir_extractor import WirExtractor
 
 
 def instrumented_call_used(arg_values, args_code, node, code):
@@ -31,6 +31,7 @@ class PipelineExecutor:
         """
         Instrument and execute the pipeline
         """
+        # pylint: disable=no-self-use
         PipelineExecutor.script_scope = {}
 
         source_code = ""
@@ -45,6 +46,10 @@ class PipelineExecutor:
                 source_code, _ = exporter.from_notebook_node(notebook)
 
         parsed_ast = ast.parse(source_code)
+
+        initial_wir = WirExtractor().extract_wir(parsed_ast)
+        print(initial_wir)
+
         parsed_ast = CallCaptureTransformer().visit(parsed_ast)
         parsed_ast = ast.fix_missing_locations(parsed_ast)
 
@@ -57,7 +62,7 @@ class PipelineExecutor:
         parsed_ast.body.insert(3, inspect_import_node)
         parsed_ast = ast.fix_missing_locations(parsed_ast)
 
-        self.output_parsed_ast(parsed_ast)
+        # self.output_parsed_ast(parsed_ast)
 
         exec(compile(parsed_ast, filename="<ast>", mode="exec"), PipelineExecutor.script_scope)
 
@@ -86,7 +91,3 @@ class PipelineExecutor:
         """
         astunparse.unparse(parsed_ast)  # TODO: Remove this
         astpretty.pprint(parsed_ast)  # TODO: Remove this
-        parsed_ast_with_parent_childs = transformers.ParentChildNodeTransformer().visit(parsed_ast)
-        visitor = visitors.GraphNodeVisitor()
-        visitor.visit(parsed_ast_with_parent_childs)
-        # visitor.graph.write_png('graph.png')  # TODO: Remove this # pylint: disable=no-member

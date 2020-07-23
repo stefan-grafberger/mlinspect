@@ -1,7 +1,7 @@
 language: python
 python:
-- '3.7'
-install: pip install .[test]
+- '3.8'
+install: pip install .[dev]
 
 script: python -m pytest
-after_success: python  -m codecov
+after_success: bash <(curl -s https://codecov.io/bash) -t 94150045-9c0d-4b51-8116-e1606ab7a72e

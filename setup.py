@@ -16,7 +16,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="MLInspect",
+    name="mlinspect",
     version="0.0.1",
     description="Inspect ML Pipelines in the form of a DAG",
     author='Stefan Grafberger',
@@ -25,11 +25,11 @@ setup(
     long_description_content_type="text/markdown",
     packages=find_packages(),
     include_package_data=True,
-    setup_requires=test_required,
+    install_requires=required,
     tests_require=test_required,
-    install_requires=required + test_required,  # FIXME: remove this later, just for develop convenience
+    extras_require={'dev': test_required},
     license='Apache License 2.0',
-    python_requires='>=3',
+    python_requires='>=3.8',
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3 :: Only'
