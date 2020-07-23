@@ -210,6 +210,32 @@ def test_index_subscript():
                       expected_constant_two, expected_index_subscript]
     assert extracted_dag == expected_graph
 
+
+def test_tuples():
+    """
+    Tests whether the WIR Extraction works for tuples
+    """
+    test_code = cleandoc("""
+            from sklearn import preprocessing
+
+            ('categorical', preprocessing.OneHotEncoder(handle_unknown='ignore'), ['education', 'workclass'])
+            """)
+    extractor = WirExtractor()
+    test_ast = ast.parse(test_code)
+    extracted_dag = extractor.extract_wir(test_ast)
+    expected_import_from = Vertex(0, "sklearn", [], "Import")
+    expected_constant_one = Vertex(1, "categorical", [], "Constant")
+    expected_constant_two = Vertex(2, "ignore", [], "Constant")
+    expected_keyword = Vertex(3, "handle_unknown", [expected_constant_two], "Keyword")
+    expected_call = Vertex(4, "OneHotEncoder", [expected_import_from, expected_keyword], "Call")
+    expected_constant_three = Vertex(5, "education", [], "Constant")
+    expected_constant_four = Vertex(6, "workclass", [], "Constant")
+    expected_list = Vertex(7, "as_list", [expected_constant_three, expected_constant_four], "List")
+    expected_tuple = Vertex(8, "as_tuple", [expected_constant_one, expected_call, expected_list], "Tuple")
+    expected_graph = [expected_import_from, expected_constant_one, expected_constant_two, expected_keyword,
+                      expected_call, expected_constant_three, expected_constant_four, expected_list, expected_tuple]
+    assert extracted_dag == expected_graph
+
     # TODO: actual pipeline code, nested calls, functions with multiple return values
     # Maybe mark caller explicitly?
 
