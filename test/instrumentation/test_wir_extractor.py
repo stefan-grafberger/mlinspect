@@ -253,13 +253,4 @@ def test_adult_easy_pipeline():
 
         assert len(extracted_wir) == 59
 
-    # TODO: Functions with multiple return values, function defs and other edge cases
-    # Maybe mark caller explicitly?
-
-    # We can also see if we really need runtime detection to check where a function comes from.
-    # Makes things a lot easier if we use it for class member variables however. Maybe in a later step.
-    # Also, maybe a knowledge base is possible. Then we can have a map from function
-    # to operator and mark which parameters contain important operator attributes
-    # Also: mark root nodes. then we can only list root nodes in graph. then we can
-    # calculate children from the parents. then we can update the
-    # print functions to print children.
+    # TODO: Functions with multiple return values, function definitions and other edge cases
