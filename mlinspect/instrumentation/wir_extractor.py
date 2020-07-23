@@ -88,17 +88,23 @@ class WirExtractor:
         elif isinstance(ast_node, ast.Subscript):
             self.extract_wir_subscript(ast_node)
         elif isinstance(ast_node, ast.Tuple):
-            parent_in_wir_ast_nodes = ast_node.children[:-1]
-            wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
-            new_wir_node = Vertex(self.get_next_wir_id(), "as_tuple", wir_parents, "Tuple")
-            self.graph.append(new_wir_node)
-            self.store_ast_node_wir_mapping(ast_node, new_wir_node)
+            self.extract_wir_tuple(ast_node)
         elif isinstance(ast_node, (ast.Attribute, ast.Expr, ast.Index, ast.Load, ast.Module, ast.Name, ast.Store,
                                    ast.alias)):
             pass  # TODO: Test if we really covered all necessary edge cases
         else:
             print("AST Node Type not supported yet: {}!".format(str(ast_node)))
             assert False
+
+    def extract_wir_tuple(self, ast_node):
+        """
+        Creates a tuple vertex.
+        """
+        parent_in_wir_ast_nodes = ast_node.children[:-1]
+        wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
+        new_wir_node = Vertex(self.get_next_wir_id(), "as_tuple", wir_parents, "Tuple")
+        self.graph.append(new_wir_node)
+        self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
     def extract_wir_subscript(self, ast_node):
         """
