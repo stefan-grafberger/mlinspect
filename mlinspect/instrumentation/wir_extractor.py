@@ -9,31 +9,32 @@ class Vertex:
     """
     A WIR Vertex
     """
-    def __init__(self, node_id, name, parent_vertices, operation):
+    def __init__(self, node_id, name, caller_parent, other_parent_vertices, operation):
+        # pylint: disable=too-many-arguments
         self.node_id = node_id
         self.name = name
-        self.parent_vertices = parent_vertices
+        self.caller_parent = caller_parent
+        self.other_parent_vertices = other_parent_vertices
         self.operation = operation
 
     def __repr__(self):
-        parent_ids = [vertex.node_id for vertex in self.parent_vertices if self.parent_vertices]
-        message = "(node_id={}: vertex_name={}, parent={}, op={})" \
-            .format(self.node_id, self.name, parent_ids, self.operation)
+        caller_id = self.caller_parent.node_id if self.caller_parent else None
+        parent_ids = [vertex.node_id for vertex in self.other_parent_vertices if self.other_parent_vertices]
+        message = "(node_id={}: vertex_name={}, caller= {}, parents={}, op={})" \
+            .format(self.node_id, self.name, caller_id, parent_ids, self.operation)
         return message
 
     def display(self):
         """
         Print the vertex
         """
-        parent_ids = [vertex.node_id for vertex in self.parent_vertices if self.parent_vertices]
-        message = "(node_id={}: vertex_name={}, parent={}, op={})" \
-            .format(self.node_id, self.name, parent_ids, self.operation)
-        print(message)
+        print(self.__repr__)
 
     def __eq__(self, other):
         return self.node_id == other.node_id and \
                self.name == other.name and \
-               self.parent_vertices == other.parent_vertices and \
+               self.caller_parent == other.caller_parent and \
+               self.other_parent_vertices == other.other_parent_vertices and \
                self.operation == other.operation
 
 
@@ -42,7 +43,7 @@ class WirExtractor:
     Extract WIR (Workflow Intermediate Representation) from the AST
     """
 
-    NOT_FOUND_WIR = Vertex(-1, "FIXME", [], "FIXME")
+    NOT_FOUND_WIR = Vertex(-1, "FIXME", None, [], "FIXME")
 
     def __init__(self):
         self.ast_wir_map = {}
@@ -102,7 +103,7 @@ class WirExtractor:
         """
         parent_in_wir_ast_nodes = ast_node.children[:-1]
         wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
-        new_wir_node = Vertex(self.get_next_wir_id(), "as_tuple", wir_parents, "Tuple")
+        new_wir_node = Vertex(self.get_next_wir_id(), "as_tuple", None, wir_parents, "Tuple")
         self.graph.append(new_wir_node)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
@@ -119,7 +120,7 @@ class WirExtractor:
         index_constant_ast = index_ast.children[0]
         assert isinstance(index_constant_ast, ast.Constant)
         constant_wir = self.get_wir_node_for_ast(index_constant_ast)
-        new_wir_node = Vertex(self.get_next_wir_id(), "Index-Subscript", [name_wir, constant_wir], "Subscript")
+        new_wir_node = Vertex(self.get_next_wir_id(), "Index-Subscript", name_wir, [constant_wir], "Subscript")
         self.graph.append(new_wir_node)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
@@ -129,7 +130,7 @@ class WirExtractor:
         """
         parent_in_wir_ast_nodes = ast_node.children[:-1]
         wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
-        new_wir_node = Vertex(self.get_next_wir_id(), "as_list", wir_parents, "List")
+        new_wir_node = Vertex(self.get_next_wir_id(), "as_list", None, wir_parents, "List")
         self.graph.append(new_wir_node)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
@@ -138,7 +139,7 @@ class WirExtractor:
         Creates an import vertex. Stores each imported entity in the dict.
         """
         module_name = ast_node.module
-        new_wir_node = Vertex(self.get_next_wir_id(), module_name, [], "Import")
+        new_wir_node = Vertex(self.get_next_wir_id(), module_name, None, [], "Import")
         self.graph.append(new_wir_node)
         for imported_entity_ast in ast_node.children:
             assert isinstance(imported_entity_ast, ast.alias)
@@ -156,7 +157,7 @@ class WirExtractor:
             alias_name = alias_ast.asname
         else:
             alias_name = module_name
-        new_wir_node = Vertex(self.get_next_wir_id(), module_name, [], "Import")
+        new_wir_node = Vertex(self.get_next_wir_id(), module_name, None, [], "Import")
         self.graph.append(new_wir_node)
         self.store_variable_wir_mapping(alias_name, new_wir_node)
 
@@ -166,7 +167,7 @@ class WirExtractor:
         """
         child_ast = ast_node.children[0]
         child_wir = self.get_wir_node_for_ast(child_ast)
-        new_wir_node = Vertex(self.get_next_wir_id(), ast_node.arg, [child_wir], "Keyword")
+        new_wir_node = Vertex(self.get_next_wir_id(), ast_node.arg, None, [child_wir], "Keyword")
         self.graph.append(new_wir_node)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
@@ -178,7 +179,7 @@ class WirExtractor:
         assign_right_ast = ast_node.children[1]
         assign_right_wir = self.get_wir_node_for_ast(assign_right_ast)
         var_name = assign_left_ast.id
-        new_wir_node = Vertex(self.get_next_wir_id(), var_name, [assign_right_wir], "Assign")
+        new_wir_node = Vertex(self.get_next_wir_id(), var_name, None, [assign_right_wir], "Assign")
         self.graph.append(new_wir_node)
         self.store_variable_wir_mapping(var_name, new_wir_node)
 
@@ -186,7 +187,7 @@ class WirExtractor:
         """
         Creates a vertex for a constant in the code like a String or number
         """
-        new_wir_node = Vertex(self.get_next_wir_id(), str(ast_node.n), [], "Constant")
+        new_wir_node = Vertex(self.get_next_wir_id(), str(ast_node.n), None, [], "Constant")
         self.graph.append(new_wir_node)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
@@ -195,6 +196,7 @@ class WirExtractor:
         Creates a vertex for a function call in the code
         """
         parent_in_wir_ast_nodes = ast_node.children[1:]
+        caller_parent = None
         wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
 
         name_or_attribute_ast = ast_node.children[0]
@@ -202,16 +204,16 @@ class WirExtractor:
             name = name_or_attribute_ast.id
             possible_import_wir_node = self.get_wir_node_for_variable(name)
             if possible_import_wir_node != WirExtractor.NOT_FOUND_WIR:
-                wir_parents.insert(0, possible_import_wir_node)
+                caller_parent = possible_import_wir_node
         elif isinstance(name_or_attribute_ast, ast.Attribute):
             name = name_or_attribute_ast.attr
             object_with_that_func_ast = name_or_attribute_ast.children[0]
             object_with_that_func_wir = self.get_wir_node_for_ast(object_with_that_func_ast)
-            wir_parents.insert(0, object_with_that_func_wir)
+            caller_parent = object_with_that_func_wir
         else:
             assert False
 
-        new_wir_node = Vertex(self.get_next_wir_id(), name, wir_parents, "Call")
+        new_wir_node = Vertex(self.get_next_wir_id(), name, caller_parent, wir_parents, "Call")
         self.graph.append(new_wir_node)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
