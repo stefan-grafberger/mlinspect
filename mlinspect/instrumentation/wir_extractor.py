@@ -11,6 +11,7 @@ class Vertex:
     """
     A WIR Vertex
     """
+
     def __init__(self, node_id, name, operation):
         # pylint: disable=too-many-arguments
         self.node_id = node_id
@@ -109,7 +110,8 @@ class WirExtractor:
         wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
         new_wir_node = Vertex(self.get_next_wir_id(), "as_tuple", "Tuple")
         self.graph.add_node(new_wir_node)
-        [self.graph.add_edge(parent, new_wir_node, type="input") for parent in wir_parents]
+        for parent in wir_parents:
+            self.graph.add_edge(parent, new_wir_node, type="input")
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
     def extract_wir_subscript(self, ast_node):
@@ -139,7 +141,8 @@ class WirExtractor:
         wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
         new_wir_node = Vertex(self.get_next_wir_id(), "as_list", "List")
         self.graph.add_node(new_wir_node)
-        [self.graph.add_edge(parent, new_wir_node, type="input") for parent in wir_parents]
+        for parent in wir_parents:
+            self.graph.add_edge(parent, new_wir_node, type="input")
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
     def extract_wir_import_from(self, ast_node):
@@ -219,6 +222,10 @@ class WirExtractor:
             name = name_or_attribute_ast.attr
             object_with_that_func_ast = name_or_attribute_ast.children[0]
             object_with_that_func_wir = self.get_wir_node_for_ast(object_with_that_func_ast)
+            # Still not done, example: import os, os.path.join: join children ast is not os, but path
+            while object_with_that_func_wir == WirExtractor.NOT_FOUND_WIR:
+                object_with_that_func_ast = object_with_that_func_ast.children[0]
+                object_with_that_func_wir = self.get_wir_node_for_ast(object_with_that_func_ast)
             caller_parent = object_with_that_func_wir
         else:
             assert False
@@ -231,7 +238,8 @@ class WirExtractor:
         self.graph.add_node(new_wir_node)
         if caller_parent:
             self.graph.add_edge(caller_parent, new_wir_node, type="caller")
-        [self.graph.add_edge(parent, new_wir_node, type="input") for parent in wir_parents]
+        for parent in wir_parents:
+            self.graph.add_edge(parent, new_wir_node, type="input")
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
     def extract_wir_name(self, ast_node):

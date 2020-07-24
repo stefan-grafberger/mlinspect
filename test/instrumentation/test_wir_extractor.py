@@ -4,9 +4,9 @@ Tests whether the WIR extraction works
 import ast
 import os
 from inspect import cleandoc
+import networkx
 from mlinspect.utils import get_project_root
 from mlinspect.instrumentation.wir_extractor import WirExtractor, Vertex
-import networkx
 
 FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 
@@ -283,18 +283,30 @@ def test_tuples():
     test_ast = ast.parse(test_code)
     extractor = WirExtractor(test_ast)
     extracted_wir = extractor.extract_wir()
-    expected_import_from = Vertex(0, "sklearn", None, [], "Import")
-    expected_constant_one = Vertex(1, "categorical", None, [], "Constant")
-    expected_constant_two = Vertex(2, "ignore", None, [], "Constant")
-    expected_keyword = Vertex(3, "handle_unknown", None, [expected_constant_two], "Keyword")
-    expected_call = Vertex(4, "OneHotEncoder", expected_import_from, [expected_keyword], "Call")
-    expected_constant_three = Vertex(5, "education", None, [], "Constant")
-    expected_constant_four = Vertex(6, "workclass", None, [], "Constant")
-    expected_list = Vertex(7, "as_list", None, [expected_constant_three, expected_constant_four], "List")
-    expected_tuple = Vertex(8, "as_tuple", None, [expected_constant_one, expected_call, expected_list], "Tuple")
-    expected_graph = [expected_import_from, expected_constant_one, expected_constant_two, expected_keyword,
-                      expected_call, expected_constant_three, expected_constant_four, expected_list, expected_tuple]
-    assert extracted_wir == expected_graph
+    expected_graph = networkx.DiGraph()
+
+    expected_import_from = Vertex(0, "sklearn", "Import")
+    expected_constant_one = Vertex(1, "categorical", "Constant")
+    expected_constant_two = Vertex(2, "ignore", "Constant")
+    expected_keyword = Vertex(3, "handle_unknown", "Keyword")
+    expected_graph.add_edge(expected_constant_two, expected_keyword, type="input")
+
+    expected_call = Vertex(4, "OneHotEncoder", "Call")
+    expected_graph.add_edge(expected_import_from, expected_call, type="caller")
+    expected_graph.add_edge(expected_keyword, expected_call, type="input")
+
+    expected_constant_three = Vertex(5, "education", "Constant")
+    expected_constant_four = Vertex(6, "workclass", "Constant")
+    expected_list = Vertex(7, "as_list", "List")
+    expected_graph.add_edge(expected_constant_three, expected_list, type="input")
+    expected_graph.add_edge(expected_constant_four, expected_list, type="input")
+
+    expected_tuple = Vertex(8, "as_tuple", "Tuple")
+    expected_graph.add_edge(expected_constant_one, expected_tuple, type="input")
+    expected_graph.add_edge(expected_call, expected_tuple, type="input")
+    expected_graph.add_edge(expected_list, expected_tuple, type="input")
+
+    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
 def test_adult_easy_pipeline():
