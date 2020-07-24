@@ -6,6 +6,7 @@ import os
 from inspect import cleandoc
 from mlinspect.utils import get_project_root
 from mlinspect.instrumentation.wir_extractor import WirExtractor, Vertex
+import networkx
 
 FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 
@@ -18,11 +19,15 @@ def test_print_stmt():
     test_ast = ast.parse(test_code)
     extractor = WirExtractor(test_ast)
     extracted_wir = extractor.extract_wir()
+    expected_graph = networkx.DiGraph()
 
-    expected_constant = Vertex(0, "test", None, [], "Constant")
-    expected_call = Vertex(1, "print", None, [expected_constant], "Call")
-    expected_graph = [expected_constant, expected_call]
-    assert extracted_wir == expected_graph
+    expected_constant = Vertex(0, "test", "Constant")
+    expected_call = Vertex(1, "print", "Call")
+    expected_graph.add_nodes_from([expected_call, expected_call])
+    expected_graph.add_edge(expected_constant, expected_call, type="input")
+
+    test = expected_graph.get_edge_data(expected_constant, expected_call)
+    assert networkx.is_isomorphic(extracted_wir, expected_graph)
 
 
 def test_print_var_usage():
@@ -35,11 +40,18 @@ def test_print_var_usage():
     test_ast = ast.parse(test_code)
     extractor = WirExtractor(test_ast)
     extracted_wir = extractor.extract_wir()
-    expected_constant = Vertex(0, "test", None, [], "Constant")
-    expected_assign = Vertex(1, "test_var", None, [expected_constant], "Assign")
-    expected_call = Vertex(2, "print", None, [expected_assign], "Call")
-    expected_graph = [expected_constant, expected_assign, expected_call]
-    assert extracted_wir == expected_graph
+    expected_graph = networkx.DiGraph()
+
+    expected_constant = Vertex(0, "test", "Constant")
+    expected_assign = Vertex(1, "test_var", "Assign")
+    expected_graph.add_nodes_from([expected_constant, expected_assign])
+    expected_graph.add_edge(expected_constant, expected_assign, type="input")
+
+    expected_call = Vertex(2, "print", "Call")
+    expected_graph.add_node(expected_call)
+    expected_graph.add_edge(expected_assign, expected_call, type="input")
+
+    assert networkx.is_isomorphic(extracted_wir, expected_graph)
 
 
 def test_string_call_attribute():
