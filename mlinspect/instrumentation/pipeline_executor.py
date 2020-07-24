@@ -19,14 +19,14 @@ class PipelineExecutor:
     def __init__(self):
         self.ast_call_node_id_to_module = {}
 
-    def run(self, notebook_path: str or None, python_path: str or None):
+    def run(self, notebook_path: str or None, python_path: str or None, python_code: str or None):
         """
         Instrument and execute the pipeline
         """
         # pylint: disable=no-self-use
         PipelineExecutor.script_scope = {}
 
-        source_code = self.load_source_code(notebook_path, python_path)
+        source_code = self.load_source_code(notebook_path, python_path, python_code)
         parsed_ast = ast.parse(source_code)
 
         parsed_modified_ast = self.instrument_pipeline(parsed_ast)
@@ -57,20 +57,23 @@ class PipelineExecutor:
         return parsed_modified_ast
 
     @staticmethod
-    def load_source_code(notebook_path, python_path):
+    def load_source_code(notebook_path, python_path, python_code):
         """
         Load the pipeline source code from the specified source
         """
         source_code = ""
-        assert (notebook_path is None or python_path is None)
+        sources = [notebook_path, python_path, python_code]
+        assert sum(source is not None for source in sources) == 1
         if python_path is not None:
             with open(python_path) as file:
                 source_code = file.read()
-        if notebook_path is not None:
+        elif notebook_path is not None:
             with open(notebook_path) as file:
                 notebook = nbformat.reads(file.read(), nbformat.NO_CONVERT)
                 exporter = PythonExporter()
                 source_code, _ = exporter.from_notebook_node(notebook)
+        elif python_code is not None:
+            source_code = python_code
         return source_code
 
     def instrumented_call_used(self, arg_values, args_code, node, code, ast_lineno, ast_col_offset):

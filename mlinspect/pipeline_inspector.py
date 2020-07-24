@@ -9,9 +9,13 @@ class PipelineInspectorBuilder:
     The fluent API builder to build an inspection run
     """
 
-    def __init__(self, notebook_path: str or None, python_path: str or None) -> None:
+    def __init__(self, notebook_path: str or None = None,
+                 python_path: str or None = None,
+                 python_code: str or None = None
+                 ) -> None:
         self.notebook_path = notebook_path
         self.python_path = python_path
+        self.python_code = python_code
 
     def add_analyzer(self, analyzer):
         """
@@ -24,7 +28,7 @@ class PipelineInspectorBuilder:
         """
         Instrument and execute the pipeline
         """
-        return pipeline_executor.run(self.notebook_path, self.python_path)
+        return pipeline_executor.run(self.notebook_path, self.python_path, self.python_code)
 
 
 class PipelineInspector:
@@ -32,11 +36,16 @@ class PipelineInspector:
     The entry point to the fluent API to build an inspection run
     """
     @staticmethod
-    def on_python_pipeline(path: str) -> PipelineInspectorBuilder:
+    def on_pipeline_from_py_file(path: str) -> PipelineInspectorBuilder:
         """Inspect a pipeline from a .py file."""
-        return PipelineInspectorBuilder(None, path)
+        return PipelineInspectorBuilder(python_path=path)
 
     @staticmethod
-    def on_jupyter_pipeline(path: str) -> PipelineInspectorBuilder:
+    def on_pipeline_from_ipynb_file(path: str) -> PipelineInspectorBuilder:
         """Inspect a pipeline from a .ipynb file."""
-        return PipelineInspectorBuilder(path, None)
+        return PipelineInspectorBuilder(notebook_path=path)
+
+    @staticmethod
+    def on_pipeline_from_string(code: str) -> PipelineInspectorBuilder:
+        """Inspect a pipeline from a string."""
+        return PipelineInspectorBuilder(python_code=code)

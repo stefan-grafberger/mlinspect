@@ -11,10 +11,10 @@ FILE_NB = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy
 
 def test_py_pipeline_runs():
     """
-    Tests whether the .py version of the pipeline works
+    Tests whether the .py version of the inspector works
     """
     result = PipelineInspector\
-        .on_python_pipeline(FILE_PY)\
+        .on_pipeline_from_py_file(FILE_PY)\
         .add_analyzer("test")\
         .execute()
     assert result == "test"
@@ -22,10 +22,24 @@ def test_py_pipeline_runs():
 
 def test_nb_pipeline_runs():
     """
-    Tests whether the .py version of the pipeline works
+    Tests whether the .ipynb version of the inspector works
     """
     result = PipelineInspector\
-        .on_jupyter_pipeline(FILE_NB)\
+        .on_pipeline_from_ipynb_file(FILE_NB)\
         .add_analyzer("test")\
         .execute()
     assert result == "test"
+
+
+def test_str_pipeline_runs():
+    """
+    Tests whether the str version of the inspector works
+    """
+    with open(FILE_PY) as file:
+        code = file.read()
+
+        result = PipelineInspector\
+            .on_pipeline_from_string(code)\
+            .add_analyzer("test")\
+            .execute()
+        assert result == "test"
