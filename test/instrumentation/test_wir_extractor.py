@@ -9,7 +9,6 @@ from mlinspect.instrumentation.wir_extractor import WirExtractor, Vertex
 import networkx
 
 FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
-NODE_MATCH = networkx.algorithms.isomorphism.categorical_node_match(["name", "operation"], [None, None])
 
 
 def test_print_stmt():
@@ -24,10 +23,9 @@ def test_print_stmt():
 
     expected_constant = Vertex(0, "test", "Constant")
     expected_call = Vertex(1, "print", "Call")
-    expected_graph.add_nodes_from([expected_call, expected_call])
     expected_graph.add_edge(expected_constant, expected_call, type="input")
 
-    assert (networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph))
+    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
 def test_print_var_usage():
@@ -44,14 +42,13 @@ def test_print_var_usage():
 
     expected_constant = Vertex(0, "test", "Constant")
     expected_assign = Vertex(1, "test_var", "Assign")
-    expected_graph.add_nodes_from([expected_constant, expected_assign])
     expected_graph.add_edge(expected_constant, expected_assign, type="input")
 
     expected_call = Vertex(2, "print", "Call")
     expected_graph.add_node(expected_call)
     expected_graph.add_edge(expected_assign, expected_call, type="input")
 
-    assert (networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph))
+    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
 def test_string_call_attribute():
@@ -69,11 +66,10 @@ def test_string_call_attribute():
     expected_constant_one = Vertex(0, "hello ", "Constant")
     expected_constant_two = Vertex(1, "world", "Constant")
     expected_attribute_call = Vertex(2, "join", "Call")
-    expected_graph.add_nodes_from([expected_constant_one, expected_constant_two, expected_attribute_call])
     expected_graph.add_edge(expected_constant_one, expected_attribute_call, type="caller")
     expected_graph.add_edge(expected_constant_two, expected_attribute_call, type="input")
 
-    assert (networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph))
+    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
 def test_print_expressions():
@@ -86,11 +82,15 @@ def test_print_expressions():
     test_ast = ast.parse(test_code)
     extractor = WirExtractor(test_ast)
     extracted_wir = extractor.extract_wir()
-    expected_constant = Vertex(0, "test", None, [], "Constant")
-    expected_call_one = Vertex(1, "isupper", expected_constant, [], "Call")
-    expected_call_two = Vertex(2, "print", None, [expected_call_one], "Call")
-    expected_graph = [expected_constant, expected_call_one, expected_call_two]
-    assert extracted_wir == expected_graph
+    expected_graph = networkx.DiGraph()
+
+    expected_constant = Vertex(0, "test", "Constant")
+    expected_call_one = Vertex(1, "isupper", "Call")
+    expected_call_two = Vertex(2, "print", "Call")
+    expected_graph.add_edge(expected_constant, expected_call_one, type="caller")
+    expected_graph.add_edge(expected_call_one, expected_call_two, type="input")
+
+    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
 def test_keyword():
@@ -103,16 +103,22 @@ def test_keyword():
     test_ast = ast.parse(test_code)
     extractor = WirExtractor(test_ast)
     extracted_wir = extractor.extract_wir()
-    expected_constant_one = Vertex(0, "comma", None, [], "Constant")
-    expected_constant_two = Vertex(1, "separated", None, [], "Constant")
-    expected_constant_three = Vertex(2, "words", None, [], "Constant")
-    expected_constant_four = Vertex(3, ", ", None, [], "Constant")
-    expected_keyword = Vertex(4, "sep", None, [expected_constant_four], "Keyword")
-    expected_call = Vertex(5, "print", None, [expected_constant_one, expected_constant_two,
-                                              expected_constant_three, expected_keyword], "Call")
-    expected_graph = [expected_constant_one, expected_constant_two, expected_constant_three, expected_constant_four,
-                      expected_keyword, expected_call]
-    assert extracted_wir == expected_graph
+    expected_graph = networkx.DiGraph()
+
+    expected_constant_one = Vertex(0, "comma", "Constant")
+    expected_constant_two = Vertex(1, "separated", "Constant")
+    expected_constant_three = Vertex(2, "words", "Constant")
+    expected_constant_four = Vertex(3, ", ", "Constant")
+    expected_keyword = Vertex(4, "sep", "Keyword")
+    expected_call = Vertex(5, "print", "Call")
+
+    expected_graph.add_edge(expected_constant_four, expected_keyword, type="input")
+    expected_graph.add_edge(expected_constant_one, expected_call, type="input")
+    expected_graph.add_edge(expected_constant_two, expected_call, type="input")
+    expected_graph.add_edge(expected_constant_three, expected_call, type="input")
+    expected_graph.add_edge(expected_keyword, expected_call, type="input")
+
+    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
 def test_import():
