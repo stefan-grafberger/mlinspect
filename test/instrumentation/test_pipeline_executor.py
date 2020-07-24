@@ -28,7 +28,7 @@ def test_pipeline_executor_nb_file():
     assert extracted_dag == "test"
 
 
-def test_pipeline_executor_module_information_extraction():
+def test_pipeline_executor_function_call_info_extraction():
     """
     Tests whether the capturing of module information works
     """
@@ -49,5 +49,32 @@ def test_pipeline_executor_module_information_extraction():
                             (5, 30): ('mlinspect.utils', 'get_project_root'),
                             (6, 11): ('pandas.io.parsers', 'read_csv'),
                             (7, 7): ('pandas.core.frame', 'dropna')}
+
+    assert pipeline_executor.singleton.ast_call_node_id_to_module == expected_module_info
+
+
+def test_pipeline_executor_function_subscript_index_info_extraction():
+    """
+    Tests whether the capturing of module information works
+    """
+    test_code = cleandoc("""
+            import os
+            import pandas as pd
+            from mlinspect.utils import get_project_root
+
+            train_file = os.path.join(str(get_project_root()), "test", "data", "adult_train.csv")
+            raw_data = pd.read_csv(train_file)
+            data = raw_data.dropna()
+            data['income-per-year']
+            """)
+
+    pipeline_executor.singleton = pipeline_executor.PipelineExecutor()
+    pipeline_executor.singleton.run(None, None, test_code)
+    expected_module_info = {(5, 13): ('posixpath', 'join'),
+                            (5, 26): ('builtins', 'str'),
+                            (5, 30): ('mlinspect.utils', 'get_project_root'),
+                            (6, 11): ('pandas.io.parsers', 'read_csv'),
+                            (7, 7): ('pandas.core.frame', 'dropna'),
+                            (8, 0): ('pandas.core.frame', '__getitem__')}
 
     assert pipeline_executor.singleton.ast_call_node_id_to_module == expected_module_info

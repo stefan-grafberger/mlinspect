@@ -76,24 +76,37 @@ class PipelineExecutor:
             source_code = python_code
         return source_code
 
-    def instrumented_call_used(self, arg_values, args_code, node, code, ast_lineno, ast_col_offset):
+    def instrumented_call_used(self, subscript, arg_values, args_code, node, code, ast_lineno, ast_col_offset):
         """
         This is the method we want to insert into the DAG
         """
         # pylint: disable=too-many-arguments
-        print(code)
+        if not subscript:
+            print(code)
 
-        function = str(code.split("(", 1)[0])
-        module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
+            function = str(code.split("(", 1)[0])
+            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
 
-        function_info = (module_info.__name__, str(function.split(".")[-1]))
-        self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
+            function_info = (module_info.__name__, str(function.split(".")[-1]))
+            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
 
-        print(len(arg_values))
-        for arg_code in args_code:
-            print(arg_code)
+            print(len(arg_values))
+            for arg_code in args_code:
+                print(arg_code)
+        else:
+            # pylint: disable=too-many-arguments
+            print(code)
+
+            function = str(code.split("[", 1)[0])
+            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
+
+            function_info = (module_info.__name__, "__getitem__")
+            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
+
+            print(len(arg_values))
+            print("caller: {}, key: {}".format(args_code[0], args_code[1]))
+
         print(node)
-
         return node
 
     @staticmethod
@@ -112,9 +125,9 @@ class PipelineExecutor:
 singleton = PipelineExecutor()
 
 
-def instrumented_call_used(arg_values, args_code, node, code, ast_lineno, ast_col_offset):
+def instrumented_call_used(subscript, arg_values, args_code, node, code, ast_lineno, ast_col_offset):
     """
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
-    return singleton.instrumented_call_used(arg_values, args_code, node, code, ast_lineno, ast_col_offset)
+    return singleton.instrumented_call_used(subscript, arg_values, args_code, node, code, ast_lineno, ast_col_offset)
