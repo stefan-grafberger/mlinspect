@@ -2,7 +2,6 @@
 Instrument and executes the pipeline
 """
 import ast
-import copy
 import astunparse
 import astpretty  # pylint: disable=unused-import
 import nbformat
@@ -27,6 +26,41 @@ class PipelineExecutor:
         # pylint: disable=no-self-use
         PipelineExecutor.script_scope = {}
 
+        source_code = self.load_source_code(notebook_path, python_path)
+        parsed_ast = ast.parse(source_code)
+
+        parsed_modified_ast = self.instrument_pipeline(parsed_ast)
+
+        exec(compile(parsed_modified_ast, filename="<ast>", mode="exec"), PipelineExecutor.script_scope)
+
+        initial_wir = WirExtractor(parsed_ast).extract_wir(self.ast_call_node_id_to_module)
+        print(initial_wir)
+
+        return "test"
+
+    @staticmethod
+    def instrument_pipeline(parsed_ast):
+        """
+        Instrument the pipeline AST to instrument function calls
+        """
+        call_capture_transformer = CallCaptureTransformer()
+        parsed_modified_ast = call_capture_transformer.visit(parsed_ast)
+        parsed_modified_ast = ast.fix_missing_locations(parsed_modified_ast)
+        func_import_node = ast.ImportFrom(module='mlinspect.instrumentation.pipeline_executor',
+                                          names=[ast.alias(name='instrumented_call_used',
+                                                           asname=None)],
+                                          level=0)
+        parsed_modified_ast.body.insert(2, func_import_node)
+        inspect_import_node = ast.Import(names=[ast.alias(name='inspect', asname=None)])
+        parsed_modified_ast.body.insert(3, inspect_import_node)
+        parsed_modified_ast = ast.fix_missing_locations(parsed_modified_ast)
+        return parsed_modified_ast
+
+    @staticmethod
+    def load_source_code(notebook_path, python_path):
+        """
+        Load the pipeline source code from the specified source
+        """
         source_code = ""
         assert (notebook_path is None or python_path is None)
         if python_path is not None:
@@ -37,28 +71,7 @@ class PipelineExecutor:
                 notebook = nbformat.reads(file.read(), nbformat.NO_CONVERT)
                 exporter = PythonExporter()
                 source_code, _ = exporter.from_notebook_node(notebook)
-
-        parsed_ast = ast.parse(source_code)
-
-        call_capture_transformer = CallCaptureTransformer()
-        parsed_modified_ast = call_capture_transformer.visit(parsed_ast)
-        parsed_modified_ast = ast.fix_missing_locations(parsed_modified_ast)
-
-        func_import_node = ast.ImportFrom(module='mlinspect.instrumentation.pipeline_executor',
-                                          names=[ast.alias(name='instrumented_call_used',
-                                                           asname=None)],
-                                          level=0)
-        parsed_modified_ast.body.insert(2, func_import_node)
-        inspect_import_node = ast.Import(names=[ast.alias(name='inspect', asname=None)])
-        parsed_modified_ast.body.insert(3, inspect_import_node)
-        parsed_modified_ast = ast.fix_missing_locations(parsed_modified_ast)
-
-        exec(compile(parsed_modified_ast, filename="<ast>", mode="exec"), PipelineExecutor.script_scope)
-
-        initial_wir = WirExtractor(parsed_ast).extract_wir(self.ast_call_node_id_to_module)
-        print(initial_wir)
-
-        return "test"
+        return source_code
 
     def instrumented_call_used(self, arg_values, args_code, node, code, ast_lineno, ast_col_offset):
         """
@@ -98,4 +111,5 @@ def instrumented_call_used(arg_values, args_code, node, code, ast_lineno, ast_co
     """
     Method that gets injected into the pipeline code
     """
+    # pylint: disable=too-many-arguments
     return pipeline_executor.instrumented_call_used(arg_values, args_code, node, code, ast_lineno, ast_col_offset)
