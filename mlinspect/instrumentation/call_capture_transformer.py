@@ -9,17 +9,28 @@ class CallCaptureTransformer(ast.NodeTransformer):
     """
     ast.NodeTransformer to replace calls with captured calls
     """
+    def __init__(self):
+        # Necessary to avoid issues with nested function calls
+        # lineno and col_offset are used for identification
+        self.already_instrumented_code = set()
 
     def visit_Call(self, node):
         """
         Instrument all function calls
         """
         # pylint: disable=no-self-use, invalid-name
-        ast.NodeTransformer.generic_visit(self, node)
+        # FIXME: See output of function_subscript_index_info_extraction test. os.path.join and str
+        # cause get_project_root to be called many times. Maybe I need to use assigns or something to use references
+        # or something similar.
 
-        if hasattr(node.func, "id") and node.func.id == "instrumented_call_used":
+        # This is some work in progress testing that does not work. maybe look at the ast? what does it look like
+        # after the instrumentation? Everything already works for non-nested calls. In the worst case,
+        # we need to un-nest it with assigns. However, that should not be necessary.
+        if self.already_instrumented_code.__contains__((node.lineno, node.col_offset)):
             return node
 
+        self.already_instrumented_code.add((node.lineno, node.col_offset))
+        ast.NodeTransformer.generic_visit(self, node)
         code = astunparse.unparse(node)
 
         args = ast.List(node.args, ctx=ast.Load())
@@ -35,7 +46,6 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                                 ast.Constant(n=node.lineno, kind=None),
                                                 ast.Constant(n=node.col_offset, kind=None)],
                                           keywords=[])
-
         # TODO: warn if unrecognized function call, expressions
         return ast.copy_location(instrumented_call_node, node)
 
