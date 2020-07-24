@@ -322,4 +322,37 @@ def test_adult_easy_pipeline():
 
         assert len(extracted_wir) == 59
 
+
+def test_index_subscript_with_module_information():
+    """
+    Tests whether the WIR Extraction works for lists
+    """
+    test_code = cleandoc("""
+            import pandas as pd
+
+            data = pd.read_csv('test_path')
+            data['income-per-year']
+            """)
+    test_ast = ast.parse(test_code)
+    extractor = WirExtractor(test_ast)
+    module_info = {(3, 7): "test: some pandas module path"}
+    extracted_wir = extractor.extract_wir(module_info)
+    expected_graph = networkx.DiGraph()
+
+    expected_import = Vertex(0, "pandas", "Import")
+    expected_constant_one = Vertex(1, "test_path", "Constant")
+    expected_call = Vertex(2, "read_csv", "Call", "test: some pandas module path")
+    expected_graph.add_edge(expected_import, expected_call, type="caller")
+    expected_graph.add_edge(expected_constant_one, expected_call, type="input")
+
+    expected_assign = Vertex(3, "data", "Assign")
+    expected_graph.add_edge(expected_call, expected_assign, type="input")
+
+    expected_constant_two = Vertex(4, "income-per-year", "Constant")
+    expected_index_subscript = Vertex(5, "Index-Subscript", "Subscript")
+    expected_graph.add_edge(expected_assign, expected_index_subscript, type="caller")
+    expected_graph.add_edge(expected_constant_two, expected_index_subscript, type="input")
+
+    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
+
 # TODO: Functions with multiple return values, function definitions, control flow, and other edge cases

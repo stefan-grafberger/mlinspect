@@ -12,15 +12,16 @@ class Vertex:
     A WIR Vertex
     """
 
-    def __init__(self, node_id, name, operation):
+    def __init__(self, node_id, name, operation, module=None):
         # pylint: disable=too-many-arguments
         self.node_id = node_id
         self.name = name
         self.operation = operation
+        self.module = module
 
     def __repr__(self):
-        message = "(node_id={}: vertex_name={}, op={})" \
-            .format(self.node_id, self.name, self.operation)
+        message = "(node_id={}: vertex_name={}, op={}, module={})" \
+            .format(self.node_id, self.name, self.operation, self.module)
         return message
 
     def display(self):
@@ -32,7 +33,8 @@ class Vertex:
     def __eq__(self, other):
         return self.node_id == other.node_id and \
                self.name == other.name and \
-               self.operation == other.operation
+               self.operation == other.operation and \
+               self.module == other.module
 
     def __hash__(self):
         return hash(self.node_id)
@@ -230,11 +232,11 @@ class WirExtractor:
         else:
             assert False
 
+        module = None
         if self.ast_call_to_module:  # TODO: Test this and use it
             ast_call_node_lookup_key = simplify_ast_call_nodes(ast_node)
             module = self.ast_call_to_module[ast_call_node_lookup_key]
-            print(module)
-        new_wir_node = Vertex(self.get_next_wir_id(), name, "Call")
+        new_wir_node = Vertex(self.get_next_wir_id(), name, "Call", module)
         self.graph.add_node(new_wir_node)
         if caller_parent:
             self.graph.add_edge(caller_parent, new_wir_node, type="caller")
