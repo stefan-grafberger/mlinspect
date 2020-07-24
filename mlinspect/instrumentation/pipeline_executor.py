@@ -82,31 +82,34 @@ class PipelineExecutor:
         """
         # pylint: disable=too-many-arguments
         if not subscript:
-            print(code)
-
             function = str(code.split("(", 1)[0])
             module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
 
             function_info = (module_info.__name__, str(function.split(".")[-1]))
             self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
 
-            print(len(arg_values))
-            for arg_code in args_code:
-                print(arg_code)
+            print("_______________________________________")
+            print("code: {}".format(code.split("\n")[0]))
+            print("function_info: {}".format(function_info))
+            print("args_code: {}".format(args_code))
+            print("number of args: {}".format(len(arg_values)))
+            print("return_value: {}".format(str(node)))
+            print("_______________________________________")
         else:
-            # pylint: disable=too-many-arguments
-            print(code)
-
             function = str(code.split("[", 1)[0])
             module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
 
             function_info = (module_info.__name__, "__getitem__")
             self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
 
-            print(len(arg_values))
-            print("caller: {}, key: {}".format(args_code[0], args_code[1]))
-
-        print(node)
+            print("_______________________________________")
+            print("code: {}".format(code.split("\n")[0]))
+            print("function_info: {}".format(function_info))
+            print("caller_code: {}, key_code: {}".format(args_code[0], args_code[1]))
+            print("caller: {}".format(arg_values[0]))
+            print("key: {}".format(arg_values[1]))
+            print("return_value: {}".format(str(node)))
+            print("_______________________________________")
         return node
 
     @staticmethod
