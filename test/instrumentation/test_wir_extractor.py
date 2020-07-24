@@ -86,8 +86,9 @@ def test_print_expressions():
 
     expected_constant = Vertex(0, "test", "Constant")
     expected_call_one = Vertex(1, "isupper", "Call")
-    expected_call_two = Vertex(2, "print", "Call")
     expected_graph.add_edge(expected_constant, expected_call_one, type="caller")
+
+    expected_call_two = Vertex(2, "print", "Call")
     expected_graph.add_edge(expected_call_one, expected_call_two, type="input")
 
     assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
@@ -133,11 +134,15 @@ def test_import():
     test_ast = ast.parse(test_code)
     extractor = WirExtractor(test_ast)
     extracted_wir = extractor.extract_wir()
-    expected_import = Vertex(0, "math", None, [], "Import")
-    expected_constant = Vertex(1, "4", None, [], "Constant")
-    expected_constant_call = Vertex(2, "sqrt", expected_import, [expected_constant], "Call")
-    expected_graph = [expected_import, expected_constant, expected_constant_call]
-    assert extracted_wir == expected_graph
+    expected_graph = networkx.DiGraph()
+
+    expected_import = Vertex(0, "math", "Import")
+    expected_constant = Vertex(1, "4", "Constant")
+    expected_constant_call = Vertex(2, "sqrt", "Call")
+    expected_graph.add_edge(expected_import, expected_constant_call, type="caller")
+    expected_graph.add_edge(expected_constant, expected_constant_call, type="input")
+
+    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
 def test_import_as():
@@ -152,11 +157,15 @@ def test_import_as():
     test_ast = ast.parse(test_code)
     extractor = WirExtractor(test_ast)
     extracted_wir = extractor.extract_wir()
-    expected_import = Vertex(0, "math", None, [], "Import")
-    expected_constant = Vertex(1, "4", None, [], "Constant")
-    expected_constant_call = Vertex(2, "sqrt", expected_import, [expected_constant], "Call")
-    expected_graph = [expected_import, expected_constant, expected_constant_call]
-    assert extracted_wir == expected_graph
+    expected_graph = networkx.DiGraph()
+
+    expected_import = Vertex(0, "math", "Import")
+    expected_constant = Vertex(1, "4", "Constant")
+    expected_constant_call = Vertex(2, "sqrt", "Call")
+    expected_graph.add_edge(expected_import, expected_constant_call, type="caller")
+    expected_graph.add_edge(expected_constant, expected_constant_call, type="input")
+
+    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
 def test_import_from():
@@ -171,11 +180,15 @@ def test_import_from():
     test_ast = ast.parse(test_code)
     extractor = WirExtractor(test_ast)
     extracted_wir = extractor.extract_wir()
-    expected_import = Vertex(0, "math", None, [], "Import")
-    expected_constant = Vertex(1, "4", None, [], "Constant")
-    expected_constant_call = Vertex(2, "sqrt", expected_import, [expected_constant], "Call")
-    expected_graph = [expected_import, expected_constant, expected_constant_call]
-    assert extracted_wir == expected_graph
+    expected_graph = networkx.DiGraph()
+
+    expected_import = Vertex(0, "math", "Import")
+    expected_constant = Vertex(1, "4", "Constant")
+    expected_constant_call = Vertex(2, "sqrt", "Call")
+    expected_graph.add_edge(expected_import, expected_constant_call, type="caller")
+    expected_graph.add_edge(expected_constant, expected_constant_call, type="input")
+
+    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
 def test_nested_import_from():
@@ -190,11 +203,16 @@ def test_nested_import_from():
     test_ast = ast.parse(test_code)
     extractor = WirExtractor(test_ast)
     extracted_wir = extractor.extract_wir()
-    expected_import = Vertex(0, "mlinspect.utils", None, [], "Import")
-    expected_call_one = Vertex(1, "get_project_root", expected_import, [], "Call")
-    expected_call_two = Vertex(2, "print", None, [expected_call_one], "Call")
-    expected_graph = [expected_import, expected_call_one, expected_call_two]
-    assert extracted_wir == expected_graph
+    expected_graph = networkx.DiGraph()
+
+    expected_import = Vertex(0, "mlinspect.utils", "Import")
+    expected_call_one = Vertex(1, "get_project_root", "Call")
+    expected_graph.add_edge(expected_import, expected_call_one, type="caller")
+
+    expected_call_two = Vertex(2, "print", "Call")
+    expected_graph.add_edge(expected_call_one, expected_call_two, type="input")
+
+    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
 def test_list_creation():
@@ -207,12 +225,18 @@ def test_list_creation():
     test_ast = ast.parse(test_code)
     extractor = WirExtractor(test_ast)
     extracted_wir = extractor.extract_wir()
-    expected_constant_one = Vertex(0, "test1", None, [], "Constant")
-    expected_constant_two = Vertex(1, "test2", None, [], "Constant")
-    expected_list = Vertex(2, "as_list", None, [expected_constant_one, expected_constant_two], "List")
-    expected_call = Vertex(3, "print", None, [expected_list], "Call")
-    expected_graph = [expected_constant_one, expected_constant_two, expected_list, expected_call]
-    assert extracted_wir == expected_graph
+    expected_graph = networkx.DiGraph()
+
+    expected_constant_one = Vertex(0, "test1", "Constant")
+    expected_constant_two = Vertex(1, "test2", "Constant")
+    expected_list = Vertex(2, "as_list", "List")
+    expected_graph.add_edge(expected_constant_one, expected_list, type="input")
+    expected_graph.add_edge(expected_constant_two, expected_list, type="input")
+
+    expected_call = Vertex(3, "print", "Call")
+    expected_graph.add_edge(expected_list, expected_call, type="input")
+
+    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
 def test_index_subscript():
@@ -228,15 +252,23 @@ def test_index_subscript():
     test_ast = ast.parse(test_code)
     extractor = WirExtractor(test_ast)
     extracted_wir = extractor.extract_wir()
-    expected_import = Vertex(0, "pandas", None, [], "Import")
-    expected_constant_one = Vertex(1, "test_path", None, [], "Constant")
-    expected_call = Vertex(2, "read_csv", expected_import, [expected_constant_one], "Call")
-    expected_assign = Vertex(3, "data", None, [expected_call], "Assign")
-    expected_constant_two = Vertex(4, "income-per-year", None, [], "Constant")
-    expected_index_subscript = Vertex(5, "Index-Subscript", expected_assign, [expected_constant_two], "Subscript")
-    expected_graph = [expected_import, expected_constant_one, expected_call, expected_assign,
-                      expected_constant_two, expected_index_subscript]
-    assert extracted_wir == expected_graph
+    expected_graph = networkx.DiGraph()
+
+    expected_import = Vertex(0, "pandas", "Import")
+    expected_constant_one = Vertex(1, "test_path", "Constant")
+    expected_call = Vertex(2, "read_csv", "Call")
+    expected_graph.add_edge(expected_import, expected_call, type="caller")
+    expected_graph.add_edge(expected_constant_one, expected_call, type="input")
+
+    expected_assign = Vertex(3, "data", "Assign")
+    expected_graph.add_edge(expected_call, expected_assign, type="input")
+
+    expected_constant_two = Vertex(4, "income-per-year", "Constant")
+    expected_index_subscript = Vertex(5, "Index-Subscript", "Subscript")
+    expected_graph.add_edge(expected_assign, expected_index_subscript, type="caller")
+    expected_graph.add_edge(expected_constant_two, expected_index_subscript, type="input")
+
+    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
 def test_tuples():
