@@ -13,7 +13,7 @@ def test_pipeline_executor_py_file():
     """
     Tests whether the PipelineExecutor works for .py files
     """
-    extracted_dag = pipeline_executor.run(None, FILE_PY)
+    extracted_dag = pipeline_executor.run(None, FILE_PY, None)
     assert extracted_dag == "test"
 
 
@@ -21,5 +21,5 @@ def test_pipeline_executor_nb_file():
     """
     Tests whether the PipelineExecutor works for .ipynb files
     """
-    extracted_dag = pipeline_executor.run(FILE_NB, None)
+    extracted_dag = pipeline_executor.run(FILE_NB, None, None)
     assert extracted_dag == "test"
