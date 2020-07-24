@@ -39,7 +39,6 @@ class PipelineExecutor:
                 source_code, _ = exporter.from_notebook_node(notebook)
 
         parsed_ast = ast.parse(source_code)
-        parsed_ast_before_modifications = copy.deepcopy(parsed_ast)
 
         call_capture_transformer = CallCaptureTransformer()
         parsed_modified_ast = call_capture_transformer.visit(parsed_ast)
@@ -56,24 +55,12 @@ class PipelineExecutor:
 
         exec(compile(parsed_modified_ast, filename="<ast>", mode="exec"), PipelineExecutor.script_scope)
 
-        initial_wir = self.extract_wir(call_capture_transformer, parsed_ast_before_modifications)
+        initial_wir = WirExtractor(parsed_ast).extract_wir(self.ast_call_node_id_to_module)
         print(initial_wir)
 
         return "test"
 
-    def extract_wir(self, call_capture_transformer, parsed_ast):
-        """
-        Gets the WIR using the WirExtractor
-        """
-        ast_calls_to_module = {}
-        id_to_call_ast = call_capture_transformer.get_id_to_call_ast()
-        for ast_call_id, module in self.ast_call_node_id_to_module.items():
-            ast_node = id_to_call_ast[ast_call_id]
-            ast_calls_to_module[ast_node] = module
-        initial_wir = WirExtractor(parsed_ast).extract_wir(ast_calls_to_module)
-        return initial_wir
-
-    def instrumented_call_used(self, arg_values, args_code, node, code, ast_node_id):
+    def instrumented_call_used(self, arg_values, args_code, node, code, ast_lineno, ast_col_offset):
         """
         This is the method we want to insert into the DAG
         """
@@ -82,7 +69,7 @@ class PipelineExecutor:
 
         function = code.split("(", 1)[0]
         module = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
-        self.ast_call_node_id_to_module[ast_node_id] = module
+        self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = module
 
         print(len(arg_values))
         for arg_code in args_code:
@@ -107,8 +94,8 @@ class PipelineExecutor:
 pipeline_executor = PipelineExecutor()
 
 
-def instrumented_call_used(arg_values, args_code, node, code, ast_node_id):
+def instrumented_call_used(arg_values, args_code, node, code, ast_lineno, ast_col_offset):
     """
     Method that gets injected into the pipeline code
     """
-    return pipeline_executor.instrumented_call_used(arg_values, args_code, node, code, ast_node_id)
+    return pipeline_executor.instrumented_call_used(arg_values, args_code, node, code, ast_lineno, ast_col_offset)
