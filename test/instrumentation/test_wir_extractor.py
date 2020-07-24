@@ -335,13 +335,13 @@ def test_index_subscript_with_module_information():
             """)
     test_ast = ast.parse(test_code)
     extractor = WirExtractor(test_ast)
-    module_info = {(3, 7): "test: some pandas module path"}
+    module_info = {(3, 7): ('pandas.io.parsers', 'read_csv')}
     extracted_wir = extractor.extract_wir(module_info)
     expected_graph = networkx.DiGraph()
 
     expected_import = Vertex(0, "pandas", "Import")
     expected_constant_one = Vertex(1, "test_path", "Constant")
-    expected_call = Vertex(2, "read_csv", "Call", "test: some pandas module path")
+    expected_call = Vertex(2, "read_csv", "Call", ('pandas.io.parsers', 'read_csv'))
     expected_graph.add_edge(expected_import, expected_call, type="caller")
     expected_graph.add_edge(expected_constant_one, expected_call, type="input")
 

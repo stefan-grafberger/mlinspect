@@ -83,9 +83,11 @@ class PipelineExecutor:
         # pylint: disable=too-many-arguments
         print(code)
 
-        function = code.split("(", 1)[0]
-        module = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
-        self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = module
+        function = str(code.split("(", 1)[0])
+        module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
+
+        function_info = (module_info.__name__, str(function.split(".")[-1]))
+        self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
 
         print(len(arg_values))
         for arg_code in args_code:
@@ -107,7 +109,7 @@ class PipelineExecutor:
 
 # This instance works as our singleton: we avoid to pass the class instance to the instrumented
 # pipeline. This keeps the DAG nodes to be inserted very simple.
-pipeline_executor = PipelineExecutor()
+singleton = PipelineExecutor()
 
 
 def instrumented_call_used(arg_values, args_code, node, code, ast_lineno, ast_col_offset):
@@ -115,4 +117,4 @@ def instrumented_call_used(arg_values, args_code, node, code, ast_lineno, ast_co
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
-    return pipeline_executor.instrumented_call_used(arg_values, args_code, node, code, ast_lineno, ast_col_offset)
+    return singleton.instrumented_call_used(arg_values, args_code, node, code, ast_lineno, ast_col_offset)
