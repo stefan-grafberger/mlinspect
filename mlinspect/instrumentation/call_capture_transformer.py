@@ -43,25 +43,35 @@ class CallCaptureTransformer(ast.NodeTransformer):
             old_value_node = node.func.value
             new_value_node = ast.Call(func=ast.Name(id='before_call_used_value', ctx=ast.Load()),
                                       args=[ast.Constant(n=False, kind=None),
-                                            old_value_node,
                                             ast.Constant(n=code, kind=None),
+                                            old_value_node,
                                             ast.Constant(n=node.lineno, kind=None),
                                             ast.Constant(n=node.col_offset, kind=None)],
                                       keywords=[])
             node.func.value = new_value_node
 
-        args_code = ast.List([ast.Constant(n=astunparse.unparse(arg).split("\n", 1)[0], kind=None)
-                              for arg in node.args], ctx=ast.Load())
+        if len(node.args) != 0:
+            old_args_nodes_ast = ast.List(node.args, ctx=ast.Load())
+            old_args_code = ast.List([ast.Constant(n=astunparse.unparse(arg).split("\n", 1)[0], kind=None)
+                                     for arg in node.args], ctx=ast.Load())
+            new_args_node = ast.Starred(ast.Call(func=ast.Name(id='before_call_used_value', ctx=ast.Load()),
+                                                 args=[ast.Constant(n=False, kind=None),
+                                                       old_args_code,
+                                                       old_args_nodes_ast,
+                                                       ast.Constant(n=code, kind=None),
+                                                       ast.Constant(n=node.lineno, kind=None),
+                                                       ast.Constant(n=node.col_offset, kind=None)],
+                                                 keywords=[]))
+            node.args = [new_args_node]
 
         instrumented_call_node = ast.Call(func=ast.Name(id='after_call_used', ctx=ast.Load()),
                                           args=[ast.Constant(n=False, kind=None),
-                                                args_code,
-                                                node,
                                                 ast.Constant(n=code, kind=None),
+                                                node,
                                                 ast.Constant(n=node.lineno, kind=None),
                                                 ast.Constant(n=node.col_offset, kind=None)],
                                           keywords=[])
-        # TODO: warn if unrecognized function call, expressions
+
         return ast.copy_location(instrumented_call_node, node)
 
     def visit_Subscript(self, node):
@@ -76,8 +86,8 @@ class CallCaptureTransformer(ast.NodeTransformer):
         old_value_node = node.value
         new_value_node = ast.Call(func=ast.Name(id='before_call_used_value', ctx=ast.Load()),
                                   args=[ast.Constant(n=True, kind=None),
-                                        old_value_node,
                                         ast.Constant(n=code, kind=None),
+                                        old_value_node,
                                         ast.Constant(n=node.lineno, kind=None),
                                         ast.Constant(n=node.col_offset, kind=None)],
                                   keywords=[])
@@ -97,5 +107,4 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                                 ast.Constant(n=node.col_offset, kind=None)],
                                           keywords=[])
 
-        # TODO: warn if unrecognized function call, expressions
         return ast.copy_location(instrumented_call_node, node)

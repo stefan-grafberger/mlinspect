@@ -77,7 +77,7 @@ class PipelineExecutor:
             source_code = python_code
         return source_code
 
-    def after_call_used(self, subscript, args_code, return_value, code, ast_lineno, ast_col_offset):
+    def after_call_used(self, subscript, code, return_value, ast_lineno, ast_col_offset):
         """
         This is the method we want to insert into the DAG
         """
@@ -92,7 +92,6 @@ class PipelineExecutor:
             print("_______________________________________")
             print("after call used: {}".format(code.split("\n")[0]))
             print("function_info: {}".format(function_info))
-            print("args_code: {}".format(args_code))
             print("return_value: {}".format(str(return_value)))
             print("_______________________________________")
         else:
@@ -105,7 +104,6 @@ class PipelineExecutor:
             print("_______________________________________")
             print("after call used: {}".format(code.split("\n")[0]))
             print("function_info: {}".format(function_info))
-            print("caller_code: {}, key_code: {}".format(args_code[0], args_code[1]))
             print("return_value: {}".format(str(return_value)))
             print("_______________________________________")
         return return_value
@@ -135,11 +133,44 @@ class PipelineExecutor:
             self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
 
             print("_______________________________________")
-            print("before call used: {}".format(code.split("\n")[0]))
+            print("before call used value: {}".format(code.split("\n")[0]))
             print("function_info: {}".format(function_info))
             print("value_value: {}".format(value_value))
             print("_______________________________________")
         return value_value
+
+    def before_call_used_args(self, subscript, args_code, *args_values, code, ast_lineno, ast_col_offset):
+        """
+        This is the method we want to insert into the DAG
+        """
+        # pylint: disable=too-many-arguments
+        if not subscript:
+            function = str(code.split("(", 1)[0])
+            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
+
+            function_info = (module_info.__name__, str(function.split(".")[-1]))
+            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
+
+            print("_______________________________________")
+            print("before call used args: {}".format(code.split("\n")[0]))
+            print("function_info: {}".format(function_info))
+            print("args_code: {}".format(args_code))
+            print("args_values: {}".format(args_values))
+            print("_______________________________________")
+        else:
+            function = str(code.split("[", 1)[0])
+            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
+
+            function_info = (module_info.__name__, "__getitem__")
+            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
+
+            print("_______________________________________")
+            print("before call used: {}".format(code.split("\n")[0]))
+            print("function_info: {}".format(function_info))
+            print("args_code: {}".format(args_code))
+            print("args_values: {}".format(args_values))
+            print("_______________________________________")
+        return args_values
 
     @staticmethod
     def output_parsed_ast(parsed_ast):
@@ -165,7 +196,7 @@ def before_call_used_value(subscript, value_value, code, ast_lineno, ast_col_off
     return singleton.before_call_used_value(subscript, value_value, code, ast_lineno, ast_col_offset)
 
 
-def before_call_used_args(subscript, arg_values, args_code, node, code, ast_lineno, ast_col_offset):
+def before_call_used_args(subscript, args_code, arg_values, code, ast_lineno, ast_col_offset):
     """
     Method that gets injected into the pipeline code
     """
@@ -173,9 +204,17 @@ def before_call_used_args(subscript, arg_values, args_code, node, code, ast_line
     pass
 
 
-def after_call_used(subscript, args_code, return_value, code, ast_lineno, ast_col_offset):
+def before_call_used_kwargs(subscript, kwargs_code, kwarg_values, code, ast_lineno, ast_col_offset):
+    """
+    Method that gets injected into the pipeline code
+    """
+    # pylint: disable=too-many-arguments, unused-argument, unnecessary-pass
+    pass
+
+
+def after_call_used(subscript, code, return_value, ast_lineno, ast_col_offset):
     """
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
-    return singleton.after_call_used(subscript, args_code, return_value, code, ast_lineno, ast_col_offset)
+    return singleton.after_call_used(subscript, code, return_value, ast_lineno, ast_col_offset)
