@@ -2,10 +2,10 @@
 Instrument and executes the pipeline
 """
 import ast
+import copy
 import astunparse
 import astpretty  # pylint: disable=unused-import
 import nbformat
-import copy
 from nbconvert import PythonExporter
 from .call_capture_transformer import CallCaptureTransformer
 from .wir_extractor import WirExtractor

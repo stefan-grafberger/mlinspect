@@ -4,9 +4,9 @@ Tests whether the adult_easy test pipeline works
 import os
 import ast
 from inspect import cleandoc
+import astpretty
 from mlinspect.utils import get_project_root
 from mlinspect.instrumentation import pipeline_executor
-import astpretty
 
 FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 FILE_NB = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.ipynb")
