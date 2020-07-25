@@ -67,6 +67,19 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                                    keywords=[]), ctx=ast.Load())
         node.args = [new_args_node]
 
+        # before_call_used_kwargs
+        old_kwargs_nodes_ast = node.keywords  # old_kwargs_nodes_ast = ast.List(node.keywords, ctx=ast.Load())
+        old_kwargs_code = ast.List([ast.Constant(n=astunparse.unparse(kwarg), kind=None)
+                                    for kwarg in node.keywords], ctx=ast.Load())
+        new_kwargs_node = ast.keyword(value=ast.Call(func=ast.Name(id='before_call_used_kwargs', ctx=ast.Load()),
+                                                     args=[ast.Constant(n=False, kind=None),
+                                                           ast.Constant(n=code, kind=None),
+                                                           old_kwargs_code,
+                                                           ast.Constant(n=node.lineno, kind=None),
+                                                           ast.Constant(n=node.col_offset, kind=None),],
+                                                     keywords=old_kwargs_nodes_ast), arg=None)
+        node.keywords = [new_kwargs_node]
+
         # after_call_used
         instrumented_call_node = ast.Call(func=ast.Name(id='after_call_used', ctx=ast.Load()),
                                           args=[ast.Constant(n=False, kind=None),

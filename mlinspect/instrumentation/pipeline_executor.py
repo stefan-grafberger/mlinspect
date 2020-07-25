@@ -51,6 +51,7 @@ class PipelineExecutor:
         func_import_node = ast.ImportFrom(module='mlinspect.instrumentation.pipeline_executor',
                                           names=[ast.alias(name='before_call_used_value', asname=None),
                                                  ast.alias(name='before_call_used_args', asname=None),
+                                                 ast.alias(name='before_call_used_kwargs', asname=None),
                                                  ast.alias(name='after_call_used', asname=None)],
                                           level=0)
         parsed_modified_ast.body.insert(2, func_import_node)
@@ -169,12 +170,45 @@ class PipelineExecutor:
             self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
 
             print("_______________________________________")
-            print("before call used: {}".format(call_code.split("\n")[0]))
+            print("before call used args: {}".format(call_code.split("\n")[0]))
             print("function_info: {}".format(function_info))
             print("args_code: {}".format(args_code))
             print("args_values: {}".format(args_values))
-            print("_______________________________________")
+            print("_______________________________________")    
         return args_values
+
+    def before_call_used_kwargs(self, subscript, call_code, kwargs_code, ast_lineno, ast_col_offset, kwargs_values):
+        """
+        This is the method we want to insert into the DAG
+        """
+        # pylint: disable=too-many-arguments
+        if not subscript:
+            function = str(call_code.split("(", 1)[0])
+            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
+
+            function_info = (module_info.__name__, str(function.split(".")[-1]))
+            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
+
+            print("_______________________________________")
+            print("before call used kwargs: {}".format(call_code.split("\n")[0]))
+            print("function_info: {}".format(function_info))
+            print("kwargs_code: {}".format(kwargs_code))
+            print("args_values: {}".format(kwargs_values))
+            print("_______________________________________")
+        else:
+            function = str(call_code.split("[", 1)[0])
+            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
+
+            function_info = (module_info.__name__, "__getitem__")
+            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
+
+            print("_______________________________________")
+            print("before call used kwargs: {}".format(call_code.split("\n")[0]))
+            print("function_info: {}".format(function_info))
+            print("args_code: {}".format(kwargs_code))
+            print("args_values: {}".format(kwargs_values))
+            print("_______________________________________")
+        return kwargs_values
 
     @staticmethod
     def output_parsed_ast(parsed_ast):
@@ -208,12 +242,12 @@ def before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_o
     return singleton.before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_offset, args_values)
 
 
-def before_call_used_kwargs(subscript, call_code, kwargs_code, kwarg_values, ast_lineno, ast_col_offset):
+def before_call_used_kwargs(subscript, call_code, kwargs_code, ast_lineno, ast_col_offset, **kwarg_values):
     """
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments, unused-argument, unnecessary-pass
-    pass
+    return singleton.before_call_used_kwargs(subscript, call_code, kwargs_code, ast_lineno, ast_col_offset, kwarg_values)
 
 
 def after_call_used(subscript, call_code, return_value, ast_lineno, ast_col_offset):
