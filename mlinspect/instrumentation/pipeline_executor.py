@@ -226,7 +226,7 @@ def before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_o
     """
     Method that gets injected into the pipeline code
     """
-    # pylint: disable=too-many-arguments, unused-argument, unnecessary-pass
+    # pylint: disable=too-many-arguments
     return singleton.before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_offset, args_values)
 
 
@@ -234,7 +234,7 @@ def before_call_used_kwargs(subscript, call_code, kwargs_code, ast_lineno, ast_c
     """
     Method that gets injected into the pipeline code
     """
-    # pylint: disable=too-many-arguments, unused-argument, unnecessary-pass
+    # pylint: disable=too-many-arguments
     return singleton.before_call_used_kwargs(subscript, call_code, kwargs_code, ast_lineno, ast_col_offset, kwarg_values)
 
 

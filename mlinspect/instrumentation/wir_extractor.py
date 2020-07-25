@@ -207,7 +207,7 @@ class WirExtractor:
             assert False
 
         module = None
-        if self.ast_call_to_module:  # TODO: Test this and use it
+        if self.ast_call_to_module:
             ast_call_node_lookup_key = simplify_ast_call_nodes(ast_node)
             module = self.ast_call_to_module[ast_call_node_lookup_key]
         new_wir_node = WirVertex(self.get_next_wir_id(), name, "Call", module)
