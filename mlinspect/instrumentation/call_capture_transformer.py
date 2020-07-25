@@ -106,7 +106,7 @@ class CallCaptureTransformer(ast.NodeTransformer):
         old_args_code = ast.List([ast.Constant(n=astunparse.unparse(arg).split("\n", 1)[0], kind=None)
                                   for arg in args], ctx=ast.Load())
         new_args_node = ast.Call(func=ast.Name(id='before_call_used_args', ctx=ast.Load()),
-                                 args=[ast.Constant(n=False, kind=None),
+                                 args=[ast.Constant(n=True, kind=None),
                                        ast.Constant(n=code, kind=None),
                                        old_args_code,
                                        ast.Constant(n=node.lineno, kind=None),
