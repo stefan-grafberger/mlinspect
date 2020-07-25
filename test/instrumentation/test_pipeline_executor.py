@@ -2,9 +2,7 @@
 Tests whether the adult_easy test pipeline works
 """
 import os
-import ast
 from inspect import cleandoc
-import astpretty
 from mlinspect.utils import get_project_root
 from mlinspect.instrumentation import pipeline_executor
 
@@ -80,25 +78,3 @@ def test_pipeline_executor_function_subscript_index_info_extraction():
                             (8, 0): ('pandas.core.frame', '__getitem__')}
 
     assert pipeline_executor.singleton.ast_call_node_id_to_module == expected_module_info
-
-
-def test_impl_stuff():
-    """
-    Tests whether the capturing of module information works
-    """
-    test_code = cleandoc("""
-            def capture_args(*args):
-                print(args)
-                return args
-        
-            def capture_kwargs(**kwargs):
-                print(kwargs)
-                return kwargs
-        
-            print(*capture_args("test", "comma"), **capture_kwargs(sep=', '))
-            """)
-
-    parsed_ast = ast.parse(test_code)
-    astpretty.pprint(parsed_ast)
-    print("exec")
-    exec(compile(parsed_ast, filename="<ast>", mode="exec"), {})
