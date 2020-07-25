@@ -5,6 +5,7 @@ import ast
 import astunparse
 import astpretty  # pylint: disable=unused-import
 import nbformat
+import copy
 from nbconvert import PythonExporter
 from .call_capture_transformer import CallCaptureTransformer
 from .wir_extractor import WirExtractor
@@ -28,12 +29,13 @@ class PipelineExecutor:
 
         source_code = self.load_source_code(notebook_path, python_path, python_code)
         parsed_ast = ast.parse(source_code)
+        original_parsed_ast = copy.deepcopy(parsed_ast)  # Some ast functions modify in-place
 
         parsed_modified_ast = self.instrument_pipeline(parsed_ast)
 
         exec(compile(parsed_modified_ast, filename="<ast>", mode="exec"), PipelineExecutor.script_scope)
 
-        initial_wir = WirExtractor(parsed_ast).extract_wir(self.ast_call_node_id_to_module)
+        initial_wir = WirExtractor(original_parsed_ast).extract_wir(self.ast_call_node_id_to_module)
         print(initial_wir)
 
         return "test"
@@ -121,7 +123,7 @@ class PipelineExecutor:
             self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
 
             print("_______________________________________")
-            print("before call used: {}".format(call_code.split("\n")[0]))
+            print("before call used value: {}".format(call_code.split("\n")[0]))
             print("function_info: {}".format(function_info))
             print("value_code: {}".format(value_code))
             print("value_value: {}".format(value_value))
@@ -141,7 +143,7 @@ class PipelineExecutor:
             print("_______________________________________")
         return value_value
 
-    def before_call_used_args(self, subscript, call_code, args_code, ast_lineno, ast_col_offset, *args_values):
+    def before_call_used_args(self, subscript, call_code, args_code, ast_lineno, ast_col_offset, args_values):
         """
         This is the method we want to insert into the DAG
         """
@@ -198,7 +200,7 @@ def before_call_used_value(subscript, call_code, value_code, value_value, ast_li
     return singleton.before_call_used_value(subscript, call_code, value_code, value_value, ast_lineno, ast_col_offset)
 
 
-def before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_offset, *args_values):
+def before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_offset, args_values):
     """
     Method that gets injected into the pipeline code
     """
