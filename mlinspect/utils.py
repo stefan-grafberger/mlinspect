@@ -16,7 +16,7 @@ def simplify_ast_call_nodes(node: ast):
     Apparently python AST nodes have no equals.
     """
     if not isinstance(node, ast.Call):
-        return None
+        assert False
 
     id_tuple = (node.lineno, node.col_offset)
     return id_tuple
