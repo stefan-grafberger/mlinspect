@@ -21,7 +21,7 @@ class CallCaptureTransformer(ast.NodeTransformer):
         self.add_before_call_used_value_capturing_call(code, node)
         self.add_before_call_used_args_capturing_call(code, node)
         self.add_before_call_used_kwargs_capturing_call(code, node)
-        instrumented_call_node = self.add_after_call_used_capturing_call(code, node)
+        instrumented_call_node = self.add_after_call_used_capturing(code, node, False)
 
         return instrumented_call_node
 
@@ -35,12 +35,15 @@ class CallCaptureTransformer(ast.NodeTransformer):
 
         self.add_before_call_used_value_capturing_subscript(code, node)
         self.add_before_call_used_args_capturing_subscript(code, node)
-        instrumented_call_node = self.add_after_call_used_value_capturing_subscript(code, node)
+        instrumented_call_node = self.add_after_call_used_capturing(code, node, True)
 
         return instrumented_call_node
 
     @staticmethod
     def add_before_call_used_value_capturing_call(code, node):
+        """
+        When the method of some object is called, capture the value of the object before executing the method
+        """
         if hasattr(node.func, "value"):
             old_value_node = node.func.value
             value_code = astunparse.unparse(old_value_node)
@@ -56,6 +59,10 @@ class CallCaptureTransformer(ast.NodeTransformer):
 
     @staticmethod
     def add_before_call_used_value_capturing_subscript(code, node):
+        """
+        When the __getitem__ method of some object is called, capture the value of the object before executing the
+        method
+        """
         old_value_node = node.value
         value_code = astunparse.unparse(old_value_node)
         new_value_node = ast.Call(func=ast.Name(id='before_call_used_value', ctx=ast.Load()),
@@ -70,6 +77,9 @@ class CallCaptureTransformer(ast.NodeTransformer):
 
     @staticmethod
     def add_before_call_used_args_capturing_call(code, node):
+        """
+        When a method is called, capture the arguments of the method before executing it
+        """
         old_args_nodes_ast = ast.List(node.args, ctx=ast.Load())
         old_args_code = ast.List([ast.Constant(n=astunparse.unparse(arg).split("\n", 1)[0], kind=None)
                                   for arg in node.args], ctx=ast.Load())
@@ -85,10 +95,12 @@ class CallCaptureTransformer(ast.NodeTransformer):
 
     @staticmethod
     def add_before_call_used_args_capturing_subscript(code, node):
-        args = [node.slice.value]
-        old_args_nodes_ast = ast.List(args, ctx=ast.Load())
-        old_args_code = ast.List([ast.Constant(n=astunparse.unparse(arg).split("\n", 1)[0], kind=None)
-                                  for arg in args], ctx=ast.Load())
+        """
+        When the __getitem__ method of some object is called, capture the arguments of the method before executing it
+        """
+        old_args_nodes_ast = ast.List([node.slice.value], ctx=ast.Load())
+        old_args_code = ast.List([ast.Constant(n=astunparse.unparse(node.slice.value).split("\n", 1)[0], kind=None)],
+                                 ctx=ast.Load())
         new_args_node = ast.Call(func=ast.Name(id='before_call_used_args', ctx=ast.Load()),
                                  args=[ast.Constant(n=True, kind=None),
                                        ast.Constant(n=code, kind=None),
@@ -101,6 +113,9 @@ class CallCaptureTransformer(ast.NodeTransformer):
 
     @staticmethod
     def add_before_call_used_kwargs_capturing_call(code, node):
+        """
+        When a method is called, capture the keyword arguments of the method before executing it
+        """
         old_kwargs_nodes_ast = node.keywords  # old_kwargs_nodes_ast = ast.List(node.keywords, ctx=ast.Load())
         old_kwargs_code = ast.List([ast.Constant(n=astunparse.unparse(kwarg), kind=None)
                                     for kwarg in node.keywords], ctx=ast.Load())
@@ -114,21 +129,12 @@ class CallCaptureTransformer(ast.NodeTransformer):
         node.keywords = [new_kwargs_node]
 
     @staticmethod
-    def add_after_call_used_capturing_call(code, node):
+    def add_after_call_used_capturing(code, node, subscript):
+        """
+        After a method got executed, capture the return value
+        """
         instrumented_call_node = ast.Call(func=ast.Name(id='after_call_used', ctx=ast.Load()),
-                                          args=[ast.Constant(n=False, kind=None),
-                                                ast.Constant(n=code, kind=None),
-                                                node,
-                                                ast.Constant(n=node.lineno, kind=None),
-                                                ast.Constant(n=node.col_offset, kind=None)],
-                                          keywords=[])
-        instrumented_call_node = ast.copy_location(instrumented_call_node, node)
-        return instrumented_call_node
-
-    @staticmethod
-    def add_after_call_used_value_capturing_subscript(code, node):
-        instrumented_call_node = ast.Call(func=ast.Name(id='after_call_used', ctx=ast.Load()),
-                                          args=[ast.Constant(n=True, kind=None),
+                                          args=[ast.Constant(n=subscript, kind=None),
                                                 ast.Constant(n=code, kind=None),
                                                 node,
                                                 ast.Constant(n=node.lineno, kind=None),
