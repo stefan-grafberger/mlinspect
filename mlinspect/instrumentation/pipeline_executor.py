@@ -47,8 +47,9 @@ class PipelineExecutor:
         parsed_modified_ast = call_capture_transformer.visit(parsed_ast)
         parsed_modified_ast = ast.fix_missing_locations(parsed_modified_ast)
         func_import_node = ast.ImportFrom(module='mlinspect.instrumentation.pipeline_executor',
-                                          names=[ast.alias(name='instrumented_call_used',
-                                                           asname=None)],
+                                          names=[ast.alias(name='before_call_used_value', asname=None),
+                                                 ast.alias(name='before_call_used_args', asname=None),
+                                                 ast.alias(name='after_call_used', asname=None)],
                                           level=0)
         parsed_modified_ast.body.insert(2, func_import_node)
         inspect_import_node = ast.Import(names=[ast.alias(name='inspect', asname=None)])
@@ -76,7 +77,7 @@ class PipelineExecutor:
             source_code = python_code
         return source_code
 
-    def instrumented_call_used(self, subscript, arg_values, args_code, node, code, ast_lineno, ast_col_offset):
+    def after_call_used(self, subscript, args_code, return_value, code, ast_lineno, ast_col_offset):
         """
         This is the method we want to insert into the DAG
         """
@@ -89,11 +90,10 @@ class PipelineExecutor:
             self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
 
             print("_______________________________________")
-            print("code: {}".format(code.split("\n")[0]))
+            print("after call used: {}".format(code.split("\n")[0]))
             print("function_info: {}".format(function_info))
             print("args_code: {}".format(args_code))
-            print("number of args: {}".format(len(arg_values)))
-            print("return_value: {}".format(str(node)))
+            print("return_value: {}".format(str(return_value)))
             print("_______________________________________")
         else:
             function = str(code.split("[", 1)[0])
@@ -103,14 +103,43 @@ class PipelineExecutor:
             self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
 
             print("_______________________________________")
-            print("code: {}".format(code.split("\n")[0]))
+            print("after call used: {}".format(code.split("\n")[0]))
             print("function_info: {}".format(function_info))
             print("caller_code: {}, key_code: {}".format(args_code[0], args_code[1]))
-            print("caller: {}".format(arg_values[0]))
-            print("key: {}".format(arg_values[1]))
-            print("return_value: {}".format(str(node)))
+            print("return_value: {}".format(str(return_value)))
             print("_______________________________________")
-        return node
+        return return_value
+
+    def before_call_used_value(self, subscript, value_value, code, ast_lineno, ast_col_offset):
+        """
+        This is the method we want to insert into the DAG
+        """
+        # pylint: disable=too-many-arguments
+        if not subscript:
+            function = str(code.split("(", 1)[0])
+            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
+
+            function_info = (module_info.__name__, str(function.split(".")[-1]))
+            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
+
+            print("_______________________________________")
+            print("before call used: {}".format(code.split("\n")[0]))
+            print("function_info: {}".format(function_info))
+            print("value_value: {}".format(value_value))
+            print("_______________________________________")
+        else:
+            function = str(code.split("[", 1)[0])
+            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
+
+            function_info = (module_info.__name__, "__getitem__")
+            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
+
+            print("_______________________________________")
+            print("before call used: {}".format(code.split("\n")[0]))
+            print("function_info: {}".format(function_info))
+            print("value_value: {}".format(value_value))
+            print("_______________________________________")
+        return value_value
 
     @staticmethod
     def output_parsed_ast(parsed_ast):
@@ -128,9 +157,25 @@ class PipelineExecutor:
 singleton = PipelineExecutor()
 
 
-def instrumented_call_used(subscript, arg_values, args_code, node, code, ast_lineno, ast_col_offset):
+def before_call_used_value(subscript, value_value, code, ast_lineno, ast_col_offset):
     """
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
-    return singleton.instrumented_call_used(subscript, arg_values, args_code, node, code, ast_lineno, ast_col_offset)
+    return singleton.before_call_used_value(subscript, value_value, code, ast_lineno, ast_col_offset)
+
+
+def before_call_used_args(subscript, arg_values, args_code, node, code, ast_lineno, ast_col_offset):
+    """
+    Method that gets injected into the pipeline code
+    """
+    # pylint: disable=too-many-arguments, unused-argument, unnecessary-pass
+    pass
+
+
+def after_call_used(subscript, args_code, return_value, code, ast_lineno, ast_col_offset):
+    """
+    Method that gets injected into the pipeline code
+    """
+    # pylint: disable=too-many-arguments
+    return singleton.after_call_used(subscript, args_code, return_value, code, ast_lineno, ast_col_offset)

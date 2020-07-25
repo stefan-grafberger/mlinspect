@@ -39,13 +39,22 @@ class CallCaptureTransformer(ast.NodeTransformer):
         ast.NodeTransformer.generic_visit(self, node)
         code = astunparse.unparse(node)
 
-        args = ast.List([], ctx=ast.Load())
+        if hasattr(node.func, "value"):
+            old_value_node = node.func.value
+            new_value_node = ast.Call(func=ast.Name(id='before_call_used_value', ctx=ast.Load()),
+                                      args=[ast.Constant(n=False, kind=None),
+                                            old_value_node,
+                                            ast.Constant(n=code, kind=None),
+                                            ast.Constant(n=node.lineno, kind=None),
+                                            ast.Constant(n=node.col_offset, kind=None)],
+                                      keywords=[])
+            node.func.value = new_value_node
+
         args_code = ast.List([ast.Constant(n=astunparse.unparse(arg).split("\n", 1)[0], kind=None)
                               for arg in node.args], ctx=ast.Load())
 
-        instrumented_call_node = ast.Call(func=ast.Name(id='instrumented_call_used', ctx=ast.Load()),
+        instrumented_call_node = ast.Call(func=ast.Name(id='after_call_used', ctx=ast.Load()),
                                           args=[ast.Constant(n=False, kind=None),
-                                                args,
                                                 args_code,
                                                 node,
                                                 ast.Constant(n=code, kind=None),
@@ -64,14 +73,23 @@ class CallCaptureTransformer(ast.NodeTransformer):
 
         code = astunparse.unparse(node)
 
+        old_value_node = node.value
+        new_value_node = ast.Call(func=ast.Name(id='before_call_used_value', ctx=ast.Load()),
+                                  args=[ast.Constant(n=True, kind=None),
+                                        old_value_node,
+                                        ast.Constant(n=code, kind=None),
+                                        ast.Constant(n=node.lineno, kind=None),
+                                        ast.Constant(n=node.col_offset, kind=None)],
+                                  keywords=[])
+        node.value = new_value_node
+
         args = [node.value, node.slice.value]
-        args_ast = ast.List(args, ctx=ast.Load())
+        # args_ast = ast.List(args, ctx=ast.Load())
         args_code = ast.List([ast.Constant(n=astunparse.unparse(arg).split("\n", 1)[0], kind=None)
                               for arg in args], ctx=ast.Load())
 
-        instrumented_call_node = ast.Call(func=ast.Name(id='instrumented_call_used', ctx=ast.Load()),
+        instrumented_call_node = ast.Call(func=ast.Name(id='after_call_used', ctx=ast.Load()),
                                           args=[ast.Constant(n=True, kind=None),
-                                                args_ast,
                                                 args_code,
                                                 node,
                                                 ast.Constant(n=code, kind=None),

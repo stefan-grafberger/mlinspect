@@ -120,7 +120,13 @@ class WirExtractor:
         """
         Creates a subscript vertex. Currently only supports index subscripts.
         """
-        name_ast = ast_node.children[0]
+        value_ast = ast_node.children[0]
+        if isinstance(value_ast, ast.Call):
+            assert value_ast.func.id == "before_call_used_value"  # TODO:  Cover other edge cases
+            name_ast = value_ast.children[2]
+        else:
+            name_ast = value_ast
+
         assert isinstance(name_ast, ast.Name)  # TODO: Cover other edge cases
         name_name_ast = name_ast.id
         name_wir = self.get_wir_node_for_variable(name_name_ast)
