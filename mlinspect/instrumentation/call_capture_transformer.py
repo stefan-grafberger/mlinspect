@@ -26,6 +26,12 @@ class CallCaptureTransformer(ast.NodeTransformer):
         # This is some work in progress testing that does not work. maybe look at the ast? what does it look like
         # after the instrumentation? Everything already works for non-nested calls. In the worst case,
         # we need to un-nest it with assigns. However, that should not be necessary.
+
+        # stuff to try: for generic visit child, remove already instrumented stuff and re-add it after
+        # other stuff: if argument is instrumented, directly use the argument of the instrumentation function
+
+        # problem: already instrumented_code does not work as instrumented functions do not have
+        # a lineno and col_offset
         if self.already_instrumented_code.__contains__((node.lineno, node.col_offset)):
             return node
 
@@ -33,7 +39,7 @@ class CallCaptureTransformer(ast.NodeTransformer):
         ast.NodeTransformer.generic_visit(self, node)
         code = astunparse.unparse(node)
 
-        args = ast.List(node.args, ctx=ast.Load())
+        args = ast.List([], ctx=ast.Load())
         args_code = ast.List([ast.Constant(n=astunparse.unparse(arg).split("\n", 1)[0], kind=None)
                               for arg in node.args], ctx=ast.Load())
 
