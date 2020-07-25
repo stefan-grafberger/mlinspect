@@ -80,37 +80,6 @@ class PipelineExecutor:
             source_code = python_code
         return source_code
 
-    def after_call_used(self, subscript, call_code, return_value, ast_lineno, ast_col_offset):
-        """
-        This is the method we want to insert into the DAG
-        """
-        # pylint: disable=too-many-arguments
-        if not subscript:
-            function = str(call_code.split("(", 1)[0])
-            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
-
-            function_info = (module_info.__name__, str(function.split(".")[-1]))
-            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
-
-            print("_______________________________________")
-            print("after call used: {}".format(call_code.split("\n")[0]))
-            print("function_info: {}".format(function_info))
-            print("return_value: {}".format(str(return_value)))
-            print("_______________________________________")
-        else:
-            function = str(call_code.split("[", 1)[0])
-            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
-
-            function_info = (module_info.__name__, "__getitem__")
-            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
-
-            print("_______________________________________")
-            print("after call used: {}".format(call_code.split("\n")[0]))
-            print("function_info: {}".format(function_info))
-            print("return_value: {}".format(str(return_value)))
-            print("_______________________________________")
-        return return_value
-
     def before_call_used_value(self, subscript, call_code, value_code, value_value, ast_lineno, ast_col_offset):
         """
         This is the method we want to insert into the DAG
@@ -182,6 +151,27 @@ class PipelineExecutor:
         This is the method we want to insert into the DAG
         """
         # pylint: disable=too-many-arguments
+        assert not subscript  # we currently only consider __getitem__ subscripts, these do not take kwargs
+        function = str(call_code.split("(", 1)[0])
+        module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
+
+        function_info = (module_info.__name__, str(function.split(".")[-1]))
+        self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
+
+        print("_______________________________________")
+        print("before call used kwargs: {}".format(call_code.split("\n")[0]))
+        print("function_info: {}".format(function_info))
+        print("kwargs_code: {}".format(kwargs_code))
+        print("args_values: {}".format(kwargs_values))
+        print("_______________________________________")
+
+        return kwargs_values
+
+    def after_call_used(self, subscript, call_code, return_value, ast_lineno, ast_col_offset):
+        """
+        This is the method we want to insert into the DAG
+        """
+        # pylint: disable=too-many-arguments
         if not subscript:
             function = str(call_code.split("(", 1)[0])
             module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
@@ -190,10 +180,9 @@ class PipelineExecutor:
             self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
 
             print("_______________________________________")
-            print("before call used kwargs: {}".format(call_code.split("\n")[0]))
+            print("after call used: {}".format(call_code.split("\n")[0]))
             print("function_info: {}".format(function_info))
-            print("kwargs_code: {}".format(kwargs_code))
-            print("args_values: {}".format(kwargs_values))
+            print("return_value: {}".format(str(return_value)))
             print("_______________________________________")
         else:
             function = str(call_code.split("[", 1)[0])
@@ -203,12 +192,11 @@ class PipelineExecutor:
             self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
 
             print("_______________________________________")
-            print("before call used kwargs: {}".format(call_code.split("\n")[0]))
+            print("after call used: {}".format(call_code.split("\n")[0]))
             print("function_info: {}".format(function_info))
-            print("args_code: {}".format(kwargs_code))
-            print("args_values: {}".format(kwargs_values))
+            print("return_value: {}".format(str(return_value)))
             print("_______________________________________")
-        return kwargs_values
+        return return_value
 
     @staticmethod
     def output_parsed_ast(parsed_ast):
