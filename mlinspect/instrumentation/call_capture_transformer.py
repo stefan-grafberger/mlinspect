@@ -9,37 +9,38 @@ class CallCaptureTransformer(ast.NodeTransformer):
     """
     ast.NodeTransformer to replace calls with captured calls
     """
-    def __init__(self):
-        # Necessary to avoid issues with nested function calls
-        # lineno and col_offset are used for identification
-        self.already_instrumented_code = set()
 
     def visit_Call(self, node):
         """
         Instrument all function calls
         """
-        # pylint: disable=no-self-use, invalid-name
-        # FIXME: See output of function_subscript_index_info_extraction test. os.path.join and str
-        # cause get_project_root to be called many times. Maybe I need to use assigns or something to use references
-        # or something similar.
-
-        # This is some work in progress testing that does not work. maybe look at the ast? what does it look like
-        # after the instrumentation? Everything already works for non-nested calls. In the worst case,
-        # we need to un-nest it with assigns. However, that should not be necessary.
-
-        # stuff to try: for generic visit child, remove already instrumented stuff and re-add it after
-        # other stuff: if argument is instrumented, directly use the argument of the instrumentation function
-
-        # problem: already instrumented_code does not work as instrumented functions do not have
-        # a lineno and col_offset
-        if self.already_instrumented_code.__contains__((node.lineno, node.col_offset)):
-            return node
-
-        self.already_instrumented_code.add((node.lineno, node.col_offset))
+        # pylint: disable=invalid-name
         ast.NodeTransformer.generic_visit(self, node)
         code = astunparse.unparse(node)
 
-        # before_call_used_value
+        self.add_before_call_used_value_capturing_call(code, node)
+        self.add_before_call_used_args_capturing_call(code, node)
+        self.add_before_call_used_kwargs_capturing_call(code, node)
+        instrumented_call_node = self.add_after_call_used_capturing_call(code, node)
+
+        return instrumented_call_node
+
+    def visit_Subscript(self, node):
+        """
+        Instrument all subscript calls
+        """
+        # pylint: disable=invalid-name
+        ast.NodeTransformer.generic_visit(self, node)
+        code = astunparse.unparse(node)
+
+        self.add_before_call_used_value_capturing_subscript(code, node)
+        self.add_before_call_used_args_capturing_subscript(code, node)
+        instrumented_call_node = self.add_after_call_used_value_capturing_subscript(code, node)
+
+        return instrumented_call_node
+
+    @staticmethod
+    def add_before_call_used_value_capturing_call(code, node):
         if hasattr(node.func, "value"):
             old_value_node = node.func.value
             value_code = astunparse.unparse(old_value_node)
@@ -53,7 +54,22 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                       keywords=[])
             node.func.value = new_value_node
 
-        # before_call_used_args
+    @staticmethod
+    def add_before_call_used_value_capturing_subscript(code, node):
+        old_value_node = node.value
+        value_code = astunparse.unparse(old_value_node)
+        new_value_node = ast.Call(func=ast.Name(id='before_call_used_value', ctx=ast.Load()),
+                                  args=[ast.Constant(n=True, kind=None),
+                                        ast.Constant(n=code, kind=None),
+                                        ast.Constant(n=value_code, kind=None),
+                                        old_value_node,
+                                        ast.Constant(n=node.lineno, kind=None),
+                                        ast.Constant(n=node.col_offset, kind=None)],
+                                  keywords=[])
+        node.value = new_value_node
+
+    @staticmethod
+    def add_before_call_used_args_capturing_call(code, node):
         old_args_nodes_ast = ast.List(node.args, ctx=ast.Load())
         old_args_code = ast.List([ast.Constant(n=astunparse.unparse(arg).split("\n", 1)[0], kind=None)
                                   for arg in node.args], ctx=ast.Load())
@@ -67,53 +83,8 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                                    keywords=[]), ctx=ast.Load())
         node.args = [new_args_node]
 
-        # before_call_used_kwargs
-        old_kwargs_nodes_ast = node.keywords  # old_kwargs_nodes_ast = ast.List(node.keywords, ctx=ast.Load())
-        old_kwargs_code = ast.List([ast.Constant(n=astunparse.unparse(kwarg), kind=None)
-                                    for kwarg in node.keywords], ctx=ast.Load())
-        new_kwargs_node = ast.keyword(value=ast.Call(func=ast.Name(id='before_call_used_kwargs', ctx=ast.Load()),
-                                                     args=[ast.Constant(n=False, kind=None),
-                                                           ast.Constant(n=code, kind=None),
-                                                           old_kwargs_code,
-                                                           ast.Constant(n=node.lineno, kind=None),
-                                                           ast.Constant(n=node.col_offset, kind=None),],
-                                                     keywords=old_kwargs_nodes_ast), arg=None)
-        node.keywords = [new_kwargs_node]
-
-        # after_call_used
-        instrumented_call_node = ast.Call(func=ast.Name(id='after_call_used', ctx=ast.Load()),
-                                          args=[ast.Constant(n=False, kind=None),
-                                                ast.Constant(n=code, kind=None),
-                                                node,
-                                                ast.Constant(n=node.lineno, kind=None),
-                                                ast.Constant(n=node.col_offset, kind=None)],
-                                          keywords=[])
-
-        return ast.copy_location(instrumented_call_node, node)
-
-    def visit_Subscript(self, node):
-        """
-        Instrument all subscript calls
-        """
-        # pylint: disable=no-self-use, invalid-name
-        ast.NodeTransformer.generic_visit(self, node)
-
-        code = astunparse.unparse(node)
-
-        # before_call_used_value
-        old_value_node = node.value
-        value_code = astunparse.unparse(old_value_node)
-        new_value_node = ast.Call(func=ast.Name(id='before_call_used_value', ctx=ast.Load()),
-                                  args=[ast.Constant(n=True, kind=None),
-                                        ast.Constant(n=code, kind=None),
-                                        ast.Constant(n=value_code, kind=None),
-                                        old_value_node,
-                                        ast.Constant(n=node.lineno, kind=None),
-                                        ast.Constant(n=node.col_offset, kind=None)],
-                                  keywords=[])
-        node.value = new_value_node
-
-        # before_call_used_args
+    @staticmethod
+    def add_before_call_used_args_capturing_subscript(code, node):
         args = [node.slice.value]
         old_args_nodes_ast = ast.List(args, ctx=ast.Load())
         old_args_code = ast.List([ast.Constant(n=astunparse.unparse(arg).split("\n", 1)[0], kind=None)
@@ -128,7 +99,34 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                  keywords=[])
         node.slice.value = new_args_node
 
-        # after_call_used
+    @staticmethod
+    def add_before_call_used_kwargs_capturing_call(code, node):
+        old_kwargs_nodes_ast = node.keywords  # old_kwargs_nodes_ast = ast.List(node.keywords, ctx=ast.Load())
+        old_kwargs_code = ast.List([ast.Constant(n=astunparse.unparse(kwarg), kind=None)
+                                    for kwarg in node.keywords], ctx=ast.Load())
+        new_kwargs_node = ast.keyword(value=ast.Call(func=ast.Name(id='before_call_used_kwargs', ctx=ast.Load()),
+                                                     args=[ast.Constant(n=False, kind=None),
+                                                           ast.Constant(n=code, kind=None),
+                                                           old_kwargs_code,
+                                                           ast.Constant(n=node.lineno, kind=None),
+                                                           ast.Constant(n=node.col_offset, kind=None), ],
+                                                     keywords=old_kwargs_nodes_ast), arg=None)
+        node.keywords = [new_kwargs_node]
+
+    @staticmethod
+    def add_after_call_used_capturing_call(code, node):
+        instrumented_call_node = ast.Call(func=ast.Name(id='after_call_used', ctx=ast.Load()),
+                                          args=[ast.Constant(n=False, kind=None),
+                                                ast.Constant(n=code, kind=None),
+                                                node,
+                                                ast.Constant(n=node.lineno, kind=None),
+                                                ast.Constant(n=node.col_offset, kind=None)],
+                                          keywords=[])
+        instrumented_call_node = ast.copy_location(instrumented_call_node, node)
+        return instrumented_call_node
+
+    @staticmethod
+    def add_after_call_used_value_capturing_subscript(code, node):
         instrumented_call_node = ast.Call(func=ast.Name(id='after_call_used', ctx=ast.Load()),
                                           args=[ast.Constant(n=True, kind=None),
                                                 ast.Constant(n=code, kind=None),
@@ -136,5 +134,5 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                                 ast.Constant(n=node.lineno, kind=None),
                                                 ast.Constant(n=node.col_offset, kind=None)],
                                           keywords=[])
-
-        return ast.copy_location(instrumented_call_node, node)
+        instrumented_call_node = ast.copy_location(instrumented_call_node, node)
+        return instrumented_call_node
