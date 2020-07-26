@@ -20,10 +20,14 @@ class WirToDagTransformer:
         while len(current_nodes) != 0:
             for node in current_nodes:
                 if node.operation == "Constant":
-                    successors = graph.successors(node)
-                    for successor in successors:
-                        print("contract_node {} and {}".format(node, successor))
-                    current_nodes.remove(node)
+                    graph.remove_node(node)
+                if node.operation == "Assign":
+                    parents = graph.predecessors(node)
+                    children = graph.successors(node)
+                    for parent in parents:
+                        for child in children:
+                            graph.add_edge(child, parent)
+                    graph.remove_node(node)
                 else:
                     # assert False
                     current_nodes.remove(node)
