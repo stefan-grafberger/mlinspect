@@ -14,8 +14,6 @@ class WirToDagTransformer:
         """
         Removes all nodes that can not be a operator we might care about
         """
-        # Useful link:
-        # https://stackoverflow.com/questions/61914713/removing-a-node-from-digraph-in-networkx-while-preserving-child-nodes-and-remapp
         current_nodes = {node for node in graph.nodes if len(list(graph.predecessors(node))) == 0}
         while len(current_nodes) != 0:
             for node in current_nodes:
@@ -23,33 +21,20 @@ class WirToDagTransformer:
                 children = graph.successors(node)
                 current_nodes = current_nodes.union(children)
 
-                if node.operation == "Import":
+                if node.operation in ["Import", "Constant"]:
                     graph.remove_node(node)
                     current_nodes.remove(node)
-                elif node.operation == "Constant":
-                    graph.remove_node(node)
-                    current_nodes.remove(node)
-                elif node.operation == "Assign":
+                elif node.operation in ["Assign", "Keyword", "List", "Tuple"]:
                     for parent in parents:
                         for child in children:
                             graph.add_edge(child, parent)
                     graph.remove_node(node)
                     current_nodes.remove(node)
-                elif node.operation == "Keyword":
-                    for parent in parents:
-                        for child in children:
-                            graph.add_edge(child, parent)
-                    graph.remove_node(node)
-                    current_nodes.remove(node)
-                elif node.operation == "List":
-                    for parent in parents:
-                        for child in children:
-                            graph.add_edge(child, parent)
-                    graph.remove_node(node)
+                elif node.operation in ["Call", "Subscript"]:
                     current_nodes.remove(node)
                 else:
-                    # assert False
-                    current_nodes.remove(node)
+                    print("Unknown WIR Node Type: {}".format(node))
+                    assert False
         return graph
 
     def get_parent_operator_identifier_for_operator(self, lineno, col_offset):
