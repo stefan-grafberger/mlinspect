@@ -3,6 +3,7 @@ Tests whether the adult_easy test pipeline works
 """
 import os
 from inspect import cleandoc
+
 from mlinspect.utils import get_project_root
 from mlinspect.instrumentation import pipeline_executor
 
@@ -10,22 +11,44 @@ FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy
 FILE_NB = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.ipynb")
 
 
-def test_pipeline_executor_py_file():
+def test_pipeline_executor_py_file(mocker):
     """
     Tests whether the PipelineExecutor works for .py files
     """
     pipeline_executor.singleton = pipeline_executor.PipelineExecutor()
+
+    before_call_used_value_spy = mocker.spy(pipeline_executor, 'before_call_used_value')
+    before_call_used_args_spy = mocker.spy(pipeline_executor, 'before_call_used_args')
+    before_call_used_kwargs_spy = mocker.spy(pipeline_executor, 'before_call_used_kwargs')
+    after_call_used_spy = mocker.spy(pipeline_executor, 'after_call_used')
+
     extracted_dag = pipeline_executor.singleton.run(None, FILE_PY, None)
     assert extracted_dag == "test"
 
+    assert before_call_used_value_spy.call_count == 11
+    assert before_call_used_args_spy.call_count == 15
+    assert before_call_used_kwargs_spy.call_count == 14
+    assert after_call_used_spy.call_count == 15
 
-def test_pipeline_executor_nb_file():
+
+def test_pipeline_executor_nb_file(mocker):
     """
     Tests whether the PipelineExecutor works for .ipynb files
     """
     pipeline_executor.singleton = pipeline_executor.PipelineExecutor()
+
+    before_call_used_value_spy = mocker.spy(pipeline_executor, 'before_call_used_value')
+    before_call_used_args_spy = mocker.spy(pipeline_executor, 'before_call_used_args')
+    before_call_used_kwargs_spy = mocker.spy(pipeline_executor, 'before_call_used_kwargs')
+    after_call_used_spy = mocker.spy(pipeline_executor, 'after_call_used')
+
     extracted_dag = pipeline_executor.singleton.run(FILE_NB, None, None)
     assert extracted_dag == "test"
+
+    assert before_call_used_value_spy.call_count == 11
+    assert before_call_used_args_spy.call_count == 15
+    assert before_call_used_kwargs_spy.call_count == 14
+    assert after_call_used_spy.call_count == 15
 
 
 def test_pipeline_executor_function_call_info_extraction():
