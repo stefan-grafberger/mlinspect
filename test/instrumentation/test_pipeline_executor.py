@@ -1,5 +1,5 @@
 """
-Tests whether the adult_easy test pipeline works
+Tests whether the PipelineExecutor works
 """
 import os
 from inspect import cleandoc
