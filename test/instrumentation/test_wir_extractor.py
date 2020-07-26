@@ -337,13 +337,17 @@ def test_index_subscript_with_module_information():
             """)
     test_ast = ast.parse(test_code)
     extractor = WirExtractor(test_ast)
-    module_info = {(3, 7): ('pandas.io.parsers', 'read_csv')}
-    extracted_wir = extractor.extract_wir(module_info)
+    module_info = {
+        (3, 7): ('pandas.io.parsers', 'read_csv'),
+        (4, 0): ('pandas.core.frame', '__getitem__')
+    }
+    extracted_wir = extractor.extract_wir()
+    extractor.add_call_module_info(module_info)
     expected_graph = networkx.DiGraph()
 
     expected_import = WirVertex(0, "pandas", "Import")
     expected_constant_one = WirVertex(1, "test_path", "Constant")
-    expected_call = WirVertex(2, "read_csv", "Call", ('pandas.io.parsers', 'read_csv'))
+    expected_call = WirVertex(2, "read_csv", "Call", 3, 7, ('pandas.io.parsers', 'read_csv'))
     expected_graph.add_edge(expected_import, expected_call, type="caller")
     expected_graph.add_edge(expected_constant_one, expected_call, type="input")
 
@@ -351,7 +355,7 @@ def test_index_subscript_with_module_information():
     expected_graph.add_edge(expected_call, expected_assign, type="input")
 
     expected_constant_two = WirVertex(4, "income-per-year", "Constant")
-    expected_index_subscript = WirVertex(5, "Index-Subscript", "Subscript")
+    expected_index_subscript = WirVertex(5, "Index-Subscript", "Subscript", 4, 0, ('pandas.core.frame', '__getitem__'))
     expected_graph.add_edge(expected_assign, expected_index_subscript, type="caller")
     expected_graph.add_edge(expected_constant_two, expected_index_subscript, type="input")
 

@@ -5,7 +5,6 @@ import ast
 from astmonkey import transformers
 import networkx
 from mlinspect.instrumentation.wir_vertex import WirVertex
-from mlinspect.utils import simplify_ast_call_nodes
 
 
 class WirExtractor:
@@ -24,13 +23,10 @@ class WirExtractor:
         self.ast_root = ast_root
         self.ast_call_to_module = None
 
-    def extract_wir(self, ast_call_to_module=None) -> networkx.DiGraph:
+    def extract_wir(self) -> networkx.DiGraph:
         """
         Instrument all function calls
         """
-        # pylint: disable=no-self-use
-        self.ast_call_to_module = ast_call_to_module
-
         enriched_ast = transformers.ParentChildNodeTransformer().visit(self.ast_root)
         assert isinstance(enriched_ast, ast.Module)
         self.process_node(enriched_ast)
@@ -103,7 +99,8 @@ class WirExtractor:
         index_constant_ast = index_ast.children[0]
         assert isinstance(index_constant_ast, ast.Constant)
         constant_wir = self.get_wir_node_for_ast(index_constant_ast)
-        new_wir_node = WirVertex(self.get_next_wir_id(), "Index-Subscript", "Subscript")
+        new_wir_node = WirVertex(self.get_next_wir_id(), "Index-Subscript", "Subscript", ast_node.lineno,
+                                 ast_node.col_offset)
         self.graph.add_node(new_wir_node)
         self.graph.add_edge(name_wir, new_wir_node, type="caller")
         self.graph.add_edge(constant_wir, new_wir_node, type="input")
@@ -206,17 +203,23 @@ class WirExtractor:
         else:
             assert False
 
-        module = None
-        if self.ast_call_to_module:
-            ast_call_node_lookup_key = simplify_ast_call_nodes(ast_node)
-            module = self.ast_call_to_module[ast_call_node_lookup_key]
-        new_wir_node = WirVertex(self.get_next_wir_id(), name, "Call", module)
+        new_wir_node = WirVertex(self.get_next_wir_id(), name, "Call", ast_node.lineno, ast_node.col_offset)
         self.graph.add_node(new_wir_node)
         if caller_parent:
             self.graph.add_edge(caller_parent, new_wir_node, type="caller")
         for parent in wir_parents:
             self.graph.add_edge(parent, new_wir_node, type="input")
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
+
+    def add_call_module_info(self, ast_call_to_module):
+        """
+        After executing the pipeline, annotate call nodes with the captured module info
+        """
+        for node in self.graph.nodes:
+            if node.operation == "Call" or node.operation == "Subscript":
+                ast_call_node_lookup_key = (node.lineno, node.col_offset)
+                node.module = ast_call_to_module[ast_call_node_lookup_key]
+        return self.graph
 
     def extract_wir_name(self, ast_node):
         """

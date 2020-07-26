@@ -35,8 +35,10 @@ class PipelineExecutor:
 
         exec(compile(parsed_modified_ast, filename="<ast>", mode="exec"), PipelineExecutor.script_scope)
 
-        initial_wir = WirExtractor(original_parsed_ast).extract_wir(self.ast_call_node_id_to_module)
-        print(initial_wir)
+        wir_extractor = WirExtractor(original_parsed_ast)
+        wir_extractor.extract_wir()
+        wir_with_module_info = wir_extractor.add_call_module_info(self.ast_call_node_id_to_module)
+        print(wir_with_module_info)
 
         return "test"
 

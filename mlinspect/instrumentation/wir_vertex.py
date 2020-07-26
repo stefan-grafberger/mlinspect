@@ -8,15 +8,18 @@ class WirVertex:
     A WIR Vertex
     """
 
-    def __init__(self, node_id, name, operation, module=None):
+    def __init__(self, node_id, name, operation, lineno=None, col_offset=None, module=None):
+        # pylint: disable=too-many-arguments
         self.node_id = node_id
         self.name = name
         self.operation = operation
+        self.lineno = lineno
+        self.col_offset = col_offset
         self.module = module
 
     def __repr__(self):
-        message = "(node_id={}: vertex_name='{}', op='{}', module={})" \
-            .format(self.node_id, self.name, self.operation, self.module)
+        message = "(node_id={}: vertex_name='{}', op='{}', lineno={}, col_offset={}, module={})" \
+            .format(self.node_id, self.name, self.operation, self.lineno, self.col_offset, self.module)
         return message
 
     def display(self):
