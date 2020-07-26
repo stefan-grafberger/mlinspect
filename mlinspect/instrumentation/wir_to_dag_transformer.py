@@ -14,6 +14,19 @@ class WirToDagTransformer:
         """
         Removes all nodes that can not be a operator we might care about
         """
+        # Useful link:
+        # https://stackoverflow.com/questions/61914713/removing-a-node-from-digraph-in-networkx-while-preserving-child-nodes-and-remapp
+        current_nodes = [node for node in graph.nodes if len(list(graph.predecessors(node))) == 0]
+        while len(current_nodes) != 0:
+            for node in current_nodes:
+                if node.operation == "Constant":
+                    successors = graph.successors(node)
+                    for successor in successors:
+                        print("contract_node {} and {}".format(node, successor))
+                    current_nodes.remove(node)
+                else:
+                    # assert False
+                    current_nodes.remove(node)
         return graph
 
     def get_parent_operator_identifier_for_operator(self, lineno, col_offset):
