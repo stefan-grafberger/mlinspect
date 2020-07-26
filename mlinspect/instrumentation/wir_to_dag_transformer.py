@@ -16,18 +16,37 @@ class WirToDagTransformer:
         """
         # Useful link:
         # https://stackoverflow.com/questions/61914713/removing-a-node-from-digraph-in-networkx-while-preserving-child-nodes-and-remapp
-        current_nodes = [node for node in graph.nodes if len(list(graph.predecessors(node))) == 0]
+        current_nodes = {node for node in graph.nodes if len(list(graph.predecessors(node))) == 0}
         while len(current_nodes) != 0:
             for node in current_nodes:
-                if node.operation == "Constant":
+                parents = graph.predecessors(node)
+                children = graph.successors(node)
+                current_nodes = current_nodes.union(children)
+
+                if node.operation == "Import":
                     graph.remove_node(node)
-                if node.operation == "Assign":
-                    parents = graph.predecessors(node)
-                    children = graph.successors(node)
+                    current_nodes.remove(node)
+                elif node.operation == "Constant":
+                    graph.remove_node(node)
+                    current_nodes.remove(node)
+                elif node.operation == "Assign":
                     for parent in parents:
                         for child in children:
                             graph.add_edge(child, parent)
                     graph.remove_node(node)
+                    current_nodes.remove(node)
+                elif node.operation == "Keyword":
+                    for parent in parents:
+                        for child in children:
+                            graph.add_edge(child, parent)
+                    graph.remove_node(node)
+                    current_nodes.remove(node)
+                elif node.operation == "List":
+                    for parent in parents:
+                        for child in children:
+                            graph.add_edge(child, parent)
+                    graph.remove_node(node)
+                    current_nodes.remove(node)
                 else:
                     # assert False
                     current_nodes.remove(node)
