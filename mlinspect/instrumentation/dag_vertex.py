@@ -17,15 +17,9 @@ class DagVertex:
         self.module = module
 
     def __repr__(self):
-        message = "(node_id={}: vertex_name='{}', lineno={}, col_offset={}, module={})" \
+        message = "DagVertex(node_id={}: name='{}', lineno={}, col_offset={}, module={})" \
             .format(self.node_id, self.name, self.lineno, self.col_offset, self.module)
         return message
-
-    def display(self):
-        """
-        Print the vertex
-        """
-        print(self.__repr__)
 
     def __eq__(self, other):
         return self.node_id == other.node_id and \
