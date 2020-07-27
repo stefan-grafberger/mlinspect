@@ -74,7 +74,7 @@ class WirExtractor:
         """
         parent_in_wir_ast_nodes = ast_node.children[:-1]
         wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
-        new_wir_node = WirVertex(self.get_next_wir_id(), "as_tuple", "Tuple")
+        new_wir_node = WirVertex(self.get_next_wir_id(), "as_tuple", "Tuple", ast_node.lineno, ast_node.col_offset)
         self.graph.add_node(new_wir_node)
         for parent in wir_parents:
             self.graph.add_edge(parent, new_wir_node, type="input")
@@ -112,7 +112,7 @@ class WirExtractor:
         """
         parent_in_wir_ast_nodes = ast_node.children[:-1]
         wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
-        new_wir_node = WirVertex(self.get_next_wir_id(), "as_list", "List")
+        new_wir_node = WirVertex(self.get_next_wir_id(), "as_list", "List", ast_node.lineno, ast_node.col_offset)
         self.graph.add_node(new_wir_node)
         for parent in wir_parents:
             self.graph.add_edge(parent, new_wir_node, type="input")
@@ -123,7 +123,7 @@ class WirExtractor:
         Creates an import vertex. Stores each imported entity in the dict.
         """
         module_name = ast_node.module
-        new_wir_node = WirVertex(self.get_next_wir_id(), module_name, "Import")
+        new_wir_node = WirVertex(self.get_next_wir_id(), module_name, "Import", ast_node.lineno, ast_node.col_offset)
         self.graph.add_node(new_wir_node)
         for imported_entity_ast in ast_node.children:
             assert isinstance(imported_entity_ast, ast.alias)
@@ -141,7 +141,7 @@ class WirExtractor:
             alias_name = alias_ast.asname
         else:
             alias_name = module_name
-        new_wir_node = WirVertex(self.get_next_wir_id(), module_name, "Import")
+        new_wir_node = WirVertex(self.get_next_wir_id(), module_name, "Import", ast_node.lineno, ast_node.col_offset)
         self.graph.add_node(new_wir_node)
         self.store_variable_wir_mapping(alias_name, new_wir_node)
 
