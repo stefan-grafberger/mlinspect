@@ -138,9 +138,9 @@ def test_import():
     extracted_wir = extractor.extract_wir()
     expected_graph = networkx.DiGraph()
 
-    expected_import = WirVertex(0, "math", "Import")
-    expected_constant = WirVertex(1, "4", "Constant")
-    expected_constant_call = WirVertex(2, "sqrt", "Call")
+    expected_import = WirVertex(0, "math", "Import", 1, 0)
+    expected_constant = WirVertex(1, "4", "Constant", 3, 10)
+    expected_constant_call = WirVertex(2, "sqrt", "Call", 3, 0)
     expected_graph.add_edge(expected_import, expected_constant_call, type="caller")
     expected_graph.add_edge(expected_constant, expected_constant_call, type="input")
 
@@ -161,9 +161,9 @@ def test_import_as():
     extracted_wir = extractor.extract_wir()
     expected_graph = networkx.DiGraph()
 
-    expected_import = WirVertex(0, "math", "Import")
-    expected_constant = WirVertex(1, "4", "Constant")
-    expected_constant_call = WirVertex(2, "sqrt", "Call")
+    expected_import = WirVertex(0, "math", "Import", 1, 0)
+    expected_constant = WirVertex(1, "4", "Constant", 3, 10)
+    expected_constant_call = WirVertex(2, "sqrt", "Call", 3, 0)
     expected_graph.add_edge(expected_import, expected_constant_call, type="caller")
     expected_graph.add_edge(expected_constant, expected_constant_call, type="input")
 
@@ -184,9 +184,9 @@ def test_import_from():
     extracted_wir = extractor.extract_wir()
     expected_graph = networkx.DiGraph()
 
-    expected_import = WirVertex(0, "math", "Import")
-    expected_constant = WirVertex(1, "4", "Constant")
-    expected_constant_call = WirVertex(2, "sqrt", "Call")
+    expected_import = WirVertex(0, "math", "Import", 1, 0)
+    expected_constant = WirVertex(1, "4", "Constant", 3, 5)
+    expected_constant_call = WirVertex(2, "sqrt", "Call", 3, 0)
     expected_graph.add_edge(expected_import, expected_constant_call, type="caller")
     expected_graph.add_edge(expected_constant, expected_constant_call, type="input")
 
@@ -207,11 +207,11 @@ def test_nested_import_from():
     extracted_wir = extractor.extract_wir()
     expected_graph = networkx.DiGraph()
 
-    expected_import = WirVertex(0, "mlinspect.utils", "Import")
-    expected_call_one = WirVertex(1, "get_project_root", "Call")
+    expected_import = WirVertex(0, "mlinspect.utils", "Import", 1, 0)
+    expected_call_one = WirVertex(1, "get_project_root", "Call", 3, 6)
     expected_graph.add_edge(expected_import, expected_call_one, type="caller")
 
-    expected_call_two = WirVertex(2, "print", "Call")
+    expected_call_two = WirVertex(2, "print", "Call", 3, 0)
     expected_graph.add_edge(expected_call_one, expected_call_two, type="input")
 
     assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
@@ -229,13 +229,13 @@ def test_list_creation():
     extracted_wir = extractor.extract_wir()
     expected_graph = networkx.DiGraph()
 
-    expected_constant_one = WirVertex(0, "test1", "Constant")
-    expected_constant_two = WirVertex(1, "test2", "Constant")
-    expected_list = WirVertex(2, "as_list", "List")
+    expected_constant_one = WirVertex(0, "test1", "Constant", 1, 7)
+    expected_constant_two = WirVertex(1, "test2", "Constant", 1, 16)
+    expected_list = WirVertex(2, "as_list", "List", 1, 6)
     expected_graph.add_edge(expected_constant_one, expected_list, type="input")
     expected_graph.add_edge(expected_constant_two, expected_list, type="input")
 
-    expected_call = WirVertex(3, "print", "Call")
+    expected_call = WirVertex(3, "print", "Call", 1, 0)
     expected_graph.add_edge(expected_list, expected_call, type="input")
 
     assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
@@ -256,17 +256,17 @@ def test_index_subscript():
     extracted_wir = extractor.extract_wir()
     expected_graph = networkx.DiGraph()
 
-    expected_import = WirVertex(0, "pandas", "Import")
-    expected_constant_one = WirVertex(1, "test_path", "Constant")
-    expected_call = WirVertex(2, "read_csv", "Call")
+    expected_import = WirVertex(0, "pandas", "Import", 1, 0)
+    expected_constant_one = WirVertex(1, "test_path", "Constant", 3, 19)
+    expected_call = WirVertex(2, "read_csv", "Call", 3, 7)
     expected_graph.add_edge(expected_import, expected_call, type="caller")
     expected_graph.add_edge(expected_constant_one, expected_call, type="input")
 
-    expected_assign = WirVertex(3, "data", "Assign")
+    expected_assign = WirVertex(3, "data", "Assign", 3, 0)
     expected_graph.add_edge(expected_call, expected_assign, type="input")
 
-    expected_constant_two = WirVertex(4, "income-per-year", "Constant")
-    expected_index_subscript = WirVertex(5, "Index-Subscript", "Subscript")
+    expected_constant_two = WirVertex(4, "income-per-year", "Constant", 4, 5)
+    expected_index_subscript = WirVertex(5, "Index-Subscript", "Subscript", 4, 0)
     expected_graph.add_edge(expected_assign, expected_index_subscript, type="caller")
     expected_graph.add_edge(expected_constant_two, expected_index_subscript, type="input")
 
@@ -287,23 +287,23 @@ def test_tuples():
     extracted_wir = extractor.extract_wir()
     expected_graph = networkx.DiGraph()
 
-    expected_import_from = WirVertex(0, "sklearn", "Import")
-    expected_constant_one = WirVertex(1, "categorical", "Constant")
-    expected_constant_two = WirVertex(2, "ignore", "Constant")
+    expected_import_from = WirVertex(0, "sklearn", "Import", 1, 0)
+    expected_constant_one = WirVertex(1, "categorical", "Constant", 3, 1)
+    expected_constant_two = WirVertex(2, "ignore", "Constant", 3, 59)
     expected_keyword = WirVertex(3, "handle_unknown", "Keyword")
     expected_graph.add_edge(expected_constant_two, expected_keyword, type="input")
 
-    expected_call = WirVertex(4, "OneHotEncoder", "Call")
+    expected_call = WirVertex(4, "OneHotEncoder", "Call", 3, 16)
     expected_graph.add_edge(expected_import_from, expected_call, type="caller")
     expected_graph.add_edge(expected_keyword, expected_call, type="input")
 
-    expected_constant_three = WirVertex(5, "education", "Constant")
-    expected_constant_four = WirVertex(6, "workclass", "Constant")
-    expected_list = WirVertex(7, "as_list", "List")
+    expected_constant_three = WirVertex(5, "education", "Constant", 3, 71)
+    expected_constant_four = WirVertex(6, "workclass", "Constant", 3, 84)
+    expected_list = WirVertex(7, "as_list", "List", 3, 70)
     expected_graph.add_edge(expected_constant_three, expected_list, type="input")
     expected_graph.add_edge(expected_constant_four, expected_list, type="input")
 
-    expected_tuple = WirVertex(8, "as_tuple", "Tuple")
+    expected_tuple = WirVertex(8, "as_tuple", "Tuple", 3, 0)
     expected_graph.add_edge(expected_constant_one, expected_tuple, type="input")
     expected_graph.add_edge(expected_call, expected_tuple, type="input")
     expected_graph.add_edge(expected_list, expected_tuple, type="input")
@@ -345,16 +345,16 @@ def test_index_subscript_with_module_information():
     extractor.add_call_module_info(module_info)
     expected_graph = networkx.DiGraph()
 
-    expected_import = WirVertex(0, "pandas", "Import")
-    expected_constant_one = WirVertex(1, "test_path", "Constant")
+    expected_import = WirVertex(0, "pandas", "Import", 1, 0)
+    expected_constant_one = WirVertex(1, "test_path", "Constant", 3, 19)
     expected_call = WirVertex(2, "read_csv", "Call", 3, 7, ('pandas.io.parsers', 'read_csv'))
     expected_graph.add_edge(expected_import, expected_call, type="caller")
     expected_graph.add_edge(expected_constant_one, expected_call, type="input")
 
-    expected_assign = WirVertex(3, "data", "Assign")
+    expected_assign = WirVertex(3, "data", "Assign", 3, 0)
     expected_graph.add_edge(expected_call, expected_assign, type="input")
 
-    expected_constant_two = WirVertex(4, "income-per-year", "Constant")
+    expected_constant_two = WirVertex(4, "income-per-year", "Constant", 4, 5)
     expected_index_subscript = WirVertex(5, "Index-Subscript", "Subscript", 4, 0, ('pandas.core.frame', '__getitem__'))
     expected_graph.add_edge(expected_assign, expected_index_subscript, type="caller")
     expected_graph.add_edge(expected_constant_two, expected_index_subscript, type="input")
