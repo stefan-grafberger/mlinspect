@@ -4,8 +4,11 @@ Tests whether the PipelineExecutor works
 import os
 from inspect import cleandoc
 
+import networkx
+
 from mlinspect.utils import get_project_root
 from mlinspect.instrumentation import pipeline_executor
+from ..utils import get_expected_dag_adult_easy_py, get_expected_dag_adult_easy_ipynb
 
 FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 FILE_NB = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.ipynb")
@@ -23,7 +26,8 @@ def test_pipeline_executor_py_file(mocker):
     after_call_used_spy = mocker.spy(pipeline_executor, 'after_call_used')
 
     extracted_dag = pipeline_executor.singleton.run(None, FILE_PY, None)
-    assert extracted_dag == "test"
+    expected_dag = get_expected_dag_adult_easy_py()
+    assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
 
     assert before_call_used_value_spy.call_count == 11
     assert before_call_used_args_spy.call_count == 15
@@ -43,7 +47,8 @@ def test_pipeline_executor_nb_file(mocker):
     after_call_used_spy = mocker.spy(pipeline_executor, 'after_call_used')
 
     extracted_dag = pipeline_executor.singleton.run(FILE_NB, None, None)
-    assert extracted_dag == "test"
+    expected_dag = get_expected_dag_adult_easy_ipynb()
+    assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
 
     assert before_call_used_value_spy.call_count == 11
     assert before_call_used_args_spy.call_count == 15

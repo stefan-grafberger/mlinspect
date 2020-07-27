@@ -9,6 +9,7 @@ import nbformat
 from nbconvert import PythonExporter
 from .call_capture_transformer import CallCaptureTransformer
 from .wir_extractor import WirExtractor
+from .wir_to_dag_transformer import WirToDagTransformer
 
 
 class PipelineExecutor:
@@ -38,9 +39,11 @@ class PipelineExecutor:
         wir_extractor = WirExtractor(original_parsed_ast)
         wir_extractor.extract_wir()
         wir_with_module_info = wir_extractor.add_call_module_info(self.ast_call_node_id_to_module)
-        print(wir_with_module_info)
 
-        return "test"
+        cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(wir_with_module_info)
+        dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
+
+        return dag
 
     @staticmethod
     def instrument_pipeline(parsed_ast):

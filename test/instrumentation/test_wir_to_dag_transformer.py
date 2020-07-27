@@ -5,11 +5,11 @@ import ast
 import os
 import networkx
 
-from mlinspect.instrumentation.dag_vertex import DagVertex
 from mlinspect.instrumentation.wir_to_dag_transformer import WirToDagTransformer
 from mlinspect.instrumentation.wir_vertex import WirVertex
 from mlinspect.utils import get_project_root
 from mlinspect.instrumentation.wir_extractor import WirExtractor
+from ..utils import get_expected_dag_adult_easy_py
 
 FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 
@@ -52,7 +52,7 @@ def test_remove_all_non_operators_and_update_names():
 
         assert len(dag) == 4
 
-        expected_graph = get_expected_dag_adult_easy()
+        expected_graph = get_expected_dag_adult_easy_py()
 
         assert networkx.to_dict_of_dicts(cleaned_wir) == networkx.to_dict_of_dicts(expected_graph)
 
@@ -133,27 +133,5 @@ def get_expected_cleaned_wir_adult_easy():
 
     expected_print_two = WirVertex(58, "print", "Call", 31, 0, ('builtins', 'print'))
     expected_graph.add_node(expected_print_two)
-
-    return expected_graph
-
-
-def get_expected_dag_adult_easy():
-    """
-    Get the expected DAG for the adult_easy pipeline
-    """
-    expected_graph = networkx.DiGraph()
-
-    expected_data_source = DagVertex(18, "Data Source", 12, 11, ('pandas.io.parsers', 'read_csv'))
-    expected_graph.add_node(expected_data_source)
-
-    expected_select = DagVertex(20, "Selection", 14, 7, ('pandas.core.frame', 'dropna'))
-    expected_graph.add_edge(expected_data_source, expected_select)
-
-    expected_project = DagVertex(23, "Projection", 16, 38, ('pandas.core.frame', '__getitem__'))
-    expected_graph.add_edge(expected_select, expected_project)
-
-    expected_project_modify = DagVertex(28, "Projection (Modify)", 16, 9,
-                                        ('sklearn.preprocessing._label', 'label_binarize'))
-    expected_graph.add_edge(expected_project, expected_project_modify)
 
     return expected_graph
