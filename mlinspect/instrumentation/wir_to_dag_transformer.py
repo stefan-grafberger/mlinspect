@@ -28,14 +28,14 @@ class WirToDagTransformer:
                     if processed_nodes.issuperset(graph.predecessors(child)):
                         current_nodes.append(child)
 
-            if node.operation in ["Import", "Constant"]:
+            if node.operation in {"Import", "Constant"}:
                 graph.remove_node(node)
-            elif node.operation in ["Assign", "Keyword", "List", "Tuple"]:
+            elif node.operation in {"Assign", "Keyword", "List", "Tuple"}:
                 for parent in parents:
                     for child in children:
                         graph.add_edge(parent, child)
                 graph.remove_node(node)
-            elif node.operation in ["Call", "Subscript"]:
+            elif node.operation in {"Call", "Subscript"}:
                 pass
             else:
                 print("Unknown WIR Node Type: {}".format(node))
