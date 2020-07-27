@@ -23,8 +23,8 @@ def test_print_stmt():
     extracted_wir = extractor.extract_wir()
     expected_graph = networkx.DiGraph()
 
-    expected_constant = WirVertex(0, "test", "Constant")
-    expected_call = WirVertex(1, "print", "Call")
+    expected_constant = WirVertex(0, "test", "Constant", 1, 6)
+    expected_call = WirVertex(1, "print", "Call", 1, 0)
     expected_graph.add_edge(expected_constant, expected_call, type="input")
 
     assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)

@@ -164,7 +164,7 @@ class WirExtractor:
         assign_right_ast = ast_node.children[1]
         assign_right_wir = self.get_wir_node_for_ast(assign_right_ast)
         var_name = assign_left_ast.id
-        new_wir_node = WirVertex(self.get_next_wir_id(), var_name, "Assign")
+        new_wir_node = WirVertex(self.get_next_wir_id(), var_name, "Assign", ast_node.lineno, ast_node.col_offset)
         self.graph.add_node(new_wir_node)
         self.graph.add_edge(assign_right_wir, new_wir_node, type="input")
         self.store_variable_wir_mapping(var_name, new_wir_node)
@@ -173,7 +173,8 @@ class WirExtractor:
         """
         Creates a vertex for a constant in the code like a String or number
         """
-        new_wir_node = WirVertex(self.get_next_wir_id(), str(ast_node.n), "Constant")
+        new_wir_node = WirVertex(self.get_next_wir_id(), str(ast_node.n), "Constant", ast_node.lineno,
+                                 ast_node.col_offset)
         self.graph.add_node(new_wir_node)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
