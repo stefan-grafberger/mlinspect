@@ -3,11 +3,19 @@ Extract a DAG from the WIR (Workflow Intermediate Representation)
 """
 import networkx
 
+from mlinspect.instrumentation.dag_vertex import DagVertex
+
 
 class WirToDagTransformer:
     """
     Extract DAG from the WIR (Workflow Intermediate Representation)
     """
+
+    OPERATOR_MAP = {
+        ('pandas.io.parsers', 'read_csv'): "Data Source",
+        ('pandas.core.frame', 'dropna'): "Select",
+        ('pandas.core.frame', '__getitem__'): "Project"
+    }
 
     @staticmethod
     def remove_all_nodes_but_calls_and_subscripts(graph: networkx.DiGraph) -> networkx.DiGraph:
@@ -44,6 +52,42 @@ class WirToDagTransformer:
         # By modifying edges, most labels are lost, so we remove the rest of them too
         for (parent, child, edge_attributes) in graph.edges(data=True):
             edge_attributes.clear()
+
+        return graph
+
+    @staticmethod
+    def remove_all_non_operators_and_update_names(graph: networkx.DiGraph) -> networkx.DiGraph:
+        """
+        Removes all nodes that can not be a operator we might care about
+        """
+        current_nodes = [node for node in graph.nodes if len(list(graph.predecessors(node))) == 0]
+        processed_nodes = set()
+        while len(current_nodes) != 0:
+            node = current_nodes.pop(0)
+            processed_nodes.add(node)
+            parents = list(graph.predecessors(node))
+            children = list(graph.successors(node))
+
+            # Nodes can have multiple parents, only want to process them once we processed all parents
+            for child in children:
+                if child not in processed_nodes:
+                    if processed_nodes.issuperset(graph.predecessors(child)):
+                        current_nodes.append(child)
+
+            if node.module in WirToDagTransformer.OPERATOR_MAP:
+                new_dag_vertex = DagVertex(node.node_id, WirToDagTransformer.OPERATOR_MAP[node.module], node.lineno,
+                                           node.col_offset, node.module)
+                for parent in parents:
+                    graph.add_edge(parent, new_dag_vertex)
+                for child in children:
+                    graph.add_edge(new_dag_vertex, child)
+                graph.remove_node(node)
+                processed_nodes.add(new_dag_vertex)
+            else:
+                for parent in parents:
+                    for child in children:
+                        graph.add_edge(parent, child)
+                graph.remove_node(node)
 
         return graph
 

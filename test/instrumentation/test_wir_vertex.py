@@ -6,7 +6,7 @@ from mlinspect.instrumentation.wir_vertex import WirVertex
 
 def test_wir_repr():
     """
-    Tests whether the .py version of the inspector works
+    Tests whether the WirVertex works
     """
     vertex = WirVertex(1, "read_csv", "Call", 1, 5, ('pandas.io.parsers', 'read_csv'))
     assert str(vertex) == "(node_id=1: vertex_name='read_csv', op='Call', " \

@@ -4,6 +4,8 @@ Tests whether the DAG extraction works
 import ast
 import os
 import networkx
+
+from mlinspect.instrumentation.dag_vertex import DagVertex
 from mlinspect.instrumentation.wir_to_dag_transformer import WirToDagTransformer
 from mlinspect.instrumentation.wir_vertex import WirVertex
 from mlinspect.utils import get_project_root
@@ -28,7 +30,29 @@ def test_remove_all_nodes_but_calls_and_subscripts():
 
         assert len(cleaned_wir) == 15
 
-        expected_graph = get_expected_graph()
+        expected_graph = get_expected_cleaned_wir_adult_easy()
+
+        assert networkx.to_dict_of_dicts(cleaned_wir) == networkx.to_dict_of_dicts(expected_graph)
+
+
+def test_remove_all_non_operators_and_update_names():
+    """
+    Tests whether the WIR Extraction works for the adult_easy pipeline
+    """
+    with open(FILE_PY) as file:
+        test_code = file.read()
+
+        test_ast = ast.parse(test_code)
+        extractor = WirExtractor(test_ast)
+        extractor.extract_wir()
+        extracted_wir_with_module_info = extractor.add_call_module_info(get_module_info())
+
+        cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(extracted_wir_with_module_info)
+        dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
+
+        assert len(dag) == 3
+
+        expected_graph = get_expected_dag_adult_easy()
 
         assert networkx.to_dict_of_dicts(cleaned_wir) == networkx.to_dict_of_dicts(expected_graph)
 
@@ -56,9 +80,9 @@ def get_module_info():
     return module_info
 
 
-def get_expected_graph():
+def get_expected_cleaned_wir_adult_easy():
     """
-    Get the expected call graph for the adult_easy pipeline
+    Get the expected cleaned WIR for the adult_easy pipeline
     """
     # pylint: disable=too-many-locals
     expected_graph = networkx.DiGraph()
@@ -109,5 +133,23 @@ def get_expected_graph():
 
     expected_print_two = WirVertex(58, "print", "Call", 31, 0, ('builtins', 'print'))
     expected_graph.add_node(expected_print_two)
+
+    return expected_graph
+
+
+def get_expected_dag_adult_easy():
+    """
+    Get the expected DAG for the adult_easy pipeline
+    """
+    expected_graph = networkx.DiGraph()
+
+    expected_data_source = DagVertex(18, "Data Source", 12, 11, ('pandas.io.parsers', 'read_csv'))
+    expected_graph.add_node(expected_data_source)
+
+    expected_select = DagVertex(20, "Select", 14, 7, ('pandas.core.frame', 'dropna'))
+    expected_graph.add_edge(expected_data_source, expected_select)
+
+    expected_project = DagVertex(23, "Project", 16, 38, ('pandas.core.frame', '__getitem__'))
+    expected_graph.add_edge(expected_select, expected_project)
 
     return expected_graph
