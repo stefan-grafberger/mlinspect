@@ -2,30 +2,51 @@
 Tests whether the fluent API works
 """
 import os
+
+import networkx
+
 from mlinspect.utils import get_project_root
 from mlinspect.pipeline_inspector import PipelineInspector
+from .utils import get_expected_dag_adult_easy_ipynb, get_expected_dag_adult_easy_py
 
 FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 FILE_NB = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.ipynb")
 
 
-def test_py_pipeline_runs():
+def test_inspector_py_pipeline():
     """
-    Tests whether the .py version of the pipeline works
+    Tests whether the .py version of the inspector works
     """
-    result = PipelineInspector\
-        .on_python_pipeline(FILE_PY)\
+    extracted_dag = PipelineInspector\
+        .on_pipeline_from_py_file(FILE_PY)\
         .add_analyzer("test")\
         .execute()
-    assert result == "test"
+    expected_dag = get_expected_dag_adult_easy_py()
+    assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
 
 
-def test_nb_pipeline_runs():
+def test_inspector_ipynb_pipeline():
     """
-    Tests whether the .py version of the pipeline works
+    Tests whether the .ipynb version of the inspector works
     """
-    result = PipelineInspector\
-        .on_jupyter_pipeline(FILE_NB)\
+    extracted_dag = PipelineInspector\
+        .on_pipeline_from_ipynb_file(FILE_NB)\
         .add_analyzer("test")\
         .execute()
-    assert result == "test"
+    expected_dag = get_expected_dag_adult_easy_ipynb()
+    assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
+
+
+def test_inspector_str_pipeline():
+    """
+    Tests whether the str version of the inspector works
+    """
+    with open(FILE_PY) as file:
+        code = file.read()
+
+        extracted_dag = PipelineInspector\
+            .on_pipeline_from_string(code)\
+            .add_analyzer("test")\
+            .execute()
+        expected_dag = get_expected_dag_adult_easy_py()
+        assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)

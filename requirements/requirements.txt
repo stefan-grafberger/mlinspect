@@ -6,3 +6,4 @@ ipython==7.16.1
 astunparse==1.6.3
 astpretty==2.0.0
 astmonkey==0.3.6
+networkx==2.4
