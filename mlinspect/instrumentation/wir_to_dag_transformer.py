@@ -13,8 +13,9 @@ class WirToDagTransformer:
 
     OPERATOR_MAP = {
         ('pandas.io.parsers', 'read_csv'): "Data Source",
-        ('pandas.core.frame', 'dropna'): "Select",
-        ('pandas.core.frame', '__getitem__'): "Project"
+        ('pandas.core.frame', 'dropna'): "Selection",
+        ('pandas.core.frame', '__getitem__'): "Projection",
+        ('sklearn.preprocessing._label', 'label_binarize'): "Projection (Modify)"
     }
 
     @staticmethod

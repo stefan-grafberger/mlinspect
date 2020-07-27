@@ -50,7 +50,7 @@ def test_remove_all_non_operators_and_update_names():
         cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(extracted_wir_with_module_info)
         dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
 
-        assert len(dag) == 3
+        assert len(dag) == 4
 
         expected_graph = get_expected_dag_adult_easy()
 
@@ -146,10 +146,14 @@ def get_expected_dag_adult_easy():
     expected_data_source = DagVertex(18, "Data Source", 12, 11, ('pandas.io.parsers', 'read_csv'))
     expected_graph.add_node(expected_data_source)
 
-    expected_select = DagVertex(20, "Select", 14, 7, ('pandas.core.frame', 'dropna'))
+    expected_select = DagVertex(20, "Selection", 14, 7, ('pandas.core.frame', 'dropna'))
     expected_graph.add_edge(expected_data_source, expected_select)
 
-    expected_project = DagVertex(23, "Project", 16, 38, ('pandas.core.frame', '__getitem__'))
+    expected_project = DagVertex(23, "Projection", 16, 38, ('pandas.core.frame', '__getitem__'))
     expected_graph.add_edge(expected_select, expected_project)
+
+    expected_project_modify = DagVertex(28, "Projection (Modify)", 16, 9,
+                                        ('sklearn.preprocessing._label', 'label_binarize'))
+    expected_graph.add_edge(expected_project, expected_project_modify)
 
     return expected_graph
