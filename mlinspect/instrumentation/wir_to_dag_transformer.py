@@ -40,6 +40,11 @@ class WirToDagTransformer:
             else:
                 print("Unknown WIR Node Type: {}".format(node))
                 assert False
+
+        # By modifying edges, most labels are lost, so we remove the rest of them too
+        for (parent, child, edge_attributes) in graph.edges(data=True):
+            edge_attributes.clear()
+
         return graph
 
     def get_parent_operator_identifier_for_operator(self, lineno, col_offset):
