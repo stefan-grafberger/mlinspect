@@ -14,27 +14,32 @@ class WirToDagTransformer:
         """
         Removes all nodes that can not be a operator we might care about
         """
-        current_nodes = {node for node in graph.nodes if len(list(graph.predecessors(node))) == 0}
+        current_nodes = [node for node in graph.nodes if len(list(graph.predecessors(node))) == 0]
+        processed_nodes = set()
         while len(current_nodes) != 0:
-            for node in current_nodes:
-                parents = graph.predecessors(node)
-                children = graph.successors(node)
-                current_nodes = current_nodes.union(children)
+            node = current_nodes.pop(0)
+            processed_nodes.add(node)
+            parents = list(graph.predecessors(node))
+            children = list(graph.successors(node))
 
-                if node.operation in ["Import", "Constant"]:
-                    graph.remove_node(node)
-                    current_nodes.remove(node)
-                elif node.operation in ["Assign", "Keyword", "List", "Tuple"]:
-                    for parent in parents:
-                        for child in children:
-                            graph.add_edge(child, parent)
-                    graph.remove_node(node)
-                    current_nodes.remove(node)
-                elif node.operation in ["Call", "Subscript"]:
-                    current_nodes.remove(node)
-                else:
-                    print("Unknown WIR Node Type: {}".format(node))
-                    assert False
+            # Nodes can have multiple parents, only want to process them once we processed all parents
+            for child in children:
+                if child not in processed_nodes:
+                    if processed_nodes.issuperset(graph.predecessors(child)):
+                        current_nodes.append(child)
+
+            if node.operation in ["Import", "Constant"]:
+                graph.remove_node(node)
+            elif node.operation in ["Assign", "Keyword", "List", "Tuple"]:
+                for parent in parents:
+                    for child in children:
+                        graph.add_edge(parent, child)
+                graph.remove_node(node)
+            elif node.operation in ["Call", "Subscript"]:
+                pass
+            else:
+                print("Unknown WIR Node Type: {}".format(node))
+                assert False
         return graph
 
     def get_parent_operator_identifier_for_operator(self, lineno, col_offset):
