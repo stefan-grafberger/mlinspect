@@ -4,6 +4,7 @@ Extract a DAG from the WIR (Workflow Intermediate Representation)
 import networkx
 
 from mlinspect.instrumentation.dag_vertex import DagVertex
+from mlinspect.instrumentation.wir_vertex import WirVertex
 
 
 class WirToDagTransformer:
@@ -49,10 +50,38 @@ class WirToDagTransformer:
                                                and parent.name == "transformers"]
                 if len(transformers_keyword_parent) != 0:
                     transformer_keyword = transformers_keyword_parent[0]
-                    transformers = list(graph.predecessors(transformer_keyword))
+                    keyword_parents = list(graph.predecessors(transformer_keyword))
+                    transformers = keyword_parents[0]
                 else:
                     list_parents = [parent for parent in parents if parent.operation == "List"]
                     transformers = list_parents[0]
+                transformers_list = list(graph.predecessors(transformers))
+                module_name, func_name = node.module
+                new_module_name = "mlinspect." + module_name
+                new_module = (new_module_name, func_name)
+                concatenation_wir = WirVertex(node.node_id, "Concatenation", node.operation, node.lineno,
+                                              node.col_offset, new_module)
+                for transformer_tuple in transformers_list:
+                    tuple_parents = list(graph.predecessors(transformer_tuple))
+                    tuple_parents_with_arg_index = [(tuple_parent, graph.get_edge_data(tuple_parent, transformer_tuple))
+                                                    for tuple_parent in tuple_parents]
+                    tuple_parents = sorted(tuple_parents_with_arg_index, key=lambda x: x[1]['arg_index'])
+                    call_node = tuple_parents[1][0]
+                    column_list_node = tuple_parents[2][0]
+                    column_nodes = list(graph.predecessors(column_list_node))
+                    for column_node in column_nodes:
+                        column_name = column_node.name
+                        projection_wir = WirVertex(node.node_id, "Projection", node.operation, node.lineno,
+                                                   node.col_offset, new_module)
+
+                        for parent in parents:
+                            graph.add_edge(parent, projection_wir)
+                        # transformer etc
+                        graph.add_edge(projection_wir, call_node)
+                        graph.add_edge(projection_wir, concatenation_wir)
+                for child in children:
+                    graph.add_edge(concatenation_wir, child)
+                graph.remove_node(node)
             elif node.module == ('sklearn.pipeline', 'fit'):
                 pass
 
