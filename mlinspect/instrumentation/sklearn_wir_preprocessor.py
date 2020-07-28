@@ -11,10 +11,16 @@ class SklearnWirPreprocessor:
     """
     Preprocess Sklearn WIR nodes to enable DAG extraction
     """
+
+    KNOWN_SINGLE_STEPS = {
+        ('sklearn.preprocessing._encoders', 'OneHotEncoder'),
+        ('sklearn.preprocessing._data', 'StandardScaler')
+    }
+
     def __init__(self):
-        self.ast_node_to_sub_pipeline_beginning = {}
-        self.ast_node_to_sub_pipeline_end = {}
-        self.ast_nodes_to_delete_when_done = set()
+        self.wir_node_to_sub_pipeline_beginning = {}
+        self.wir_node_to_sub_pipeline_end = {}
+        self.wir_nodes_to_delete_when_done = set()
 
     # create a map that maps from pipeline entity to list of start ast nodes and an end ast node
     # add processing for scaler and onehot encoder etc too to initialize the map. then update it in
@@ -26,14 +32,17 @@ class SklearnWirPreprocessor:
         """
 
         def process_node(node, _):
-            if node.module == ('sklearn.pipeline', 'Pipeline'):
-                pass
+            if node.module in self.KNOWN_SINGLE_STEPS:
+                self.wir_node_to_sub_pipeline_beginning[node] = [node]
+                self.wir_node_to_sub_pipeline_end[node] = node
             elif node.module == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
                 self.preprocess_column_transformer(graph, node)
+            if node.module == ('sklearn.pipeline', 'Pipeline'):
+                pass
             elif node.module == ('sklearn.pipeline', 'fit'):
                 pass
 
-        graph.remove_nodes_from(self.ast_nodes_to_delete_when_done)
+        graph.remove_nodes_from(self.wir_nodes_to_delete_when_done)
         return traverse_graph_and_process_nodes(graph, process_node)
 
     def preprocess_column_transformer(self, graph, node):
@@ -55,8 +64,8 @@ class SklearnWirPreprocessor:
         for child in children:
             graph.add_edge(concatenation_wir, child)
 
-        self.ast_node_to_sub_pipeline_end[node] = concatenation_wir
-        self.ast_nodes_to_delete_when_done.add(node)
+        self.wir_node_to_sub_pipeline_end[node] = concatenation_wir
+        self.wir_nodes_to_delete_when_done.add(node)
 
     def preprocess_column_transformer_transformer_tuple(self, concatenation_wir, graph, node,
                                                         transformer_tuple):
@@ -75,17 +84,24 @@ class SklearnWirPreprocessor:
                                        node.lineno, node.col_offset, projection_module)
             projection_wirs.append(projection_wir)
 
+            # FIXME here i need a deep copy
+            # FIXME and we can not assume that it is only a single node. find pipeline beginning and end with the map
             new_call_module = (call_node.module[0], call_node.module[1], "Transformer")
             new_call_wir = WirVertex(column_node.node_id, call_node.name, call_node.operation,
                                      call_node.lineno, call_node.col_offset, new_call_module)
+            self.wir_nodes_to_delete_when_done.add(call_node) # plus other stuff
+            start_transformers = [new_call_wir]
+            end_transformer = new_call_wir
+
+            # end
 
             parents = list(graph.predecessors(node))
             for parent in parents:
                 graph.add_edge(parent, projection_wir)
-            graph.add_edge(projection_wir, new_call_wir)
-            graph.add_edge(new_call_wir, concatenation_wir)
-        self.ast_node_to_sub_pipeline_beginning[node] = projection_wirs
-        graph.remove_node(call_node)
+            for start_transformer in start_transformers:
+                graph.add_edge(projection_wir, start_transformer)
+            graph.add_edge(end_transformer, concatenation_wir)
+        self.wir_node_to_sub_pipeline_beginning[node] = projection_wirs
         graph.remove_nodes_from(sorted_tuple_parents)
         graph.remove_node(transformer_tuple)
 
