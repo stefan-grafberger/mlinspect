@@ -21,7 +21,7 @@ def test_sklearn_wir_preprocessing():
     extractor.extract_wir()
     extracted_wir_with_module_info = extractor.add_call_module_info(get_module_info())
 
-    preprocessed_wir = SklearnWirPreprocessor.sklearn_wir_preprocessing(extracted_wir_with_module_info)
+    preprocessed_wir = SklearnWirPreprocessor().sklearn_wir_preprocessing(extracted_wir_with_module_info)
     cleaned_wir = WirToDagTransformer.remove_all_nodes_but_calls_and_subscripts(preprocessed_wir)
     dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
 
