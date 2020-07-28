@@ -80,6 +80,9 @@ def get_module_info():
 
 
 def get_adult_easy_py_ast():
+    """
+    Get the parsed AST for the adult_easy pipeline
+    """
     with open(FILE_PY) as file:
         test_code = file.read()
 

@@ -4,6 +4,7 @@ Extract a DAG from the WIR (Workflow Intermediate Representation)
 import networkx
 
 from mlinspect.instrumentation.dag_vertex import DagVertex
+from mlinspect.utils import traverse_graph_and_process_nodes
 
 
 class WirToDagTransformer:
@@ -20,8 +21,8 @@ class WirToDagTransformer:
         ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Transformer'): "Transformer",
         ('sklearn.preprocessing._data', 'StandardScaler', 'Transformer'): "Transformer",
         ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Concatenation'): "Concatenation",
-        #('sklearn.tree._classes', 'DecisionTreeClassifier'): "Estimator",  # FIXME
-        #('sklearn.pipeline', 'fit'): "Fit Transformers and Estimators"
+        # ('sklearn.tree._classes', 'DecisionTreeClassifier'): "Estimator",  # FIXME
+        # ('sklearn.pipeline', 'fit'): "Fit Transformers and Estimators"
     }
 
     @staticmethod
@@ -29,26 +30,15 @@ class WirToDagTransformer:
         """
         Removes all nodes that can not be a operator we might care about
         """
-        current_nodes = [node for node in graph.nodes if len(list(graph.predecessors(node))) == 0]
-        processed_nodes = set()
-        while len(current_nodes) != 0:
-            node = current_nodes.pop(0)
-            processed_nodes.add(node)
-            parents = list(graph.predecessors(node))
-            children = list(graph.successors(node))
-
-            # Nodes can have multiple parents, only want to process them once we processed all parents
-            for child in children:
-                if child not in processed_nodes:
-                    if processed_nodes.issuperset(graph.predecessors(child)):
-                        current_nodes.append(child)
-
+        def process_node(node, _):
             if node.operation in {"Import", "Constant"}:
                 graph.remove_node(node)
             elif node.operation in {"Assign", "Keyword", "List", "Tuple"}:
-                for parent in parents:
-                    for child in children:
-                        graph.add_edge(parent, child)
+                parents = list(graph.predecessors(node))
+                children = list(graph.successors(node))
+                for parent_node in parents:
+                    for child_node in children:
+                        graph.add_edge(parent_node, child_node)
                 graph.remove_node(node)
             elif node.operation in {"Call", "Subscript"}:
                 pass
@@ -56,8 +46,10 @@ class WirToDagTransformer:
                 print("Unknown WIR Node Type: {}".format(node))
                 assert False
 
+        traverse_graph_and_process_nodes(graph, process_node)
+
         # By modifying edges, most labels are lost, so we remove the rest of them too
-        for (parent, child, edge_attributes) in graph.edges(data=True):
+        for (_, _, edge_attributes) in graph.edges(data=True):
             edge_attributes.clear()
 
         return graph
@@ -67,20 +59,9 @@ class WirToDagTransformer:
         """
         Removes all nodes that can not be a operator we might care about
         """
-        current_nodes = [node for node in graph.nodes if len(list(graph.predecessors(node))) == 0]
-        processed_nodes = set()
-        while len(current_nodes) != 0:
-            node = current_nodes.pop(0)
-            processed_nodes.add(node)
+        def process_node(node, processed_nodes):
             parents = list(graph.predecessors(node))
             children = list(graph.successors(node))
-
-            # Nodes can have multiple parents, only want to process them once we processed all parents
-            for child in children:
-                if child not in processed_nodes:
-                    if processed_nodes.issuperset(graph.predecessors(child)):
-                        current_nodes.append(child)
-
             if node.module in WirToDagTransformer.OPERATOR_MAP:
                 new_dag_vertex = DagVertex(node.node_id, WirToDagTransformer.OPERATOR_MAP[node.module], node.lineno,
                                            node.col_offset, node.module)
@@ -95,6 +76,8 @@ class WirToDagTransformer:
                     for child in children:
                         graph.add_edge(parent, child)
                 graph.remove_node(node)
+
+        traverse_graph_and_process_nodes(graph, process_node)
 
         return graph
 

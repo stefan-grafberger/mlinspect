@@ -4,6 +4,7 @@ Preprocess Sklearn WIR nodes to enable DAG extraction
 import networkx
 
 from mlinspect.instrumentation.wir_vertex import WirVertex
+from mlinspect.utils import traverse_graph_and_process_nodes
 
 
 class SklearnWirPreprocessor:
@@ -16,19 +17,8 @@ class SklearnWirPreprocessor:
         """
         Re-orders scikit-learn pipeline operations in order to create a dag for them
         """
-        current_nodes = [node for node in graph.nodes if len(list(graph.predecessors(node))) == 0]
-        processed_nodes = set()
-        while len(current_nodes) != 0:
-            node = current_nodes.pop(0)
-            processed_nodes.add(node)
-            children = list(graph.successors(node))
 
-            # Nodes can have multiple parents, only want to process them once we processed all parents
-            for child in children:
-                if child not in processed_nodes:
-                    if processed_nodes.issuperset(graph.predecessors(child)):
-                        current_nodes.append(child)
-
+        def process_node(node, _):
             if node.module == ('sklearn.pipeline', 'Pipeline'):
                 pass
             elif node.module == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
@@ -36,7 +26,7 @@ class SklearnWirPreprocessor:
             elif node.module == ('sklearn.pipeline', 'fit'):
                 pass
 
-        return graph
+        return traverse_graph_and_process_nodes(graph, process_node)
 
     @staticmethod
     def preprocess_column_transformer(graph, node):
@@ -82,7 +72,7 @@ class SklearnWirPreprocessor:
             parents = list(graph.predecessors(node))
             for parent in parents:
                 graph.add_edge(parent, projection_wir)
-            # transformer etc
+            # TODO: What if this is a pipeline, not a transformer?
             graph.add_edge(projection_wir, new_call_wir)
             graph.add_edge(new_call_wir, concatenation_wir)
         graph.remove_node(call_node)
