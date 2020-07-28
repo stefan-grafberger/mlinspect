@@ -1,60 +1,49 @@
 """
 Tests whether the DAG extraction works
 """
-import ast
-import os
 import networkx
 
 from mlinspect.instrumentation.wir_to_dag_transformer import WirToDagTransformer
 from mlinspect.instrumentation.wir_vertex import WirVertex
-from mlinspect.utils import get_project_root
 from mlinspect.instrumentation.wir_extractor import WirExtractor
-from ..utils import get_expected_dag_adult_easy_py, get_module_info
-
-FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
+from ..utils import get_expected_dag_adult_easy_py, get_module_info, get_adult_easy_py_ast
 
 
 def test_remove_all_nodes_but_calls_and_subscripts():
     """
     Tests whether the WIR Extraction works for the adult_easy pipeline
     """
-    with open(FILE_PY) as file:
-        test_code = file.read()
+    test_ast = get_adult_easy_py_ast()
+    extractor = WirExtractor(test_ast)
+    extractor.extract_wir()
+    extracted_wir_with_module_info = extractor.add_call_module_info(get_module_info())
 
-        test_ast = ast.parse(test_code)
-        extractor = WirExtractor(test_ast)
-        extractor.extract_wir()
-        extracted_wir_with_module_info = extractor.add_call_module_info(get_module_info())
+    cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(extracted_wir_with_module_info)
 
-        cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(extracted_wir_with_module_info)
+    assert len(cleaned_wir) == 15
 
-        assert len(cleaned_wir) == 15
+    expected_graph = get_expected_cleaned_wir_adult_easy()
 
-        expected_graph = get_expected_cleaned_wir_adult_easy()
-
-        assert networkx.to_dict_of_dicts(cleaned_wir) == networkx.to_dict_of_dicts(expected_graph)
+    assert networkx.to_dict_of_dicts(cleaned_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
 def test_remove_all_non_operators_and_update_names():
     """
     Tests whether the WIR Extraction works for the adult_easy pipeline
     """
-    with open(FILE_PY) as file:
-        test_code = file.read()
+    test_ast = get_adult_easy_py_ast()
+    extractor = WirExtractor(test_ast)
+    extractor.extract_wir()
+    extracted_wir_with_module_info = extractor.add_call_module_info(get_module_info())
 
-        test_ast = ast.parse(test_code)
-        extractor = WirExtractor(test_ast)
-        extractor.extract_wir()
-        extracted_wir_with_module_info = extractor.add_call_module_info(get_module_info())
+    cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(extracted_wir_with_module_info)
+    dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
 
-        cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(extracted_wir_with_module_info)
-        dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
+    assert len(dag) == 4
 
-        assert len(dag) == 4
+    expected_graph = get_expected_dag_adult_easy_py()
 
-        expected_graph = get_expected_dag_adult_easy_py()
-
-        assert networkx.to_dict_of_dicts(cleaned_wir) == networkx.to_dict_of_dicts(expected_graph)
+    assert networkx.to_dict_of_dicts(cleaned_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
 def get_expected_cleaned_wir_adult_easy():

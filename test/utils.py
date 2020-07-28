@@ -1,9 +1,15 @@
 """
 Some util functions used in other tests
 """
+import os
+import ast
 import networkx
 
 from mlinspect.instrumentation.dag_vertex import DagVertex
+from mlinspect.utils import get_project_root
+
+FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
+FILE_NB = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.ipynb")
 
 
 def get_expected_dag_adult_easy_py():
@@ -71,3 +77,11 @@ def get_module_info():
                    (31, 0): ('builtins', 'print')}
 
     return module_info
+
+
+def get_adult_easy_py_ast():
+    with open(FILE_PY) as file:
+        test_code = file.read()
+
+        test_ast = ast.parse(test_code)
+    return test_ast

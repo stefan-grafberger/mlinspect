@@ -32,14 +32,14 @@ class SklearnWirPreprocessor:
             if node.module == ('sklearn.pipeline', 'Pipeline'):
                 pass
             elif node.module == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
-                SklearnWirPreprocessor.preprocess_sklearn_column_transformer(graph, node)
+                SklearnWirPreprocessor.preprocess_column_transformer(graph, node)
             elif node.module == ('sklearn.pipeline', 'fit'):
                 pass
 
         return graph
 
     @staticmethod
-    def preprocess_sklearn_column_transformer(graph, node):
+    def preprocess_column_transformer(graph, node):
         """
         Re-orders scikit-learn ColumnTransformer operations in order to create a dag for them
         """
@@ -53,16 +53,16 @@ class SklearnWirPreprocessor:
         concatenation_wir = WirVertex(node.node_id, "Concatenation", "Call", node.lineno,
                                       node.col_offset, concat_module)
         for transformer_tuple in transformers_list:
-            SklearnWirPreprocessor.preprocess_sklearn_column_transformer_transformer_tuple(concatenation_wir, graph, node,
-                                                                                           transformer_tuple)
+            SklearnWirPreprocessor.preprocess_column_transformer_transformer_tuple(concatenation_wir, graph,
+                                                                                   node, transformer_tuple)
         graph.remove_nodes_from(transformers_list)
         for child in children:
             graph.add_edge(concatenation_wir, child)
         graph.remove_node(node)
 
     @staticmethod
-    def preprocess_sklearn_column_transformer_transformer_tuple(concatenation_wir, graph, node,
-                                                                transformer_tuple):
+    def preprocess_column_transformer_transformer_tuple(concatenation_wir, graph, node,
+                                                        transformer_tuple):
         """
         Re-orders scikit-learn ColumnTransformer transformer tuple nodes in order to create a dag for them
         """
