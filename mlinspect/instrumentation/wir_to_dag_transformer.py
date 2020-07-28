@@ -17,10 +17,11 @@ class WirToDagTransformer:
         ('pandas.core.frame', 'dropna'): "Selection",
         ('pandas.core.frame', '__getitem__'): "Projection",
         ('sklearn.preprocessing._label', 'label_binarize'): "Projection (Modify)",
-        #('sklearn.compose._column_transformer', 'ColumnTransformer'): "Projection",  # FIXME
-        #('sklearn.preprocessing._encoders', 'OneHotEncoder'): "Transformer",
-        #('sklearn.preprocessing._data', 'StandardScaler'): "Transformer",
-        #('sklearn.tree._classes', 'DecisionTreeClassifier'): "Estimator",
+        ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'): "Projection",
+        ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Transformer'): "Transformer",
+        ('sklearn.preprocessing._data', 'StandardScaler', 'Transformer'): "Transformer",
+        ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Concatenation'): "Concatenation",
+        #('sklearn.tree._classes', 'DecisionTreeClassifier'): "Estimator",  # FIXME
         #('sklearn.pipeline', 'fit'): "Fit Transformers and Estimators"
     }
 
@@ -34,7 +35,6 @@ class WirToDagTransformer:
         while len(current_nodes) != 0:
             node = current_nodes.pop(0)
             processed_nodes.add(node)
-            parents = list(graph.predecessors(node))
             children = list(graph.successors(node))
 
             # Nodes can have multiple parents, only want to process them once we processed all parents
@@ -46,46 +46,91 @@ class WirToDagTransformer:
             if node.module == ('sklearn.pipeline', 'Pipeline'):
                 pass
             elif node.module == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
-                transformers_keyword_parent = [parent for parent in parents if parent.operation == "Keyword"
-                                               and parent.name == "transformers"]
-                if len(transformers_keyword_parent) != 0:
-                    transformer_keyword = transformers_keyword_parent[0]
-                    keyword_parents = list(graph.predecessors(transformer_keyword))
-                    transformers = keyword_parents[0]
-                else:
-                    list_parents = [parent for parent in parents if parent.operation == "List"]
-                    transformers = list_parents[0]
-                transformers_list = list(graph.predecessors(transformers))
-                module_name, func_name = node.module
-                new_module_name = "mlinspect." + module_name
-                new_module = (new_module_name, func_name)
-                concatenation_wir = WirVertex(node.node_id, "Concatenation", node.operation, node.lineno,
-                                              node.col_offset, new_module)
-                for transformer_tuple in transformers_list:
-                    tuple_parents = list(graph.predecessors(transformer_tuple))
-                    tuple_parents_with_arg_index = [(tuple_parent, graph.get_edge_data(tuple_parent, transformer_tuple))
-                                                    for tuple_parent in tuple_parents]
-                    tuple_parents = sorted(tuple_parents_with_arg_index, key=lambda x: x[1]['arg_index'])
-                    call_node = tuple_parents[1][0]
-                    column_list_node = tuple_parents[2][0]
-                    column_nodes = list(graph.predecessors(column_list_node))
-                    for column_node in column_nodes:
-                        column_name = column_node.name
-                        projection_wir = WirVertex(node.node_id, "Projection", node.operation, node.lineno,
-                                                   node.col_offset, new_module)
-
-                        for parent in parents:
-                            graph.add_edge(parent, projection_wir)
-                        # transformer etc
-                        graph.add_edge(projection_wir, call_node)
-                        graph.add_edge(projection_wir, concatenation_wir)
-                for child in children:
-                    graph.add_edge(concatenation_wir, child)
-                graph.remove_node(node)
+                WirToDagTransformer.preprocess_sklearn_column_transformer(graph, node)
             elif node.module == ('sklearn.pipeline', 'fit'):
                 pass
 
         return graph
+
+    @staticmethod
+    def preprocess_sklearn_column_transformer(graph, node):
+        """
+        Re-orders scikit-learn ColumnTransformer operations in order to create a dag for them
+        """
+        parents = list(graph.predecessors(node))
+        children = list(graph.successors(node))
+
+        transformers_list = WirToDagTransformer.get_column_transformer_transformers_list(graph, parents)
+
+        # Concatenation node
+        concat_module = (node.module[0], node.module[1], "Concatenation")
+        concatenation_wir = WirVertex(node.node_id, "Concatenation", "Call", node.lineno,
+                                      node.col_offset, concat_module)
+        for transformer_tuple in transformers_list:
+            WirToDagTransformer.preprocess_sklearn_column_transformer_transformer_tuple(concatenation_wir, graph, node,
+                                                                                        transformer_tuple)
+        graph.remove_nodes_from(transformers_list)
+        for child in children:
+            graph.add_edge(concatenation_wir, child)
+        graph.remove_node(node)
+
+    @staticmethod
+    def preprocess_sklearn_column_transformer_transformer_tuple(concatenation_wir, graph, node,
+                                                                transformer_tuple):
+        """
+        Re-orders scikit-learn ColumnTransformer transformer tuple nodes in order to create a dag for them
+        """
+        sorted_tuple_parents = WirToDagTransformer.get_sorted_node_parents(graph, transformer_tuple)
+        call_node = sorted_tuple_parents[1]
+        column_list_node = sorted_tuple_parents[2]
+        column_constant_nodes = list(graph.predecessors(column_list_node))
+        for column_node in column_constant_nodes:
+            projection_module = (node.module[0], node.module[1], "Projection")
+            projection_wir = WirVertex(column_node.node_id, column_node.name, node.operation,
+                                       node.lineno, node.col_offset, projection_module)
+
+            new_call_module = (call_node.module[0], call_node.module[1], "Transformer")
+            new_call_wir = WirVertex(column_node.node_id, call_node.name, call_node.operation,
+                                     call_node.lineno, call_node.col_offset, new_call_module)
+
+            parents = list(graph.predecessors(node))
+            for parent in parents:
+                graph.add_edge(parent, projection_wir)
+            # transformer etc
+            graph.add_edge(projection_wir, new_call_wir)
+            graph.add_edge(new_call_wir, concatenation_wir)
+        graph.remove_node(call_node)
+        graph.remove_nodes_from(sorted_tuple_parents)
+        graph.remove_node(transformer_tuple)
+
+    @staticmethod
+    def get_sorted_node_parents(graph, node_with_parents):
+        """
+        Get the parent nodes of e.g., a tuple sorted by argument index.
+        """
+        node_parents = list(graph.predecessors(node_with_parents))
+        node_parents_with_arg_index = [(node_parent, graph.get_edge_data(node_parent, node_with_parents))
+                                       for node_parent in node_parents]
+        sorted_node_parents_with_arg_index = sorted(node_parents_with_arg_index, key=lambda x: x[1]['arg_index'])
+        sorted_node_parents = [node_parent[0] for node_parent in sorted_node_parents_with_arg_index]
+        return sorted_node_parents
+
+    @staticmethod
+    def get_column_transformer_transformers_list(graph, parents):
+        """
+        Get the 'transformers' argument of ColumnTransformers
+        """
+        transformers_keyword_parent = [parent for parent in parents if parent.operation == "Keyword"
+                                       and parent.name == "transformers"]
+        if len(transformers_keyword_parent) != 0:
+            transformer_keyword = transformers_keyword_parent[0]
+            keyword_parents = list(graph.predecessors(transformer_keyword))
+            transformers = keyword_parents[0]
+        else:
+            list_parents = [parent for parent in parents if parent.operation == "List"]
+            transformers = list_parents[0]
+        transformers_list = list(graph.predecessors(transformers))
+        return transformers_list
 
     @staticmethod
     def remove_all_nodes_but_calls_and_subscripts(graph: networkx.DiGraph) -> networkx.DiGraph:
