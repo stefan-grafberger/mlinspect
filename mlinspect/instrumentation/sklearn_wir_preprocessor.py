@@ -12,6 +12,10 @@ class SklearnWirPreprocessor:
     Preprocess Sklearn WIR nodes to enable DAG extraction
     """
 
+    # create a map that maps from pipeline entity to list of start ast nodes and an end ast node
+    # add processing for scaler and onehot encoder etc too to initialize the map. then update it in
+    # column transformer. fit and pipeline can then use this map too 
+
     @staticmethod
     def sklearn_wir_preprocessing(graph: networkx.DiGraph) -> networkx.DiGraph:
         """
