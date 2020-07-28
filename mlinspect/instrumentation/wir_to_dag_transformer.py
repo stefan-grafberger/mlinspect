@@ -15,8 +15,48 @@ class WirToDagTransformer:
         ('pandas.io.parsers', 'read_csv'): "Data Source",
         ('pandas.core.frame', 'dropna'): "Selection",
         ('pandas.core.frame', '__getitem__'): "Projection",
-        ('sklearn.preprocessing._label', 'label_binarize'): "Projection (Modify)"
+        ('sklearn.preprocessing._label', 'label_binarize'): "Projection (Modify)",
+        #('sklearn.compose._column_transformer', 'ColumnTransformer'): "Projection",  # FIXME
+        #('sklearn.preprocessing._encoders', 'OneHotEncoder'): "Transformer",
+        #('sklearn.preprocessing._data', 'StandardScaler'): "Transformer",
+        #('sklearn.tree._classes', 'DecisionTreeClassifier'): "Estimator",
+        #('sklearn.pipeline', 'fit'): "Fit Transformers and Estimators"
     }
+
+    @staticmethod
+    def sklearn_wir_preprocessing(graph: networkx.DiGraph) -> networkx.DiGraph:
+        """
+        Re-orders scikit-learn pipeline operations in order to create a dag for them
+        """
+        current_nodes = [node for node in graph.nodes if len(list(graph.predecessors(node))) == 0]
+        processed_nodes = set()
+        while len(current_nodes) != 0:
+            node = current_nodes.pop(0)
+            processed_nodes.add(node)
+            parents = list(graph.predecessors(node))
+            children = list(graph.successors(node))
+
+            # Nodes can have multiple parents, only want to process them once we processed all parents
+            for child in children:
+                if child not in processed_nodes:
+                    if processed_nodes.issuperset(graph.predecessors(child)):
+                        current_nodes.append(child)
+
+            if node.module == ('sklearn.pipeline', 'Pipeline'):
+                pass
+            elif node.module == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
+                transformers_keyword_parent = [parent for parent in parents if parent.operation == "Keyword"
+                                               and parent.name == "transformers"]
+                if len(transformers_keyword_parent) != 0:
+                    transformer_keyword = transformers_keyword_parent[0]
+                    transformers = list(graph.predecessors(transformer_keyword))
+                else:
+                    list_parents = [parent for parent in parents if parent.operation == "List"]
+                    transformers = list_parents[0]
+            elif node.module == ('sklearn.pipeline', 'fit'):
+                pass
+
+        return graph
 
     @staticmethod
     def remove_all_nodes_but_calls_and_subscripts(graph: networkx.DiGraph) -> networkx.DiGraph:

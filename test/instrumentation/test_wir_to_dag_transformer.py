@@ -57,6 +57,30 @@ def test_remove_all_non_operators_and_update_names():
         assert networkx.to_dict_of_dicts(cleaned_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
+def test_sklearn_wir_preprocessing():
+    """
+    Tests whether the WIR Extraction works for the adult_easy pipeline
+    """
+    with open(FILE_PY) as file:
+        test_code = file.read()
+
+        test_ast = ast.parse(test_code)
+        extractor = WirExtractor(test_ast)
+        extractor.extract_wir()
+        extracted_wir_with_module_info = extractor.add_call_module_info(get_module_info())
+
+        preprocessed_wir = WirToDagTransformer().sklearn_wir_preprocessing(extracted_wir_with_module_info)
+        cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(preprocessed_wir)
+        dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
+
+        # FIXME
+        assert len(dag) == 4
+
+        expected_graph = get_expected_dag_adult_easy_py()
+
+        assert networkx.to_dict_of_dicts(cleaned_wir) == networkx.to_dict_of_dicts(expected_graph)
+
+
 def get_module_info():
     """
     Get the module info for the adult_easy pipeline
