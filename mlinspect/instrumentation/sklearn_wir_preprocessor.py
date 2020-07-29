@@ -213,7 +213,7 @@ class SklearnWirPreprocessor:
         for column_node in column_constant_nodes:
             projection_module = (node.module[0], node.module[1], "Projection")
             projection_wir = WirVertex(column_node.node_id, column_node.name, node.operation,
-                                       node.lineno, node.col_offset, projection_module)
+                                       column_node.lineno, column_node.col_offset, projection_module)
             projection_wirs.append(projection_wir)
 
             start_transformers, end_transformer = self.preprocess_column_transformer_copy_transformer_per_column(
