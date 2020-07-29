@@ -25,18 +25,21 @@ def get_expected_dag_adult_easy_py():
     expected_select = DagVertex(20, "Selection", 14, 7, ('pandas.core.frame', 'dropna'))
     expected_graph.add_edge(expected_data_source, expected_select)
 
+    expected_train_data = DagVertex(56, "Train Data", 28, 0, ('sklearn.pipeline', 'fit', 'Train Data'))
+    expected_graph.add_edge(expected_select, expected_train_data)
+
     expected_pipeline_project_one = DagVertex(34, "Projection", 18, 25, ('sklearn.compose._column_transformer',
                                                                          'ColumnTransformer', 'Projection'))
-    expected_graph.add_edge(expected_select, expected_pipeline_project_one)
+    expected_graph.add_edge(expected_train_data, expected_pipeline_project_one)
     expected_pipeline_project_two = DagVertex(35, "Projection", 18, 25, ('sklearn.compose._column_transformer',
                                                                          'ColumnTransformer', 'Projection'))
-    expected_graph.add_edge(expected_select, expected_pipeline_project_two)
+    expected_graph.add_edge(expected_train_data, expected_pipeline_project_two)
     expected_pipeline_project_three = DagVertex(40, "Projection", 18, 25, ('sklearn.compose._column_transformer',
                                                                            'ColumnTransformer', 'Projection'))
-    expected_graph.add_edge(expected_select, expected_pipeline_project_three)
+    expected_graph.add_edge(expected_train_data, expected_pipeline_project_three)
     expected_pipeline_project_four = DagVertex(41, "Projection", 18, 25, ('sklearn.compose._column_transformer',
                                                                           'ColumnTransformer', 'Projection'))
-    expected_graph.add_edge(expected_select, expected_pipeline_project_four)
+    expected_graph.add_edge(expected_train_data, expected_pipeline_project_four)
 
     expected_pipeline_transformer_one = DagVertex(34, "Transformer", 19, 20, ('sklearn.preprocessing._encoders',
                                                                               'OneHotEncoder', 'Pipeline'))
@@ -72,7 +75,10 @@ def get_expected_dag_adult_easy_py():
     expected_project_modify = DagVertex(28, "Projection (Modify)", 16, 9,
                                         ('sklearn.preprocessing._label', 'label_binarize'))
     expected_graph.add_edge(expected_project, expected_project_modify)
-    expected_graph.add_edge(expected_project_modify, expected_pipeline_fit)
+
+    expected_train_labels = DagVertex(56, "Train Labels", 28, 0, ('sklearn.pipeline', 'fit', 'Train Labels'))
+    expected_graph.add_edge(expected_project_modify, expected_train_labels)
+    expected_graph.add_edge(expected_train_labels, expected_pipeline_fit)
 
     return expected_graph
 
@@ -90,18 +96,21 @@ def get_expected_dag_adult_easy_ipynb():
     expected_select = DagVertex(20, "Selection", 20, 7, ('pandas.core.frame', 'dropna'))
     expected_graph.add_edge(expected_data_source, expected_select)
 
+    expected_train_data = DagVertex(56, "Train Data", 34, 0, ('sklearn.pipeline', 'fit', 'Train Data'))
+    expected_graph.add_edge(expected_select, expected_train_data)
+
     expected_pipeline_project_one = DagVertex(34, "Projection", 24, 25, ('sklearn.compose._column_transformer',
                                                                          'ColumnTransformer', 'Projection'))
-    expected_graph.add_edge(expected_select, expected_pipeline_project_one)
+    expected_graph.add_edge(expected_train_data, expected_pipeline_project_one)
     expected_pipeline_project_two = DagVertex(35, "Projection", 24, 25, ('sklearn.compose._column_transformer',
                                                                          'ColumnTransformer', 'Projection'))
-    expected_graph.add_edge(expected_select, expected_pipeline_project_two)
+    expected_graph.add_edge(expected_train_data, expected_pipeline_project_two)
     expected_pipeline_project_three = DagVertex(40, "Projection", 24, 25, ('sklearn.compose._column_transformer',
                                                                            'ColumnTransformer', 'Projection'))
-    expected_graph.add_edge(expected_select, expected_pipeline_project_three)
+    expected_graph.add_edge(expected_train_data, expected_pipeline_project_three)
     expected_pipeline_project_four = DagVertex(41, "Projection", 24, 25, ('sklearn.compose._column_transformer',
                                                                           'ColumnTransformer', 'Projection'))
-    expected_graph.add_edge(expected_select, expected_pipeline_project_four)
+    expected_graph.add_edge(expected_train_data, expected_pipeline_project_four)
 
     expected_pipeline_transformer_one = DagVertex(34, "Transformer", 25, 20, ('sklearn.preprocessing._encoders',
                                                                               'OneHotEncoder', 'Pipeline'))
@@ -137,7 +146,10 @@ def get_expected_dag_adult_easy_ipynb():
     expected_project_modify = DagVertex(28, "Projection (Modify)", 22, 9,
                                         ('sklearn.preprocessing._label', 'label_binarize'))
     expected_graph.add_edge(expected_project, expected_project_modify)
-    expected_graph.add_edge(expected_project_modify, expected_pipeline_fit)
+
+    expected_train_labels = DagVertex(56, "Train Labels", 34, 0, ('sklearn.pipeline', 'fit', 'Train Labels'))
+    expected_graph.add_edge(expected_project_modify, expected_train_labels)
+    expected_graph.add_edge(expected_train_labels, expected_pipeline_fit)
 
     return expected_graph
 

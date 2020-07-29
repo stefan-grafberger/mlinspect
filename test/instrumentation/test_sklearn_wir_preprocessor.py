@@ -27,7 +27,7 @@ def test_sklearn_wir_preprocessing():
     cleaned_wir = WirToDagTransformer.remove_all_nodes_but_calls_and_subscripts(preprocessed_wir)
     dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
 
-    assert len(dag) == 15
+    assert len(dag) == 17
 
     expected_dag = get_expected_dag_adult_easy_py()
 

@@ -102,17 +102,25 @@ class SklearnWirPreprocessor:
         pipeline_start = self.wir_node_to_sub_pipeline_start[actual_pipeline_node]
         pipeline_end = self.wir_node_to_sub_pipeline_end[actual_pipeline_node]
 
-        new_module = (node.module[0], node.module[1], "Pipeline")
+        new_fit_module = (node.module[0], node.module[1], "Pipeline")
         new_pipeline_fit_node = WirVertex(node.node_id, node.name, node.operation, node.lineno, node.col_offset,
-                                          new_module)
+                                          new_fit_module)
 
+        new_train_data_module = (node.module[0], node.module[1], "Train Data")
+        new_pipeline_train_data_node = WirVertex(node.node_id, "Train Data", node.operation, node.lineno,
+                                                 node.col_offset, new_train_data_module)
+        graph.add_edge(data_node, new_pipeline_train_data_node)
         for start_node in pipeline_start:
-            graph.add_edge(data_node, start_node)
+            graph.add_edge(new_pipeline_train_data_node, start_node)
 
         graph.add_edge(pipeline_end, new_pipeline_fit_node)
 
         if target_node_or_none:
-            graph.add_edge(target_node_or_none, new_pipeline_fit_node)
+            new_train_data_module = (node.module[0], node.module[1], "Train Labels")
+            new_pipeline_train_labels_node = WirVertex(node.node_id, "Train Labels", node.operation, node.lineno,
+                                                       node.col_offset, new_train_data_module)
+            graph.add_edge(target_node_or_none, new_pipeline_train_labels_node)
+            graph.add_edge(new_pipeline_train_labels_node, new_pipeline_fit_node)
 
 
 
