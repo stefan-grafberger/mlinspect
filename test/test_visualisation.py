@@ -3,9 +3,9 @@ Tests whether the visualisation of the resulting DAG works
 """
 import os
 
+from test.utils import get_expected_dag_adult_easy_py
 from mlinspect.utils import get_project_root
 from mlinspect.visualisation import save_fig_to_path
-from test.utils import get_expected_dag_adult_easy_py
 
 FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 
