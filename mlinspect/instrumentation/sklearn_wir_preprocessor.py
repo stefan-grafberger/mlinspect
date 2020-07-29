@@ -124,8 +124,6 @@ class SklearnWirPreprocessor:
             graph.add_edge(target_node_or_none, new_pipeline_train_labels_node)
             graph.add_edge(new_pipeline_train_labels_node, new_pipeline_fit_node)
 
-
-
     @staticmethod
     def get_column_transformer_transformers_arg(graph, node):
         """
