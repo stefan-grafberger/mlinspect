@@ -31,7 +31,8 @@ class SklearnWirPreprocessor:
 
     def sklearn_wir_preprocessing(self, graph: networkx.DiGraph) -> networkx.DiGraph:
         """
-        Re-orders scikit-learn pipeline operations in order to create a dag for them
+        Preprocess scikit-learn pipeline operations to hide the special pipeline
+        declaration style from other parts of the library
         """
 
         def process_node(node, _):
