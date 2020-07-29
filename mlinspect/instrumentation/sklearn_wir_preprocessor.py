@@ -56,7 +56,8 @@ class SklearnWirPreprocessor:
 
     def preprocess_column_transformer(self, graph, node):
         """
-        Re-orders scikit-learn ColumnTransformer operations in order to create a dag for them
+        Preprocessing for ColumnTransformers: Introduce projection and concatenation nodes,
+        create one transformer of the specified type for each column
         """
         transformers_arg = self.get_column_transformer_transformers_arg(graph, node)
 
@@ -76,7 +77,7 @@ class SklearnWirPreprocessor:
 
     def preprocess_pipeline(self, graph, node):
         """
-        Re-orders scikit-learn Pipeline operations in order to create a dag for them
+        Preprocessing for Pipelines: Chains the transformer nodes behind each other
         """
         transformers_list = self.get_pipeline_steps_arg_transformers(graph, node)
 
@@ -93,7 +94,8 @@ class SklearnWirPreprocessor:
 
     def preprocess_pipeline_fit(self, graph, node):
         """
-        Re-orders scikit-learn Pipeline fit operations in order to create a dag for them
+        Preprocessing for Pipeline.fit: Inputs the train data into the beginning of the pipeline-chain,
+        creates Train Data and Train Labels DAG nodes
         """
         actual_pipeline_node = self.get_pipeline_fit_pipeline_node(graph, node)
         data_node = self.get_pipeline_fit_arg_node(graph, node, 0)
@@ -127,7 +129,7 @@ class SklearnWirPreprocessor:
     @staticmethod
     def get_column_transformer_transformers_arg(graph, node):
         """
-        Get the 'transformers' argument of ColumnTransformers
+        Get the 'transformers' list argument of ColumnTransformers
         """
         parents = list(graph.predecessors(node))
         transformers_keyword_parent = [parent for parent in parents if parent.operation == "Keyword"
@@ -144,7 +146,7 @@ class SklearnWirPreprocessor:
 
     def get_pipeline_steps_arg_transformers(self, graph, node):
         """
-        Get the 'transformers' argument of ColumnTransformers
+        Get the sub-pipelines specified in the 'steps' argument of Pipelines
         """
         parents = list(graph.predecessors(node))
         parents_with_arg_index = [(parent, graph.get_edge_data(parent, node)) for parent in parents]
@@ -187,7 +189,7 @@ class SklearnWirPreprocessor:
     @staticmethod
     def get_pipeline_fit_arg_node(graph, node, index):
         """
-        Get the 'pipeline' value of Pipeline.fit
+        Get the train_data and train_label arguments of Pipeline.fit
         """
         parents = list(graph.predecessors(node))
         parents_with_arg_index = [(parent, graph.get_edge_data(parent, node)) for parent in parents]
@@ -202,7 +204,8 @@ class SklearnWirPreprocessor:
     def preprocess_column_transformer_transformer_tuple(self, concatenation_wir, graph, node,
                                                         transformer_tuple):
         """
-        Re-orders scikit-learn ColumnTransformer transformer tuple nodes in order to create a dag for them
+        Preprocessing for ColumnTransformers: Introduce projection nodes,
+        create one transformer of the specified type for each column
         """
         # pylint: disable=too-many-locals
         sorted_tuple_parents = get_sorted_node_parents(graph, transformer_tuple)
@@ -229,7 +232,8 @@ class SklearnWirPreprocessor:
 
     def preprocess_column_transformer_copy_transformer_per_column(self, graph, transformer_node, new_node_id):
         """
-        Each transformer in a ColumnTransformer needs to be copied for each column
+        Preprocessing for ColumnTransformers: Each transformer in a ColumnTransformer needs to be copied for
+        each column
         """
         transformer_node = self.get_sklearn_call_wir_node(graph, transformer_node)
         start_copy = set(self.wir_node_to_sub_pipeline_start[transformer_node])
@@ -267,8 +271,9 @@ class SklearnWirPreprocessor:
 
     def get_sklearn_call_wir_node(self, graph, transformer):
         """
-        Get a sklearn call that is a parent to the transformer node.
-        This is not straight-forward, as there can be steps in-between, e.g., Assigns.
+        Get a sklearn call that is the transformer WIR node or a parent of it.
+        This is not straight-forward, as there can be many steps in-between, e.g., Assigns, Lists,
+        Subscripts, Calls, etc.
         We currently deal with Assigns, but not the worst possible cases like
         nested lists or tuples with multiple transformers from which one is chosen with a
         subscript.
