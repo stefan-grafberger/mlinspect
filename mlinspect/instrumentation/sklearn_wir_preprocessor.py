@@ -20,7 +20,6 @@ class SklearnWirPreprocessor:
     def __init__(self):
         self.wir_node_to_sub_pipeline_beginning = {}
         self.wir_node_to_sub_pipeline_end = {}
-        self.wir_nodes_to_delete_when_done = set()
 
     # create a map that maps from pipeline entity to list of start ast nodes and an end ast node
     # add processing for scaler and onehot encoder etc too to initialize the map. then update it in
@@ -42,8 +41,8 @@ class SklearnWirPreprocessor:
             elif node.module == ('sklearn.pipeline', 'fit'):
                 pass
 
-        graph.remove_nodes_from(self.wir_nodes_to_delete_when_done)
-        return traverse_graph_and_process_nodes(graph, process_node)
+        graph = traverse_graph_and_process_nodes(graph, process_node)
+        return graph
 
     def preprocess_column_transformer(self, graph, node):
         """
@@ -52,7 +51,7 @@ class SklearnWirPreprocessor:
         parents = list(graph.predecessors(node))
         children = list(graph.successors(node))
 
-        transformers_list = SklearnWirPreprocessor.get_column_transformer_transformers_list(graph, parents)
+        transformers_list = self.get_column_transformer_transformers_list(graph, parents)
 
         # Concatenation node
         concat_module = (node.module[0], node.module[1], "Concatenation")
@@ -65,7 +64,6 @@ class SklearnWirPreprocessor:
             graph.add_edge(concatenation_wir, child)
 
         self.wir_node_to_sub_pipeline_end[node] = concatenation_wir
-        self.wir_nodes_to_delete_when_done.add(node)
 
     def preprocess_column_transformer_transformer_tuple(self, concatenation_wir, graph, node,
                                                         transformer_tuple):
@@ -73,7 +71,7 @@ class SklearnWirPreprocessor:
         Re-orders scikit-learn ColumnTransformer transformer tuple nodes in order to create a dag for them
         """
         # pylint: disable=too-many-locals
-        sorted_tuple_parents = SklearnWirPreprocessor.get_sorted_node_parents(graph, transformer_tuple)
+        sorted_tuple_parents = self.get_sorted_node_parents(graph, transformer_tuple)
         call_node = sorted_tuple_parents[1]
         column_list_node = sorted_tuple_parents[2]
         column_constant_nodes = list(graph.predecessors(column_list_node))
@@ -84,14 +82,8 @@ class SklearnWirPreprocessor:
                                        node.lineno, node.col_offset, projection_module)
             projection_wirs.append(projection_wir)
 
-            # FIXME here i need a deep copy
-            # FIXME and we can not assume that it is only a single node. find pipeline beginning and end with the map
-            new_call_module = (call_node.module[0], call_node.module[1], "Transformer")
-            new_call_wir = WirVertex(column_node.node_id, call_node.name, call_node.operation,
-                                     call_node.lineno, call_node.col_offset, new_call_module)
-            self.wir_nodes_to_delete_when_done.add(call_node) # plus other stuff
-            start_transformers = [new_call_wir]
-            end_transformer = new_call_wir
+            end_transformer, start_transformers = self.preprocess_column_transformer_copy_transformer_per_column(
+                call_node, column_node)
 
             # end
 
@@ -102,8 +94,21 @@ class SklearnWirPreprocessor:
                 graph.add_edge(projection_wir, start_transformer)
             graph.add_edge(end_transformer, concatenation_wir)
         self.wir_node_to_sub_pipeline_beginning[node] = projection_wirs
-        graph.remove_nodes_from(sorted_tuple_parents)
-        graph.remove_node(transformer_tuple)
+
+    @staticmethod
+    def preprocess_column_transformer_copy_transformer_per_column(call_node, column_node):
+        """
+        Each transformer in a ColumnTransformer needs to be copied for each column
+        """
+        # FIXME here i need a deep copy for all transformers
+        # FIXME and we can not assume that it is only a single node. find pipeline beginning and end with the map
+        new_call_module = (call_node.module[0], call_node.module[1], "Transformer")
+        new_call_wir = WirVertex(column_node.node_id, call_node.name, call_node.operation,
+                                 call_node.lineno, call_node.col_offset, new_call_module)
+        # self.wir_nodes_to_delete_when_done.add(call_node)  # plus other stuff if pipeline not a single node
+        start_transformers = [new_call_wir]
+        end_transformer = new_call_wir
+        return end_transformer, start_transformers
 
     @staticmethod
     def get_sorted_node_parents(graph, node_with_parents):
