@@ -42,7 +42,7 @@ class SklearnWirPreprocessor:
             if node.module == ('sklearn.pipeline', 'Pipeline'):
                 self.preprocess_pipeline(graph, node)
             elif node.module == ('sklearn.pipeline', 'fit'):
-                pass
+                self.preprocess_pipeline_fit(graph, node)
 
         graph = traverse_graph_and_process_nodes(graph, process_node)
         return graph
@@ -64,6 +64,7 @@ class SklearnWirPreprocessor:
         concatenation_wir = WirVertex(node.node_id, "Concatenation", "Call", node.lineno,
                                       node.col_offset, concat_module)
 
+        self.wir_node_to_sub_pipeline_start[node] = []
         for transformer_tuple in transformers_arg:
             self.preprocess_column_transformer_transformer_tuple(concatenation_wir, graph, node, transformer_tuple)
 
@@ -75,7 +76,7 @@ class SklearnWirPreprocessor:
 
     def preprocess_pipeline(self, graph, node):
         """
-        Re-orders scikit-learn ColumnTransformer operations in order to create a dag for them
+        Re-orders scikit-learn Pipeline operations in order to create a dag for them
         """
         transformers_list = self.get_pipeline_steps_arg_transformers(graph, node)
 
@@ -89,6 +90,31 @@ class SklearnWirPreprocessor:
         pipeline_end = self.wir_node_to_sub_pipeline_end[transformers_list[-1]]
         self.wir_node_to_sub_pipeline_start[node] = pipeline_start
         self.wir_node_to_sub_pipeline_end[node] = pipeline_end
+
+    def preprocess_pipeline_fit(self, graph, node):
+        """
+        Re-orders scikit-learn Pipeline fit operations in order to create a dag for them
+        """
+        direct_pipeline_parent_node, actual_pipeline_node = self.get_pipeline_fit_pipeline_node(graph, node)
+        data_node = self.get_pipeline_fit_arg_node(graph, node, 0)
+        target_node_or_none = self.get_pipeline_fit_arg_node(graph, node, 1)
+
+        pipeline_start = self.wir_node_to_sub_pipeline_start[actual_pipeline_node]
+        pipeline_end = self.wir_node_to_sub_pipeline_end[actual_pipeline_node]
+
+        new_module = (node.module[0], node.module[1], "Pipeline")
+        new_pipeline_fit_node = WirVertex(node.node_id, node.name, node.operation, node.lineno, node.col_offset,
+                                          new_module)
+
+        for start_node in pipeline_start:
+            graph.add_edge(data_node, start_node)
+
+        graph.add_edge(pipeline_end, new_pipeline_fit_node)
+
+        if target_node_or_none:
+            graph.add_edge(target_node_or_none, new_pipeline_fit_node)
+
+
 
     @staticmethod
     def get_column_transformer_transformers_arg(graph, node):
@@ -136,6 +162,35 @@ class SklearnWirPreprocessor:
 
         return transformers_list
 
+    def get_pipeline_fit_pipeline_node(self, graph, node):
+        """
+        Get the 'pipeline' value of Pipeline.fit
+        """
+        parents = list(graph.predecessors(node))
+        parents_with_arg_index = [(parent, graph.get_edge_data(parent, node)) for parent in parents]
+        direct_pipeline_parent_node = [parent for parent in parents_with_arg_index if
+                                       parent[1]['arg_index'] == -1][0][0]
+        actual_pipeline_node = self.get_sklearn_call_wir_node(graph, direct_pipeline_parent_node)
+
+        assert actual_pipeline_node.operation == "Call"
+
+        return direct_pipeline_parent_node, actual_pipeline_node
+
+    @staticmethod
+    def get_pipeline_fit_arg_node(graph, node, index):
+        """
+        Get the 'pipeline' value of Pipeline.fit
+        """
+        parents = list(graph.predecessors(node))
+        parents_with_arg_index = [(parent, graph.get_edge_data(parent, node)) for parent in parents]
+        arg_node_list = [parent for parent in parents_with_arg_index if parent[1]['arg_index'] == index]
+
+        arg_node = None
+        if arg_node_list:
+            arg_node = arg_node_list[0][0]
+
+        return arg_node
+
     def preprocess_column_transformer_transformer_tuple(self, concatenation_wir, graph, node,
                                                         transformer_tuple):
         """
@@ -162,7 +217,7 @@ class SklearnWirPreprocessor:
             for start_transformer in start_transformers:
                 graph.add_edge(projection_wir, start_transformer)
             graph.add_edge(end_transformer, concatenation_wir)
-        self.wir_node_to_sub_pipeline_start[node] = projection_wirs
+        self.wir_node_to_sub_pipeline_start[node].extend(projection_wirs)
 
     def preprocess_column_transformer_copy_transformer_per_column(self, graph, transformer_node, new_node_id):
         """

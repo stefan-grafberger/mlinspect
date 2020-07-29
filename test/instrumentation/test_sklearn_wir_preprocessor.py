@@ -3,6 +3,8 @@ Tests whether the Sklearn DAG extraction works
 """
 import os
 
+import networkx
+
 from mlinspect.instrumentation.wir_extractor import WirExtractor
 from mlinspect.instrumentation.sklearn_wir_preprocessor import SklearnWirPreprocessor
 from mlinspect.instrumentation.wir_to_dag_transformer import WirToDagTransformer
@@ -25,8 +27,8 @@ def test_sklearn_wir_preprocessing():
     cleaned_wir = WirToDagTransformer.remove_all_nodes_but_calls_and_subscripts(preprocessed_wir)
     dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
 
-    assert len(dag) == 14
+    assert len(dag) == 15
 
     # expected_dag = get_expected_dag_adult_easy_py()
 
-    # assert networkx.to_dict_of_dicts(preprocessed_wir) == {} #networkx.to_dict_of_dicts(expected_dag)
+    assert networkx.to_dict_of_dicts(preprocessed_wir) == {} #networkx.to_dict_of_dicts(expected_dag)

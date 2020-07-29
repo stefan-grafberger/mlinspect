@@ -22,7 +22,7 @@ class WirToDagTransformer:
         ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'): "Transformer",
         ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Concatenation'): "Concatenation",
         ('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'): "Estimator",
-        # ('sklearn.pipeline', 'fit'): "Fit Transformers and Estimators" # FIXME
+        ('sklearn.pipeline', 'fit', 'Pipeline'): "Fit Transformers and Estimators"
     }
 
     @staticmethod
