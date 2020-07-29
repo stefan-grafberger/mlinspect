@@ -144,35 +144,15 @@ class SklearnWirPreprocessor:
             if current_node == end_copy:
                 end_transformer.append(copied_wir)
 
-        self.traverse_graph_and_process_nodes_with_start_and_end(graph, list(start_copy), end_copy, copy_node)
+        def child_filter(child):
+            return child.module and len(child.module) == 3
+
+        traverse_graph_and_process_nodes(graph, copy_node, list(start_copy), end_copy, child_filter)
 
         assert start_transformers
         assert end_transformer
 
         return start_transformers, end_transformer[0]
-
-    @staticmethod
-    def traverse_graph_and_process_nodes_with_start_and_end(graph: networkx.DiGraph, start_nodes, end_node, func):
-        """
-        Traverse the WIR node by node from top to bottom
-        """
-        current_nodes = start_nodes
-        processed_nodes = set()
-        while len(current_nodes) != 0:
-            node = current_nodes.pop(0)
-            processed_nodes.add(node)
-            children = list(graph.successors(node))
-            relevant_children = [child for child in children if child.module and len(child.module) == 3]
-
-            # Nodes can have multiple parents, only want to process them once we processed all parents
-            if node != end_node:
-                for child in relevant_children:
-                    if child not in processed_nodes:
-                        if processed_nodes.issuperset(graph.predecessors(child)):
-                            current_nodes.append(child)
-
-            func(node, processed_nodes)
-        return graph
 
     @staticmethod
     def get_sorted_node_parents(graph, node_with_parents):

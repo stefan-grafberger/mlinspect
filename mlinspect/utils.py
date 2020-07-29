@@ -24,22 +24,28 @@ def simplify_ast_call_nodes(node: ast):
     return id_tuple
 
 
-def traverse_graph_and_process_nodes(graph: networkx.DiGraph, func):
+def traverse_graph_and_process_nodes(graph: networkx.DiGraph, func, start_nodes=None, end_node=None, child_filter=None):
     """
     Traverse the WIR node by node from top to bottom
     """
-    current_nodes = [node for node in graph.nodes if len(list(graph.predecessors(node))) == 0]
+    if not start_nodes:
+        current_nodes = [node for node in graph.nodes if len(list(graph.predecessors(node))) == 0]
+    else:
+        current_nodes = start_nodes
     processed_nodes = set()
     while len(current_nodes) != 0:
         node = current_nodes.pop(0)
         processed_nodes.add(node)
         children = list(graph.successors(node))
+        if child_filter:
+            children = [child for child in children if child_filter(child)]
 
         # Nodes can have multiple parents, only want to process them once we processed all parents
-        for child in children:
-            if child not in processed_nodes:
-                if processed_nodes.issuperset(graph.predecessors(child)):
-                    current_nodes.append(child)
+        if not end_node or node != end_node:
+            for child in children:
+                if child not in processed_nodes:
+                    if processed_nodes.issuperset(graph.predecessors(child)):
+                        current_nodes.append(child)
 
         func(node, processed_nodes)
     return graph
