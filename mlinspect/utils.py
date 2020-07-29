@@ -24,6 +24,18 @@ def simplify_ast_call_nodes(node: ast):
     return id_tuple
 
 
+def get_sorted_node_parents(graph, node_with_parents):
+    """
+    Get the parent nodes of a WIR node sorted by argument index.
+    """
+    node_parents = list(graph.predecessors(node_with_parents))
+    node_parents_with_arg_index = [(node_parent, graph.get_edge_data(node_parent, node_with_parents))
+                                   for node_parent in node_parents]
+    sorted_node_parents_with_arg_index = sorted(node_parents_with_arg_index, key=lambda x: x[1]['arg_index'])
+    sorted_node_parents = [node_parent[0] for node_parent in sorted_node_parents_with_arg_index]
+    return sorted_node_parents
+
+
 def traverse_graph_and_process_nodes(graph: networkx.DiGraph, func, start_nodes=None, end_node=None, child_filter=None):
     """
     Traverse the WIR node by node from top to bottom
