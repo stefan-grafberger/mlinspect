@@ -95,7 +95,7 @@ class SklearnWirPreprocessor:
         """
         Re-orders scikit-learn Pipeline fit operations in order to create a dag for them
         """
-        direct_pipeline_parent_node, actual_pipeline_node = self.get_pipeline_fit_pipeline_node(graph, node)
+        actual_pipeline_node = self.get_pipeline_fit_pipeline_node(graph, node)
         data_node = self.get_pipeline_fit_arg_node(graph, node, 0)
         target_node_or_none = self.get_pipeline_fit_arg_node(graph, node, 1)
 
@@ -174,7 +174,7 @@ class SklearnWirPreprocessor:
 
         assert actual_pipeline_node.operation == "Call"
 
-        return direct_pipeline_parent_node, actual_pipeline_node
+        return actual_pipeline_node
 
     @staticmethod
     def get_pipeline_fit_arg_node(graph, node, index):

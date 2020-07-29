@@ -3,6 +3,7 @@ Tests whether the DAG extraction works
 """
 import networkx
 
+from mlinspect.instrumentation.sklearn_wir_preprocessor import SklearnWirPreprocessor
 from mlinspect.instrumentation.wir_to_dag_transformer import WirToDagTransformer
 from mlinspect.instrumentation.wir_vertex import WirVertex
 from mlinspect.instrumentation.wir_extractor import WirExtractor
@@ -34,12 +35,13 @@ def test_remove_all_non_operators_and_update_names():
     test_ast = get_adult_easy_py_ast()
     extractor = WirExtractor(test_ast)
     extractor.extract_wir()
-    extracted_wir_with_module_info = extractor.add_call_module_info(get_module_info())
+    wir_with_module_info = extractor.add_call_module_info(get_module_info())
 
-    cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(extracted_wir_with_module_info)
+    preprocessed_wir = SklearnWirPreprocessor().sklearn_wir_preprocessing(wir_with_module_info)
+    cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(preprocessed_wir)
     dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
 
-    assert len(dag) == 4
+    assert len(dag) == 15
 
     expected_graph = get_expected_dag_adult_easy_py()
 
