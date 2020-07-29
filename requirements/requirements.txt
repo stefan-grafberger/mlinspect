@@ -8,4 +8,5 @@ astpretty==2.0.0
 astmonkey==0.3.6
 networkx==2.4
 more-itertools==8.4.0
+graphviz==0.14.1
 pygraphviz==1.5
