@@ -19,6 +19,12 @@ class SklearnWirPreprocessor:
         ('sklearn.tree._classes', 'DecisionTreeClassifier')
     }
 
+    KNOWN_MULTI_STEPS = {
+        ('sklearn.compose._column_transformer', 'ColumnTransformer'),
+        ('sklearn.pipeline', 'Pipeline'),
+        ('sklearn.pipeline', 'fit')
+    }
+
     def __init__(self):
         self.wir_node_to_sub_pipeline_start = {}
         self.wir_node_to_sub_pipeline_end = {}
@@ -100,9 +106,7 @@ class SklearnWirPreprocessor:
             projection_wirs.append(projection_wir)
 
             start_transformers, end_transformer = self.preprocess_column_transformer_copy_transformer_per_column(
-                graph, call_node, column_node)
-
-            # end
+                graph, call_node, column_node.node_id)
 
             parents = list(graph.predecessors(node))
             for parent in parents:
@@ -112,10 +116,11 @@ class SklearnWirPreprocessor:
             graph.add_edge(end_transformer, concatenation_wir)
         self.wir_node_to_sub_pipeline_start[node] = projection_wirs
 
-    def preprocess_column_transformer_copy_transformer_per_column(self, graph, transformer_node, column_node):
+    def preprocess_column_transformer_copy_transformer_per_column(self, graph, transformer_node, new_node_id):
         """
         Each transformer in a ColumnTransformer needs to be copied for each column
         """
+        transformer_node = self.get_sklearn_call_wir_node(graph, transformer_node)
         start_copy = set(self.wir_node_to_sub_pipeline_start[transformer_node])
         end_copy = self.wir_node_to_sub_pipeline_end[transformer_node]
         assert start_copy
@@ -124,16 +129,15 @@ class SklearnWirPreprocessor:
         end_transformer = []
 
         def copy_node(current_node, _):
-            new_call_module = (current_node.module[0], current_node.module[1],
-                               "Pipeline")
-            copied_wir = WirVertex(column_node.node_id, current_node.name, current_node.operation,
-                                   current_node.lineno, current_node.col_offset, new_call_module)
+            new_module = (current_node.module[0], current_node.module[1], "Pipeline")
+            copied_wir = WirVertex(new_node_id, current_node.name, current_node.operation,
+                                   current_node.lineno, current_node.col_offset, new_module)
 
             if current_node in start_copy:
                 start_transformers.append(copied_wir)
             else:
                 parents = list(graph.predecessors(current_node))
-                relevant_parents = [parent for parent in parents if parent.node_id == column_node.node_id]
+                relevant_parents = [parent for parent in parents if parent.node_id == new_node_id]
                 for parent in relevant_parents:
                     graph.add_edge(parent, copied_wir)
 
@@ -216,9 +220,7 @@ class SklearnWirPreprocessor:
             assert tuple_node.operation == "Tuple"
             tuple_parents = self.get_sorted_node_parents(graph, tuple_node)
             transformer = tuple_parents[1]
-            while transformer.operation == "Assign":
-                transformer = list(graph.predecessors(transformer))[0]
-            assert transformer.operation == "Call"
+            transformer = self.get_sklearn_call_wir_node(graph, transformer)
 
             if transformer.module in self.KNOWN_SINGLE_STEPS:
                 new_transformer_module = (transformer.module[0], transformer.module[1], "Pipeline")
@@ -229,3 +231,17 @@ class SklearnWirPreprocessor:
             transformers_list.append(transformer)
 
         return transformers_list
+
+    def get_sklearn_call_wir_node(self, graph, transformer):
+        """
+        Get a sklearn call that is a parent to the transformer node.
+        This is not straight-forward, as there can be steps in-between, e.g., Assigns.
+        We currently deal with Assigns, but not the worst possible cases like
+        nested lists or tuples with multiple transformers from which one is chosen with a
+        subscript.
+        """
+        while transformer.operation == "Assign":
+            transformer = list(graph.predecessors(transformer))[0]
+        assert transformer.operation == "Call"
+        assert transformer.module in self.KNOWN_SINGLE_STEPS.union(self.KNOWN_MULTI_STEPS)
+        return transformer
