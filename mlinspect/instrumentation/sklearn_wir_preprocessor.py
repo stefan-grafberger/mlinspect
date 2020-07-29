@@ -2,6 +2,7 @@
 Preprocess Sklearn WIR nodes to enable DAG extraction
 """
 import networkx
+from more_itertools import pairwise
 
 from mlinspect.instrumentation.wir_vertex import WirVertex
 from mlinspect.utils import traverse_graph_and_process_nodes
@@ -14,7 +15,8 @@ class SklearnWirPreprocessor:
 
     KNOWN_SINGLE_STEPS = {
         ('sklearn.preprocessing._encoders', 'OneHotEncoder'),
-        ('sklearn.preprocessing._data', 'StandardScaler')
+        ('sklearn.preprocessing._data', 'StandardScaler'),
+        ('sklearn.tree._classes', 'DecisionTreeClassifier')
     }
 
     def __init__(self):
@@ -37,7 +39,7 @@ class SklearnWirPreprocessor:
             elif node.module == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
                 self.preprocess_column_transformer(graph, node)
             if node.module == ('sklearn.pipeline', 'Pipeline'):
-                pass
+                self.preprocess_pipeline(graph, node)
             elif node.module == ('sklearn.pipeline', 'fit'):
                 pass
 
@@ -48,10 +50,7 @@ class SklearnWirPreprocessor:
         """
         Re-orders scikit-learn ColumnTransformer operations in order to create a dag for them
         """
-        parents = list(graph.predecessors(node))
-        children = list(graph.successors(node))
-
-        transformers_list = self.get_column_transformer_transformers_list(graph, parents)
+        transformers_list = self.get_column_transformer_transformers_list(graph, node)
 
         # Concatenation node
         concat_module = (node.module[0], node.module[1], "Concatenation")
@@ -59,11 +58,29 @@ class SklearnWirPreprocessor:
                                       node.col_offset, concat_module)
         for transformer_tuple in transformers_list:
             self.preprocess_column_transformer_transformer_tuple(concatenation_wir, graph, node, transformer_tuple)
-        graph.remove_nodes_from(transformers_list)
+
+        children = list(graph.successors(node))
         for child in children:
             graph.add_edge(concatenation_wir, child)
 
         self.wir_node_to_sub_pipeline_end[node] = concatenation_wir
+
+    def preprocess_pipeline(self, graph, node):
+        """
+        Re-orders scikit-learn ColumnTransformer operations in order to create a dag for them
+        """
+        transformers_list = self.get_pipeline_steps_transformers(graph, node)
+
+        for (step, next_step) in pairwise(transformers_list):
+            step_end = self.wir_node_to_sub_pipeline_end[step]
+            next_step_start_nodes = self.wir_node_to_sub_pipeline_start[next_step]
+            for next_step_start in next_step_start_nodes:
+                graph.add_edge(step_end, next_step_start)
+
+        pipeline_start = self.wir_node_to_sub_pipeline_start[transformers_list[0]]
+        pipeline_end = self.wir_node_to_sub_pipeline_end[transformers_list[-1]]
+        self.wir_node_to_sub_pipeline_start[node] = pipeline_start
+        self.wir_node_to_sub_pipeline_end[node] = pipeline_end
 
     def preprocess_column_transformer_transformer_tuple(self, concatenation_wir, graph, node,
                                                         transformer_tuple):
@@ -107,7 +124,8 @@ class SklearnWirPreprocessor:
         end_transformer = []
 
         def copy_node(current_node, _):
-            new_call_module = (current_node.module[0], current_node.module[1], "Transformer")
+            new_call_module = (current_node.module[0], current_node.module[1],
+                               "Pipeline")
             copied_wir = WirVertex(column_node.node_id, current_node.name, current_node.operation,
                                    current_node.lineno, current_node.col_offset, new_call_module)
 
@@ -120,7 +138,7 @@ class SklearnWirPreprocessor:
                     graph.add_edge(parent, copied_wir)
 
             if current_node == end_copy:
-                end_transformer.append(current_node)
+                end_transformer.append(copied_wir)
 
         self.traverse_graph_and_process_nodes_with_start_and_end(graph, list(start_copy), end_copy, copy_node)
 
@@ -165,10 +183,11 @@ class SklearnWirPreprocessor:
         return sorted_node_parents
 
     @staticmethod
-    def get_column_transformer_transformers_list(graph, parents):
+    def get_column_transformer_transformers_list(graph, node):
         """
         Get the 'transformers' argument of ColumnTransformers
         """
+        parents = list(graph.predecessors(node))
         transformers_keyword_parent = [parent for parent in parents if parent.operation == "Keyword"
                                        and parent.name == "transformers"]
         if len(transformers_keyword_parent) != 0:
@@ -179,4 +198,34 @@ class SklearnWirPreprocessor:
             list_parents = [parent for parent in parents if parent.operation == "List"]
             transformers = list_parents[0]
         transformers_list = list(graph.predecessors(transformers))
+        return transformers_list
+
+    def get_pipeline_steps_transformers(self, graph, node):
+        """
+        Get the 'transformers' argument of ColumnTransformers
+        """
+        parents = list(graph.predecessors(node))
+        parents_with_arg_index = [(parent, graph.get_edge_data(parent, node)) for parent in parents]
+        steps_list = [parent for parent in parents_with_arg_index if parent[1]['arg_index'] == 0][0][0]
+
+        assert steps_list.operation == "List"
+
+        steps_list_parents = self.get_sorted_node_parents(graph, steps_list)
+        transformers_list = []
+        for tuple_node in steps_list_parents:
+            assert tuple_node.operation == "Tuple"
+            tuple_parents = self.get_sorted_node_parents(graph, tuple_node)
+            transformer = tuple_parents[1]
+            while transformer.operation == "Assign":
+                transformer = list(graph.predecessors(transformer))[0]
+            assert transformer.operation == "Call"
+
+            if transformer.module in self.KNOWN_SINGLE_STEPS:
+                new_transformer_module = (transformer.module[0], transformer.module[1], "Pipeline")
+                transformer = WirVertex(transformer.node_id, transformer.name, transformer.operation,
+                                        transformer.lineno, transformer.col_offset, new_transformer_module)
+                self.wir_node_to_sub_pipeline_start[transformer] = [transformer]
+                self.wir_node_to_sub_pipeline_end[transformer] = transformer
+            transformers_list.append(transformer)
+
         return transformers_list

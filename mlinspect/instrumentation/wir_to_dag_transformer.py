@@ -18,11 +18,11 @@ class WirToDagTransformer:
         ('pandas.core.frame', '__getitem__'): "Projection",
         ('sklearn.preprocessing._label', 'label_binarize'): "Projection (Modify)",
         ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'): "Projection",
-        ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Transformer'): "Transformer",
-        ('sklearn.preprocessing._data', 'StandardScaler', 'Transformer'): "Transformer",
+        ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'): "Transformer",
+        ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'): "Transformer",
         ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Concatenation'): "Concatenation",
-        # ('sklearn.tree._classes', 'DecisionTreeClassifier'): "Estimator",  # FIXME
-        # ('sklearn.pipeline', 'fit'): "Fit Transformers and Estimators"
+        ('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'): "Estimator",
+        # ('sklearn.pipeline', 'fit'): "Fit Transformers and Estimators" # FIXME
     }
 
     @staticmethod
