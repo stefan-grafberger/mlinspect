@@ -17,7 +17,6 @@ def test_inspector_py_pipeline():
     """
     Tests whether the .py version of the inspector works
     """
-    # pylint: disable=duplicate-code
     extracted_dag = PipelineInspector\
         .on_pipeline_from_py_file(FILE_PY)\
         .add_analyzer("test")\

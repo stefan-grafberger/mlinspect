@@ -14,7 +14,6 @@ def test_inspector_py_pipeline():
     """
     Tests whether the .py version of the inspector works
     """
-    # pylint: disable=duplicate-code
     extracted_dag = get_expected_dag_adult_easy_py()
 
     filename = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.png")
