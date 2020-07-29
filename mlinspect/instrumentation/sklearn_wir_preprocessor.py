@@ -18,7 +18,7 @@ class SklearnWirPreprocessor:
     }
 
     def __init__(self):
-        self.wir_node_to_sub_pipeline_beginning = {}
+        self.wir_node_to_sub_pipeline_start = {}
         self.wir_node_to_sub_pipeline_end = {}
 
     # create a map that maps from pipeline entity to list of start ast nodes and an end ast node
@@ -32,7 +32,7 @@ class SklearnWirPreprocessor:
 
         def process_node(node, _):
             if node.module in self.KNOWN_SINGLE_STEPS:
-                self.wir_node_to_sub_pipeline_beginning[node] = [node]
+                self.wir_node_to_sub_pipeline_start[node] = [node]
                 self.wir_node_to_sub_pipeline_end[node] = node
             elif node.module == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
                 self.preprocess_column_transformer(graph, node)
@@ -82,8 +82,8 @@ class SklearnWirPreprocessor:
                                        node.lineno, node.col_offset, projection_module)
             projection_wirs.append(projection_wir)
 
-            end_transformer, start_transformers = self.preprocess_column_transformer_copy_transformer_per_column(
-                call_node, column_node)
+            start_transformers, end_transformer = self.preprocess_column_transformer_copy_transformer_per_column(
+                graph, call_node, column_node)
 
             # end
 
@@ -93,22 +93,64 @@ class SklearnWirPreprocessor:
             for start_transformer in start_transformers:
                 graph.add_edge(projection_wir, start_transformer)
             graph.add_edge(end_transformer, concatenation_wir)
-        self.wir_node_to_sub_pipeline_beginning[node] = projection_wirs
+        self.wir_node_to_sub_pipeline_start[node] = projection_wirs
 
-    @staticmethod
-    def preprocess_column_transformer_copy_transformer_per_column(call_node, column_node):
+    def preprocess_column_transformer_copy_transformer_per_column(self, graph, transformer_node, column_node):
         """
         Each transformer in a ColumnTransformer needs to be copied for each column
         """
-        # FIXME here i need a deep copy for all transformers
-        # FIXME and we can not assume that it is only a single node. find pipeline beginning and end with the map
-        new_call_module = (call_node.module[0], call_node.module[1], "Transformer")
-        new_call_wir = WirVertex(column_node.node_id, call_node.name, call_node.operation,
-                                 call_node.lineno, call_node.col_offset, new_call_module)
-        # self.wir_nodes_to_delete_when_done.add(call_node)  # plus other stuff if pipeline not a single node
-        start_transformers = [new_call_wir]
-        end_transformer = new_call_wir
-        return end_transformer, start_transformers
+        start_copy = set(self.wir_node_to_sub_pipeline_start[transformer_node])
+        end_copy = self.wir_node_to_sub_pipeline_end[transformer_node]
+        assert start_copy
+        assert end_copy
+        start_transformers = []
+        end_transformer = []
+
+        def copy_node(current_node, _):
+            new_call_module = (current_node.module[0], current_node.module[1], "Transformer")
+            copied_wir = WirVertex(column_node.node_id, current_node.name, current_node.operation,
+                                   current_node.lineno, current_node.col_offset, new_call_module)
+
+            if current_node in start_copy:
+                start_transformers.append(copied_wir)
+            else:
+                parents = list(graph.predecessors(current_node))
+                relevant_parents = [parent for parent in parents if parent.node_id == column_node.node_id]
+                for parent in relevant_parents:
+                    graph.add_edge(parent, copied_wir)
+
+            if current_node == end_copy:
+                end_transformer.append(current_node)
+
+        self.traverse_graph_and_process_nodes_with_start_and_end(graph, list(start_copy), end_copy, copy_node)
+
+        assert start_transformers
+        assert end_transformer
+
+        return start_transformers, end_transformer[0]
+
+    @staticmethod
+    def traverse_graph_and_process_nodes_with_start_and_end(graph: networkx.DiGraph, start_nodes, end_node, func):
+        """
+        Traverse the WIR node by node from top to bottom
+        """
+        current_nodes = start_nodes
+        processed_nodes = set()
+        while len(current_nodes) != 0:
+            node = current_nodes.pop(0)
+            processed_nodes.add(node)
+            children = list(graph.successors(node))
+            relevant_children = [child for child in children if child.module and len(child.module) == 3]
+
+            # Nodes can have multiple parents, only want to process them once we processed all parents
+            if node != end_node:
+                for child in relevant_children:
+                    if child not in processed_nodes:
+                        if processed_nodes.issuperset(graph.predecessors(child)):
+                            current_nodes.append(child)
+
+            func(node, processed_nodes)
+        return graph
 
     @staticmethod
     def get_sorted_node_parents(graph, node_with_parents):
