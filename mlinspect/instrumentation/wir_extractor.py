@@ -76,8 +76,8 @@ class WirExtractor:
         wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
         new_wir_node = WirVertex(self.get_next_wir_id(), "as_tuple", "Tuple", ast_node.lineno, ast_node.col_offset)
         self.graph.add_node(new_wir_node)
-        for parent in wir_parents:
-            self.graph.add_edge(parent, new_wir_node, type="input")
+        for parent_index, parent in enumerate(wir_parents):
+            self.graph.add_edge(parent, new_wir_node, type="input", arg_index=parent_index)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
     def extract_wir_subscript(self, ast_node):
@@ -102,8 +102,8 @@ class WirExtractor:
         new_wir_node = WirVertex(self.get_next_wir_id(), "Index-Subscript", "Subscript", ast_node.lineno,
                                  ast_node.col_offset)
         self.graph.add_node(new_wir_node)
-        self.graph.add_edge(name_wir, new_wir_node, type="caller")
-        self.graph.add_edge(constant_wir, new_wir_node, type="input")
+        self.graph.add_edge(name_wir, new_wir_node, type="caller", arg_index=-1)
+        self.graph.add_edge(constant_wir, new_wir_node, type="input", arg_index=0)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
     def extract_wir_list(self, ast_node):
@@ -114,8 +114,8 @@ class WirExtractor:
         wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
         new_wir_node = WirVertex(self.get_next_wir_id(), "as_list", "List", ast_node.lineno, ast_node.col_offset)
         self.graph.add_node(new_wir_node)
-        for parent in wir_parents:
-            self.graph.add_edge(parent, new_wir_node, type="input")
+        for parent_index, parent in enumerate(wir_parents):
+            self.graph.add_edge(parent, new_wir_node, type="input", arg_index=parent_index)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
     def extract_wir_import_from(self, ast_node):
@@ -153,7 +153,7 @@ class WirExtractor:
         child_wir = self.get_wir_node_for_ast(child_ast)
         new_wir_node = WirVertex(self.get_next_wir_id(), ast_node.arg, "Keyword")
         self.graph.add_node(new_wir_node)
-        self.graph.add_edge(child_wir, new_wir_node, type="input")
+        self.graph.add_edge(child_wir, new_wir_node, type="input", arg_index=0)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
     def extract_wir_assign(self, ast_node):
@@ -166,7 +166,7 @@ class WirExtractor:
         var_name = assign_left_ast.id
         new_wir_node = WirVertex(self.get_next_wir_id(), var_name, "Assign", ast_node.lineno, ast_node.col_offset)
         self.graph.add_node(new_wir_node)
-        self.graph.add_edge(assign_right_wir, new_wir_node, type="input")
+        self.graph.add_edge(assign_right_wir, new_wir_node, type="input", arg_index=0)
         self.store_variable_wir_mapping(var_name, new_wir_node)
 
     def extract_wir_constant(self, ast_node):
@@ -207,9 +207,9 @@ class WirExtractor:
         new_wir_node = WirVertex(self.get_next_wir_id(), name, "Call", ast_node.lineno, ast_node.col_offset)
         self.graph.add_node(new_wir_node)
         if caller_parent:
-            self.graph.add_edge(caller_parent, new_wir_node, type="caller")
-        for parent in wir_parents:
-            self.graph.add_edge(parent, new_wir_node, type="input")
+            self.graph.add_edge(caller_parent, new_wir_node, type="caller", arg_index=-1)
+        for parent_index, parent in enumerate(wir_parents):
+            self.graph.add_edge(parent, new_wir_node, type="input", arg_index=parent_index)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
     def add_call_module_info(self, ast_call_to_module):

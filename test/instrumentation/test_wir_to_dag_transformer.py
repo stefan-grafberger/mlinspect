@@ -1,83 +1,51 @@
 """
 Tests whether the DAG extraction works
 """
-import ast
-import os
 import networkx
 
+from mlinspect.instrumentation.sklearn_wir_preprocessor import SklearnWirPreprocessor
 from mlinspect.instrumentation.wir_to_dag_transformer import WirToDagTransformer
 from mlinspect.instrumentation.wir_vertex import WirVertex
-from mlinspect.utils import get_project_root
 from mlinspect.instrumentation.wir_extractor import WirExtractor
-from ..utils import get_expected_dag_adult_easy_py
-
-FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
+from ..utils import get_expected_dag_adult_easy_py, get_module_info, get_adult_easy_py_ast
 
 
 def test_remove_all_nodes_but_calls_and_subscripts():
     """
     Tests whether the WIR Extraction works for the adult_easy pipeline
     """
-    with open(FILE_PY) as file:
-        test_code = file.read()
+    test_ast = get_adult_easy_py_ast()
+    extractor = WirExtractor(test_ast)
+    extractor.extract_wir()
+    extracted_wir_with_module_info = extractor.add_call_module_info(get_module_info())
 
-        test_ast = ast.parse(test_code)
-        extractor = WirExtractor(test_ast)
-        extractor.extract_wir()
-        extracted_wir_with_module_info = extractor.add_call_module_info(get_module_info())
+    cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(extracted_wir_with_module_info)
 
-        cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(extracted_wir_with_module_info)
+    assert len(cleaned_wir) == 15
 
-        assert len(cleaned_wir) == 15
+    expected_graph = get_expected_cleaned_wir_adult_easy()
 
-        expected_graph = get_expected_cleaned_wir_adult_easy()
-
-        assert networkx.to_dict_of_dicts(cleaned_wir) == networkx.to_dict_of_dicts(expected_graph)
+    assert networkx.to_dict_of_dicts(cleaned_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
 def test_remove_all_non_operators_and_update_names():
     """
     Tests whether the WIR Extraction works for the adult_easy pipeline
     """
-    with open(FILE_PY) as file:
-        test_code = file.read()
+    test_ast = get_adult_easy_py_ast()
+    extractor = WirExtractor(test_ast)
+    extractor.extract_wir()
+    wir_with_module_info = extractor.add_call_module_info(get_module_info())
 
-        test_ast = ast.parse(test_code)
-        extractor = WirExtractor(test_ast)
-        extractor.extract_wir()
-        extracted_wir_with_module_info = extractor.add_call_module_info(get_module_info())
+    preprocessed_wir = SklearnWirPreprocessor().sklearn_wir_preprocessing(wir_with_module_info)
+    cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(preprocessed_wir)
+    dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
 
-        cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(extracted_wir_with_module_info)
-        dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
+    assert len(dag) == 17
 
-        assert len(dag) == 4
+    expected_graph = get_expected_dag_adult_easy_py()
 
-        expected_graph = get_expected_dag_adult_easy_py()
-
-        assert networkx.to_dict_of_dicts(cleaned_wir) == networkx.to_dict_of_dicts(expected_graph)
-
-
-def get_module_info():
-    """
-    Get the module info for the adult_easy pipeline
-    """
-    module_info = {(10, 0): ('builtins', 'print'),
-                   (11, 13): ('posixpath', 'join'),
-                   (11, 26): ('builtins', 'str'),
-                   (11, 30): ('mlinspect.utils', 'get_project_root'),
-                   (12, 11): ('pandas.io.parsers', 'read_csv'),
-                   (14, 7): ('pandas.core.frame', 'dropna'),
-                   (16, 9): ('sklearn.preprocessing._label', 'label_binarize'),
-                   (16, 38): ('pandas.core.frame', '__getitem__'),
-                   (18, 25): ('sklearn.compose._column_transformer', 'ColumnTransformer'),
-                   (19, 20): ('sklearn.preprocessing._encoders', 'OneHotEncoder'),
-                   (20, 16): ('sklearn.preprocessing._data', 'StandardScaler'),
-                   (24, 18): ('sklearn.pipeline', 'Pipeline'),
-                   (26, 19): ('sklearn.tree._classes', 'DecisionTreeClassifier'),
-                   (28, 0): ('sklearn.pipeline', 'fit'),
-                   (31, 0): ('builtins', 'print')}
-
-    return module_info
+    assert networkx.to_dict_of_dicts(cleaned_wir) == networkx.to_dict_of_dicts(expected_graph)
 
 
 def get_expected_cleaned_wir_adult_easy():

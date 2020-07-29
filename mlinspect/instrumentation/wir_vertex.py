@@ -23,7 +23,8 @@ class WirVertex:
         return message
 
     def __eq__(self, other):
-        return self.node_id == other.node_id and \
+        return isinstance(other, WirVertex) and \
+               self.node_id == other.node_id and \
                self.name == other.name and \
                self.operation == other.operation and \
                self.lineno == other.lineno and \
