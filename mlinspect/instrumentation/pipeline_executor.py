@@ -3,6 +3,8 @@ Instrument and executes the pipeline
 """
 import ast
 import copy
+import os
+
 import astunparse
 import astpretty  # pylint: disable=unused-import
 import nbformat
@@ -21,6 +23,7 @@ class PipelineExecutor:
 
     def __init__(self):
         self.ast_call_node_id_to_module = {}
+        self.ast_call_node_id_to_description = {}
 
     def run(self, notebook_path: str or None, python_path: str or None, python_code: str or None):
         """
@@ -39,9 +42,10 @@ class PipelineExecutor:
 
         wir_extractor = WirExtractor(original_parsed_ast)
         wir_extractor.extract_wir()
-        wir_with_module_info = wir_extractor.add_call_module_info(self.ast_call_node_id_to_module)
+        wir_extractor.add_call_module_info(self.ast_call_node_id_to_module)
+        wir_with_descriptions = wir_extractor.add_call_description_info(self.ast_call_node_id_to_description)
 
-        preprocessed_wir = SklearnWirPreprocessor().sklearn_wir_preprocessing(wir_with_module_info)
+        preprocessed_wir = SklearnWirPreprocessor().sklearn_wir_preprocessing(wir_with_descriptions)
         cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(preprocessed_wir)
         dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
 
@@ -151,7 +155,44 @@ class PipelineExecutor:
             print("args_code: {}".format(args_code))
             print("args_values: {}".format(args_values))
             print("_______________________________________")
+
+        if function_info[0].split(".", 1)[0] == "pandas":
+            self.pandas_before_call_used_args(function_info, subscript, call_code, args_code, ast_lineno,
+                                              ast_col_offset, args_values)
+        elif function_info[0].split(".", 1)[0] == "sklearn":
+            self.sklearn_before_call_used_args(function_info, subscript, call_code, args_code, ast_lineno,
+                                               ast_col_offset, args_values)
         return args_values
+
+    def pandas_before_call_used_args(self, function_info, subscript, call_code, args_code, ast_lineno,
+                                     ast_col_offset, args_values):
+        description = None
+        if function_info == ('pandas.io.parsers', 'read_csv'):
+            filename = args_values[0].split(os.path.sep)[-1]
+            description = "{}".format(filename)
+        elif function_info == ('pandas.core.frame', 'dropna'):
+            description = "dropna"
+        elif function_info == ('pandas.core.frame', '__getitem__'):
+            # TODO: Can this also be a select?
+            key_arg = args_values[0].split(os.path.sep)[-1]
+            description = "to {}".format([key_arg])
+
+        if description:
+            self.ast_call_node_id_to_description[(ast_lineno, ast_col_offset)] = description
+
+    def sklearn_before_call_used_args(self, function_info, subscript, call_code, args_code, ast_lineno,
+                                      ast_col_offset, args_values):
+        description = None
+
+        if function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
+            description = "Categorical Encoder (OneHotEncoder)"
+        elif function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
+            description = "Numerical Encoder (StandardScaler)"
+        elif function_info == ('sklearn.tree._classes', 'DecisionTreeClassifier'):
+            description = "Decision Tree"
+
+        if description:
+            self.ast_call_node_id_to_description[(ast_lineno, ast_col_offset)] = description
 
     def before_call_used_kwargs(self, subscript, call_code, kwargs_code, ast_lineno, ast_col_offset, kwargs_values):
         """
@@ -172,7 +213,21 @@ class PipelineExecutor:
         print("args_values: {}".format(kwargs_values))
         print("_______________________________________")
 
+        if function_info[0].split(".", 1)[0] == "sklearn":
+            self.sklearn_before_call_used_kwargs(function_info, subscript, call_code, kwargs_code, ast_lineno,
+                                                 ast_col_offset, kwargs_values)
+
         return kwargs_values
+
+    def sklearn_before_call_used_kwargs(self, function_info, subscript, call_code, kwargs_code, ast_lineno,
+                                        ast_col_offset, kwargs_values):
+        description = None
+        if function_info == ('sklearn.preprocessing._label', 'label_binarize'):
+            classes = kwargs_values['classes']
+            description = "label_binarize, classes: {}".format(classes)
+
+        if description:
+            self.ast_call_node_id_to_description[(ast_lineno, ast_col_offset)] = description
 
     def after_call_used(self, subscript, call_code, return_value, ast_lineno, ast_col_offset):
         """

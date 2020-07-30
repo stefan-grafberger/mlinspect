@@ -29,16 +29,20 @@ def get_expected_dag_adult_easy_py():
     expected_graph.add_edge(expected_select, expected_train_data)
 
     expected_pipeline_project_one = DagVertex(34, "Projection", 19, 75, ('sklearn.compose._column_transformer',
-                                                                         'ColumnTransformer', 'Projection'))
+                                                                         'ColumnTransformer', 'Projection'),
+                                              "to ['education']")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_one)
     expected_pipeline_project_two = DagVertex(35, "Projection", 19, 88, ('sklearn.compose._column_transformer',
-                                                                         'ColumnTransformer', 'Projection'))
+                                                                         'ColumnTransformer', 'Projection'),
+                                              "to ['workclass']")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_two)
     expected_pipeline_project_three = DagVertex(40, "Projection", 20, 49, ('sklearn.compose._column_transformer',
-                                                                           'ColumnTransformer', 'Projection'))
+                                                                           'ColumnTransformer', 'Projection'),
+                                                "to ['age']")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_three)
     expected_pipeline_project_four = DagVertex(41, "Projection", 20, 56, ('sklearn.compose._column_transformer',
-                                                                          'ColumnTransformer', 'Projection'))
+                                                                          'ColumnTransformer', 'Projection'),
+                                               "to ['hours-per-week']")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_four)
 
     expected_pipeline_transformer_one = DagVertex(34, "Transformer", 19, 20, ('sklearn.preprocessing._encoders',
@@ -69,7 +73,8 @@ def get_expected_dag_adult_easy_py():
                                                                                      'Pipeline'))
     expected_graph.add_edge(expected_estimator, expected_pipeline_fit)
 
-    expected_project = DagVertex(23, "Projection", 16, 38, ('pandas.core.frame', '__getitem__'))
+    expected_project = DagVertex(23, "Projection", 16, 38, ('pandas.core.frame', '__getitem__'),
+                                 "to ['income-per-year']")
     expected_graph.add_edge(expected_select, expected_project)
 
     expected_project_modify = DagVertex(28, "Projection (Modify)", 16, 9,
