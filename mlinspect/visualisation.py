@@ -33,7 +33,11 @@ def get_dag_as_pretty_string(extracted_dag):
     """
 
     def get_new_node_label(node):
-        label = "{}: {}({})".format(node.node_id, node.operator_name, node.description or "")
+        description = ""
+        if node.description:
+            description = "({})".format(node.description)
+
+        label = "{}: {}{}".format(node.node_id, node.operator_name, description)
         return label
 
     # noinspection PyTypeChecker

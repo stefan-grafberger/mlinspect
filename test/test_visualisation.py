@@ -32,7 +32,12 @@ def test_get_dag_as_pretty_string():
     """
     Tests whether the .py version of the inspector works
     """
-    extracted_dag = get_expected_dag_adult_easy_py()
+    # extracted_dag = get_expected_dag_adult_easy_py()
+
+    extracted_dag = PipelineInspector \
+        .on_pipeline_from_py_file(FILE_PY) \
+        .add_analyzer("test") \
+        .execute()
 
     pretty_string = get_dag_as_pretty_string(extracted_dag)
 
