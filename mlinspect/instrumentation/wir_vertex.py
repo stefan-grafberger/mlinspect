@@ -21,7 +21,7 @@ class WirVertex:
     def __repr__(self):
         message = "WirVertex(node_id={}: name='{}', operation='{}', lineno={}, col_offset={}, module={}, " \
                   "description='{}')".format(self.node_id, self.name, self.operation, self.lineno,
-                                           self.col_offset, self.module, self.description)
+                                             self.col_offset, self.module, self.description)
         return message
 
     def __eq__(self, other):

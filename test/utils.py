@@ -204,13 +204,13 @@ def get_call_description_info():
     Get the module info for the adult_easy pipeline
     """
     call_description_info = {
-                   (12, 11): 'adult_train.csv',
-                   (14, 7): 'dropna',
-                   (16, 38): 'to [\'income-per-year\']',
-                   (16, 9): 'label_binarize, classes: [\'>50K\', \'<=50K\']',
-                   (19, 20): 'Categorical Encoder (OneHotEncoder)',
-                   (20, 16): 'Numerical Encoder (StandardScaler)',
-                   (26, 19): 'Decision Tree'
+        (12, 11): 'adult_train.csv',
+        (14, 7): 'dropna',
+        (16, 38): 'to [\'income-per-year\']',
+        (16, 9): 'label_binarize, classes: [\'>50K\', \'<=50K\']',
+        (19, 20): 'Categorical Encoder (OneHotEncoder)',
+        (20, 16): 'Numerical Encoder (StandardScaler)',
+        (26, 19): 'Decision Tree'
     }
 
     return call_description_info

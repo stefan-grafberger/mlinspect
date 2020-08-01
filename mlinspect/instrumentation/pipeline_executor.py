@@ -166,6 +166,10 @@ class PipelineExecutor:
 
     def pandas_before_call_used_args(self, function_info, subscript, call_code, args_code, ast_lineno,
                                      ast_col_offset, args_values):
+        """
+        This is the method we want to insert into the DAG
+        """
+        # pylint: disable=unused-argument, too-many-arguments
         description = None
         if function_info == ('pandas.io.parsers', 'read_csv'):
             filename = args_values[0].split(os.path.sep)[-1]
@@ -182,6 +186,10 @@ class PipelineExecutor:
 
     def sklearn_before_call_used_args(self, function_info, subscript, call_code, args_code, ast_lineno,
                                       ast_col_offset, args_values):
+        """
+        This is the method we want to insert into the DAG
+        """
+        # pylint: disable=unused-argument, too-many-arguments
         description = None
 
         if function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
@@ -221,6 +229,10 @@ class PipelineExecutor:
 
     def sklearn_before_call_used_kwargs(self, function_info, subscript, call_code, kwargs_code, ast_lineno,
                                         ast_col_offset, kwargs_values):
+        """
+        This is the method we want to insert into the DAG
+        """
+        # pylint: disable=unused-argument, too-many-arguments
         description = None
         if function_info == ('sklearn.preprocessing._label', 'label_binarize'):
             classes = kwargs_values['classes']
