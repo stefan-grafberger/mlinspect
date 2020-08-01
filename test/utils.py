@@ -6,6 +6,7 @@ import ast
 import networkx
 
 from mlinspect.instrumentation.dag_vertex import DagVertex
+from mlinspect.instrumentation.wir_extractor import WirExtractor
 from mlinspect.utils import get_project_root
 
 FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
@@ -225,3 +226,15 @@ def get_adult_easy_py_ast():
 
         test_ast = ast.parse(test_code)
     return test_ast
+
+
+def get_test_wir():
+    """
+    Get the extracted WIR for the adult_easy pipeline with runtime info
+    """
+    test_ast = get_adult_easy_py_ast()
+    extractor = WirExtractor(test_ast)
+    extractor.extract_wir()
+    wir = extractor.add_runtime_info(get_module_info(), get_call_description_info())
+
+    return wir

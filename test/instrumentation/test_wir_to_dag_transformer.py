@@ -7,7 +7,7 @@ from mlinspect.instrumentation.sklearn_wir_preprocessor import SklearnWirPreproc
 from mlinspect.instrumentation.wir_to_dag_transformer import WirToDagTransformer
 from mlinspect.instrumentation.wir_vertex import WirVertex
 from mlinspect.instrumentation.wir_extractor import WirExtractor
-from ..utils import get_expected_dag_adult_easy_py, get_module_info, get_adult_easy_py_ast, get_call_description_info
+from ..utils import get_expected_dag_adult_easy_py, get_module_info, get_adult_easy_py_ast, get_test_wir
 
 
 def test_remove_all_nodes_but_calls_and_subscripts():
@@ -32,12 +32,7 @@ def test_remove_all_non_operators_and_update_names():
     """
     Tests whether the WIR Extraction works for the adult_easy pipeline
     """
-    test_ast = get_adult_easy_py_ast()
-    extractor = WirExtractor(test_ast)
-    extractor.extract_wir()
-    wir = extractor.add_runtime_info(get_module_info(), get_call_description_info())
-
-    preprocessed_wir = SklearnWirPreprocessor().sklearn_wir_preprocessing(wir)
+    preprocessed_wir = SklearnWirPreprocessor().sklearn_wir_preprocessing(get_test_wir())
     cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(preprocessed_wir)
     dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
 
