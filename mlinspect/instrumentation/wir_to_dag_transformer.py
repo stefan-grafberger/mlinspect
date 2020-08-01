@@ -34,7 +34,7 @@ class WirToDagTransformer:
         Extract the final DAG
         """
         preprocessed_wir = SklearnWirPreprocessor().sklearn_wir_preprocessing(wir)
-        cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(preprocessed_wir)
+        cleaned_wir = WirToDagTransformer.remove_all_nodes_but_calls_and_subscripts(preprocessed_wir)
         dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
 
         return dag
