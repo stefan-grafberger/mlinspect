@@ -342,7 +342,7 @@ def test_index_subscript_with_module_information():
         (4, 0): ('pandas.core.frame', '__getitem__')
     }
     extracted_wir = extractor.extract_wir()
-    extractor.add_call_module_info(module_info)
+    extractor.add_runtime_info(module_info, {})
     expected_graph = networkx.DiGraph()
 
     expected_import = WirVertex(0, "pandas", "Import", 1, 0)

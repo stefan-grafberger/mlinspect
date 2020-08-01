@@ -25,7 +25,7 @@ class WirExtractor:
 
     def extract_wir(self) -> networkx.DiGraph:
         """
-        Instrument all function calls
+        Extract the WIR
         """
         enriched_ast = transformers.ParentChildNodeTransformer().visit(self.ast_root)
         assert isinstance(enriched_ast, ast.Module)
@@ -212,7 +212,7 @@ class WirExtractor:
             self.graph.add_edge(parent, new_wir_node, type="input", arg_index=parent_index)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
-    def add_call_module_info(self, ast_call_to_module):
+    def add_runtime_info(self, ast_call_to_module, ast_call_node_id_to_description):
         """
         After executing the pipeline, annotate call nodes with the captured module info
         """
@@ -220,15 +220,6 @@ class WirExtractor:
             if node.operation == "Call" or node.operation == "Subscript":
                 ast_call_node_lookup_key = (node.lineno, node.col_offset)
                 node.module = ast_call_to_module[ast_call_node_lookup_key]
-        return self.graph
-
-    def add_call_description_info(self, ast_call_node_id_to_description):
-        """
-        After executing the pipeline, annotate call nodes with the captured module info
-        """
-        for node in self.graph.nodes:
-            if node.operation == "Call" or node.operation == "Subscript":
-                ast_call_node_lookup_key = (node.lineno, node.col_offset)
                 if ast_call_node_lookup_key in ast_call_node_id_to_description:
                     node.description = ast_call_node_id_to_description[ast_call_node_lookup_key]
         return self.graph

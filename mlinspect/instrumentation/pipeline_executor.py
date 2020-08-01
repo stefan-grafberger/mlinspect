@@ -10,7 +10,6 @@ import astpretty  # pylint: disable=unused-import
 import nbformat
 from nbconvert import PythonExporter
 from .call_capture_transformer import CallCaptureTransformer
-from .sklearn_wir_preprocessor import SklearnWirPreprocessor
 from .wir_extractor import WirExtractor
 from .wir_to_dag_transformer import WirToDagTransformer
 
@@ -42,12 +41,9 @@ class PipelineExecutor:
 
         wir_extractor = WirExtractor(original_parsed_ast)
         wir_extractor.extract_wir()
-        wir_extractor.add_call_module_info(self.ast_call_node_id_to_module)
-        wir_with_descriptions = wir_extractor.add_call_description_info(self.ast_call_node_id_to_description)
+        wir = wir_extractor.add_runtime_info(self.ast_call_node_id_to_module, self.ast_call_node_id_to_description)
 
-        preprocessed_wir = SklearnWirPreprocessor().sklearn_wir_preprocessing(wir_with_descriptions)
-        cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(preprocessed_wir)
-        dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
+        dag = WirToDagTransformer.extract_dag(wir)
 
         return dag
 
