@@ -19,11 +19,16 @@ Prerequisite: python >=  3.8
 	`python -m venv venv` <br>
 	`source venv/bin/activate` <br>
 	
-3. Install dependencies 
+3. Install pip dependencies 
 
     `pip install -e .[dev]` <br>
+    
+4. If you want to use the visualisation functions we provide, install graphviz which can not be installed via pip
 
-3. Run the tests
+    `Linux: ` `apt-get install graphviz` <br>
+    `MAC OS: ` `brew install graphviz` <br>
+
+5. Run the tests
 
     `python setup.py test` <br>
     

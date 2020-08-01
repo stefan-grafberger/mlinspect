@@ -4,6 +4,7 @@ Extract a DAG from the WIR (Workflow Intermediate Representation)
 import networkx
 
 from mlinspect.instrumentation.dag_vertex import DagVertex
+from mlinspect.instrumentation.sklearn_wir_preprocessor import SklearnWirPreprocessor
 from mlinspect.utils import traverse_graph_and_process_nodes
 
 
@@ -26,6 +27,17 @@ class WirToDagTransformer:
         ('sklearn.pipeline', 'fit', 'Train Data'): "Train Data",
         ('sklearn.pipeline', 'fit', 'Train Labels'): "Train Labels"
     }
+
+    @staticmethod
+    def extract_dag(wir: networkx.DiGraph) -> networkx.DiGraph:
+        """
+        Extract the final DAG
+        """
+        preprocessed_wir = SklearnWirPreprocessor().sklearn_wir_preprocessing(wir)
+        cleaned_wir = WirToDagTransformer.remove_all_nodes_but_calls_and_subscripts(preprocessed_wir)
+        dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
+
+        return dag
 
     @staticmethod
     def remove_all_nodes_but_calls_and_subscripts(graph: networkx.DiGraph) -> networkx.DiGraph:
@@ -66,7 +78,7 @@ class WirToDagTransformer:
             children = list(graph.successors(node))
             if node.module in WirToDagTransformer.OPERATOR_MAP:
                 new_dag_vertex = DagVertex(node.node_id, WirToDagTransformer.OPERATOR_MAP[node.module], node.lineno,
-                                           node.col_offset, node.module)
+                                           node.col_offset, node.module, node.description)
                 for parent in parents:
                     graph.add_edge(parent, new_dag_vertex)
                 for child in children:

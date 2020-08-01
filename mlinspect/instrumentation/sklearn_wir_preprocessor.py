@@ -164,7 +164,8 @@ class SklearnWirPreprocessor:
             if transformer.module in self.KNOWN_SINGLE_STEPS:
                 new_transformer_module = (transformer.module[0], transformer.module[1], "Pipeline")
                 transformer = WirVertex(transformer.node_id, transformer.name, transformer.operation,
-                                        transformer.lineno, transformer.col_offset, new_transformer_module)
+                                        transformer.lineno, transformer.col_offset, new_transformer_module,
+                                        transformer.description)
                 self.wir_node_to_sub_pipeline_start[transformer] = [transformer]
                 self.wir_node_to_sub_pipeline_end[transformer] = transformer
             transformers_list.append(transformer)
@@ -214,8 +215,9 @@ class SklearnWirPreprocessor:
         projection_wirs = []
         for column_node in column_constant_nodes:
             projection_module = (node.module[0], node.module[1], "Projection")
-            projection_wir = WirVertex(column_node.node_id, column_node.name, node.operation,
-                                       column_node.lineno, column_node.col_offset, projection_module)
+            projection_description = "to {}".format([column_node.name])
+            projection_wir = WirVertex(column_node.node_id, column_node.name, node.operation, column_node.lineno,
+                                       column_node.col_offset, projection_module, projection_description)
             projection_wirs.append(projection_wir)
 
             start_transformers, end_transformer = self.preprocess_column_transformer_copy_transformer_per_column(
@@ -244,8 +246,8 @@ class SklearnWirPreprocessor:
 
         def copy_node(current_node, _):
             new_module = (current_node.module[0], current_node.module[1], "Pipeline")
-            copied_wir = WirVertex(new_node_id, current_node.name, current_node.operation,
-                                   current_node.lineno, current_node.col_offset, new_module)
+            copied_wir = WirVertex(new_node_id, current_node.name, current_node.operation, current_node.lineno,
+                                   current_node.col_offset, new_module, current_node.description)
 
             if current_node in start_copy:
                 start_transformers.append(copied_wir)

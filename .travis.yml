@@ -1,6 +1,11 @@
 language: python
-python:
-- '3.8'
+
+addons:
+  apt:
+    packages:
+      - graphviz
+
+python: '3.8'
 install: pip install .[dev]
 
 script: python -m pytest
