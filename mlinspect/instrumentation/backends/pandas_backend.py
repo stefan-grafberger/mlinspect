@@ -3,6 +3,8 @@ The pandas backend
 """
 import os
 
+from pandas import DataFrame
+
 from mlinspect.instrumentation.analyzers.print_first_rows_analyzer import PrintFirstRowsAnalyzer
 from mlinspect.instrumentation.backends.backend import Backend
 
@@ -13,6 +15,10 @@ class PandasBackend(Backend):
     """
 
     prefix = "pandas"
+
+    def __init__(self):
+        super().__init__()
+        self.input = None
 
     def before_call_used_value(self, function_info, subscript, call_code, value_code, value_value, ast_lineno,
                                ast_col_offset):
@@ -53,4 +59,8 @@ class PandasBackend(Backend):
             print("read.csv:")
             # Performance tips:
             # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-            annotations = [analyzer.process_row(row) for row in return_value]
+            # We need our own iterator type:
+            # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas/41022840#41022840
+            annotations_iterator = analyzer.visit_operator(return_value.itertuples())
+            annotations_df = DataFrame(annotations_iterator, columns=[str(analyzer)])
+            print(annotations_df)
