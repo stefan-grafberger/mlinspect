@@ -3,6 +3,7 @@ The pandas backend
 """
 import os
 
+import pandas
 from pandas import DataFrame
 
 from mlinspect.instrumentation.analyzers.print_first_rows_analyzer import PrintFirstRowsAnalyzer
@@ -18,7 +19,8 @@ class PandasBackend(Backend):
 
     def __init__(self):
         super().__init__()
-        self.input = None
+        self.input_data = None
+        self.input_annotations = None
 
     def before_call_used_value(self, function_info, subscript, call_code, value_code, value_value, ast_lineno,
                                ast_col_offset):
@@ -64,3 +66,20 @@ class PandasBackend(Backend):
             annotations_iterator = analyzer.visit_operator(return_value.itertuples())
             annotations_df = DataFrame(annotations_iterator, columns=[str(analyzer)])
             print(annotations_df)
+            self.input_data = return_value
+            self.input_annotations = annotations_df
+        elif function_info == ('pandas.core.frame', 'dropna'):
+            analyzer = PrintFirstRowsAnalyzer(5)
+            print("dropna")
+            # Performance tips:
+            # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+            # We need our own iterator type:
+            # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas/41022840#41022840
+            data_before_with_annotations = pandas.concat([self.input_data, self.input_annotations], axis=1)
+            joined_df = pandas.merge(data_before_with_annotations, return_value, left_index=True, right_index=True)
+
+            annotations_iterator = analyzer.visit_operator(joined_df.itertuples())
+            annotations_df = DataFrame(annotations_iterator, columns=[str(analyzer)])
+            print(annotations_df)
+            self.input_data = None
+            self.input_annotations = None
