@@ -1,10 +1,12 @@
 """
 The pandas backend
 """
+import collections
 import os
 from collections import namedtuple
 
 import pandas
+from pandas.compat import PY37
 from pandas import DataFrame
 
 from mlinspect.instrumentation.analyzers.print_first_rows_analyzer import PrintFirstRowsAnalyzer
@@ -84,21 +86,34 @@ class PandasBackend(Backend):
             # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
             # We need our own iterator type:
             # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas/41022840#41022840
-
-            def iter_input_annotation_output():
-                column_index_input_end = len(self.input_data.columns) + 1
-                column_index_annotation_end = column_index_input_end + len(self.input_annotations.columns)
-                data_before_with_annotations = pandas.concat([self.input_data, self.input_annotations], axis=1)
-                joined_df = pandas.merge(data_before_with_annotations, return_value, left_index=True, right_index=True)
-                for row in joined_df.itertuples():
-                    AnalyzerInputRow = namedtuple('Row', ['input', 'annotation', 'output'])
-                    next_row = AnalyzerInputRow(input=row[0:column_index_input_end],
-                                                annotation=row[column_index_input_end:column_index_annotation_end],
-                                                output=row[column_index_annotation_end:])
-                    yield next_row
-
-            annotations_iterator = analyzer.visit_operator(iter_input_annotation_output())
+            annotations_iterator = analyzer.visit_operator(iter_input_annotation_output(self.input_data,
+                                                                                        self.input_annotations,
+                                                                                        return_value))
             annotations_df = DataFrame(annotations_iterator, columns=[str(analyzer)])
             # print(annotations_df)
             self.input_data = None
             self.input_annotations = None
+
+
+def iter_input_annotation_output(input_data, input_annotations, output):
+    column_index_input_end = len(input_data.columns) + 1
+    column_index_annotation_end = column_index_input_end + len(input_annotations.columns)
+    data_before_with_annotations = pandas.concat([input_data, input_annotations], axis=1)
+    joined_df = pandas.merge(data_before_with_annotations, output, left_index=True, right_index=True)
+
+    # this is an adjusted version of the pandas DataFrame itertuples method
+    # split into multiple parts
+    arrays = []
+    fields = list(joined_df.columns)
+
+    # use integer indexing because of possible duplicate column names
+    arrays.extend(joined_df.iloc[:, k] for k in range(len(joined_df.columns)))
+
+    # Python versions before 3.7 support at most 255 arguments to constructors
+    can_return_named_tuples = PY37 or len(joined_df.columns) + joined_df.index < 255
+    if can_return_named_tuples:
+        itertuple = collections.namedtuple("AnalyzerInput", fields, rename=True)
+        return map(itertuple._make, zip(*arrays))
+
+    # fallback to regular tuples
+    return zip(*arrays)
