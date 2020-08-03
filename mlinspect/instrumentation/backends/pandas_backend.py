@@ -49,5 +49,8 @@ class PandasBackend(Backend):
         # pylint: disable=too-many-arguments, unused-argument, no-self-use
         print("pandas_after_call_used")
         if function_info == ('pandas.io.parsers', 'read_csv'):
+            analyzer = PrintFirstRowsAnalyzer(5)
             print("read.csv:")
-            PrintFirstRowsAnalyzer(5).visit_operator(return_value.itertuples())
+            # Performance tips:
+            # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+            annotations = [analyzer.process_row(row) for row in return_value]
