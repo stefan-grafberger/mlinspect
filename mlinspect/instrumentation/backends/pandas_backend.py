@@ -3,16 +3,15 @@ The pandas backend
 """
 import os
 
+from mlinspect.instrumentation.backends.backend import Backend
 
-class PandasBackend:
+
+class PandasBackend(Backend):
     """
     The pandas backend
     """
 
     prefix = "pandas"
-
-    def __init__(self):
-        self.call_description_map = {}
 
     def before_call_used_value(self, function_info, subscript, call_code, value_code, value_value, ast_lineno,
                                ast_col_offset):

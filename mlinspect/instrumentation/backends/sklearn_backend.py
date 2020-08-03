@@ -1,17 +1,15 @@
 """
 The scikit-learn backend
 """
+from mlinspect.instrumentation.backends.backend import Backend
 
 
-class SklearnBackend:
+class SklearnBackend(Backend):
     """
     The scikit-learn backend
     """
 
     prefix = "sklearn"
-
-    def __init__(self):
-        self.call_description_map = {}
 
     def before_call_used_value(self, function_info, subscript, call_code, value_code, value_value, ast_lineno,
                                ast_col_offset):

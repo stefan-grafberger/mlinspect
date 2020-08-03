@@ -4,8 +4,6 @@ Instrument and executes the pipeline
 import ast
 import copy
 
-import astunparse
-import astpretty  # pylint: disable=unused-import
 import nbformat
 from nbconvert import PythonExporter
 
@@ -47,6 +45,7 @@ class PipelineExecutor:
 
         wir_extractor = WirExtractor(original_parsed_ast)
         wir_extractor.extract_wir()
+
         ast_call_node_id_to_description = {}
         for backend in self.backend_map.values():
             ast_call_node_id_to_description = {**ast_call_node_id_to_description, **backend.call_description_map}
@@ -108,26 +107,12 @@ class PipelineExecutor:
 
             function_info = (module_info.__name__, str(function.split(".")[-1]))
             self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
-
-            print("_______________________________________")
-            print("before call used value: {}".format(call_code.split("\n")[0]))
-            print("function_info: {}".format(function_info))
-            print("value_code: {}".format(value_code))
-            print("value_value: {}".format(value_value))
-            print("_______________________________________")
         else:
             function = str(call_code.split("[", 1)[0])
             module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
 
             function_info = (module_info.__name__, "__getitem__")
             self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
-
-            print("_______________________________________")
-            print("before call used value: {}".format(call_code.split("\n")[0]))
-            print("function_info: {}".format(function_info))
-            print("value_code: {}".format(value_code))
-            print("value_value: {}".format(value_value))
-            print("_______________________________________")
 
         function_prefix = function_info[0].split(".", 1)[0]
         if function_prefix in self.backend_map:
@@ -148,26 +133,12 @@ class PipelineExecutor:
 
             function_info = (module_info.__name__, str(function.split(".")[-1]))
             self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
-
-            print("_______________________________________")
-            print("before call used args: {}".format(call_code.split("\n")[0]))
-            print("function_info: {}".format(function_info))
-            print("args_code: {}".format(args_code))
-            print("args_values: {}".format(args_values))
-            print("_______________________________________")
         else:
             function = str(call_code.split("[", 1)[0])
             module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
 
             function_info = (module_info.__name__, "__getitem__")
             self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
-
-            print("_______________________________________")
-            print("before call used args: {}".format(call_code.split("\n")[0]))
-            print("function_info: {}".format(function_info))
-            print("args_code: {}".format(args_code))
-            print("args_values: {}".format(args_values))
-            print("_______________________________________")
 
         function_prefix = function_info[0].split(".", 1)[0]
         if function_prefix in self.backend_map:
@@ -189,13 +160,6 @@ class PipelineExecutor:
         function_info = (module_info.__name__, str(function.split(".")[-1]))
         self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
 
-        print("_______________________________________")
-        print("before call used kwargs: {}".format(call_code.split("\n")[0]))
-        print("function_info: {}".format(function_info))
-        print("kwargs_code: {}".format(kwargs_code))
-        print("args_values: {}".format(kwargs_values))
-        print("_______________________________________")
-
         function_prefix = function_info[0].split(".", 1)[0]
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
@@ -215,12 +179,6 @@ class PipelineExecutor:
 
             function_info = (module_info.__name__, str(function.split(".")[-1]))
             self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
-
-            print("_______________________________________")
-            print("after call used: {}".format(call_code.split("\n")[0]))
-            print("function_info: {}".format(function_info))
-            print("return_value: {}".format(str(return_value)))
-            print("_______________________________________")
         else:
             function = str(call_code.split("[", 1)[0])
             module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
@@ -228,26 +186,12 @@ class PipelineExecutor:
             function_info = (module_info.__name__, "__getitem__")
             self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
 
-            print("_______________________________________")
-            print("after call used: {}".format(call_code.split("\n")[0]))
-            print("function_info: {}".format(function_info))
-            print("return_value: {}".format(str(return_value)))
-            print("_______________________________________")
-
         function_prefix = function_info[0].split(".", 1)[0]
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
             backend.after_call_used(function_info, subscript, call_code, return_value, ast_lineno, ast_col_offset)
 
         return return_value
-
-    @staticmethod
-    def output_parsed_ast(parsed_ast):
-        """
-        Output the unparsed Dag, print the DAG and generate an image of it
-        """
-        astunparse.unparse(parsed_ast)  # TODO: Remove this
-        astpretty.pprint(parsed_ast)  # TODO: Remove this
 
 
 # How we instrument the calls
@@ -278,7 +222,8 @@ def before_call_used_kwargs(subscript, call_code, kwargs_code, ast_lineno, ast_c
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
-    return singleton.before_call_used_kwargs(subscript, call_code, kwargs_code, ast_lineno, ast_col_offset, kwarg_values)
+    return singleton.before_call_used_kwargs(subscript, call_code, kwargs_code, ast_lineno, ast_col_offset,
+                                             kwarg_values)
 
 
 def after_call_used(subscript, call_code, return_value, ast_lineno, ast_col_offset):

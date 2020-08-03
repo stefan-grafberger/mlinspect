@@ -9,23 +9,13 @@ class Backend(metaclass=abc.ABCMeta):
     The Interface for the different instrumentation backends
     """
 
-    @classmethod
-    def __subclasshook__(cls, subclass):
-        return (hasattr(subclass, 'prefix') and
-                hasattr(subclass, 'call_description_map') and
-                callable(subclass.call_description_map) and
-                hasattr(subclass, 'before_call_used_value') and
-                callable(subclass.before_call_used_value) and
-                hasattr(subclass, 'before_call_used_args') and
-                callable(subclass.before_call_used_args) and
-                hasattr(subclass, 'before_call_used_kwargs') and
-                callable(subclass.before_call_used_kwargs) and
-                hasattr(subclass, 'after_call_used') and
-                callable(subclass.after_call_used))
+    def __init__(self):
+        self.call_description_map = {}
 
     @property
-    def call_description_map(self):
-        """The map with additional runtime descriptions for operators"""
+    @abc.abstractmethod
+    def prefix(self):
+        """The prefix of the module of the library the backend is for"""
         raise NotImplementedError
 
     @abc.abstractmethod
