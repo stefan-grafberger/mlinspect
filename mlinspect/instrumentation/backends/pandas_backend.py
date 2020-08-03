@@ -3,6 +3,7 @@ The pandas backend
 """
 import os
 
+from mlinspect.instrumentation.analyzers.print_first_rows_analyzer import PrintFirstRowsAnalyzer
 from mlinspect.instrumentation.backends.backend import Backend
 
 
@@ -47,3 +48,6 @@ class PandasBackend(Backend):
         """The return value of some function"""
         # pylint: disable=too-many-arguments, unused-argument, no-self-use
         print("pandas_after_call_used")
+        if function_info == ('pandas.io.parsers', 'read_csv'):
+            print("read.csv:")
+            PrintFirstRowsAnalyzer(5).visit_operator(return_value.itertuples())
