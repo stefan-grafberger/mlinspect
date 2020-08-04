@@ -1,14 +1,14 @@
 """
 The pandas backend
 """
-import collections
 import os
-from collections import namedtuple
+from functools import partial
 
 import pandas
-from pandas.compat import PY37
 from pandas import DataFrame
 
+from mlinspect.instrumentation.analyzer_input import AnalyzerInputUnaryOperator, AnalyzerInputRow, \
+    AnalyzerInputDataSource
 from mlinspect.instrumentation.analyzers.print_first_rows_analyzer import PrintFirstRowsAnalyzer
 from mlinspect.instrumentation.backends.backend import Backend
 
@@ -32,10 +32,7 @@ class PandasBackend(Backend):
         print("pandas_before_call_used_value")
 
         if function_info == ('pandas.core.frame', 'dropna'):
-            analyzer = PrintFirstRowsAnalyzer(5)
             print("dropna")
-            # .copy() necessary if inplace. However, inplace should not be used and
-            # we ignore this edge case for now
             self.input_data = value_value
 
     def before_call_used_args(self, function_info, subscript, call_code, args_code, ast_lineno, ast_col_offset,
@@ -45,6 +42,7 @@ class PandasBackend(Backend):
         self.before_call_used_args_add_description(args_values, ast_col_offset, ast_lineno, function_info)
 
     def before_call_used_args_add_description(self, args_values, ast_col_offset, ast_lineno, function_info):
+        """Add special descriptions to certain pandas operators"""
         description = None
         if function_info == ('pandas.io.parsers', 'read_csv'):
             filename = args_values[0].split(os.path.sep)[-1]
@@ -75,52 +73,62 @@ class PandasBackend(Backend):
             # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
             # We need our own iterator type:
             # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas/41022840#41022840
-            annotations_iterator = analyzer.visit_operator(return_value.sort_index().itertuples())
-            annotations_df = DataFrame(annotations_iterator, columns=[str(analyzer)])
-            print(return_value.sort_index())
+            annotations_iterator = analyzer.visit_operator("Data Source", iter_input_data_source(return_value))
+            annotations_df = DataFrame(annotations_iterator, columns=["TestAnalyzer"])
             self.input_annotations = annotations_df
         elif function_info == ('pandas.core.frame', 'dropna'):
             analyzer = PrintFirstRowsAnalyzer(5)
             print("dropna")
-            # Performance tips:
-            # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-            # We need our own iterator type:
-            # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas/41022840#41022840
-            annotations_iterator = analyzer.visit_operator(iter_input_annotation_output(self.input_data,
+            annotations_iterator = analyzer.visit_operator("Selection",
+                                                           iter_input_annotation_output(self.input_data,
                                                                                         self.input_annotations,
                                                                                         return_value))
             annotations_df = DataFrame(annotations_iterator, columns=["TestAnalyzer"])
-            # print(annotations_df)
             self.input_data = None
             self.input_annotations = None
 
 
+def iter_input_data_source(output):
+    """
+    Create an efficient iterator for the analyzer input for operators with no parent: Data Source
+    """
+    output = get_named_tuple_for_tuple_part(output, 0, len(output.columns))
+    return map(AnalyzerInputDataSource, output)
+
+
 def iter_input_annotation_output(input_data, input_annotations, output):
+    """
+    Create an efficient iterator for the analyzer input for operators with one parent.
+    """
+    # Performance tips:
+    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+    # We need our own iterator type:
+    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas/41022840#41022840
     column_index_input_end = len(input_data.columns)
     column_index_annotation_end = column_index_input_end + len(input_annotations.columns)
     data_before_with_annotations = pandas.concat([input_data, input_annotations], axis=1)
     joined_df = pandas.merge(data_before_with_annotations, output, left_index=True, right_index=True)
 
-    input = get_named_tuple_for_tuple_part(joined_df, "input", 0, column_index_input_end)
-    annotations = get_named_tuple_for_tuple_part(joined_df, "annotations", column_index_input_end,
-                                                 column_index_annotation_end)
-    output = get_named_tuple_for_tuple_part(joined_df, "output", column_index_annotation_end,
-                                            len(joined_df.columns))
-    # this is an adjusted version of the pandas DataFrame itertuples method
-    # split into multiple parts
-    itertuple = collections.namedtuple("AnalyzerInput", ["input", "annotations", "output"], rename=True)
-    return map(itertuple._make, zip(input, annotations, output))
+    input_rows = get_named_tuple_for_tuple_part(joined_df, 0, column_index_input_end)
+    annotation_rows = get_named_tuple_for_tuple_part(joined_df, column_index_input_end,
+                                                     column_index_annotation_end)
+    output_rows = get_named_tuple_for_tuple_part(joined_df, column_index_annotation_end,
+                                                 len(joined_df.columns))
+
+    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
+               zip(input_rows, annotation_rows, output_rows))
 
 
-def get_named_tuple_for_tuple_part(joined_df, name, start_col, end_col):
+def get_named_tuple_for_tuple_part(joined_df, start_col, end_col):
+    """
+    Create an efficient iterator for the data frame rows.
+    The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
+    """
     arrays = []
     fields = list(joined_df.columns[start_col:end_col])
     # use integer indexing because of possible duplicate column names
     arrays.extend(joined_df.iloc[:, k] for k in range(start_col, end_col))
-    # Python versions before 3.7 support at most 255 arguments to constructors
-    can_return_named_tuples = PY37 or len(joined_df.columns) + joined_df.index < 255
-    if can_return_named_tuples:
-        itertuple = collections.namedtuple(name, fields, rename=True)
-        return map(itertuple._make, zip(*arrays))
-    # fallback to regular tuples
-    return zip(*arrays)
+
+    partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
+    test = map(partial_func_create_row, zip(*arrays))
+    return test
