@@ -117,6 +117,16 @@ def iter_input_annotation_output(input_data, input_annotations, output):
     joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
                              right_on="mlinspect_index")
 
+    # TODO: Remove leftover _x and _y from merge operations above.
+    # TODO: store annotations in map and clean them from map. use wir to determine which
+    # TODO: annotation entry to load from the map for specific function arguments.
+    # TODO: Introduce analyzer abstract class.
+    # TODO: Add analyzer output to the extracted DAG instead of printing it
+    # TODO: Do not always use the print test analazyer, but build a test case
+    # TODO: and add functions/arguments to inspector and executor.
+    # TODO: Then support the rest of the pandas functions for this example.
+    # TODO: Sklearn backend as part of next PR.
+
     input_rows = get_row_iterator(joined_df, 0, column_index_input_end)
     annotation_rows = get_row_iterator(joined_df, column_index_input_end,
                                        column_index_annotation_end)
