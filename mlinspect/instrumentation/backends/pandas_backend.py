@@ -36,7 +36,6 @@ class PandasBackend(Backend):
             value_value['mlinspect_index'] = range(1, len(value_value) + 1)
             self.input_data = value_value
 
-
     def before_call_used_args(self, function_info, subscript, call_code, args_code, ast_lineno, ast_col_offset,
                               args_values):
         """The arguments a function may be called with"""
@@ -136,7 +135,7 @@ def get_row_iterator(joined_df, start_col, end_col):
     arrays = []
     fields = list(joined_df.columns[start_col:end_col])
     # use integer indexing because of possible duplicate column names
-    arrays.extend(joined_df.iloc[:, k] for k in range(start_col, end_col))  # sort_index fixes things
+    arrays.extend(joined_df.iloc[:, k] for k in range(start_col, end_col))
 
     partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
     test = map(partial_func_create_row, zip(*arrays))
