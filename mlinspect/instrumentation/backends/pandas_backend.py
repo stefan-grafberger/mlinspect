@@ -128,6 +128,9 @@ def iter_input_annotation_output(input_data, input_annotations, output):
     # TODO: Sklearn backend as part of next PR.
     # TODO: Move SklearnWirPreprocessor functionality to backend interface
     # TODO: Vertex classes as data classes. also: maybe rename to node
+    # TODO: In WirToDagTransformer the map to operators should also be moved into backend.
+    # TODO: Then we can also introduce warnings whenever there is e.g., a pandas function
+    # TODO: that the pandas backend can not deal with (has no operator mapping for)
 
     input_rows = get_row_iterator(joined_df, 0, column_index_input_end)
     annotation_rows = get_row_iterator(joined_df, column_index_input_end,
