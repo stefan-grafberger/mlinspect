@@ -95,14 +95,3 @@ class WirToDagTransformer:
         traverse_graph_and_process_nodes(graph, process_node)
 
         return graph
-
-    def get_parent_operator_identifier_for_operator(self, lineno, col_offset):
-        """
-        If we store the annotations of analyzers in a map until the next operator needs it, we need some
-        way to identify them and know when we can delete them. When e.g., there is a raw_data.dropna, it needs
-        to know that the previous operator was the pd.read_csv. Then it can load the annotations from a map.
-        Afterwards, the annotations need to be deleted from the map to avoid unnecessary overhead.
-        While we might store the annotations directly in the data frame in the case of pandas, in the case of
-        sklearn that is probably not easily possible.
-        """
-        raise NotImplementedError
