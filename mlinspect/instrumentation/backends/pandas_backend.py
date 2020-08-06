@@ -127,8 +127,6 @@ def iter_input_annotation_output(input_data, input_annotations, output):
     joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
                              right_on="mlinspect_index")
 
-    # TODO: store annotations in map and clean them from map. use wir to determine which
-    # TODO: annotation entry to load from the map for specific function arguments.
     # TODO: Introduce analyzer abstract class.
     # TODO: Add analyzer output to the extracted DAG instead of printing it
     # TODO: Do not always use the print test analazyer, but build a test case
@@ -141,6 +139,7 @@ def iter_input_annotation_output(input_data, input_annotations, output):
     # TODO: Then we can also introduce warnings whenever there is e.g., a pandas function
     # TODO: that the pandas backend can not deal with (has no operator mapping for)
     # TODO: Add utility function to extract the library name, pandas and sklearn etc.
+    # TODO: extract the function info adjustments for overwritten classes into backend in some way
 
     input_df_view = joined_df.iloc[:, 0:column_index_input_end-1]
     input_df_view.columns = input_data.columns[0:-1]
