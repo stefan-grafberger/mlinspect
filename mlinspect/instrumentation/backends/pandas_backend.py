@@ -11,6 +11,7 @@ from mlinspect.instrumentation.analyzer_input import AnalyzerInputUnaryOperator,
     AnalyzerInputDataSource
 from mlinspect.instrumentation.analyzers.print_first_rows_analyzer import PrintFirstRowsAnalyzer
 from mlinspect.instrumentation.backends.backend import Backend
+from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
 
 
 class PandasBackend(Backend):
@@ -23,7 +24,6 @@ class PandasBackend(Backend):
     def __init__(self):
         super().__init__()
         self.input_data = None
-        self.input_annotations = None
 
     def before_call_used_value(self, function_info, subscript, call_code, value_code, value_value, ast_lineno,
                                ast_col_offset):
@@ -33,6 +33,7 @@ class PandasBackend(Backend):
 
         if function_info == ('pandas.core.frame', 'dropna'):
             print("dropna")
+            assert isinstance(value_value, MlinspectDataFrame)
             value_value['mlinspect_index'] = range(1, len(value_value) + 1)
             self.input_data = value_value
 
@@ -77,21 +78,30 @@ class PandasBackend(Backend):
             annotations_iterator = analyzer.visit_operator("Data Source", iter_input_data_source(return_value))
             annotations_df = DataFrame(annotations_iterator, columns=["TestAnalyzer"])
             annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
-            self.input_annotations = annotations_df
+
+            return_value = MlinspectDataFrame(return_value)
+            return_value.annotations = annotations_df
+            assert isinstance(return_value, MlinspectDataFrame)
 
         elif function_info == ('pandas.core.frame', 'dropna'):
             assert "mlinspect_index" in return_value.columns
+            assert isinstance(self.input_data, MlinspectDataFrame)
+
             analyzer = PrintFirstRowsAnalyzer(5)
             print("dropna")
             annotations_iterator = analyzer.visit_operator("Selection",
                                                            iter_input_annotation_output(self.input_data,
-                                                                                        self.input_annotations,
+                                                                                        self.input_data.annotations,
                                                                                         return_value))
             annotations_df = DataFrame(annotations_iterator, columns=["TestAnalyzer"])
+            return_value.annotations = annotations_df
             self.input_data = None
-            self.input_annotations = annotations_df
             return_value = return_value.drop("mlinspect_index", axis=1)
+
             assert "mlinspect_index" not in return_value.columns
+            assert isinstance(return_value, MlinspectDataFrame)
+
+        return return_value
 
 
 def iter_input_data_source(output):

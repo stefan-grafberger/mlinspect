@@ -50,3 +50,4 @@ class SklearnBackend(Backend):
         """The return value of some function"""
         # pylint: disable=too-many-arguments, unused-argument, no-self-use
         print("sklearn_after_call_used")
+        return return_value

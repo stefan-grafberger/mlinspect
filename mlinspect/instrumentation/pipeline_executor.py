@@ -106,13 +106,15 @@ class PipelineExecutor:
             module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
 
             function_info = (module_info.__name__, str(function.split(".")[-1]))
-            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
         else:
             function = str(call_code.split("[", 1)[0])
             module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
 
             function_info = (module_info.__name__, "__getitem__")
-            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
+
+        # TODO: Extract this into backend
+        if function_info[0] == 'mlinspect.instrumentation.backends.pandas_backend_frame_wrapper':
+            function_info = ('pandas.core.frame', function_info[1])
 
         function_prefix = function_info[0].split(".", 1)[0]
         if function_prefix in self.backend_map:
@@ -132,13 +134,15 @@ class PipelineExecutor:
             module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
 
             function_info = (module_info.__name__, str(function.split(".")[-1]))
-            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
         else:
             function = str(call_code.split("[", 1)[0])
             module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
 
             function_info = (module_info.__name__, "__getitem__")
-            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
+
+        # TODO: Extract this into backend
+        if function_info[0] == 'mlinspect.instrumentation.backends.pandas_backend_frame_wrapper':
+            function_info = ('pandas.core.frame', function_info[1])
 
         function_prefix = function_info[0].split(".", 1)[0]
         if function_prefix in self.backend_map:
@@ -158,7 +162,10 @@ class PipelineExecutor:
         module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
 
         function_info = (module_info.__name__, str(function.split(".")[-1]))
-        self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
+
+        # TODO: Extract this into backend
+        if function_info[0] == 'mlinspect.instrumentation.backends.pandas_backend_frame_wrapper':
+            function_info = ('pandas.core.frame', function_info[1])
 
         function_prefix = function_info[0].split(".", 1)[0]
         if function_prefix in self.backend_map:
@@ -178,18 +185,22 @@ class PipelineExecutor:
             module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
 
             function_info = (module_info.__name__, str(function.split(".")[-1]))
-            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
         else:
             function = str(call_code.split("[", 1)[0])
             module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
 
             function_info = (module_info.__name__, "__getitem__")
-            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
+
+        # TODO: Extract this into backend
+        if function_info[0] == 'mlinspect.instrumentation.backends.pandas_backend_frame_wrapper':
+            function_info = ('pandas.core.frame', function_info[1])
+        self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
 
         function_prefix = function_info[0].split(".", 1)[0]
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
-            backend.after_call_used(function_info, subscript, call_code, return_value, ast_lineno, ast_col_offset)
+            return backend.after_call_used(function_info, subscript, call_code, return_value, ast_lineno,
+                                           ast_col_offset)
 
         return return_value
 

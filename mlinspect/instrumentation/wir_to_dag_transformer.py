@@ -17,6 +17,7 @@ class WirToDagTransformer:
         ('pandas.io.parsers', 'read_csv'): "Data Source",
         ('pandas.core.frame', 'dropna'): "Selection",
         ('pandas.core.frame', '__getitem__'): "Projection",
+        ('mlinspect.instrumentation.backends.pandas_backend_frame_wrapper', '__getitem__'): "Projection",
         ('sklearn.preprocessing._label', 'label_binarize'): "Projection (Modify)",
         ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'): "Projection",
         ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'): "Transformer",
