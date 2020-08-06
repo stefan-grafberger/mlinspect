@@ -98,7 +98,7 @@ def iter_input_data_source(output):
     """
     Create an efficient iterator for the analyzer input for operators with no parent: Data Source
     """
-    output = get_row_iterator(output, 0, len(output.columns))
+    output = get_row_iterator(output)
     return map(AnalyzerInputDataSource, output)
 
 
@@ -117,7 +117,6 @@ def iter_input_annotation_output(input_data, input_annotations, output):
     joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
                              right_on="mlinspect_index")
 
-    # TODO: Remove leftover _x and _y from merge operations above.
     # TODO: store annotations in map and clean them from map. use wir to determine which
     # TODO: annotation entry to load from the map for specific function arguments.
     # TODO: Introduce analyzer abstract class.
@@ -133,25 +132,31 @@ def iter_input_annotation_output(input_data, input_annotations, output):
     # TODO: that the pandas backend can not deal with (has no operator mapping for)
     # TODO: Add utility function to extract the library name, pandas and sklearn etc.
 
-    input_rows = get_row_iterator(joined_df, 0, column_index_input_end)
-    annotation_rows = get_row_iterator(joined_df, column_index_input_end,
-                                       column_index_annotation_end)
-    output_rows = get_row_iterator(joined_df, column_index_annotation_end,
-                                   len(joined_df.columns))
+    input_df_view = joined_df.iloc[:, 0:column_index_input_end-1]
+    input_df_view.columns = input_data.columns[0:-1]
+
+    annotation_df_view = joined_df.iloc[:, column_index_input_end:column_index_annotation_end+1]
+
+    output_df_view = joined_df.iloc[:, column_index_annotation_end:]
+    output_df_view.columns = output.columns[0:-1]
+
+    input_rows = get_row_iterator(input_df_view)
+    annotation_rows = get_row_iterator(annotation_df_view)
+    output_rows = get_row_iterator(output_df_view)
 
     return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
 
 
-def get_row_iterator(joined_df, start_col, end_col):
+def get_row_iterator(dataframe):
     """
     Create an efficient iterator for the data frame rows.
     The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
     """
     arrays = []
-    fields = list(joined_df.columns[start_col:end_col])
+    fields = list(dataframe.columns)
     # use integer indexing because of possible duplicate column names
-    arrays.extend(joined_df.iloc[:, k] for k in range(start_col, end_col))
+    arrays.extend(dataframe.iloc[:, k] for k in range(0, len(dataframe.columns)))
 
     partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
     test = map(partial_func_create_row, zip(*arrays))
