@@ -3,10 +3,12 @@ Instrument and executes the pipeline
 """
 import ast
 import copy
+from typing import List
 
 import nbformat
 from nbconvert import PythonExporter
 
+from .analyzers.analyzer import Analyzer
 from .backends.pandas_backend import PandasBackend
 from .backends.sklearn_backend import SklearnBackend
 from .call_capture_transformer import CallCaptureTransformer
@@ -27,11 +29,14 @@ class PipelineExecutor:
 
     def __init__(self):
         self.ast_call_node_id_to_module = {}
+        self.analyzers = None
 
-    def run(self, notebook_path: str or None, python_path: str or None, python_code: str or None):
+    def run(self, notebook_path: str or None, python_path: str or None, python_code: str or None,
+            analyzers: List[Analyzer]):
         """
         Instrument and execute the pipeline
         """
+        self.analyzers = analyzers
         # pylint: disable=no-self-use
         PipelineExecutor.script_scope = {}
 
@@ -119,8 +124,8 @@ class PipelineExecutor:
         function_prefix = function_info[0].split(".", 1)[0]
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
-            backend.before_call_used_value(function_info, subscript, call_code, value_code, value_value, ast_lineno,
-                                           ast_col_offset)
+            backend.before_call_used_value(self.analyzers, function_info, subscript, call_code, value_code,
+                                           value_value, ast_lineno, ast_col_offset)
 
         return value_value
 
@@ -147,7 +152,7 @@ class PipelineExecutor:
         function_prefix = function_info[0].split(".", 1)[0]
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
-            backend.before_call_used_args(function_info, subscript, call_code, args_code, ast_lineno,
+            backend.before_call_used_args(self.analyzers, function_info, subscript, call_code, args_code, ast_lineno,
                                           ast_col_offset, args_values)
 
         return args_values
@@ -170,8 +175,8 @@ class PipelineExecutor:
         function_prefix = function_info[0].split(".", 1)[0]
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
-            backend.before_call_used_kwargs(function_info, subscript, call_code, kwargs_code, ast_lineno,
-                                            ast_col_offset, kwargs_values)
+            backend.before_call_used_kwargs(self.analyzers, function_info, subscript, call_code, kwargs_code,
+                                            ast_lineno, ast_col_offset, kwargs_values)
 
         return kwargs_values
 
@@ -199,8 +204,8 @@ class PipelineExecutor:
         function_prefix = function_info[0].split(".", 1)[0]
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
-            return backend.after_call_used(function_info, subscript, call_code, return_value, ast_lineno,
-                                           ast_col_offset)
+            return backend.after_call_used(self.analyzers, function_info, subscript, call_code, return_value,
+                                           ast_lineno, ast_col_offset)
 
         return return_value
 

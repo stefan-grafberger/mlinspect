@@ -25,7 +25,7 @@ def test_pipeline_executor_py_file(mocker):
     before_call_used_kwargs_spy = mocker.spy(pipeline_executor, 'before_call_used_kwargs')
     after_call_used_spy = mocker.spy(pipeline_executor, 'after_call_used')
 
-    extracted_dag = pipeline_executor.singleton.run(None, FILE_PY, None)
+    extracted_dag = pipeline_executor.singleton.run(None, FILE_PY, None, [])
     expected_dag = get_expected_dag_adult_easy_py()
     assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
 
@@ -46,7 +46,7 @@ def test_pipeline_executor_nb_file(mocker):
     before_call_used_kwargs_spy = mocker.spy(pipeline_executor, 'before_call_used_kwargs')
     after_call_used_spy = mocker.spy(pipeline_executor, 'after_call_used')
 
-    extracted_dag = pipeline_executor.singleton.run(FILE_NB, None, None)
+    extracted_dag = pipeline_executor.singleton.run(FILE_NB, None, None, [])
     expected_dag = get_expected_dag_adult_easy_ipynb()
     assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
 
@@ -71,7 +71,7 @@ def test_pipeline_executor_function_call_info_extraction():
             """)
 
     pipeline_executor.singleton = pipeline_executor.PipelineExecutor()
-    pipeline_executor.singleton.run(None, None, test_code)
+    pipeline_executor.singleton.run(None, None, test_code, [])
     expected_module_info = {(5, 13): ('posixpath', 'join'),
                             (5, 26): ('builtins', 'str'),
                             (5, 30): ('mlinspect.utils', 'get_project_root'),
@@ -97,7 +97,7 @@ def test_pipeline_executor_function_subscript_index_info_extraction():
             """)
 
     pipeline_executor.singleton = pipeline_executor.PipelineExecutor()
-    pipeline_executor.singleton.run(None, None, test_code)
+    pipeline_executor.singleton.run(None, None, test_code, [])
     expected_module_info = {(5, 13): ('posixpath', 'join'),
                             (5, 26): ('builtins', 'str'),
                             (5, 30): ('mlinspect.utils', 'get_project_root'),
