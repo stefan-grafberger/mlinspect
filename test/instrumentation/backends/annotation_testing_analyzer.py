@@ -23,11 +23,9 @@ class AnnotationTestingAnalyzer(Analyzer):
         return self._analyzer_id
 
     def visit_operator(self, operator, row_iterator):
-        """
-        Visit an operator
-        """
-        current_count = - 1
+        """Visit an operator, generate random number annotations and check whether they get propagated correctly"""
         operator_output = []
+        current_count = - 1
 
         if self.operator_count == 0:
             for row in row_iterator:

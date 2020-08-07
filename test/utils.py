@@ -3,6 +3,8 @@ Some util functions used in other tests
 """
 import os
 import ast
+from inspect import cleandoc
+
 import networkx
 
 from mlinspect.instrumentation.dag_vertex import DagVertex
@@ -238,3 +240,19 @@ def get_test_wir():
     wir = extractor.add_runtime_info(get_module_info(), get_call_description_info())
 
     return wir
+
+
+def get_pandas_read_csv_and_dropna_code():
+    """
+    Get a simple code snipped that loads the adult_easy data and runs dropna
+    """
+    code = cleandoc("""
+            import os
+            import pandas as pd
+            from mlinspect.utils import get_project_root
+
+            train_file = os.path.join(str(get_project_root()), "test", "data", "adult_train.csv")
+            raw_data = pd.read_csv(train_file)
+            data = raw_data.dropna()
+            """)
+    return code

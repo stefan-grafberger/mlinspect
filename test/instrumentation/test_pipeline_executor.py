@@ -8,7 +8,8 @@ import networkx
 
 from mlinspect.utils import get_project_root
 from mlinspect.instrumentation import pipeline_executor
-from ..utils import get_expected_dag_adult_easy_py, get_expected_dag_adult_easy_ipynb
+from ..utils import get_expected_dag_adult_easy_py, get_expected_dag_adult_easy_ipynb, \
+    get_pandas_read_csv_and_dropna_code
 
 FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 FILE_NB = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.ipynb")
@@ -60,15 +61,7 @@ def test_pipeline_executor_function_call_info_extraction():
     """
     Tests whether the capturing of module information works
     """
-    test_code = cleandoc("""
-            import os
-            import pandas as pd
-            from mlinspect.utils import get_project_root
-            
-            train_file = os.path.join(str(get_project_root()), "test", "data", "adult_train.csv")
-            raw_data = pd.read_csv(train_file)
-            data = raw_data.dropna()
-            """)
+    test_code = get_pandas_read_csv_and_dropna_code()
 
     pipeline_executor.singleton = pipeline_executor.PipelineExecutor()
     pipeline_executor.singleton.run(None, None, test_code, [])
