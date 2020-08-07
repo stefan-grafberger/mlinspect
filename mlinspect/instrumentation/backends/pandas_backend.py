@@ -69,59 +69,64 @@ class PandasBackend(Backend):
             # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
             # We need our own iterator type:
             # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas/41022840#41022840
-            annotation_iterators = []
-            for analyzer in analyzers:
-                annotation_iterator = analyzer.visit_operator("Data Source", iter_input_data_source(return_value))
-                annotation_iterators.append(annotation_iterator)
-
-            annotation_iterators = zip(*annotation_iterators)
-            analyzer_names = [analyzer.analyzer_id for analyzer in analyzers]
-            annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
-            annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
-
-            analyzer_outputs = {}
-            for analyzer in analyzers:
-                analyzer_output = analyzer.get_operator_annotation_after_visit()
-                print(analyzer_output)
-                analyzer_outputs[analyzer] = analyzer_output
-
-            self.call_analyzer_output_map[(ast_lineno, ast_col_offset)] = analyzer_outputs
-
-            return_value = MlinspectDataFrame(return_value)
-            return_value.annotations = annotations_df
-            assert isinstance(return_value, MlinspectDataFrame)
-
+            return_value = self.execute_analyzer_visits_data_source(analyzers, ast_col_offset, ast_lineno, return_value)
         elif function_info == ('pandas.core.frame', 'dropna'):
-            assert "mlinspect_index" in return_value.columns
-            assert isinstance(self.input_data, MlinspectDataFrame)
+            operator_name = "Selection"
+            return_value = self.execute_analyzer_visits_unary_operator(analyzers, operator_name, ast_col_offset,
+                                                                       ast_lineno, return_value)
 
-            annotation_iterators = []
-            for analyzer in analyzers:
-                annotations_iterator = analyzer.visit_operator("Selection",
-                                                               iter_input_annotation_output(self.input_data,
-                                                                                            self.input_data.annotations,
-                                                                                            return_value))
-                annotation_iterators.append(annotations_iterator)
+        return return_value
 
-            annotation_iterators = zip(*annotation_iterators)
-            analyzer_names = [analyzer.analyzer_id for analyzer in analyzers]
-            annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
-            annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
+    def execute_analyzer_visits_data_source(self, analyzers, ast_col_offset, ast_lineno, return_value):
+        """Execute analyzers when the current operator is a data source and does not have parents in the DAG"""
+        annotation_iterators = []
+        for analyzer in analyzers:
+            annotation_iterator = analyzer.visit_operator("Data Source", iter_input_data_source(return_value))
+            annotation_iterators.append(annotation_iterator)
+        return_value = self.store_analyzer_outputs(analyzers, annotation_iterators, ast_col_offset, ast_lineno,
+                                                   return_value)
+        return return_value
 
-            analyzer_outputs = {}
-            for analyzer in analyzers:
-                analyzer_output = analyzer.get_operator_annotation_after_visit()
-                print(analyzer_output)
-                analyzer_outputs[analyzer] = analyzer_output
-
-            self.call_analyzer_output_map[(ast_lineno, ast_col_offset)] = analyzer_outputs
-
-            self.input_data = None
+    def store_analyzer_outputs(self, analyzers, annotation_iterators, ast_col_offset, ast_lineno, return_value):
+        """
+        Stores the analyzer annotations for the rows in the dataframe and the
+        analyzer annotations for the DAG operators in a map
+        """
+        # pylint: disable=too-many-arguments
+        annotation_iterators = zip(*annotation_iterators)
+        analyzer_names = [str(analyzer) for analyzer in analyzers]
+        annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
+        annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
+        analyzer_outputs = {}
+        for analyzer in analyzers:
+            analyzer_output = analyzer.get_operator_annotation_after_visit()
+            print(analyzer_output)
+            analyzer_outputs[analyzer] = analyzer_output
+        self.call_analyzer_output_map[(ast_lineno, ast_col_offset)] = analyzer_outputs
+        return_value = MlinspectDataFrame(return_value)
+        return_value.annotations = annotations_df
+        self.input_data = None
+        if "mlinspect_index" in return_value.columns:
             return_value = return_value.drop("mlinspect_index", axis=1)
+        assert "mlinspect_index" not in return_value.columns
+        assert isinstance(return_value, MlinspectDataFrame)
+        return return_value
 
-            assert "mlinspect_index" not in return_value.columns
-            assert isinstance(return_value, MlinspectDataFrame)
-
+    def execute_analyzer_visits_unary_operator(self, analyzers, operator_name, ast_col_offset, ast_lineno,
+                                               return_value):
+        """Execute analyzers when the current operator has one parent in the DAG"""
+        # pylint: disable=too-many-arguments
+        assert "mlinspect_index" in return_value.columns
+        assert isinstance(self.input_data, MlinspectDataFrame)
+        annotation_iterators = []
+        for analyzer in analyzers:
+            annotations_iterator = analyzer.visit_operator(operator_name,
+                                                           iter_input_annotation_output(self.input_data,
+                                                                                        self.input_data.annotations,
+                                                                                        return_value))
+            annotation_iterators.append(annotations_iterator)
+        return_value = self.store_analyzer_outputs(analyzers, annotation_iterators, ast_col_offset, ast_lineno,
+                                                   return_value)
         return return_value
 
 
@@ -160,6 +165,8 @@ def iter_input_annotation_output(input_data, input_annotations, output):
     # TODO: that the pandas backend can not deal with (has no operator mapping for)
     # TODO: Add utility function to extract the library name, pandas and sklearn etc.
     # TODO: extract the function info adjustments for overwritten classes into backend in some way
+
+    # FIXME: When there are multiple analyzers, each one should see its own annotations only
 
     input_df_view = joined_df.iloc[:, 0:column_index_input_end-1]
     input_df_view.columns = input_data.columns[0:-1]
