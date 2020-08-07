@@ -25,7 +25,7 @@ def test_pipeline_executor_py_file(mocker):
     before_call_used_kwargs_spy = mocker.spy(pipeline_executor, 'before_call_used_kwargs')
     after_call_used_spy = mocker.spy(pipeline_executor, 'after_call_used')
 
-    extracted_dag = pipeline_executor.singleton.run(None, FILE_PY, None, []).graph
+    extracted_dag = pipeline_executor.singleton.run(None, FILE_PY, None, []).dag
     expected_dag = get_expected_dag_adult_easy_py()
     assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
 
@@ -46,7 +46,7 @@ def test_pipeline_executor_nb_file(mocker):
     before_call_used_kwargs_spy = mocker.spy(pipeline_executor, 'before_call_used_kwargs')
     after_call_used_spy = mocker.spy(pipeline_executor, 'after_call_used')
 
-    extracted_dag = pipeline_executor.singleton.run(FILE_NB, None, None, []).graph
+    extracted_dag = pipeline_executor.singleton.run(FILE_NB, None, None, []).dag
     expected_dag = get_expected_dag_adult_easy_ipynb()
     assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
 

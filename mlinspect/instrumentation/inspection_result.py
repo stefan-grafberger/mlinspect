@@ -14,5 +14,5 @@ class InspectionResult:
     """
     The class the PipelineExecutor returns
     """
-    graph: networkx.DiGraph
+    dag: networkx.DiGraph
     analyzer_to_annotations: Dict[Analyzer, Dict[Tuple[int, int], any]]

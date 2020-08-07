@@ -22,7 +22,7 @@ def test_inspector_py_pipeline():
         .on_pipeline_from_py_file(FILE_PY)\
         .add_analyzer(PrintFirstRowsAnalyzer(5))\
         .execute()
-    extracted_dag = inspection_result.graph
+    extracted_dag = inspection_result.dag
     expected_dag = get_expected_dag_adult_easy_py()
     assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
 
@@ -35,7 +35,7 @@ def test_inspector_ipynb_pipeline():
         .on_pipeline_from_ipynb_file(FILE_NB)\
         .add_analyzer(PrintFirstRowsAnalyzer(5))\
         .execute()
-    extracted_dag = inspection_result.graph
+    extracted_dag = inspection_result.dag
     expected_dag = get_expected_dag_adult_easy_ipynb()
     assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
 
@@ -51,6 +51,6 @@ def test_inspector_str_pipeline():
             .on_pipeline_from_string(code)\
             .add_analyzer(PrintFirstRowsAnalyzer(5))\
             .execute()
-        extracted_dag = inspection_result.graph
+        extracted_dag = inspection_result.dag
         expected_dag = get_expected_dag_adult_easy_py()
         assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
