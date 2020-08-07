@@ -121,10 +121,14 @@ class PandasBackend(Backend):
         assert isinstance(self.input_data, MlinspectDataFrame)
         annotation_iterators = []
         for analyzer in self.analyzers:
-            annotations_iterator = analyzer.visit_operator(operator_name,
-                                                           iter_input_annotation_output(self.input_data,
-                                                                                        self.input_data.annotations,
-                                                                                        return_value))
+            analyzer_count = len(self.analyzers)
+            analyzer_index = self.analyzers.index(analyzer)
+            iterator_for_analyzer = iter_input_annotation_output(analyzer_count,
+                                                                 analyzer_index,
+                                                                 self.input_data,
+                                                                 self.input_data.annotations,
+                                                                 return_value)
+            annotations_iterator = analyzer.visit_operator(operator_name, iterator_for_analyzer)
             annotation_iterators.append(annotations_iterator)
         return_value = self.store_analyzer_outputs(annotation_iterators, ast_col_offset, ast_lineno,
                                                    return_value)
@@ -139,23 +143,23 @@ def iter_input_data_source(output):
     return map(AnalyzerInputDataSource, output)
 
 
-def iter_input_annotation_output(input_data, input_annotations, output):
+def iter_input_annotation_output(analyzer_count, analyzer_index, input_data, input_annotations, output):
     """
     Create an efficient iterator for the analyzer input for operators with one parent.
     """
+    # pylint: disable=too-many-locals
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
     # We need our own iterator type:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas/41022840#41022840
-    column_index_input_end = len(input_data.columns)
-    column_index_annotation_end = column_index_input_end + 1
     data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
                                                 right_on="mlinspect_index")
     joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
                              right_on="mlinspect_index")
 
-    # TODO: Do not always use the print test analazyer, but build a test case
-    # TODO: and add functions/arguments to inspector and executor.
+    # TODO: Tests for backend annotation propatation: analyzer generates uuid on first time operator seen and checks if
+    #  present on 2nd operator. But only for first 5 values
+    # TODO: Rename analyzer: store or similar
     # TODO: Then support the rest of the pandas functions for this example.
     # TODO: Sklearn backend as part of next PR.
     # TODO: Move SklearnWirPreprocessor functionality to backend interface
@@ -166,12 +170,14 @@ def iter_input_annotation_output(input_data, input_annotations, output):
     # TODO: Add utility function to extract the library name, pandas and sklearn etc.
     # TODO: extract the function info adjustments for overwritten classes into backend in some way
 
-    # FIXME: When there are multiple analyzers, each one should see its own annotations only
+    column_index_input_end = len(input_data.columns)
+    column_index_annotation_end = column_index_input_end + analyzer_count
+    column_annotation_current_analyzer = column_index_input_end + analyzer_index
 
-    input_df_view = joined_df.iloc[:, 0:column_index_input_end-1]
+    input_df_view = joined_df.iloc[:, 0:column_index_input_end - 1]
     input_df_view.columns = input_data.columns[0:-1]
 
-    annotation_df_view = joined_df.iloc[:, column_index_input_end:column_index_annotation_end+1]
+    annotation_df_view = joined_df.iloc[:, column_annotation_current_analyzer:column_annotation_current_analyzer + 1]
 
     output_df_view = joined_df.iloc[:, column_index_annotation_end:]
     output_df_view.columns = output.columns[0:-1]
