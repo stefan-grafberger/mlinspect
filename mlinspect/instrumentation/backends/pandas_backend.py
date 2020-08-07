@@ -156,6 +156,8 @@ def iter_input_annotation_output(analyzer_count, analyzer_index, input_data, inp
     joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
                              right_on="mlinspect_index")
 
+    # TODO: DAG Operators as enums: https://docs.python.org/3/library/enum.html
+    # TODO: Introduce OperatorContext as input for analyzers with DAG Operator and function info
     # TODO: Tests for backend annotation propatation: analyzer generates uuid on first time operator seen and checks if
     #  present on 2nd operator. But only for first 5 values
     # TODO: Then support the rest of the pandas functions for this example.
