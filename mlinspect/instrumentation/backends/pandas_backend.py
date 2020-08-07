@@ -101,7 +101,6 @@ class PandasBackend(Backend):
         analyzer_outputs = {}
         for analyzer in self.analyzers:
             analyzer_output = analyzer.get_operator_annotation_after_visit()
-            print(analyzer_output)
             analyzer_outputs[analyzer] = analyzer_output
         self.call_analyzer_output_map[(ast_lineno, ast_col_offset)] = analyzer_outputs
         return_value = MlinspectDataFrame(return_value)
@@ -168,6 +167,7 @@ def iter_input_annotation_output(analyzer_count, analyzer_index, input_data, inp
     # TODO: that the pandas backend can not deal with (has no operator mapping for)
     # TODO: Add utility function to extract the library name, pandas and sklearn etc.
     # TODO: extract the function info adjustments for overwritten classes into backend in some way
+    # TODO: Update readme with example
 
     column_index_input_end = len(input_data.columns)
     column_index_annotation_end = column_index_input_end + analyzer_count
