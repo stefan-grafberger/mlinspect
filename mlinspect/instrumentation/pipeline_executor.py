@@ -22,24 +22,16 @@ class PipelineExecutor:
     Internal class to instrument and execute pipelines
     """
     script_scope = {}
-
-    backend_map = {
-        PandasBackend.prefix: PandasBackend(),
-        SklearnBackend.prefix: SklearnBackend()
-    }
-
-    def __init__(self):
-        self.ast_call_node_id_to_module = {}
+    backend_map = {}
+    ast_call_node_id_to_module = {}
 
     def run(self, notebook_path: str or None, python_path: str or None, python_code: str or None,
             analyzers: List[Analyzer]) -> InspectionResult:
         """
         Instrument and execute the pipeline
         """
-        for backend in self.backend_map.values():
-            backend.analyzers = analyzers
         # pylint: disable=no-self-use
-        PipelineExecutor.script_scope = {}
+        self.initialize_static_variables(analyzers)
 
         source_code = self.load_source_code(notebook_path, python_path, python_code)
         parsed_ast = ast.parse(source_code)
@@ -55,20 +47,25 @@ class PipelineExecutor:
         ast_call_node_id_to_description = {}
         for backend in self.backend_map.values():
             ast_call_node_id_to_description = {**ast_call_node_id_to_description, **backend.call_description_map}
-
         wir = wir_extractor.add_runtime_info(self.ast_call_node_id_to_module, ast_call_node_id_to_description)
 
         dag = WirToDagTransformer.extract_dag(wir)
-
         analyzer_to_call_to_annotation = self.build_analyzer_result_map(dag)
 
-        # Reset backends
+        return InspectionResult(dag, analyzer_to_call_to_annotation)
+
+    def initialize_static_variables(self, analyzers):
+        """
+        Because variables that the user code has to update are static, we need to set them here
+        """
         PipelineExecutor.backend_map = {
             PandasBackend.prefix: PandasBackend(),
             SklearnBackend.prefix: SklearnBackend()
         }
-
-        return InspectionResult(dag, analyzer_to_call_to_annotation)
+        for backend in self.backend_map.values():
+            backend.analyzers = analyzers
+        PipelineExecutor.script_scope = {}
+        PipelineExecutor.ast_call_node_id_to_module = {}
 
     def build_analyzer_result_map(self, dag):
         """
