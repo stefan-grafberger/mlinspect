@@ -4,6 +4,7 @@ User-facing API for inspecting the pipeline
 from typing import Iterable
 
 from .instrumentation.analyzers.analyzer import Analyzer
+from .instrumentation.inspection_result import InspectionResult
 from .instrumentation.pipeline_executor import singleton
 
 
@@ -35,7 +36,7 @@ class PipelineInspectorBuilder:
         self.analyzers.extend(analyzers)
         return self
 
-    def execute(self):
+    def execute(self) -> InspectionResult:
         """
         Instrument and execute the pipeline
         """

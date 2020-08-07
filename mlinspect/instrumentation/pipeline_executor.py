@@ -12,6 +12,7 @@ from .analyzers.analyzer import Analyzer
 from .backends.pandas_backend import PandasBackend
 from .backends.sklearn_backend import SklearnBackend
 from .call_capture_transformer import CallCaptureTransformer
+from .inspection_result import InspectionResult
 from .wir_extractor import WirExtractor
 from .wir_to_dag_transformer import WirToDagTransformer
 
@@ -32,7 +33,7 @@ class PipelineExecutor:
         self.analyzers = None
 
     def run(self, notebook_path: str or None, python_path: str or None, python_code: str or None,
-            analyzers: List[Analyzer]):
+            analyzers: List[Analyzer]) -> InspectionResult:
         """
         Instrument and execute the pipeline
         """
@@ -59,7 +60,24 @@ class PipelineExecutor:
 
         dag = WirToDagTransformer.extract_dag(wir)
 
-        return dag
+        analyzer_to_call_to_annotation = self.build_analyzer_result_map()
+
+        return InspectionResult(dag, analyzer_to_call_to_annotation)
+
+    def build_analyzer_result_map(self):
+        """
+        Get the analyzer DAG annotations from the backend and build a map with it for convenient usage
+        """
+        ast_call_node_id_to_annotation = {}
+        for backend in self.backend_map.values():
+            ast_call_node_id_to_annotation = {**ast_call_node_id_to_annotation, **backend.call_analyzer_output_map}
+        analyzer_to_call_to_annotation = {}
+        for call_id, analyzer_output_map in ast_call_node_id_to_annotation.items():
+            for analyzer, annotation in analyzer_output_map.items():
+                call_id_to_annotation = analyzer_to_call_to_annotation.get(analyzer, {})
+                call_id_to_annotation[call_id] = annotation
+                analyzer_to_call_to_annotation[analyzer] = call_id_to_annotation
+        return analyzer_to_call_to_annotation
 
     @staticmethod
     def instrument_pipeline(parsed_ast):
