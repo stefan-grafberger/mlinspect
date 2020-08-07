@@ -4,7 +4,7 @@ Tests whether the DagVertex works
 import os
 
 from mlinspect.instrumentation.analyzer_input import AnalyzerInputRow
-from mlinspect.instrumentation.analyzers.print_first_rows_analyzer import PrintFirstRowsAnalyzer
+from mlinspect.instrumentation.analyzers.print_first_rows_analyzer import MaterializeFirstRowsAnalyzer
 from mlinspect.instrumentation.dag_vertex import DagVertex
 from mlinspect.pipeline_inspector import PipelineInspector
 from mlinspect.utils import get_project_root
@@ -12,17 +12,17 @@ from mlinspect.utils import get_project_root
 FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 
 
-def test_print_first_rows_analyzer():
+def test_materialize_first_rows_analyzer():
     """
     Tests whether the DagVertex works
     """
     inspection_result = PipelineInspector \
         .on_pipeline_from_py_file(FILE_PY) \
-        .add_analyzer(PrintFirstRowsAnalyzer(2)) \
+        .add_analyzer(MaterializeFirstRowsAnalyzer(2)) \
         .execute()
     analyzer_results = inspection_result.analyzer_to_annotations
-    assert PrintFirstRowsAnalyzer(2) in analyzer_results
-    result = analyzer_results[PrintFirstRowsAnalyzer(2)]
+    assert MaterializeFirstRowsAnalyzer(2) in analyzer_results
+    result = analyzer_results[MaterializeFirstRowsAnalyzer(2)]
 
     assert result == get_expected_result()
 

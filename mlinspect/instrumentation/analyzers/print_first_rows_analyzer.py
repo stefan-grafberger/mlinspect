@@ -4,7 +4,7 @@ A simple example analyzer
 from mlinspect.instrumentation.analyzers.analyzer import Analyzer
 
 
-class PrintFirstRowsAnalyzer(Analyzer):
+class MaterializeFirstRowsAnalyzer(Analyzer):
     """
     A simple example analyzer
     """

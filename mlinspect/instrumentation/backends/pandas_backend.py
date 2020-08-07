@@ -159,7 +159,6 @@ def iter_input_annotation_output(analyzer_count, analyzer_index, input_data, inp
 
     # TODO: Tests for backend annotation propatation: analyzer generates uuid on first time operator seen and checks if
     #  present on 2nd operator. But only for first 5 values
-    # TODO: Rename analyzer: store or similar
     # TODO: Then support the rest of the pandas functions for this example.
     # TODO: Sklearn backend as part of next PR.
     # TODO: Move SklearnWirPreprocessor functionality to backend interface
