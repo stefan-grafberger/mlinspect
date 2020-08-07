@@ -4,7 +4,7 @@ Tests whether the DagVertex works
 import os
 
 from mlinspect.instrumentation.analyzer_input import AnalyzerInputRow
-from mlinspect.instrumentation.analyzers.print_first_rows_analyzer import MaterializeFirstRowsAnalyzer
+from mlinspect.instrumentation.analyzers.materialize_first_rows_analyzer import MaterializeFirstRowsAnalyzer
 from mlinspect.instrumentation.dag_vertex import DagVertex
 from mlinspect.pipeline_inspector import PipelineInspector
 from mlinspect.utils import get_project_root

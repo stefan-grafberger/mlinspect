@@ -5,7 +5,7 @@ import os
 
 import networkx
 
-from mlinspect.instrumentation.analyzers.print_first_rows_analyzer import MaterializeFirstRowsAnalyzer
+from mlinspect.instrumentation.analyzers.materialize_first_rows_analyzer import MaterializeFirstRowsAnalyzer
 from mlinspect.utils import get_project_root
 from mlinspect.pipeline_inspector import PipelineInspector
 from .utils import get_expected_dag_adult_easy_ipynb, get_expected_dag_adult_easy_py
