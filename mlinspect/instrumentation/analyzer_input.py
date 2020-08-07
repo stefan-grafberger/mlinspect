@@ -4,7 +4,7 @@ Data classes used as input for the analyzers
 import dataclasses
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class AnalyzerInputRow:
     """
     A class we use to efficiently pass pandas/sklearn rows
@@ -27,7 +27,7 @@ class AnalyzerInputRow:
         return self.values[index]
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class AnalyzerInputDataSource:
     """
     Wrapper class for the only operator without a parent: a Data Source
@@ -35,7 +35,7 @@ class AnalyzerInputDataSource:
     output: AnalyzerInputRow
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class AnalyzerInputUnaryOperator:
     """
     Wrapper class for the operators with one parent like Selections and Projections

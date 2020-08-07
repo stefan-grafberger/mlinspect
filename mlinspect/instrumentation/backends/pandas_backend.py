@@ -158,8 +158,6 @@ def iter_input_annotation_output(analyzer_count, analyzer_index, input_data, inp
 
     # TODO: DAG Operators as enums: https://docs.python.org/3/library/enum.html
     # TODO: Introduce OperatorContext as input for analyzers with DAG Operator and function info
-    # TODO: Tests for backend annotation propatation: analyzer generates uuid on first time operator seen and checks if
-    #  present on 2nd operator. But only for first 5 values
     # TODO: Then support the rest of the pandas functions for this example.
     # TODO: Sklearn backend as part of next PR.
     # TODO: Move SklearnWirPreprocessor functionality to backend interface
@@ -172,8 +170,8 @@ def iter_input_annotation_output(analyzer_count, analyzer_index, input_data, inp
     # TODO: Update readme with example
 
     column_index_input_end = len(input_data.columns)
-    column_index_annotation_end = column_index_input_end + analyzer_count
     column_annotation_current_analyzer = column_index_input_end + analyzer_index
+    column_index_annotation_end = column_index_input_end + analyzer_count
 
     input_df_view = joined_df.iloc[:, 0:column_index_input_end - 1]
     input_df_view.columns = input_data.columns[0:-1]
