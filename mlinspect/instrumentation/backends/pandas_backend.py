@@ -9,7 +9,6 @@ from pandas import DataFrame
 
 from mlinspect.instrumentation.analyzer_input import AnalyzerInputUnaryOperator, AnalyzerInputRow, \
     AnalyzerInputDataSource
-from mlinspect.instrumentation.analyzers.print_first_rows_analyzer import PrintFirstRowsAnalyzer
 from mlinspect.instrumentation.backends.backend import Backend
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
 
@@ -29,10 +28,7 @@ class PandasBackend(Backend):
                                ast_lineno, ast_col_offset):
         """The value or module a function may be called on"""
         # pylint: disable=too-many-arguments, unused-argument, no-self-use
-        print("pandas_before_call_used_value")
-
         if function_info == ('pandas.core.frame', 'dropna'):
-            print("dropna")
             assert isinstance(value_value, MlinspectDataFrame)
             value_value['mlinspect_index'] = range(1, len(value_value) + 1)
             self.input_data = value_value
@@ -61,27 +57,36 @@ class PandasBackend(Backend):
     def before_call_used_kwargs(self, analyzers, function_info, subscript, call_code, kwargs_code, ast_lineno,
                                 ast_col_offset, kwargs_values):
         """The keyword arguments a function may be called with"""
-        # pylint: disable=too-many-arguments, unused-argument, no-self-use
-        print("pandas_before_call_used_kwargs")
+        # pylint: disable=too-many-arguments, unused-argument, no-self-use, unnecessary-pass
+        pass
 
     def after_call_used(self, analyzers, function_info, subscript, call_code, return_value, ast_lineno,
                         ast_col_offset):
         """The return value of some function"""
-        # pylint: disable=too-many-arguments, unused-argument, no-self-use
-        print("pandas_after_call_used")
+        # pylint: disable=too-many-arguments, unused-argument, no-self-use, too-many-locals
         if function_info == ('pandas.io.parsers', 'read_csv'):
-            analyzer = PrintFirstRowsAnalyzer(5)
-            print("read.csv:")
             # Performance tips:
             # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
             # We need our own iterator type:
             # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas/41022840#41022840
-            annotations_iterator = analyzer.visit_operator("Data Source", iter_input_data_source(return_value))
+            annotation_iterators = []
+            for analyzer in analyzers:
+                annotation_iterator = analyzer.visit_operator("Data Source", iter_input_data_source(return_value))
+                annotation_iterators.append(annotation_iterator)
 
-            annotations_df = DataFrame(annotations_iterator, columns=["TestAnalyzer"])
+            annotation_iterators = zip(*annotation_iterators)
+            analyzer_names = [analyzer.analyzer_id for analyzer in analyzers]
+            annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
             annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
 
-            print(analyzer.get_operator_annotation_after_visit())
+            analyzer_outputs = {}
+            for analyzer in analyzers:
+                analyzer_output = analyzer.get_operator_annotation_after_visit()
+                print(analyzer_output)
+                analyzer_outputs[analyzer] = analyzer_output
+
+            self.call_analyzer_output_map[(ast_lineno, ast_col_offset)] = analyzer_outputs
+
             return_value = MlinspectDataFrame(return_value)
             return_value.annotations = annotations_df
             assert isinstance(return_value, MlinspectDataFrame)
@@ -90,16 +95,26 @@ class PandasBackend(Backend):
             assert "mlinspect_index" in return_value.columns
             assert isinstance(self.input_data, MlinspectDataFrame)
 
-            analyzer = PrintFirstRowsAnalyzer(5)
-            print("dropna")
-            annotations_iterator = analyzer.visit_operator("Selection",
-                                                           iter_input_annotation_output(self.input_data,
-                                                                                        self.input_data.annotations,
-                                                                                        return_value))
+            annotation_iterators = []
+            for analyzer in analyzers:
+                annotations_iterator = analyzer.visit_operator("Selection",
+                                                               iter_input_annotation_output(self.input_data,
+                                                                                            self.input_data.annotations,
+                                                                                            return_value))
+                annotation_iterators.append(annotations_iterator)
 
-            annotations_df = DataFrame(annotations_iterator, columns=["TestAnalyzer"])
-            return_value.annotations = annotations_df
-            print(analyzer.get_operator_annotation_after_visit())
+            annotation_iterators = zip(*annotation_iterators)
+            analyzer_names = [analyzer.analyzer_id for analyzer in analyzers]
+            annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
+            annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
+
+            analyzer_outputs = {}
+            for analyzer in analyzers:
+                analyzer_output = analyzer.get_operator_annotation_after_visit()
+                print(analyzer_output)
+                analyzer_outputs[analyzer] = analyzer_output
+
+            self.call_analyzer_output_map[(ast_lineno, ast_col_offset)] = analyzer_outputs
 
             self.input_data = None
             return_value = return_value.drop("mlinspect_index", axis=1)
@@ -133,7 +148,6 @@ def iter_input_annotation_output(input_data, input_annotations, output):
     joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
                              right_on="mlinspect_index")
 
-    # TODO: Introduce analyzer abstract class.
     # TODO: Add analyzer output to the extracted DAG instead of printing it
     # TODO: Do not always use the print test analazyer, but build a test case
     # TODO: and add functions/arguments to inspector and executor.
@@ -146,10 +160,6 @@ def iter_input_annotation_output(input_data, input_annotations, output):
     # TODO: that the pandas backend can not deal with (has no operator mapping for)
     # TODO: Add utility function to extract the library name, pandas and sklearn etc.
     # TODO: extract the function info adjustments for overwritten classes into backend in some way
-
-
-
-    # FIXME: merge not necessary here
 
     input_df_view = joined_df.iloc[:, 0:column_index_input_end-1]
     input_df_view.columns = input_data.columns[0:-1]

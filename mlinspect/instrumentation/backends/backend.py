@@ -11,6 +11,7 @@ class Backend(metaclass=abc.ABCMeta):
 
     def __init__(self):
         self.call_description_map = {}
+        self.call_analyzer_output_map = {}
 
     @property
     @abc.abstractmethod
