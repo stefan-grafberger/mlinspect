@@ -153,7 +153,6 @@ def iter_input_annotation_output(input_data, input_annotations, output):
     joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
                              right_on="mlinspect_index")
 
-    # TODO: Add analyzer output to the extracted DAG instead of printing it
     # TODO: Do not always use the print test analazyer, but build a test case
     # TODO: and add functions/arguments to inspector and executor.
     # TODO: Then support the rest of the pandas functions for this example.
@@ -195,5 +194,5 @@ def get_row_iterator(dataframe):
     arrays.extend(dataframe.iloc[:, k] for k in range(0, len(dataframe.columns)))
 
     partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
-    test = map(partial_func_create_row, zip(*arrays))
+    test = map(partial_func_create_row, map(list, zip(*arrays)))
     return test
