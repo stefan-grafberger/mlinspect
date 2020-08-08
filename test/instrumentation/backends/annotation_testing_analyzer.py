@@ -4,7 +4,7 @@ A simple analyzer for testing annotation propagation
 import random
 from typing import Iterable, Union
 
-from mlinspect.instrumentation.analyzer_input import OperatorContext, AnalyzerInputDataSource, \
+from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputDataSource, \
     AnalyzerInputUnaryOperator
 from mlinspect.instrumentation.analyzers.analyzer import Analyzer
 

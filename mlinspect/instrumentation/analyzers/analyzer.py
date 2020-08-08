@@ -4,7 +4,7 @@ The Interface for the different instrumentation backends
 import abc
 from typing import Union, Iterable
 
-from mlinspect.instrumentation.analyzer_input import OperatorContext, AnalyzerInputDataSource, \
+from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputDataSource, \
     AnalyzerInputUnaryOperator
 
 

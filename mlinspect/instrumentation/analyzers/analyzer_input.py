@@ -51,7 +51,7 @@ class AnalyzerInputUnaryOperator:
 @dataclasses.dataclass(frozen=True)
 class OperatorContext:
     """
-    Wrapper class for the operators with one parent like Selections and Projections
+    Additional context for the analyzer. Contains, most importantly, the operator type.
     """
     operator: OperatorType
     function_info: Tuple[str, str]

@@ -3,7 +3,7 @@ Tests whether the DagVertex works
 """
 import os
 
-from mlinspect.instrumentation.analyzer_input import AnalyzerInputRow
+from mlinspect.instrumentation.analyzers.analyzer_input import AnalyzerInputRow
 from mlinspect.instrumentation.analyzers.materialize_first_rows_analyzer import MaterializeFirstRowsAnalyzer
 from mlinspect.instrumentation.dag_node import DagNode, OperatorType, CodeReference
 from mlinspect.pipeline_inspector import PipelineInspector
