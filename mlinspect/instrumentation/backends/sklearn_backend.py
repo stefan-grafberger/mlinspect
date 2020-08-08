@@ -16,7 +16,6 @@ class SklearnBackend(Backend):
     prefix = "sklearn"
 
     operator_map = {
-        ('mlinspect.instrumentation.backends.pandas_backend_frame_wrapper', '__getitem__'): OperatorType.PROJECTION,
         ('sklearn.preprocessing._label', 'label_binarize'): OperatorType.PROJECTION_MODIFY,
         ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'): OperatorType.PROJECTION,
         ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'): OperatorType.TRANSFORMER,
