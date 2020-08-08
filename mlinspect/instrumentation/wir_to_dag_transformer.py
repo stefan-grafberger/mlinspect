@@ -3,7 +3,7 @@ Extract a DAG from the WIR (Workflow Intermediate Representation)
 """
 import networkx
 
-from mlinspect.instrumentation.dag_vertex import DagVertex
+from mlinspect.instrumentation.dag_vertex import DagVertex, OperatorType
 from mlinspect.instrumentation.sklearn_wir_preprocessor import SklearnWirPreprocessor
 from mlinspect.utils import traverse_graph_and_process_nodes
 
@@ -14,19 +14,19 @@ class WirToDagTransformer:
     """
 
     OPERATOR_MAP = {
-        ('pandas.io.parsers', 'read_csv'): "Data Source",
-        ('pandas.core.frame', 'dropna'): "Selection",
-        ('pandas.core.frame', '__getitem__'): "Projection",
-        ('mlinspect.instrumentation.backends.pandas_backend_frame_wrapper', '__getitem__'): "Projection",
-        ('sklearn.preprocessing._label', 'label_binarize'): "Projection (Modify)",
-        ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'): "Projection",
-        ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'): "Transformer",
-        ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'): "Transformer",
-        ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Concatenation'): "Concatenation",
-        ('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'): "Estimator",
-        ('sklearn.pipeline', 'fit', 'Pipeline'): "Fit Transformers and Estimators",
-        ('sklearn.pipeline', 'fit', 'Train Data'): "Train Data",
-        ('sklearn.pipeline', 'fit', 'Train Labels'): "Train Labels"
+        ('pandas.io.parsers', 'read_csv'): OperatorType.DATA_SOURCE,
+        ('pandas.core.frame', 'dropna'): OperatorType.SELECTION,
+        ('pandas.core.frame', '__getitem__'): OperatorType.PROJECTION,
+        ('mlinspect.instrumentation.backends.pandas_backend_frame_wrapper', '__getitem__'): OperatorType.PROJECTION,
+        ('sklearn.preprocessing._label', 'label_binarize'): OperatorType.PROJECTION_MODIFY,
+        ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'): OperatorType.PROJECTION,
+        ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'): OperatorType.TRANSFORMER,
+        ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'): OperatorType.TRANSFORMER,
+        ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Concatenation'): OperatorType.CONCATENATION,
+        ('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'): OperatorType.ESTIMATOR,
+        ('sklearn.pipeline', 'fit', 'Pipeline'): OperatorType.FIT,
+        ('sklearn.pipeline', 'fit', 'Train Data'): OperatorType.TRAIN_DATA,
+        ('sklearn.pipeline', 'fit', 'Train Labels'): OperatorType.TRAIN_LABELS
     }
 
     @staticmethod

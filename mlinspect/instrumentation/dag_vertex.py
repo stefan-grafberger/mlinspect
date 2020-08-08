@@ -1,6 +1,23 @@
 """
 The Vertices used in the WIR as nodes for the networkx.DiGraph
 """
+from enum import Enum
+
+
+class OperatorType(Enum):
+    """
+    The different operator types in our DAG
+    """
+    DATA_SOURCE = "Data Source"
+    SELECTION = "Selection"
+    PROJECTION = "Projection"
+    PROJECTION_MODIFY = "Projection (Modify)"
+    TRANSFORMER = "Transformer"
+    CONCATENATION = "Concatenation"
+    ESTIMATOR = "Estimator"
+    FIT = "Fit Transformers and Estimators"
+    TRAIN_DATA = "Train Data"
+    TRAIN_LABELS = "Train Labels"
 
 
 class DagVertex:

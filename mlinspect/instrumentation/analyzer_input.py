@@ -2,6 +2,9 @@
 Data classes used as input for the analyzers
 """
 import dataclasses
+from typing import Tuple
+
+from mlinspect.instrumentation.dag_vertex import OperatorType
 
 
 @dataclasses.dataclass(frozen=True)
@@ -43,3 +46,12 @@ class AnalyzerInputUnaryOperator:
     input: AnalyzerInputRow
     annotation: AnalyzerInputRow
     output: AnalyzerInputRow
+
+
+@dataclasses.dataclass(frozen=True)
+class OperatorContext:
+    """
+    Wrapper class for the operators with one parent like Selections and Projections
+    """
+    operator: OperatorType
+    function_info: Tuple[str, str]

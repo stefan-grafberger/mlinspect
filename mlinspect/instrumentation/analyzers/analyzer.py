@@ -2,6 +2,10 @@
 The Interface for the different instrumentation backends
 """
 import abc
+from typing import Union, Iterable
+
+from mlinspect.instrumentation.analyzer_input import OperatorContext, AnalyzerInputDataSource, \
+    AnalyzerInputUnaryOperator
 
 
 class Analyzer(metaclass=abc.ABCMeta):
@@ -16,12 +20,14 @@ class Analyzer(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def visit_operator(self, operator, row_iterator):
+    def visit_operator(self, operator_context: OperatorContext,
+                       row_iterator: Union[Iterable[AnalyzerInputDataSource], Iterable[AnalyzerInputUnaryOperator]])\
+            -> Iterable[any]:
         """Visit an operator in the DAG"""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_operator_annotation_after_visit(self):
+    def get_operator_annotation_after_visit(self) -> any:
         """Get the output to be included in the DAG"""
         raise NotImplementedError
 

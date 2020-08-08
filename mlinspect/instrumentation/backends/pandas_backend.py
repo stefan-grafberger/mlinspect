@@ -9,9 +9,10 @@ import pandas
 from pandas import DataFrame
 
 from mlinspect.instrumentation.analyzer_input import AnalyzerInputUnaryOperator, AnalyzerInputRow, \
-    AnalyzerInputDataSource
+    AnalyzerInputDataSource, OperatorContext
 from mlinspect.instrumentation.backends.backend import Backend
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
+from mlinspect.instrumentation.dag_vertex import OperatorType
 
 
 class PandasBackend(Backend):
@@ -71,20 +72,21 @@ class PandasBackend(Backend):
             # We need our own iterator type:
             # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas/41022840#41022840
             return_value = self.execute_analyzer_visits_data_source(ast_col_offset, ast_lineno,
-                                                                    return_value)
+                                                                    return_value, function_info)
         elif function_info == ('pandas.core.frame', 'dropna'):
-            operator_name = "Selection"
-            return_value = self.execute_analyzer_visits_unary_operator(operator_name, ast_col_offset,
+            operator_context = OperatorContext(OperatorType.SELECTION, function_info)
+            return_value = self.execute_analyzer_visits_unary_operator(operator_context, ast_col_offset,
                                                                        ast_lineno, return_value)
 
         return return_value
 
-    def execute_analyzer_visits_data_source(self, ast_col_offset, ast_lineno, return_value):
+    def execute_analyzer_visits_data_source(self, ast_col_offset, ast_lineno, return_value, function_info):
         """Execute analyzers when the current operator is a data source and does not have parents in the DAG"""
+        operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
         annotation_iterators = []
         for analyzer in self.analyzers:
             iterator_for_analyzer = iter_input_data_source(return_value)
-            annotation_iterator = analyzer.visit_operator("Data Source", iterator_for_analyzer)
+            annotation_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
             annotation_iterators.append(annotation_iterator)
         return_value = self.store_analyzer_outputs(annotation_iterators, ast_col_offset, ast_lineno,
                                                    return_value)
@@ -114,7 +116,7 @@ class PandasBackend(Backend):
         assert isinstance(return_value, MlinspectDataFrame)
         return return_value
 
-    def execute_analyzer_visits_unary_operator(self, operator_name, ast_col_offset, ast_lineno,
+    def execute_analyzer_visits_unary_operator(self, operator_context, ast_col_offset, ast_lineno,
                                                return_value):
         """Execute analyzers when the current operator has one parent in the DAG"""
         # pylint: disable=too-many-arguments
@@ -129,7 +131,7 @@ class PandasBackend(Backend):
                                                                  self.input_data,
                                                                  self.input_data.annotations,
                                                                  return_value)
-            annotations_iterator = analyzer.visit_operator(operator_name, iterator_for_analyzer)
+            annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
             annotation_iterators.append(annotations_iterator)
         return_value = self.store_analyzer_outputs(annotation_iterators, ast_col_offset, ast_lineno,
                                                    return_value)
@@ -158,10 +160,7 @@ def iter_input_annotation_output(analyzer_count, analyzer_index, input_data, inp
     joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
                              right_on="mlinspect_index")
 
-    # TODO: DAG Operators as enums: https://docs.python.org/3/library/enum.html
-    # TODO: Introduce OperatorContext as input for analyzers with DAG Operator and function info
     # TODO: Then support the rest of the pandas functions for this example.
-    # TODO: Sklearn backend as part of next PR.
     # TODO: Move SklearnWirPreprocessor functionality to backend interface
     # TODO: Vertex classes as data classes. also: maybe rename to node
     # TODO: In WirToDagTransformer the map to operators should also be moved into backend.

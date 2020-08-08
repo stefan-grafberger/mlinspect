@@ -1,6 +1,10 @@
 """
 A simple example analyzer
 """
+from typing import Union, Iterable
+
+from mlinspect.instrumentation.analyzer_input import OperatorContext, AnalyzerInputDataSource, \
+    AnalyzerInputUnaryOperator
 from mlinspect.instrumentation.analyzers.analyzer import Analyzer
 
 
@@ -18,7 +22,9 @@ class MaterializeFirstRowsAnalyzer(Analyzer):
     def analyzer_id(self):
         return self._analyzer_id
 
-    def visit_operator(self, operator, row_iterator):
+    def visit_operator(self, operator_context: OperatorContext,
+                       row_iterator: Union[Iterable[AnalyzerInputDataSource], Iterable[AnalyzerInputUnaryOperator]])\
+            -> Iterable[any]:
         """
         Visit an operator
         """
@@ -33,7 +39,7 @@ class MaterializeFirstRowsAnalyzer(Analyzer):
 
         self._operator_output = operator_output
 
-    def get_operator_annotation_after_visit(self):
+    def get_operator_annotation_after_visit(self) -> any:
         assert self._operator_output  # May only be called after the operator visit is finished
         result = self._operator_output
         self._operator_output = None

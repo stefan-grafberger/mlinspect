@@ -5,7 +5,7 @@ import os
 
 from mlinspect.instrumentation.analyzer_input import AnalyzerInputRow
 from mlinspect.instrumentation.analyzers.materialize_first_rows_analyzer import MaterializeFirstRowsAnalyzer
-from mlinspect.instrumentation.dag_vertex import DagVertex
+from mlinspect.instrumentation.dag_vertex import DagVertex, OperatorType
 from mlinspect.pipeline_inspector import PipelineInspector
 from mlinspect.utils import get_project_root
 
@@ -32,8 +32,8 @@ def get_expected_result():
     Get the expected PrintFirstRowsAnalyzer(2) result for the adult_easy example
     """
     expected_result = {
-        DagVertex(node_id=18, operator_name='Data Source', module=('pandas.io.parsers', 'read_csv'), lineno=12,
-                  col_offset=11, description='adult_train.csv'): [
+        DagVertex(node_id=18, operator_name=OperatorType.DATA_SOURCE, module=('pandas.io.parsers', 'read_csv'),
+                  lineno=12, col_offset=11, description='adult_train.csv'): [
                       AnalyzerInputRow(
                           values=[46, 'Private', 128645, 'Some-college', 10, 'Divorced', 'Prof-specialty',
                                   'Not-in-family', 'White', 'Female', 0, 0, 40, 'United-States', '<=50K'],
@@ -47,7 +47,7 @@ def get_expected_result():
                                   'marital-status', 'occupation', 'relationship', 'race',
                                   'sex', 'capital-gain', 'capital-loss', 'hours-per-week',
                                   'native-country', 'income-per-year'])],
-        DagVertex(node_id=20, operator_name='Selection', module=('pandas.core.frame', 'dropna'), lineno=14,
+        DagVertex(node_id=20, operator_name=OperatorType.SELECTION, module=('pandas.core.frame', 'dropna'), lineno=14,
                   col_offset=7, description='dropna'): [
                       AnalyzerInputRow(
                           values=[46, 'Private', 128645, 'Some-college', 10, 'Divorced', 'Prof-specialty',
