@@ -29,7 +29,7 @@ class PandasBackend(Backend):
     def before_call_used_value(self, function_info, subscript, call_code, value_code, value_value,
                                ast_lineno, ast_col_offset):
         """The value or module a function may be called on"""
-        # pylint: disable=too-many-arguments, unused-argument, no-self-use
+        # pylint: disable=too-many-arguments
         if function_info == ('pandas.core.frame', 'dropna'):
             assert isinstance(value_value, MlinspectDataFrame)
             value_value['mlinspect_index'] = range(1, len(value_value) + 1)
@@ -38,7 +38,7 @@ class PandasBackend(Backend):
     def before_call_used_args(self, function_info, subscript, call_code, args_code, ast_lineno,
                               ast_col_offset, args_values):
         """The arguments a function may be called with"""
-        # pylint: disable=too-many-arguments, unused-argument
+        # pylint: disable=too-many-arguments
         self.before_call_used_args_add_description(args_values, ast_col_offset, ast_lineno, function_info)
 
     def before_call_used_args_add_description(self, args_values, ast_col_offset, ast_lineno, function_info):
@@ -65,12 +65,8 @@ class PandasBackend(Backend):
     def after_call_used(self, function_info, subscript, call_code, return_value, ast_lineno,
                         ast_col_offset):
         """The return value of some function"""
-        # pylint: disable=too-many-arguments, unused-argument, no-self-use, too-many-locals
+        # pylint: disable=too-many-arguments
         if function_info == ('pandas.io.parsers', 'read_csv'):
-            # Performance tips:
-            # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-            # We need our own iterator type:
-            # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas/41022840#41022840
             return_value = self.execute_analyzer_visits_data_source(ast_col_offset, ast_lineno,
                                                                     return_value, function_info)
         elif function_info == ('pandas.core.frame', 'dropna'):
@@ -97,7 +93,6 @@ class PandasBackend(Backend):
         Stores the analyzer annotations for the rows in the dataframe and the
         analyzer annotations for the DAG operators in a map
         """
-        # pylint: disable=too-many-arguments
         annotation_iterators = itertools.zip_longest(*annotation_iterators)
         analyzer_names = [str(analyzer) for analyzer in self.analyzers]
         annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
@@ -119,7 +114,6 @@ class PandasBackend(Backend):
     def execute_analyzer_visits_unary_operator(self, operator_context, ast_col_offset, ast_lineno,
                                                return_value):
         """Execute analyzers when the current operator has one parent in the DAG"""
-        # pylint: disable=too-many-arguments
         assert "mlinspect_index" in return_value.columns
         assert isinstance(self.input_data, MlinspectDataFrame)
         annotation_iterators = []
@@ -153,8 +147,6 @@ def iter_input_annotation_output(analyzer_count, analyzer_index, input_data, inp
     # pylint: disable=too-many-locals
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-    # We need our own iterator type:
-    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas/41022840#41022840
     data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
                                                 right_on="mlinspect_index")
     joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
