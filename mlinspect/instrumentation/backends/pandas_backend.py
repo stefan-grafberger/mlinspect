@@ -167,7 +167,6 @@ def iter_input_annotation_output(analyzer_count, analyzer_index, input_data, inp
     # TODO: that the pandas backend can not deal with (has no operator mapping for)
     # TODO: Add utility function to extract the library name, pandas and sklearn etc.
     # TODO: extract the function info adjustments for overwritten classes into backend in some way
-    # TODO: Update readme with example
 
     column_index_input_end = len(input_data.columns)
     column_annotation_current_analyzer = column_index_input_end + analyzer_index
