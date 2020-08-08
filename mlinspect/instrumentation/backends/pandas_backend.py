@@ -200,7 +200,6 @@ def get_row_iterator(dataframe):
     """
     arrays = []
     fields = list(dataframe.columns)
-    # use integer indexing because of possible duplicate column names
     arrays.extend(dataframe.iloc[:, k] for k in range(0, len(dataframe.columns)))
 
     partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
