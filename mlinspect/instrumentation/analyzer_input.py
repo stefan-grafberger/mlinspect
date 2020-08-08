@@ -4,7 +4,7 @@ Data classes used as input for the analyzers
 import dataclasses
 from typing import Tuple
 
-from mlinspect.instrumentation.dag_vertex import OperatorType
+from mlinspect.instrumentation.dag_node import OperatorType
 
 
 @dataclasses.dataclass(frozen=True)

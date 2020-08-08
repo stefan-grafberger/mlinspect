@@ -7,7 +7,7 @@ from inspect import cleandoc
 
 import networkx
 
-from mlinspect.instrumentation.dag_vertex import DagVertex, OperatorType
+from mlinspect.instrumentation.dag_node import DagNode, OperatorType
 from mlinspect.instrumentation.wir_extractor import WirExtractor
 from mlinspect.utils import get_project_root
 
@@ -22,80 +22,80 @@ def get_expected_dag_adult_easy_py():
     # pylint: disable=too-many-locals
     expected_graph = networkx.DiGraph()
 
-    expected_data_source = DagVertex(18, OperatorType.DATA_SOURCE, 12, 11, ('pandas.io.parsers', 'read_csv'),
-                                     "adult_train.csv")
+    expected_data_source = DagNode(18, OperatorType.DATA_SOURCE, 12, 11, ('pandas.io.parsers', 'read_csv'),
+                                   "adult_train.csv")
     expected_graph.add_node(expected_data_source)
 
-    expected_select = DagVertex(20, OperatorType.SELECTION, 14, 7, ('pandas.core.frame', 'dropna'), "dropna")
+    expected_select = DagNode(20, OperatorType.SELECTION, 14, 7, ('pandas.core.frame', 'dropna'), "dropna")
     expected_graph.add_edge(expected_data_source, expected_select)
 
-    expected_train_data = DagVertex(56, OperatorType.TRAIN_DATA, 28, 0, ('sklearn.pipeline', 'fit', 'Train Data'))
+    expected_train_data = DagNode(56, OperatorType.TRAIN_DATA, 28, 0, ('sklearn.pipeline', 'fit', 'Train Data'))
     expected_graph.add_edge(expected_select, expected_train_data)
 
-    expected_pipeline_project_one = DagVertex(34, OperatorType.PROJECTION, 19, 75,
-                                              ('sklearn.compose._column_transformer', 'ColumnTransformer',
-                                               'Projection'),
-                                              "to ['education']")
+    expected_pipeline_project_one = DagNode(34, OperatorType.PROJECTION, 19, 75,
+                                            ('sklearn.compose._column_transformer', 'ColumnTransformer',
+                                             'Projection'),
+                                            "to ['education']")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_one)
-    expected_pipeline_project_two = DagVertex(35, OperatorType.PROJECTION, 19, 88,
+    expected_pipeline_project_two = DagNode(35, OperatorType.PROJECTION, 19, 88,
+                                            ('sklearn.compose._column_transformer', 'ColumnTransformer',
+                                             'Projection'),
+                                            "to ['workclass']")
+    expected_graph.add_edge(expected_train_data, expected_pipeline_project_two)
+    expected_pipeline_project_three = DagNode(40, OperatorType.PROJECTION, 20, 49,
                                               ('sklearn.compose._column_transformer', 'ColumnTransformer',
                                                'Projection'),
-                                              "to ['workclass']")
-    expected_graph.add_edge(expected_train_data, expected_pipeline_project_two)
-    expected_pipeline_project_three = DagVertex(40, OperatorType.PROJECTION, 20, 49,
-                                                ('sklearn.compose._column_transformer', 'ColumnTransformer',
-                                                 'Projection'),
-                                                "to ['age']")
+                                              "to ['age']")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_three)
-    expected_pipeline_project_four = DagVertex(41, OperatorType.PROJECTION, 20, 56,
-                                               ('sklearn.compose._column_transformer', 'ColumnTransformer',
-                                                'Projection'),
-                                               "to ['hours-per-week']")
+    expected_pipeline_project_four = DagNode(41, OperatorType.PROJECTION, 20, 56,
+                                             ('sklearn.compose._column_transformer', 'ColumnTransformer',
+                                              'Projection'),
+                                             "to ['hours-per-week']")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_four)
 
-    expected_pipeline_transformer_one = DagVertex(34, OperatorType.TRANSFORMER, 19, 20,
-                                                  ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'),
-                                                  "Categorical Encoder (OneHotEncoder)")
+    expected_pipeline_transformer_one = DagNode(34, OperatorType.TRANSFORMER, 19, 20,
+                                                ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'),
+                                                "Categorical Encoder (OneHotEncoder)")
     expected_graph.add_edge(expected_pipeline_project_one, expected_pipeline_transformer_one)
-    expected_pipeline_transformer_two = DagVertex(35, OperatorType.TRANSFORMER, 19, 20,
-                                                  ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'),
-                                                  "Categorical Encoder (OneHotEncoder)")
+    expected_pipeline_transformer_two = DagNode(35, OperatorType.TRANSFORMER, 19, 20,
+                                                ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'),
+                                                "Categorical Encoder (OneHotEncoder)")
     expected_graph.add_edge(expected_pipeline_project_two, expected_pipeline_transformer_two)
-    expected_pipeline_transformer_three = DagVertex(40, OperatorType.TRANSFORMER, 20, 16,
-                                                    ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'),
-                                                    "Numerical Encoder (StandardScaler)")
+    expected_pipeline_transformer_three = DagNode(40, OperatorType.TRANSFORMER, 20, 16,
+                                                  ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'),
+                                                  "Numerical Encoder (StandardScaler)")
     expected_graph.add_edge(expected_pipeline_project_three, expected_pipeline_transformer_three)
-    expected_pipeline_transformer_four = DagVertex(41, OperatorType.TRANSFORMER, 20, 16,
-                                                   ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'),
-                                                   "Numerical Encoder (StandardScaler)")
+    expected_pipeline_transformer_four = DagNode(41, OperatorType.TRANSFORMER, 20, 16,
+                                                 ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'),
+                                                 "Numerical Encoder (StandardScaler)")
     expected_graph.add_edge(expected_pipeline_project_four, expected_pipeline_transformer_four)
 
-    expected_pipeline_concatenation = DagVertex(46, OperatorType.CONCATENATION, 18, 25,
-                                                ('sklearn.compose._column_transformer', 'ColumnTransformer',
-                                                 'Concatenation'))
+    expected_pipeline_concatenation = DagNode(46, OperatorType.CONCATENATION, 18, 25,
+                                              ('sklearn.compose._column_transformer', 'ColumnTransformer',
+                                               'Concatenation'))
     expected_graph.add_edge(expected_pipeline_transformer_one, expected_pipeline_concatenation)
     expected_graph.add_edge(expected_pipeline_transformer_two, expected_pipeline_concatenation)
     expected_graph.add_edge(expected_pipeline_transformer_three, expected_pipeline_concatenation)
     expected_graph.add_edge(expected_pipeline_transformer_four, expected_pipeline_concatenation)
 
-    expected_estimator = DagVertex(51, OperatorType.ESTIMATOR, 26, 19,
-                                   ('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'),
-                                   "Decision Tree")
+    expected_estimator = DagNode(51, OperatorType.ESTIMATOR, 26, 19,
+                                 ('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'),
+                                 "Decision Tree")
     expected_graph.add_edge(expected_pipeline_concatenation, expected_estimator)
 
-    expected_pipeline_fit = DagVertex(56, OperatorType.FIT, 28, 0, ('sklearn.pipeline', 'fit', 'Pipeline'))
+    expected_pipeline_fit = DagNode(56, OperatorType.FIT, 28, 0, ('sklearn.pipeline', 'fit', 'Pipeline'))
     expected_graph.add_edge(expected_estimator, expected_pipeline_fit)
 
-    expected_project = DagVertex(23, OperatorType.PROJECTION, 16, 38, ('pandas.core.frame', '__getitem__'),
-                                 "to ['income-per-year']")
+    expected_project = DagNode(23, OperatorType.PROJECTION, 16, 38, ('pandas.core.frame', '__getitem__'),
+                               "to ['income-per-year']")
     expected_graph.add_edge(expected_select, expected_project)
 
-    expected_project_modify = DagVertex(28, OperatorType.PROJECTION_MODIFY, 16, 9,
-                                        ('sklearn.preprocessing._label', 'label_binarize'),
-                                        "label_binarize, classes: ['>50K', '<=50K']")
+    expected_project_modify = DagNode(28, OperatorType.PROJECTION_MODIFY, 16, 9,
+                                      ('sklearn.preprocessing._label', 'label_binarize'),
+                                      "label_binarize, classes: ['>50K', '<=50K']")
     expected_graph.add_edge(expected_project, expected_project_modify)
 
-    expected_train_labels = DagVertex(56, OperatorType.TRAIN_LABELS, 28, 0, ('sklearn.pipeline', 'fit', 'Train Labels'))
+    expected_train_labels = DagNode(56, OperatorType.TRAIN_LABELS, 28, 0, ('sklearn.pipeline', 'fit', 'Train Labels'))
     expected_graph.add_edge(expected_project_modify, expected_train_labels)
     expected_graph.add_edge(expected_train_labels, expected_pipeline_fit)
 
@@ -109,85 +109,85 @@ def get_expected_dag_adult_easy_ipynb():
     # pylint: disable=too-many-locals
     expected_graph = networkx.DiGraph()
 
-    expected_data_source = DagVertex(18, OperatorType.DATA_SOURCE, 18, 11, ('pandas.io.parsers', 'read_csv'),
-                                     "adult_train.csv")
+    expected_data_source = DagNode(18, OperatorType.DATA_SOURCE, 18, 11, ('pandas.io.parsers', 'read_csv'),
+                                   "adult_train.csv")
     expected_graph.add_node(expected_data_source)
 
-    expected_select = DagVertex(20, OperatorType.SELECTION, 20, 7, ('pandas.core.frame', 'dropna'), "dropna")
+    expected_select = DagNode(20, OperatorType.SELECTION, 20, 7, ('pandas.core.frame', 'dropna'), "dropna")
     expected_graph.add_edge(expected_data_source, expected_select)
 
-    expected_train_data = DagVertex(56, OperatorType.TRAIN_DATA, 34, 0, ('sklearn.pipeline', 'fit', 'Train Data'))
+    expected_train_data = DagNode(56, OperatorType.TRAIN_DATA, 34, 0, ('sklearn.pipeline', 'fit', 'Train Data'))
     expected_graph.add_edge(expected_select, expected_train_data)
 
-    expected_pipeline_project_one = DagVertex(34, OperatorType.PROJECTION, 25, 75,
-                                              ('sklearn.compose._column_transformer',
-                                               'ColumnTransformer', 'Projection'),
-                                              "to ['education']")
+    expected_pipeline_project_one = DagNode(34, OperatorType.PROJECTION, 25, 75,
+                                            ('sklearn.compose._column_transformer',
+                                             'ColumnTransformer', 'Projection'),
+                                            "to ['education']")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_one)
-    expected_pipeline_project_two = DagVertex(35, OperatorType.PROJECTION, 25, 88,
+    expected_pipeline_project_two = DagNode(35, OperatorType.PROJECTION, 25, 88,
+                                            ('sklearn.compose._column_transformer',
+                                             'ColumnTransformer', 'Projection'),
+                                            "to ['workclass']")
+    expected_graph.add_edge(expected_train_data, expected_pipeline_project_two)
+    expected_pipeline_project_three = DagNode(40, OperatorType.PROJECTION, 26, 49,
                                               ('sklearn.compose._column_transformer',
                                                'ColumnTransformer', 'Projection'),
-                                              "to ['workclass']")
-    expected_graph.add_edge(expected_train_data, expected_pipeline_project_two)
-    expected_pipeline_project_three = DagVertex(40, OperatorType.PROJECTION, 26, 49,
-                                                ('sklearn.compose._column_transformer',
-                                                 'ColumnTransformer', 'Projection'),
-                                                "to ['age']")
+                                              "to ['age']")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_three)
-    expected_pipeline_project_four = DagVertex(41, OperatorType.PROJECTION, 26, 56,
-                                               ('sklearn.compose._column_transformer',
-                                                'ColumnTransformer', 'Projection'),
-                                               "to ['hours-per-week']")
+    expected_pipeline_project_four = DagNode(41, OperatorType.PROJECTION, 26, 56,
+                                             ('sklearn.compose._column_transformer',
+                                              'ColumnTransformer', 'Projection'),
+                                             "to ['hours-per-week']")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_four)
 
-    expected_pipeline_transformer_one = DagVertex(34, OperatorType.TRANSFORMER, 25, 20,
-                                                  ('sklearn.preprocessing._encoders',
-                                                   'OneHotEncoder', 'Pipeline'),
-                                                  "Categorical Encoder (OneHotEncoder)")
+    expected_pipeline_transformer_one = DagNode(34, OperatorType.TRANSFORMER, 25, 20,
+                                                ('sklearn.preprocessing._encoders',
+                                                 'OneHotEncoder', 'Pipeline'),
+                                                "Categorical Encoder (OneHotEncoder)")
     expected_graph.add_edge(expected_pipeline_project_one, expected_pipeline_transformer_one)
-    expected_pipeline_transformer_two = DagVertex(35, OperatorType.TRANSFORMER, 25, 20,
-                                                  ('sklearn.preprocessing._encoders',
-                                                   'OneHotEncoder', 'Pipeline'),
-                                                  "Categorical Encoder (OneHotEncoder)")
+    expected_pipeline_transformer_two = DagNode(35, OperatorType.TRANSFORMER, 25, 20,
+                                                ('sklearn.preprocessing._encoders',
+                                                 'OneHotEncoder', 'Pipeline'),
+                                                "Categorical Encoder (OneHotEncoder)")
     expected_graph.add_edge(expected_pipeline_project_two, expected_pipeline_transformer_two)
-    expected_pipeline_transformer_three = DagVertex(40, OperatorType.TRANSFORMER, 26, 16,
-                                                    ('sklearn.preprocessing._data',
-                                                     'StandardScaler', 'Pipeline'),
-                                                    "Numerical Encoder (StandardScaler)")
+    expected_pipeline_transformer_three = DagNode(40, OperatorType.TRANSFORMER, 26, 16,
+                                                  ('sklearn.preprocessing._data',
+                                                   'StandardScaler', 'Pipeline'),
+                                                  "Numerical Encoder (StandardScaler)")
     expected_graph.add_edge(expected_pipeline_project_three, expected_pipeline_transformer_three)
-    expected_pipeline_transformer_four = DagVertex(41, OperatorType.TRANSFORMER, 26, 16, ('sklearn.preprocessing._data',
-                                                                                          'StandardScaler', 'Pipeline'),
-                                                   "Numerical Encoder (StandardScaler)")
+    expected_pipeline_transformer_four = DagNode(41, OperatorType.TRANSFORMER, 26, 16, ('sklearn.preprocessing._data',
+                                                                                        'StandardScaler', 'Pipeline'),
+                                                 "Numerical Encoder (StandardScaler)")
     expected_graph.add_edge(expected_pipeline_project_four, expected_pipeline_transformer_four)
 
-    expected_pipeline_concatenation = DagVertex(46, OperatorType.CONCATENATION, 24, 25,
-                                                ('sklearn.compose._column_transformer',
-                                                 'ColumnTransformer', 'Concatenation'))
+    expected_pipeline_concatenation = DagNode(46, OperatorType.CONCATENATION, 24, 25,
+                                              ('sklearn.compose._column_transformer',
+                                               'ColumnTransformer', 'Concatenation'))
     expected_graph.add_edge(expected_pipeline_transformer_one, expected_pipeline_concatenation)
     expected_graph.add_edge(expected_pipeline_transformer_two, expected_pipeline_concatenation)
     expected_graph.add_edge(expected_pipeline_transformer_three, expected_pipeline_concatenation)
     expected_graph.add_edge(expected_pipeline_transformer_four, expected_pipeline_concatenation)
 
-    expected_estimator = DagVertex(51, OperatorType.ESTIMATOR, 32, 19,
-                                   ('sklearn.tree._classes', 'DecisionTreeClassifier',
-                                    'Pipeline'),
-                                   "Decision Tree")
+    expected_estimator = DagNode(51, OperatorType.ESTIMATOR, 32, 19,
+                                 ('sklearn.tree._classes', 'DecisionTreeClassifier',
+                                  'Pipeline'),
+                                 "Decision Tree")
     expected_graph.add_edge(expected_pipeline_concatenation, expected_estimator)
 
-    expected_pipeline_fit = DagVertex(56, OperatorType.FIT, 34, 0, ('sklearn.pipeline', 'fit',
-                                                                    'Pipeline'))
+    expected_pipeline_fit = DagNode(56, OperatorType.FIT, 34, 0, ('sklearn.pipeline', 'fit',
+                                                                  'Pipeline'))
     expected_graph.add_edge(expected_estimator, expected_pipeline_fit)
 
-    expected_project = DagVertex(23, OperatorType.PROJECTION, 22, 38, ('pandas.core.frame', '__getitem__'),
-                                 "to ['income-per-year']")
+    expected_project = DagNode(23, OperatorType.PROJECTION, 22, 38, ('pandas.core.frame', '__getitem__'),
+                               "to ['income-per-year']")
     expected_graph.add_edge(expected_select, expected_project)
 
-    expected_project_modify = DagVertex(28, OperatorType.PROJECTION_MODIFY, 22, 9,
-                                        ('sklearn.preprocessing._label', 'label_binarize'),
-                                        "label_binarize, classes: ['>50K', '<=50K']")
+    expected_project_modify = DagNode(28, OperatorType.PROJECTION_MODIFY, 22, 9,
+                                      ('sklearn.preprocessing._label', 'label_binarize'),
+                                      "label_binarize, classes: ['>50K', '<=50K']")
     expected_graph.add_edge(expected_project, expected_project_modify)
 
-    expected_train_labels = DagVertex(56, OperatorType.TRAIN_LABELS, 34, 0, ('sklearn.pipeline', 'fit', 'Train Labels'))
+    expected_train_labels = DagNode(56, OperatorType.TRAIN_LABELS, 34, 0, ('sklearn.pipeline', 'fit', 'Train Labels'))
     expected_graph.add_edge(expected_project_modify, expected_train_labels)
     expected_graph.add_edge(expected_train_labels, expected_pipeline_fit)
 

@@ -12,7 +12,7 @@ from mlinspect.instrumentation.analyzer_input import AnalyzerInputUnaryOperator,
     AnalyzerInputDataSource, OperatorContext
 from mlinspect.instrumentation.backends.backend import Backend
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
-from mlinspect.instrumentation.dag_vertex import OperatorType
+from mlinspect.instrumentation.dag_node import OperatorType
 
 
 class PandasBackend(Backend):
@@ -154,10 +154,9 @@ def iter_input_annotation_output(analyzer_count, analyzer_index, input_data, inp
 
     # TODO: Then support the rest of the pandas functions for this example.
     # TODO: Move SklearnWirPreprocessor functionality to backend interface
-    # TODO: Vertex classes as data classes. also: maybe rename to node
     # TODO: In WirToDagTransformer the map to operators should also be moved into backend.
-    # TODO: Then we can also introduce warnings whenever there is e.g., a pandas function
-    # TODO: that the pandas backend can not deal with (has no operator mapping for)
+    #  Then we can also introduce warnings whenever there is e.g., a pandas function
+    #  that the pandas backend can not deal with (has no operator mapping for)
     # TODO: Add utility function to extract the library name, pandas and sklearn etc.
     # TODO: extract the function info adjustments for overwritten classes into backend in some way
 
