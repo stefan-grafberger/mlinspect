@@ -5,6 +5,7 @@ import os
 from functools import partial
 import itertools
 
+import networkx
 import pandas
 from pandas import DataFrame
 
@@ -21,6 +22,23 @@ class PandasBackend(Backend):
     """
 
     prefix = "pandas"
+
+    operator_map = {
+        ('pandas.io.parsers', 'read_csv'): OperatorType.DATA_SOURCE,
+        ('pandas.core.frame', 'dropna'): OperatorType.SELECTION,
+        ('pandas.core.frame', '__getitem__'): OperatorType.PROJECTION,
+    }
+
+    replacement_type_map = {
+        'mlinspect.instrumentation.backends.pandas_backend_frame_wrapper': 'pandas.core.frame'
+    }
+
+    @staticmethod
+    def preprocess_wir(wir: networkx.DiGraph) -> networkx.DiGraph:
+        """
+        Nothing to do here
+        """
+        return wir
 
     def __init__(self):
         super().__init__()
@@ -146,10 +164,6 @@ def iter_input_annotation_output(analyzer_count, analyzer_index, input_data, inp
                              right_on="mlinspect_index")
 
     # TODO: Then support the rest of the pandas functions for this example.
-    # TODO: Move SklearnWirPreprocessor functionality to backend interface
-    # TODO: In WirToDagTransformer the map to operators should also be moved into backend.
-    #  Then we can also introduce warnings whenever there is e.g., a pandas function
-    #  that the pandas backend can not deal with (has no operator mapping for)
 
     column_index_input_end = len(input_data.columns)
     column_annotation_current_analyzer = column_index_input_end + analyzer_index

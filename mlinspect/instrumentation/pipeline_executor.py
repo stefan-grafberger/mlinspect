@@ -9,8 +9,7 @@ import nbformat
 from nbconvert import PythonExporter
 
 from .analyzers.analyzer import Analyzer
-from .backends.pandas_backend import PandasBackend
-from .backends.sklearn_backend import SklearnBackend
+from .backends.all_backends import get_all_backends
 from .call_capture_transformer import CallCaptureTransformer
 from .dag_node import CodeReference
 from .inspection_result import InspectionResult
@@ -22,6 +21,9 @@ class PipelineExecutor:
     """
     Internal class to instrument and execute pipelines
     """
+    REPLACEMENT_TYPE_MAP = dict(replacement for backend in get_all_backends() for replacement in
+                                backend.replacement_type_map.items())
+
     script_scope = {}
     backend_map = {}
     code_reference_to_module = {}
@@ -59,10 +61,7 @@ class PipelineExecutor:
         """
         Because variables that the user code has to update are static, we need to set them here
         """
-        PipelineExecutor.backend_map = {
-            PandasBackend.prefix: PandasBackend(),
-            SklearnBackend.prefix: SklearnBackend()
-        }
+        PipelineExecutor.backend_map = dict((backend.prefix, backend) for backend in get_all_backends())
         for backend in self.backend_map.values():
             backend.analyzers = analyzers
         PipelineExecutor.script_scope = {}
@@ -199,9 +198,9 @@ class PipelineExecutor:
 
             function_info = (module_info.__name__, "__getitem__")
 
-        # TODO: Extract this function info replacement into the backends once we implemented the sklearn backend
-        if function_info[0] == 'mlinspect.instrumentation.backends.pandas_backend_frame_wrapper':
-            function_info = ('pandas.core.frame', function_info[1])
+        if function_info[0] in PipelineExecutor.REPLACEMENT_TYPE_MAP:
+            new_type = PipelineExecutor.REPLACEMENT_TYPE_MAP[function_info[0]]
+            function_info = (new_type, function_info[1])
         function_prefix = function_info[0].split(".", 1)[0]
 
         return function_info, function_prefix

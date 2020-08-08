@@ -29,7 +29,7 @@ class SklearnWirPreprocessor:
         self.wir_node_to_sub_pipeline_start = {}
         self.wir_node_to_sub_pipeline_end = {}
 
-    def sklearn_wir_preprocessing(self, graph: networkx.DiGraph) -> networkx.DiGraph:
+    def preprocess_wir(self, graph: networkx.DiGraph) -> networkx.DiGraph:
         """
         Preprocess scikit-learn pipeline operations to hide the special pipeline
         declaration style from other parts of the library

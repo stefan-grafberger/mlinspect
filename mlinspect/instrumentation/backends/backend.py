@@ -3,6 +3,8 @@ The Interface for the different instrumentation backends
 """
 import abc
 
+import networkx
+
 
 class Backend(metaclass=abc.ABCMeta):
     """
@@ -18,6 +20,24 @@ class Backend(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def prefix(self):
         """The prefix of the module of the library the backend is for"""
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def operator_map(self):
+        """The list of known operator mappings"""
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def replacement_type_map(self):
+        """The list of used data type replacements"""
+        raise NotImplementedError
+
+    @staticmethod
+    @abc.abstractmethod
+    def preprocess_wir(wir: networkx.DiGraph) -> networkx.DiGraph:
+        """Preprocess the wir if necessary"""
         raise NotImplementedError
 
     @abc.abstractmethod

@@ -1,7 +1,11 @@
 """
 The scikit-learn backend
 """
+import networkx
+
 from mlinspect.instrumentation.backends.backend import Backend
+from mlinspect.instrumentation.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
+from mlinspect.instrumentation.dag_node import OperatorType
 
 
 class SklearnBackend(Backend):
@@ -10,6 +14,29 @@ class SklearnBackend(Backend):
     """
 
     prefix = "sklearn"
+
+    operator_map = {
+        ('mlinspect.instrumentation.backends.pandas_backend_frame_wrapper', '__getitem__'): OperatorType.PROJECTION,
+        ('sklearn.preprocessing._label', 'label_binarize'): OperatorType.PROJECTION_MODIFY,
+        ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'): OperatorType.PROJECTION,
+        ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'): OperatorType.TRANSFORMER,
+        ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'): OperatorType.TRANSFORMER,
+        ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Concatenation'): OperatorType.CONCATENATION,
+        ('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'): OperatorType.ESTIMATOR,
+        ('sklearn.pipeline', 'fit', 'Pipeline'): OperatorType.FIT,
+        ('sklearn.pipeline', 'fit', 'Train Data'): OperatorType.TRAIN_DATA,
+        ('sklearn.pipeline', 'fit', 'Train Labels'): OperatorType.TRAIN_LABELS
+    }
+
+    replacement_type_map = {}
+
+    @staticmethod
+    def preprocess_wir(wir: networkx.DiGraph) -> networkx.DiGraph:
+        """
+        Preprocess scikit-learn pipeline operations to hide the special pipeline
+        declaration style from other parts of the library
+        """
+        return SklearnWirPreprocessor().preprocess_wir(wir)
 
     def before_call_used_value(self, function_info, subscript, call_code, value_code, value_value,
                                code_reference):
