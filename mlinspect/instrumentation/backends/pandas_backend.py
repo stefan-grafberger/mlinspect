@@ -52,6 +52,11 @@ class PandasBackend(Backend):
             assert isinstance(value_value, MlinspectDataFrame)
             value_value['mlinspect_index'] = range(1, len(value_value) + 1)
             self.input_data = value_value
+        elif function_info == ('pandas.core.frame', '__getitem__'):
+            # TODO: Can this also be a select?
+            assert isinstance(value_value, MlinspectDataFrame)
+            value_value['mlinspect_index'] = range(1, len(value_value) + 1)
+            self.input_data = value_value
 
     def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, args_values):
         """The arguments a function may be called with"""
@@ -86,6 +91,11 @@ class PandasBackend(Backend):
                                                                     return_value, function_info)
         elif function_info == ('pandas.core.frame', 'dropna'):
             operator_context = OperatorContext(OperatorType.SELECTION, function_info)
+            return_value = self.execute_analyzer_visits_unary_operator(operator_context, code_reference, return_value)
+        elif function_info == ('pandas.core.frame', '__getitem__'):
+            # TODO: Can this also be a select
+            operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
+            return_value['mlinspect_index'] = range(1, len(return_value) + 1)
             return_value = self.execute_analyzer_visits_unary_operator(operator_context, code_reference, return_value)
 
         return return_value
@@ -162,8 +172,6 @@ def iter_input_annotation_output(analyzer_count, analyzer_index, input_data, inp
                                                 right_on="mlinspect_index")
     joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
                              right_on="mlinspect_index")
-
-    # TODO: Then support the rest of the pandas functions for this example.
 
     column_index_input_end = len(input_data.columns)
     column_annotation_current_analyzer = column_index_input_end + analyzer_index

@@ -62,5 +62,10 @@ def get_expected_result():
                         fields=['age', 'workclass', 'fnlwgt', 'education', 'education-num',
                                 'marital-status', 'occupation', 'relationship', 'race', 'sex',
                                 'capital-gain', 'capital-loss', 'hours-per-week',
-                                'native-country', 'income-per-year'])]}
+                                'native-country', 'income-per-year'])],
+        DagNode(node_id=23, operator_type=OperatorType.PROJECTION, module=('pandas.core.frame', '__getitem__'),
+                code_reference=CodeReference(lineno=16, col_offset=38), description="to ['income-per-year']"): [
+                    AnalyzerInputRow(values=['<=50K'], fields=['income-per-year']),
+                    AnalyzerInputRow(values=['<=50K'], fields=['income-per-year'])]
+    }
     return expected_result
