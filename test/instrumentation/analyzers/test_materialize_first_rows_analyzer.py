@@ -1,5 +1,5 @@
 """
-Tests whether the DagVertex works
+Tests whether the MaterializeFirstRowsAnalyzer works
 """
 import os
 
@@ -14,7 +14,7 @@ FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy
 
 def test_materialize_first_rows_analyzer():
     """
-    Tests whether the DagVertex works
+    Tests whether the MaterializeFirstRowsAnalyzer works
     """
     inspection_result = PipelineInspector \
         .on_pipeline_from_py_file(FILE_PY) \
