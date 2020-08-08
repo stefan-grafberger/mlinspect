@@ -165,7 +165,8 @@ class SklearnWirPreprocessor:
                 new_transformer_module = (transformer.module[0],
                                           transformer.module[1], "Pipeline")
                 transformer = WirNode(transformer.node_id, transformer.name, transformer.operation,
-                                      transformer.code_reference, new_transformer_module, transformer.description)
+                                      transformer.code_reference, new_transformer_module,
+                                      transformer.dag_operator_description)
                 self.wir_node_to_sub_pipeline_start[transformer] = [transformer]
                 self.wir_node_to_sub_pipeline_end[transformer] = transformer
             transformers_list.append(transformer)
@@ -247,7 +248,7 @@ class SklearnWirPreprocessor:
         def copy_node(current_node, _):
             new_module = (current_node.module[0], current_node.module[1], "Pipeline")
             copied_wir = WirNode(new_node_id, current_node.name, current_node.operation,
-                                 current_node.code_reference, new_module, current_node.description)
+                                 current_node.code_reference, new_module, current_node.dag_operator_description)
 
             if current_node in start_copy:
                 start_transformers.append(copied_wir)
