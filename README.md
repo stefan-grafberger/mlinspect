@@ -44,6 +44,7 @@ inspection_result = PipelineInspector \
         .on_pipeline_from_ipynb_file(IPYNB_PATH) \
         .add_analyzer(MaterializeFirstRowsAnalyzer(2)) \
         .execute()
+
 extracted_dag = inspection_result.dag
 analyzer_results = inspection_result.analyzer_to_annotations
 ```

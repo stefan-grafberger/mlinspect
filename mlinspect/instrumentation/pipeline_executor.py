@@ -134,22 +134,7 @@ class PipelineExecutor:
         This is the method we want to insert into the DAG
         """
         # pylint: disable=too-many-arguments
-        if not subscript:
-            function = str(call_code.split("(", 1)[0])
-            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
-
-            function_info = (module_info.__name__, str(function.split(".")[-1]))
-        else:
-            function = str(call_code.split("[", 1)[0])
-            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
-
-            function_info = (module_info.__name__, "__getitem__")
-
-        # TODO: Extract this into backend
-        if function_info[0] == 'mlinspect.instrumentation.backends.pandas_backend_frame_wrapper':
-            function_info = ('pandas.core.frame', function_info[1])
-
-        function_prefix = function_info[0].split(".", 1)[0]
+        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript)
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
             backend.before_call_used_value(function_info, subscript, call_code, value_code,
@@ -162,22 +147,7 @@ class PipelineExecutor:
         This is the method we want to insert into the DAG
         """
         # pylint: disable=too-many-arguments
-        if not subscript:
-            function = str(call_code.split("(", 1)[0])
-            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
-
-            function_info = (module_info.__name__, str(function.split(".")[-1]))
-        else:
-            function = str(call_code.split("[", 1)[0])
-            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
-
-            function_info = (module_info.__name__, "__getitem__")
-
-        # TODO: Extract this into backend
-        if function_info[0] == 'mlinspect.instrumentation.backends.pandas_backend_frame_wrapper':
-            function_info = ('pandas.core.frame', function_info[1])
-
-        function_prefix = function_info[0].split(".", 1)[0]
+        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript)
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
             backend.before_call_used_args(function_info, subscript, call_code, args_code, code_reference, args_values)
@@ -190,16 +160,7 @@ class PipelineExecutor:
         """
         # pylint: disable=too-many-arguments
         assert not subscript  # we currently only consider __getitem__ subscripts, these do not take kwargs
-        function = str(call_code.split("(", 1)[0])
-        module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
-
-        function_info = (module_info.__name__, str(function.split(".")[-1]))
-
-        # TODO: Extract this into backend
-        if function_info[0] == 'mlinspect.instrumentation.backends.pandas_backend_frame_wrapper':
-            function_info = ('pandas.core.frame', function_info[1])
-
-        function_prefix = function_info[0].split(".", 1)[0]
+        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript)
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
             backend.before_call_used_kwargs(function_info, subscript, call_code, kwargs_code,
@@ -212,6 +173,21 @@ class PipelineExecutor:
         This is the method we want to insert into the DAG
         """
         # pylint: disable=too-many-arguments
+        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript)
+
+        self.code_reference_to_module[code_reference] = function_info
+
+        if function_prefix in self.backend_map:
+            backend = self.backend_map[function_prefix]
+            return backend.after_call_used(function_info, subscript, call_code, return_value, code_reference)
+
+        return return_value
+
+    @staticmethod
+    def get_function_info_and_prefix(call_code, subscript):
+        """
+        Get the function info and find out which backend to call
+        """
         if not subscript:
             function = str(call_code.split("(", 1)[0])
             module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
@@ -223,17 +199,12 @@ class PipelineExecutor:
 
             function_info = (module_info.__name__, "__getitem__")
 
-        # TODO: Extract this into backend
+        # TODO: Extract this function info replacement into the backends once we implemented the sklearn backend
         if function_info[0] == 'mlinspect.instrumentation.backends.pandas_backend_frame_wrapper':
             function_info = ('pandas.core.frame', function_info[1])
-        self.code_reference_to_module[code_reference] = function_info
-
         function_prefix = function_info[0].split(".", 1)[0]
-        if function_prefix in self.backend_map:
-            backend = self.backend_map[function_prefix]
-            return backend.after_call_used(function_info, subscript, call_code, return_value, code_reference)
 
-        return return_value
+        return function_info, function_prefix
 
 
 # How we instrument the calls
