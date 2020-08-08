@@ -1,5 +1,5 @@
 """
-The Interface for the different instrumentation backends
+The Interface for the Analyzers
 """
 import abc
 from typing import Union, Iterable
@@ -10,7 +10,7 @@ from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, 
 
 class Analyzer(metaclass=abc.ABCMeta):
     """
-    The Interface for the different instrumentation backends
+    The Interface for the Analyzers
     """
 
     @property
