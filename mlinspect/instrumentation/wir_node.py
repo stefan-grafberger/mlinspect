@@ -4,6 +4,8 @@ The Nodes used in the WIR as nodes for the networkx.DiGraph
 import dataclasses
 from typing import Tuple
 
+from mlinspect.instrumentation.dag_node import CodeReference
+
 
 @dataclasses.dataclass
 class WirNode:
@@ -13,8 +15,7 @@ class WirNode:
     node_id: int
     name: str
     operation: str
-    lineno: int or None = None
-    col_offset: int or None = None
+    code_reference: CodeReference or None = None
     module: Tuple or None = None
     description: str or None = None
 

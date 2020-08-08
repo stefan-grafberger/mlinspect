@@ -27,7 +27,7 @@ class PandasBackend(Backend):
         self.input_data = None
 
     def before_call_used_value(self, function_info, subscript, call_code, value_code, value_value,
-                               ast_lineno, ast_col_offset):
+                               code_reference):
         """The value or module a function may be called on"""
         # pylint: disable=too-many-arguments
         if function_info == ('pandas.core.frame', 'dropna'):
@@ -35,13 +35,12 @@ class PandasBackend(Backend):
             value_value['mlinspect_index'] = range(1, len(value_value) + 1)
             self.input_data = value_value
 
-    def before_call_used_args(self, function_info, subscript, call_code, args_code, ast_lineno,
-                              ast_col_offset, args_values):
+    def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, args_values):
         """The arguments a function may be called with"""
         # pylint: disable=too-many-arguments
-        self.before_call_used_args_add_description(args_values, ast_col_offset, ast_lineno, function_info)
+        self.before_call_used_args_add_description(args_values, code_reference, function_info)
 
-    def before_call_used_args_add_description(self, args_values, ast_col_offset, ast_lineno, function_info):
+    def before_call_used_args_add_description(self, args_values, code_reference, function_info):
         """Add special descriptions to certain pandas operators"""
         description = None
         if function_info == ('pandas.io.parsers', 'read_csv'):
@@ -54,29 +53,26 @@ class PandasBackend(Backend):
             key_arg = args_values[0].split(os.path.sep)[-1]
             description = "to {}".format([key_arg])
         if description:
-            self.call_description_map[(ast_lineno, ast_col_offset)] = description
+            self.code_reference_to_description[code_reference] = description
 
-    def before_call_used_kwargs(self, function_info, subscript, call_code, kwargs_code, ast_lineno,
-                                ast_col_offset, kwargs_values):
+    def before_call_used_kwargs(self, function_info, subscript, call_code, kwargs_code, code_reference, kwargs_values):
         """The keyword arguments a function may be called with"""
         # pylint: disable=too-many-arguments, unused-argument, no-self-use, unnecessary-pass
         pass
 
-    def after_call_used(self, function_info, subscript, call_code, return_value, ast_lineno,
-                        ast_col_offset):
+    def after_call_used(self, function_info, subscript, call_code, return_value, code_reference):
         """The return value of some function"""
         # pylint: disable=too-many-arguments
         if function_info == ('pandas.io.parsers', 'read_csv'):
-            return_value = self.execute_analyzer_visits_data_source(ast_col_offset, ast_lineno,
+            return_value = self.execute_analyzer_visits_data_source(code_reference,
                                                                     return_value, function_info)
         elif function_info == ('pandas.core.frame', 'dropna'):
             operator_context = OperatorContext(OperatorType.SELECTION, function_info)
-            return_value = self.execute_analyzer_visits_unary_operator(operator_context, ast_col_offset,
-                                                                       ast_lineno, return_value)
+            return_value = self.execute_analyzer_visits_unary_operator(operator_context, code_reference, return_value)
 
         return return_value
 
-    def execute_analyzer_visits_data_source(self, ast_col_offset, ast_lineno, return_value, function_info):
+    def execute_analyzer_visits_data_source(self, code_reference, return_value, function_info):
         """Execute analyzers when the current operator is a data source and does not have parents in the DAG"""
         operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
         annotation_iterators = []
@@ -84,11 +80,10 @@ class PandasBackend(Backend):
             iterator_for_analyzer = iter_input_data_source(return_value)
             annotation_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
             annotation_iterators.append(annotation_iterator)
-        return_value = self.store_analyzer_outputs(annotation_iterators, ast_col_offset, ast_lineno,
-                                                   return_value)
+        return_value = self.store_analyzer_outputs(annotation_iterators, code_reference, return_value)
         return return_value
 
-    def store_analyzer_outputs(self, annotation_iterators, ast_col_offset, ast_lineno, return_value):
+    def store_analyzer_outputs(self, annotation_iterators, code_reference, return_value):
         """
         Stores the analyzer annotations for the rows in the dataframe and the
         analyzer annotations for the DAG operators in a map
@@ -101,7 +96,7 @@ class PandasBackend(Backend):
         for analyzer in self.analyzers:
             analyzer_output = analyzer.get_operator_annotation_after_visit()
             analyzer_outputs[analyzer] = analyzer_output
-        self.call_analyzer_output_map[(ast_lineno, ast_col_offset)] = analyzer_outputs
+        self.code_reference_analyzer_output_map[code_reference] = analyzer_outputs
         return_value = MlinspectDataFrame(return_value)
         return_value.annotations = annotations_df
         self.input_data = None
@@ -111,8 +106,7 @@ class PandasBackend(Backend):
         assert isinstance(return_value, MlinspectDataFrame)
         return return_value
 
-    def execute_analyzer_visits_unary_operator(self, operator_context, ast_col_offset, ast_lineno,
-                                               return_value):
+    def execute_analyzer_visits_unary_operator(self, operator_context, code_reference, return_value):
         """Execute analyzers when the current operator has one parent in the DAG"""
         assert "mlinspect_index" in return_value.columns
         assert isinstance(self.input_data, MlinspectDataFrame)
@@ -127,8 +121,7 @@ class PandasBackend(Backend):
                                                                  return_value)
             annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
             annotation_iterators.append(annotations_iterator)
-        return_value = self.store_analyzer_outputs(annotation_iterators, ast_col_offset, ast_lineno,
-                                                   return_value)
+        return_value = self.store_analyzer_outputs(annotation_iterators, code_reference, return_value)
         return return_value
 
 

@@ -10,8 +10,8 @@ class Backend(metaclass=abc.ABCMeta):
     """
 
     def __init__(self):
-        self.call_description_map = {}
-        self.call_analyzer_output_map = {}
+        self.code_reference_to_description = {}
+        self.code_reference_analyzer_output_map = {}
         self.analyzers = []
 
     @property
@@ -22,28 +22,25 @@ class Backend(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def before_call_used_value(self, function_info, subscript, call_code, value_code, value_value,
-                               ast_lineno, ast_col_offset):
+                               code_reference):
         """The value or module a function may be called on"""
         # pylint: disable=too-many-arguments, unused-argument
         raise NotImplementedError
 
     @abc.abstractmethod
-    def before_call_used_args(self, function_info, subscript, call_code, args_code, ast_lineno,
-                              ast_col_offset, args_values):
+    def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, args_values):
         """The arguments a function may be called with"""
         # pylint: disable=too-many-arguments, unused-argument
         raise NotImplementedError
 
     @abc.abstractmethod
-    def before_call_used_kwargs(self, function_info, subscript, call_code, kwargs_code, ast_lineno,
-                                ast_col_offset, kwargs_values):
+    def before_call_used_kwargs(self, function_info, subscript, call_code, kwargs_code, code_reference, kwargs_values):
         """The keyword arguments a function may be called with"""
         # pylint: disable=too-many-arguments, unused-argument
         raise NotImplementedError
 
     @abc.abstractmethod
-    def after_call_used(self, function_info, subscript, call_code, return_value, ast_lineno,
-                        ast_col_offset):
+    def after_call_used(self, function_info, subscript, call_code, return_value, code_reference):
         """The return value of some function"""
         # pylint: disable=too-many-arguments, unused-argument
         raise NotImplementedError

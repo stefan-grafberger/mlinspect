@@ -12,6 +12,7 @@ from .analyzers.analyzer import Analyzer
 from .backends.pandas_backend import PandasBackend
 from .backends.sklearn_backend import SklearnBackend
 from .call_capture_transformer import CallCaptureTransformer
+from .dag_node import CodeReference
 from .inspection_result import InspectionResult
 from .wir_extractor import WirExtractor
 from .wir_to_dag_transformer import WirToDagTransformer
@@ -23,7 +24,7 @@ class PipelineExecutor:
     """
     script_scope = {}
     backend_map = {}
-    ast_call_node_id_to_module = {}
+    code_reference_to_module = {}
 
     def run(self, notebook_path: str or None, python_path: str or None, python_code: str or None,
             analyzers: List[Analyzer]) -> InspectionResult:
@@ -44,10 +45,10 @@ class PipelineExecutor:
         wir_extractor = WirExtractor(original_parsed_ast)
         wir_extractor.extract_wir()
 
-        ast_call_node_id_to_description = {}
+        code_reference_to_description = {}
         for backend in self.backend_map.values():
-            ast_call_node_id_to_description = {**ast_call_node_id_to_description, **backend.call_description_map}
-        wir = wir_extractor.add_runtime_info(self.ast_call_node_id_to_module, ast_call_node_id_to_description)
+            code_reference_to_description = {**code_reference_to_description, **backend.code_reference_to_description}
+        wir = wir_extractor.add_runtime_info(self.code_reference_to_module, code_reference_to_description)
 
         dag = WirToDagTransformer.extract_dag(wir)
         analyzer_to_call_to_annotation = self.build_analyzer_result_map(dag)
@@ -65,27 +66,28 @@ class PipelineExecutor:
         for backend in self.backend_map.values():
             backend.analyzers = analyzers
         PipelineExecutor.script_scope = {}
-        PipelineExecutor.ast_call_node_id_to_module = {}
+        PipelineExecutor.code_reference_to_module = {}
 
     def build_analyzer_result_map(self, dag):
         """
         Get the analyzer DAG annotations from the backend and build a map with it for convenient usage
         """
-        node_id_to_dag_node = {}
+        code_reference_to_dag_node = {}
         for node in dag.nodes:
-            node_id_to_dag_node[(node.lineno, node.col_offset)] = node
+            code_reference_to_dag_node[node.code_reference] = node
 
-        ast_call_node_id_to_annotation = {}
+        code_reference_to_annotation = {}
         for backend in self.backend_map.values():
-            ast_call_node_id_to_annotation = {**ast_call_node_id_to_annotation, **backend.call_analyzer_output_map}
-        analyzer_to_call_to_annotation = {}
-        for call_id, analyzer_output_map in ast_call_node_id_to_annotation.items():
+            code_reference_to_annotation = {**code_reference_to_annotation,
+                                            **backend.code_reference_analyzer_output_map}
+        analyzer_to_code_reference_to_annotation = {}
+        for call_id, analyzer_output_map in code_reference_to_annotation.items():
             for analyzer, annotation in analyzer_output_map.items():
-                dag_node_to_annotation = analyzer_to_call_to_annotation.get(analyzer, {})
-                dag_node = node_id_to_dag_node[call_id]
+                dag_node_to_annotation = analyzer_to_code_reference_to_annotation.get(analyzer, {})
+                dag_node = code_reference_to_dag_node[call_id]
                 dag_node_to_annotation[dag_node] = annotation
-                analyzer_to_call_to_annotation[analyzer] = dag_node_to_annotation
-        return analyzer_to_call_to_annotation
+                analyzer_to_code_reference_to_annotation[analyzer] = dag_node_to_annotation
+        return analyzer_to_code_reference_to_annotation
 
     @staticmethod
     def instrument_pipeline(parsed_ast):
@@ -127,7 +129,7 @@ class PipelineExecutor:
             source_code = python_code
         return source_code
 
-    def before_call_used_value(self, subscript, call_code, value_code, value_value, ast_lineno, ast_col_offset):
+    def before_call_used_value(self, subscript, call_code, value_code, value_value, code_reference):
         """
         This is the method we want to insert into the DAG
         """
@@ -151,11 +153,11 @@ class PipelineExecutor:
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
             backend.before_call_used_value(function_info, subscript, call_code, value_code,
-                                           value_value, ast_lineno, ast_col_offset)
+                                           value_value, code_reference)
 
         return value_value
 
-    def before_call_used_args(self, subscript, call_code, args_code, ast_lineno, ast_col_offset, args_values):
+    def before_call_used_args(self, subscript, call_code, args_code, code_reference, args_values):
         """
         This is the method we want to insert into the DAG
         """
@@ -178,12 +180,11 @@ class PipelineExecutor:
         function_prefix = function_info[0].split(".", 1)[0]
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
-            backend.before_call_used_args(function_info, subscript, call_code, args_code, ast_lineno,
-                                          ast_col_offset, args_values)
+            backend.before_call_used_args(function_info, subscript, call_code, args_code, code_reference, args_values)
 
         return args_values
 
-    def before_call_used_kwargs(self, subscript, call_code, kwargs_code, ast_lineno, ast_col_offset, kwargs_values):
+    def before_call_used_kwargs(self, subscript, call_code, kwargs_code, code_reference, kwargs_values):
         """
         This is the method we want to insert into the DAG
         """
@@ -202,11 +203,11 @@ class PipelineExecutor:
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
             backend.before_call_used_kwargs(function_info, subscript, call_code, kwargs_code,
-                                            ast_lineno, ast_col_offset, kwargs_values)
+                                            code_reference, kwargs_values)
 
         return kwargs_values
 
-    def after_call_used(self, subscript, call_code, return_value, ast_lineno, ast_col_offset):
+    def after_call_used(self, subscript, call_code, return_value, code_reference):
         """
         This is the method we want to insert into the DAG
         """
@@ -225,13 +226,12 @@ class PipelineExecutor:
         # TODO: Extract this into backend
         if function_info[0] == 'mlinspect.instrumentation.backends.pandas_backend_frame_wrapper':
             function_info = ('pandas.core.frame', function_info[1])
-        self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
+        self.code_reference_to_module[code_reference] = function_info
 
         function_prefix = function_info[0].split(".", 1)[0]
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
-            return backend.after_call_used(function_info, subscript, call_code, return_value,
-                                           ast_lineno, ast_col_offset)
+            return backend.after_call_used(function_info, subscript, call_code, return_value, code_reference)
 
         return return_value
 
@@ -248,7 +248,8 @@ def before_call_used_value(subscript, call_code, value_code, value_value, ast_li
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
-    return singleton.before_call_used_value(subscript, call_code, value_code, value_value, ast_lineno, ast_col_offset)
+    return singleton.before_call_used_value(subscript, call_code, value_code, value_value,
+                                            CodeReference(ast_lineno, ast_col_offset))
 
 
 def before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_offset, args_values):
@@ -256,7 +257,8 @@ def before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_o
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
-    return singleton.before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_offset, args_values)
+    return singleton.before_call_used_args(subscript, call_code, args_code, CodeReference(ast_lineno, ast_col_offset),
+                                           args_values)
 
 
 def before_call_used_kwargs(subscript, call_code, kwargs_code, ast_lineno, ast_col_offset, **kwarg_values):
@@ -264,8 +266,8 @@ def before_call_used_kwargs(subscript, call_code, kwargs_code, ast_lineno, ast_c
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
-    return singleton.before_call_used_kwargs(subscript, call_code, kwargs_code, ast_lineno, ast_col_offset,
-                                             kwarg_values)
+    return singleton.before_call_used_kwargs(subscript, call_code, kwargs_code,
+                                             CodeReference(ast_lineno, ast_col_offset), kwarg_values)
 
 
 def after_call_used(subscript, call_code, return_value, ast_lineno, ast_col_offset):
@@ -273,4 +275,4 @@ def after_call_used(subscript, call_code, return_value, ast_lineno, ast_col_offs
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
-    return singleton.after_call_used(subscript, call_code, return_value, ast_lineno, ast_col_offset)
+    return singleton.after_call_used(subscript, call_code, return_value, CodeReference(ast_lineno, ast_col_offset))

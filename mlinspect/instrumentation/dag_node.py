@@ -22,6 +22,15 @@ class OperatorType(Enum):
     TRAIN_LABELS = "Train Labels"
 
 
+@dataclasses.dataclass(frozen=True)
+class CodeReference:
+    """
+    Identifies a function call in the user pipeline code
+    """
+    lineno: int
+    col_offset: int
+
+
 @dataclasses.dataclass
 class DagNode:
     """
@@ -30,8 +39,7 @@ class DagNode:
 
     node_id: int
     operator_type: OperatorType
-    lineno: int or None = None
-    col_offset: int or None = None
+    code_reference: CodeReference or None = None
     module: Tuple or None = None
     description: str or None = None
 
