@@ -3,6 +3,7 @@ The pandas backend
 """
 import os
 from functools import partial
+import itertools
 
 import pandas
 from pandas import DataFrame
@@ -82,7 +83,8 @@ class PandasBackend(Backend):
         """Execute analyzers when the current operator is a data source and does not have parents in the DAG"""
         annotation_iterators = []
         for analyzer in self.analyzers:
-            annotation_iterator = analyzer.visit_operator("Data Source", iter_input_data_source(return_value))
+            iterator_for_analyzer = iter_input_data_source(return_value)
+            annotation_iterator = analyzer.visit_operator("Data Source", iterator_for_analyzer)
             annotation_iterators.append(annotation_iterator)
         return_value = self.store_analyzer_outputs(annotation_iterators, ast_col_offset, ast_lineno,
                                                    return_value)
@@ -94,7 +96,7 @@ class PandasBackend(Backend):
         analyzer annotations for the DAG operators in a map
         """
         # pylint: disable=too-many-arguments
-        annotation_iterators = zip(*annotation_iterators)
+        annotation_iterators = itertools.zip_longest(*annotation_iterators)
         analyzer_names = [str(analyzer) for analyzer in self.analyzers]
         annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
         annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
