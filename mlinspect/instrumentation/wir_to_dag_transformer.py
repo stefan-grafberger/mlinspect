@@ -3,8 +3,8 @@ Extract a DAG from the WIR (Workflow Intermediate Representation)
 """
 import networkx
 
-from mlinspect.instrumentation.dag_vertex import DagVertex
-from mlinspect.instrumentation.sklearn_wir_preprocessor import SklearnWirPreprocessor
+from mlinspect.instrumentation.backends.all_backends import get_all_backends
+from mlinspect.instrumentation.dag_node import DagNode
 from mlinspect.utils import traverse_graph_and_process_nodes
 
 
@@ -13,28 +13,16 @@ class WirToDagTransformer:
     Extract DAG from the WIR (Workflow Intermediate Representation)
     """
 
-    OPERATOR_MAP = {
-        ('pandas.io.parsers', 'read_csv'): "Data Source",
-        ('pandas.core.frame', 'dropna'): "Selection",
-        ('pandas.core.frame', '__getitem__'): "Projection",
-        ('sklearn.preprocessing._label', 'label_binarize'): "Projection (Modify)",
-        ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'): "Projection",
-        ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'): "Transformer",
-        ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'): "Transformer",
-        ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Concatenation'): "Concatenation",
-        ('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'): "Estimator",
-        ('sklearn.pipeline', 'fit', 'Pipeline'): "Fit Transformers and Estimators",
-        ('sklearn.pipeline', 'fit', 'Train Data'): "Train Data",
-        ('sklearn.pipeline', 'fit', 'Train Labels'): "Train Labels"
-    }
+    OPERATOR_MAP = dict(backend_item for backend in get_all_backends() for backend_item in backend.operator_map.items())
 
     @staticmethod
     def extract_dag(wir: networkx.DiGraph) -> networkx.DiGraph:
         """
         Extract the final DAG
         """
-        preprocessed_wir = SklearnWirPreprocessor().sklearn_wir_preprocessing(wir)
-        cleaned_wir = WirToDagTransformer.remove_all_nodes_but_calls_and_subscripts(preprocessed_wir)
+        for backend in get_all_backends():
+            wir = backend.preprocess_wir(wir)
+        cleaned_wir = WirToDagTransformer.remove_all_nodes_but_calls_and_subscripts(wir)
         dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
 
         return dag
@@ -77,8 +65,8 @@ class WirToDagTransformer:
             parents = list(graph.predecessors(node))
             children = list(graph.successors(node))
             if node.module in WirToDagTransformer.OPERATOR_MAP:
-                new_dag_vertex = DagVertex(node.node_id, WirToDagTransformer.OPERATOR_MAP[node.module], node.lineno,
-                                           node.col_offset, node.module, node.description)
+                new_dag_vertex = DagNode(node.node_id, WirToDagTransformer.OPERATOR_MAP[node.module],
+                                         node.code_reference, node.module, node.dag_operator_description)
                 for parent in parents:
                     graph.add_edge(parent, new_dag_vertex)
                 for child in children:
@@ -94,14 +82,3 @@ class WirToDagTransformer:
         traverse_graph_and_process_nodes(graph, process_node)
 
         return graph
-
-    def get_parent_operator_identifier_for_operator(self, lineno, col_offset):
-        """
-        If we store the annotations of analyzers in a map until the next operator needs it, we need some
-        way to identify them and know when we can delete them. When e.g., there is a raw_data.dropna, it needs
-        to know that the previous operator was the pd.read_csv. Then it can load the annotations from a map.
-        Afterwards, the annotations need to be deleted from the map to avoid unnecessary overhead.
-        While we might store the annotations directly in the data frame in the case of pandas, in the case of
-        sklearn that is probably not easily possible.
-        """
-        raise NotImplementedError

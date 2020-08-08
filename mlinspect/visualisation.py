@@ -16,7 +16,7 @@ def save_fig_to_path(extracted_dag, filename):
         label = cleandoc("""
                 {}: {}
                 {}
-                """.format(node.node_id, node.operator_name, node.description or ""))
+                """.format(node.node_id, node.operator_type.value, node.description or ""))
         return label
 
     # noinspection PyTypeChecker
@@ -37,7 +37,7 @@ def get_dag_as_pretty_string(extracted_dag):
         if node.description:
             description = "({})".format(node.description)
 
-        label = "{}: {}{}".format(node.node_id, node.operator_name, description)
+        label = "{}: {}{}".format(node.node_id, node.operator_type.value, description)
         return label
 
     # noinspection PyTypeChecker

@@ -3,13 +3,16 @@ Instrument and executes the pipeline
 """
 import ast
 import copy
-import os
+from typing import List
 
-import astunparse
-import astpretty  # pylint: disable=unused-import
 import nbformat
 from nbconvert import PythonExporter
+
+from .analyzers.analyzer import Analyzer
+from .backends.all_backends import get_all_backends
 from .call_capture_transformer import CallCaptureTransformer
+from .dag_node import CodeReference
+from .inspection_result import InspectionResult
 from .wir_extractor import WirExtractor
 from .wir_to_dag_transformer import WirToDagTransformer
 
@@ -18,18 +21,20 @@ class PipelineExecutor:
     """
     Internal class to instrument and execute pipelines
     """
+    REPLACEMENT_TYPE_MAP = dict(replacement for backend in get_all_backends() for replacement in
+                                backend.replacement_type_map.items())
+
     script_scope = {}
+    backend_map = {}
+    code_reference_to_module = {}
 
-    def __init__(self):
-        self.ast_call_node_id_to_module = {}
-        self.ast_call_node_id_to_description = {}
-
-    def run(self, notebook_path: str or None, python_path: str or None, python_code: str or None):
+    def run(self, notebook_path: str or None, python_path: str or None, python_code: str or None,
+            analyzers: List[Analyzer]) -> InspectionResult:
         """
         Instrument and execute the pipeline
         """
         # pylint: disable=no-self-use
-        PipelineExecutor.script_scope = {}
+        self.initialize_static_variables(analyzers)
 
         source_code = self.load_source_code(notebook_path, python_path, python_code)
         parsed_ast = ast.parse(source_code)
@@ -41,11 +46,47 @@ class PipelineExecutor:
 
         wir_extractor = WirExtractor(original_parsed_ast)
         wir_extractor.extract_wir()
-        wir = wir_extractor.add_runtime_info(self.ast_call_node_id_to_module, self.ast_call_node_id_to_description)
+
+        code_reference_to_description = {}
+        for backend in self.backend_map.values():
+            code_reference_to_description = {**code_reference_to_description, **backend.code_reference_to_description}
+        wir = wir_extractor.add_runtime_info(self.code_reference_to_module, code_reference_to_description)
 
         dag = WirToDagTransformer.extract_dag(wir)
+        analyzer_to_call_to_annotation = self.build_analyzer_result_map(dag)
 
-        return dag
+        return InspectionResult(dag, analyzer_to_call_to_annotation)
+
+    def initialize_static_variables(self, analyzers):
+        """
+        Because variables that the user code has to update are static, we need to set them here
+        """
+        PipelineExecutor.backend_map = dict((backend.prefix, backend) for backend in get_all_backends())
+        for backend in self.backend_map.values():
+            backend.analyzers = analyzers
+        PipelineExecutor.script_scope = {}
+        PipelineExecutor.code_reference_to_module = {}
+
+    def build_analyzer_result_map(self, dag):
+        """
+        Get the analyzer DAG annotations from the backend and build a map with it for convenient usage
+        """
+        code_reference_to_dag_node = {}
+        for node in dag.nodes:
+            code_reference_to_dag_node[node.code_reference] = node
+
+        code_reference_to_annotation = {}
+        for backend in self.backend_map.values():
+            code_reference_to_annotation = {**code_reference_to_annotation,
+                                            **backend.code_reference_analyzer_output_map}
+        analyzer_to_code_reference_to_annotation = {}
+        for call_id, analyzer_output_map in code_reference_to_annotation.items():
+            for analyzer, annotation in analyzer_output_map.items():
+                dag_node_to_annotation = analyzer_to_code_reference_to_annotation.get(analyzer, {})
+                dag_node = code_reference_to_dag_node[call_id]
+                dag_node_to_annotation[dag_node] = annotation
+                analyzer_to_code_reference_to_annotation[analyzer] = dag_node_to_annotation
+        return analyzer_to_code_reference_to_annotation
 
     @staticmethod
     def instrument_pipeline(parsed_ast):
@@ -87,194 +128,82 @@ class PipelineExecutor:
             source_code = python_code
         return source_code
 
-    def before_call_used_value(self, subscript, call_code, value_code, value_value, ast_lineno, ast_col_offset):
+    def before_call_used_value(self, subscript, call_code, value_code, value_value, code_reference):
         """
         This is the method we want to insert into the DAG
         """
         # pylint: disable=too-many-arguments
-        if not subscript:
-            function = str(call_code.split("(", 1)[0])
-            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
+        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript)
+        if function_prefix in self.backend_map:
+            backend = self.backend_map[function_prefix]
+            backend.before_call_used_value(function_info, subscript, call_code, value_code,
+                                           value_value, code_reference)
 
-            function_info = (module_info.__name__, str(function.split(".")[-1]))
-            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
-
-            print("_______________________________________")
-            print("before call used value: {}".format(call_code.split("\n")[0]))
-            print("function_info: {}".format(function_info))
-            print("value_code: {}".format(value_code))
-            print("value_value: {}".format(value_value))
-            print("_______________________________________")
-        else:
-            function = str(call_code.split("[", 1)[0])
-            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
-
-            function_info = (module_info.__name__, "__getitem__")
-            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
-
-            print("_______________________________________")
-            print("before call used value: {}".format(call_code.split("\n")[0]))
-            print("function_info: {}".format(function_info))
-            print("value_code: {}".format(value_code))
-            print("value_value: {}".format(value_value))
-            print("_______________________________________")
         return value_value
 
-    def before_call_used_args(self, subscript, call_code, args_code, ast_lineno, ast_col_offset, args_values):
+    def before_call_used_args(self, subscript, call_code, args_code, code_reference, args_values):
         """
         This is the method we want to insert into the DAG
         """
         # pylint: disable=too-many-arguments
-        if not subscript:
-            function = str(call_code.split("(", 1)[0])
-            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
+        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript)
+        if function_prefix in self.backend_map:
+            backend = self.backend_map[function_prefix]
+            backend.before_call_used_args(function_info, subscript, call_code, args_code, code_reference, args_values)
 
-            function_info = (module_info.__name__, str(function.split(".")[-1]))
-            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
-
-            print("_______________________________________")
-            print("before call used args: {}".format(call_code.split("\n")[0]))
-            print("function_info: {}".format(function_info))
-            print("args_code: {}".format(args_code))
-            print("args_values: {}".format(args_values))
-            print("_______________________________________")
-        else:
-            function = str(call_code.split("[", 1)[0])
-            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
-
-            function_info = (module_info.__name__, "__getitem__")
-            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
-
-            print("_______________________________________")
-            print("before call used args: {}".format(call_code.split("\n")[0]))
-            print("function_info: {}".format(function_info))
-            print("args_code: {}".format(args_code))
-            print("args_values: {}".format(args_values))
-            print("_______________________________________")
-
-        if function_info[0].split(".", 1)[0] == "pandas":
-            self.pandas_before_call_used_args(function_info, subscript, call_code, args_code, ast_lineno,
-                                              ast_col_offset, args_values)
-        elif function_info[0].split(".", 1)[0] == "sklearn":
-            self.sklearn_before_call_used_args(function_info, subscript, call_code, args_code, ast_lineno,
-                                               ast_col_offset, args_values)
         return args_values
 
-    def pandas_before_call_used_args(self, function_info, subscript, call_code, args_code, ast_lineno,
-                                     ast_col_offset, args_values):
-        """
-        This is the method we want to insert into the DAG
-        """
-        # pylint: disable=unused-argument, too-many-arguments
-        description = None
-        if function_info == ('pandas.io.parsers', 'read_csv'):
-            filename = args_values[0].split(os.path.sep)[-1]
-            description = "{}".format(filename)
-        elif function_info == ('pandas.core.frame', 'dropna'):
-            description = "dropna"
-        elif function_info == ('pandas.core.frame', '__getitem__'):
-            # TODO: Can this also be a select?
-            key_arg = args_values[0].split(os.path.sep)[-1]
-            description = "to {}".format([key_arg])
-
-        if description:
-            self.ast_call_node_id_to_description[(ast_lineno, ast_col_offset)] = description
-
-    def sklearn_before_call_used_args(self, function_info, subscript, call_code, args_code, ast_lineno,
-                                      ast_col_offset, args_values):
-        """
-        This is the method we want to insert into the DAG
-        """
-        # pylint: disable=unused-argument, too-many-arguments
-        description = None
-
-        if function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
-            description = "Categorical Encoder (OneHotEncoder)"
-        elif function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
-            description = "Numerical Encoder (StandardScaler)"
-        elif function_info == ('sklearn.tree._classes', 'DecisionTreeClassifier'):
-            description = "Decision Tree"
-
-        if description:
-            self.ast_call_node_id_to_description[(ast_lineno, ast_col_offset)] = description
-
-    def before_call_used_kwargs(self, subscript, call_code, kwargs_code, ast_lineno, ast_col_offset, kwargs_values):
+    def before_call_used_kwargs(self, subscript, call_code, kwargs_code, code_reference, kwargs_values):
         """
         This is the method we want to insert into the DAG
         """
         # pylint: disable=too-many-arguments
         assert not subscript  # we currently only consider __getitem__ subscripts, these do not take kwargs
-        function = str(call_code.split("(", 1)[0])
-        module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
-
-        function_info = (module_info.__name__, str(function.split(".")[-1]))
-        self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
-
-        print("_______________________________________")
-        print("before call used kwargs: {}".format(call_code.split("\n")[0]))
-        print("function_info: {}".format(function_info))
-        print("kwargs_code: {}".format(kwargs_code))
-        print("args_values: {}".format(kwargs_values))
-        print("_______________________________________")
-
-        if function_info[0].split(".", 1)[0] == "sklearn":
-            self.sklearn_before_call_used_kwargs(function_info, subscript, call_code, kwargs_code, ast_lineno,
-                                                 ast_col_offset, kwargs_values)
+        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript)
+        if function_prefix in self.backend_map:
+            backend = self.backend_map[function_prefix]
+            backend.before_call_used_kwargs(function_info, subscript, call_code, kwargs_code,
+                                            code_reference, kwargs_values)
 
         return kwargs_values
 
-    def sklearn_before_call_used_kwargs(self, function_info, subscript, call_code, kwargs_code, ast_lineno,
-                                        ast_col_offset, kwargs_values):
-        """
-        This is the method we want to insert into the DAG
-        """
-        # pylint: disable=unused-argument, too-many-arguments
-        description = None
-        if function_info == ('sklearn.preprocessing._label', 'label_binarize'):
-            classes = kwargs_values['classes']
-            description = "label_binarize, classes: {}".format(classes)
-
-        if description:
-            self.ast_call_node_id_to_description[(ast_lineno, ast_col_offset)] = description
-
-    def after_call_used(self, subscript, call_code, return_value, ast_lineno, ast_col_offset):
+    def after_call_used(self, subscript, call_code, return_value, code_reference):
         """
         This is the method we want to insert into the DAG
         """
         # pylint: disable=too-many-arguments
+        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript)
+
+        self.code_reference_to_module[code_reference] = function_info
+
+        if function_prefix in self.backend_map:
+            backend = self.backend_map[function_prefix]
+            return backend.after_call_used(function_info, subscript, call_code, return_value, code_reference)
+
+        return return_value
+
+    @staticmethod
+    def get_function_info_and_prefix(call_code, subscript):
+        """
+        Get the function info and find out which backend to call
+        """
         if not subscript:
             function = str(call_code.split("(", 1)[0])
             module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
 
             function_info = (module_info.__name__, str(function.split(".")[-1]))
-            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
-
-            print("_______________________________________")
-            print("after call used: {}".format(call_code.split("\n")[0]))
-            print("function_info: {}".format(function_info))
-            print("return_value: {}".format(str(return_value)))
-            print("_______________________________________")
         else:
             function = str(call_code.split("[", 1)[0])
             module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
 
             function_info = (module_info.__name__, "__getitem__")
-            self.ast_call_node_id_to_module[(ast_lineno, ast_col_offset)] = function_info
 
-            print("_______________________________________")
-            print("after call used: {}".format(call_code.split("\n")[0]))
-            print("function_info: {}".format(function_info))
-            print("return_value: {}".format(str(return_value)))
-            print("_______________________________________")
-        return return_value
+        if function_info[0] in PipelineExecutor.REPLACEMENT_TYPE_MAP:
+            new_type = PipelineExecutor.REPLACEMENT_TYPE_MAP[function_info[0]]
+            function_info = (new_type, function_info[1])
+        function_prefix = function_info[0].split(".", 1)[0]
 
-    @staticmethod
-    def output_parsed_ast(parsed_ast):
-        """
-        Output the unparsed Dag, print the DAG and generate an image of it
-        """
-        astunparse.unparse(parsed_ast)  # TODO: Remove this
-        astpretty.pprint(parsed_ast)  # TODO: Remove this
+        return function_info, function_prefix
 
 
 # How we instrument the calls
@@ -289,7 +218,8 @@ def before_call_used_value(subscript, call_code, value_code, value_value, ast_li
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
-    return singleton.before_call_used_value(subscript, call_code, value_code, value_value, ast_lineno, ast_col_offset)
+    return singleton.before_call_used_value(subscript, call_code, value_code, value_value,
+                                            CodeReference(ast_lineno, ast_col_offset))
 
 
 def before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_offset, args_values):
@@ -297,7 +227,8 @@ def before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_o
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
-    return singleton.before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_offset, args_values)
+    return singleton.before_call_used_args(subscript, call_code, args_code, CodeReference(ast_lineno, ast_col_offset),
+                                           args_values)
 
 
 def before_call_used_kwargs(subscript, call_code, kwargs_code, ast_lineno, ast_col_offset, **kwarg_values):
@@ -305,7 +236,8 @@ def before_call_used_kwargs(subscript, call_code, kwargs_code, ast_lineno, ast_c
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
-    return singleton.before_call_used_kwargs(subscript, call_code, kwargs_code, ast_lineno, ast_col_offset, kwarg_values)
+    return singleton.before_call_used_kwargs(subscript, call_code, kwargs_code,
+                                             CodeReference(ast_lineno, ast_col_offset), kwarg_values)
 
 
 def after_call_used(subscript, call_code, return_value, ast_lineno, ast_col_offset):
@@ -313,4 +245,4 @@ def after_call_used(subscript, call_code, return_value, ast_lineno, ast_col_offs
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
-    return singleton.after_call_used(subscript, call_code, return_value, ast_lineno, ast_col_offset)
+    return singleton.after_call_used(subscript, call_code, return_value, CodeReference(ast_lineno, ast_col_offset))

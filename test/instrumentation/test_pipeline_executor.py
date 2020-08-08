@@ -6,9 +6,11 @@ from inspect import cleandoc
 
 import networkx
 
+from mlinspect.instrumentation.dag_node import CodeReference
 from mlinspect.utils import get_project_root
 from mlinspect.instrumentation import pipeline_executor
-from ..utils import get_expected_dag_adult_easy_py, get_expected_dag_adult_easy_ipynb
+from ..utils import get_expected_dag_adult_easy_py, get_expected_dag_adult_easy_ipynb, \
+    get_pandas_read_csv_and_dropna_code
 
 FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 FILE_NB = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.ipynb")
@@ -25,7 +27,7 @@ def test_pipeline_executor_py_file(mocker):
     before_call_used_kwargs_spy = mocker.spy(pipeline_executor, 'before_call_used_kwargs')
     after_call_used_spy = mocker.spy(pipeline_executor, 'after_call_used')
 
-    extracted_dag = pipeline_executor.singleton.run(None, FILE_PY, None)
+    extracted_dag = pipeline_executor.singleton.run(None, FILE_PY, None, []).dag
     expected_dag = get_expected_dag_adult_easy_py()
     assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
 
@@ -46,7 +48,7 @@ def test_pipeline_executor_nb_file(mocker):
     before_call_used_kwargs_spy = mocker.spy(pipeline_executor, 'before_call_used_kwargs')
     after_call_used_spy = mocker.spy(pipeline_executor, 'after_call_used')
 
-    extracted_dag = pipeline_executor.singleton.run(FILE_NB, None, None)
+    extracted_dag = pipeline_executor.singleton.run(FILE_NB, None, None, []).dag
     expected_dag = get_expected_dag_adult_easy_ipynb()
     assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
 
@@ -60,25 +62,17 @@ def test_pipeline_executor_function_call_info_extraction():
     """
     Tests whether the capturing of module information works
     """
-    test_code = cleandoc("""
-            import os
-            import pandas as pd
-            from mlinspect.utils import get_project_root
-            
-            train_file = os.path.join(str(get_project_root()), "test", "data", "adult_train.csv")
-            raw_data = pd.read_csv(train_file)
-            data = raw_data.dropna()
-            """)
+    test_code = get_pandas_read_csv_and_dropna_code()
 
     pipeline_executor.singleton = pipeline_executor.PipelineExecutor()
-    pipeline_executor.singleton.run(None, None, test_code)
-    expected_module_info = {(5, 13): ('posixpath', 'join'),
-                            (5, 26): ('builtins', 'str'),
-                            (5, 30): ('mlinspect.utils', 'get_project_root'),
-                            (6, 11): ('pandas.io.parsers', 'read_csv'),
-                            (7, 7): ('pandas.core.frame', 'dropna')}
+    pipeline_executor.singleton.run(None, None, test_code, [])
+    expected_module_info = {CodeReference(5, 13): ('posixpath', 'join'),
+                            CodeReference(5, 26): ('builtins', 'str'),
+                            CodeReference(5, 30): ('mlinspect.utils', 'get_project_root'),
+                            CodeReference(6, 11): ('pandas.io.parsers', 'read_csv'),
+                            CodeReference(7, 7): ('pandas.core.frame', 'dropna')}
 
-    assert pipeline_executor.singleton.ast_call_node_id_to_module == expected_module_info
+    assert pipeline_executor.singleton.code_reference_to_module == expected_module_info
 
 
 def test_pipeline_executor_function_subscript_index_info_extraction():
@@ -97,12 +91,12 @@ def test_pipeline_executor_function_subscript_index_info_extraction():
             """)
 
     pipeline_executor.singleton = pipeline_executor.PipelineExecutor()
-    pipeline_executor.singleton.run(None, None, test_code)
-    expected_module_info = {(5, 13): ('posixpath', 'join'),
-                            (5, 26): ('builtins', 'str'),
-                            (5, 30): ('mlinspect.utils', 'get_project_root'),
-                            (6, 11): ('pandas.io.parsers', 'read_csv'),
-                            (7, 7): ('pandas.core.frame', 'dropna'),
-                            (8, 0): ('pandas.core.frame', '__getitem__')}
+    pipeline_executor.singleton.run(None, None, test_code, [])
+    expected_module_info = {CodeReference(5, 13): ('posixpath', 'join'),
+                            CodeReference(5, 26): ('builtins', 'str'),
+                            CodeReference(5, 30): ('mlinspect.utils', 'get_project_root'),
+                            CodeReference(6, 11): ('pandas.io.parsers', 'read_csv'),
+                            CodeReference(7, 7): ('pandas.core.frame', 'dropna'),
+                            CodeReference(8, 0): ('pandas.core.frame', '__getitem__')}
 
-    assert pipeline_executor.singleton.ast_call_node_id_to_module == expected_module_info
+    assert pipeline_executor.singleton.code_reference_to_module == expected_module_info
