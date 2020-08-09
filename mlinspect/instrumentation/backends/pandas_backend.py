@@ -98,6 +98,8 @@ class PandasBackend(Backend):
             return_value['mlinspect_index'] = range(1, len(return_value) + 1)
             return_value = self.execute_analyzer_visits_unary_operator(operator_context, code_reference, return_value)
 
+        self.input_data = None
+
         return return_value
 
     def execute_analyzer_visits_data_source(self, code_reference, return_value, function_info):

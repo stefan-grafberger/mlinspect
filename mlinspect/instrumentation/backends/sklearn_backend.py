@@ -3,7 +3,10 @@ The scikit-learn backend
 """
 import networkx
 
+from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext
 from mlinspect.instrumentation.backends.backend import Backend
+from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
+from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
 from mlinspect.instrumentation.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
 from mlinspect.instrumentation.dag_node import OperatorType
 
@@ -37,6 +40,10 @@ class SklearnBackend(Backend):
         """
         return SklearnWirPreprocessor().preprocess_wir(wir)
 
+    def __init__(self):
+        super().__init__()
+        self.input_data = None
+
     def before_call_used_value(self, function_info, subscript, call_code, value_code, value_value,
                                code_reference):
         """The value or module a function may be called on"""
@@ -54,6 +61,9 @@ class SklearnBackend(Backend):
             description = "Numerical Encoder (StandardScaler)"
         elif function_info == ('sklearn.tree._classes', 'DecisionTreeClassifier'):
             description = "Decision Tree"
+        elif function_info == ('sklearn.preprocessing._label', 'label_binarize'):
+            assert isinstance(args_values[0], MlinspectDataFrame)
+            self.input_data = args_values[0]
 
         if description:
             self.code_reference_to_description[code_reference] = description
@@ -73,4 +83,17 @@ class SklearnBackend(Backend):
         """The return value of some function"""
         # pylint: disable=too-many-arguments, unused-argument, no-self-use
         print("sklearn_after_call_used")
+
+        if function_info == ('sklearn.preprocessing._label', 'label_binarize'):
+            operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
+            print(operator_context)
+            print(self.input_data)
+            return_value = MlinspectNdarray(return_value)
+            return_value.annotations = "test"
+            # TODO: code similar to the pandas backend for this function
+            # self.execute_analyzer_visits_unary_operator(operator_context, code_reference, return_value)
+            print(return_value)
+
+        self.input_data = None
+
         return return_value
