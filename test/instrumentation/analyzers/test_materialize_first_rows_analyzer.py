@@ -3,6 +3,8 @@ Tests whether the MaterializeFirstRowsAnalyzer works
 """
 import os
 
+from numpy.ma import array
+
 from mlinspect.instrumentation.analyzers.analyzer_input import AnalyzerInputRow
 from mlinspect.instrumentation.analyzers.materialize_first_rows_analyzer import MaterializeFirstRowsAnalyzer
 from mlinspect.instrumentation.dag_node import DagNode, OperatorType, CodeReference
@@ -66,6 +68,12 @@ def get_expected_result():
         DagNode(node_id=23, operator_type=OperatorType.PROJECTION, module=('pandas.core.frame', '__getitem__'),
                 code_reference=CodeReference(lineno=16, col_offset=38), description="to ['income-per-year']"): [
                     AnalyzerInputRow(values=['<=50K'], fields=['income-per-year']),
-                    AnalyzerInputRow(values=['<=50K'], fields=['income-per-year'])]
+                    AnalyzerInputRow(values=['<=50K'], fields=['income-per-year'])],
+        DagNode(node_id=28, operator_type=OperatorType.PROJECTION_MODIFY,
+                module=('sklearn.preprocessing._label', 'label_binarize'),
+                code_reference=CodeReference(lineno=16, col_offset=9),
+                description="label_binarize, classes: ['>50K', '<=50K']"): [
+                    AnalyzerInputRow(values=[array(1)], fields=['array']),
+                    AnalyzerInputRow(values=[array(1)], fields=['array'])],
     }
     return expected_result

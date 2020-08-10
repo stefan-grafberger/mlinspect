@@ -4,7 +4,6 @@ Tests whether the PipelineExecutor works
 import os
 
 from test.instrumentation.backends.annotation_testing_analyzer import AnnotationTestingAnalyzer
-from test.utils import get_pandas_read_csv_and_dropna_code
 from mlinspect.utils import get_project_root
 from mlinspect.instrumentation.analyzers.materialize_first_rows_analyzer import MaterializeFirstRowsAnalyzer
 from mlinspect.pipeline_inspector import PipelineInspector

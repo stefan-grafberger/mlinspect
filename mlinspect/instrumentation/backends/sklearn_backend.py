@@ -54,7 +54,7 @@ class SklearnBackend(Backend):
                                code_reference):
         """The value or module a function may be called on"""
         # pylint: disable=too-many-arguments, unused-argument, no-self-use
-        pass
+        print("sklearn before_call_used_value")
 
     def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, args_values):
         """The arguments a function may be called with"""
@@ -174,5 +174,5 @@ def get_numpy_array_row_iterator(nparray):
     numpy_iterator = numpy.nditer(nparray, ["refs_ok"])
     partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
 
-    test = map(partial_func_create_row, zip(numpy_iterator))
+    test = map(partial_func_create_row, map(list, zip(numpy_iterator)))
     return test
