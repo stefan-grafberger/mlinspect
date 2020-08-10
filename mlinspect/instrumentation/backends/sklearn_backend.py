@@ -59,6 +59,14 @@ class SklearnBackend(Backend):
     def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, args_values):
         """The arguments a function may be called with"""
         # pylint: disable=too-many-arguments, unused-argument, no-self-use
+        self.before_call_used_args_add_description(code_reference, function_info)
+
+        if function_info == ('sklearn.preprocessing._label', 'label_binarize'):
+            assert isinstance(args_values[0], MlinspectDataFrame)
+            self.input_data = args_values[0]
+
+    def before_call_used_args_add_description(self, code_reference, function_info):
+        """Add special descriptions to certain sklearn operators"""
         description = None
 
         if function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
@@ -67,9 +75,6 @@ class SklearnBackend(Backend):
             description = "Numerical Encoder (StandardScaler)"
         elif function_info == ('sklearn.tree._classes', 'DecisionTreeClassifier'):
             description = "Decision Tree"
-        elif function_info == ('sklearn.preprocessing._label', 'label_binarize'):
-            assert isinstance(args_values[0], MlinspectDataFrame)
-            self.input_data = args_values[0]
 
         if description:
             self.code_reference_to_description[code_reference] = description
@@ -91,6 +96,9 @@ class SklearnBackend(Backend):
         if function_info == ('sklearn.preprocessing._label', 'label_binarize'):
             operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
             self.execute_analyzer_visits_df_input_np_output(operator_context, code_reference, return_value)
+        elif function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
+            # return_value = None
+            pass
 
         self.input_data = None
 
