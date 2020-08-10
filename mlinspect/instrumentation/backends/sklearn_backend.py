@@ -113,6 +113,8 @@ class SklearnBackend(Backend):
             #  with one df with multiple columns. We need to save multiple columns in the annotation_df then or have
             #  multiple annotation dfs. Then, the child column transformers need to retrieve the correct annotations.
             #  for the concat step, we also need to be careful to maintain proper annotation mapping.
+            # TODO: The annotation df could have a boolean attribute whether the parent is a column transformer. Then
+            #  we can easily introduce special handling of these cases.
 
         self.input_data = None
 
