@@ -1,9 +1,15 @@
 """
 The scikit-learn backend
 """
-import networkx
+import itertools
+from functools import partial
 
-from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext
+import networkx
+import numpy
+from pandas import DataFrame
+
+from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputRow, \
+    AnalyzerInputUnaryOperator
 from mlinspect.instrumentation.backends.backend import Backend
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
 from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
@@ -48,7 +54,7 @@ class SklearnBackend(Backend):
                                code_reference):
         """The value or module a function may be called on"""
         # pylint: disable=too-many-arguments, unused-argument, no-self-use
-        print("sklearn_before_call_used_value")
+        pass
 
     def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, args_values):
         """The arguments a function may be called with"""
@@ -82,18 +88,91 @@ class SklearnBackend(Backend):
     def after_call_used(self, function_info, subscript, call_code, return_value, code_reference):
         """The return value of some function"""
         # pylint: disable=too-many-arguments, unused-argument, no-self-use
-        print("sklearn_after_call_used")
-
         if function_info == ('sklearn.preprocessing._label', 'label_binarize'):
             operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
-            print(operator_context)
-            print(self.input_data)
-            return_value = MlinspectNdarray(return_value)
-            return_value.annotations = "test"
-            # TODO: code similar to the pandas backend for this function
-            # self.execute_analyzer_visits_unary_operator(operator_context, code_reference, return_value)
-            print(return_value)
+            self.execute_analyzer_visits_df_input_np_output(operator_context, code_reference, return_value)
 
         self.input_data = None
 
         return return_value
+
+    def execute_analyzer_visits_df_input_np_output(self, operator_context, code_reference, return_value):
+        """Execute analyzers when the current operator has one parent in the DAG"""
+        assert isinstance(self.input_data, MlinspectDataFrame)
+        annotation_iterators = []
+        for analyzer in self.analyzers:
+            analyzer_index = self.analyzers.index(analyzer)
+            # TODO: Create arrays only once, return iterators over those same arrays repeatedly
+            iterator_for_analyzer = iter_input_annotation_output(analyzer_index,
+                                                                 self.input_data,
+                                                                 self.input_data.annotations,
+                                                                 return_value)
+            annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
+            annotation_iterators.append(annotations_iterator)
+        return_value = self.store_analyzer_outputs(annotation_iterators, code_reference, return_value)
+        assert isinstance(return_value, MlinspectNdarray)
+        return return_value
+
+    def store_analyzer_outputs(self, annotation_iterators, code_reference, return_value):
+        """
+        Stores the analyzer annotations for the rows in the dataframe and the
+        analyzer annotations for the DAG operators in a map
+        """
+        annotation_iterators = itertools.zip_longest(*annotation_iterators)
+        analyzer_names = [str(analyzer) for analyzer in self.analyzers]
+        annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
+        analyzer_outputs = {}
+        for analyzer in self.analyzers:
+            analyzer_output = analyzer.get_operator_annotation_after_visit()
+            analyzer_outputs[analyzer] = analyzer_output
+        self.code_reference_analyzer_output_map[code_reference] = analyzer_outputs
+        return_value = MlinspectNdarray(return_value)
+        return_value.annotations = annotations_df
+        self.input_data = None
+        assert isinstance(return_value, MlinspectNdarray)
+        return return_value
+
+
+def iter_input_annotation_output(analyzer_index, input_df, annotation_df, output_array):
+    """
+    Create an efficient iterator for the analyzer input for operators with one parent.
+    """
+    # pylint: disable=too-many-locals
+    # Performance tips:
+    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+
+    annotation_df_view = annotation_df.iloc[:, analyzer_index:analyzer_index + 1]
+
+    input_rows = get_df_row_iterator(input_df)
+    annotation_rows = get_df_row_iterator(annotation_df_view)
+    output_rows = get_numpy_array_row_iterator(output_array)
+
+    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
+               zip(input_rows, annotation_rows, output_rows))
+
+
+def get_df_row_iterator(dataframe):
+    """
+    Create an efficient iterator for the data frame rows.
+    The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
+    """
+    arrays = []
+    fields = list(dataframe.columns)
+    arrays.extend(dataframe.iloc[:, k] for k in range(0, len(dataframe.columns)))
+
+    partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
+    test = map(partial_func_create_row, map(list, zip(*arrays)))
+    return test
+
+
+def get_numpy_array_row_iterator(nparray):
+    """
+    Create an efficient iterator for the data frame rows.
+    The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
+    """
+    fields = list(["array"])
+    numpy_iterator = numpy.nditer(nparray, ["refs_ok"])
+    partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
+
+    test = map(partial_func_create_row, zip(numpy_iterator))
+    return test

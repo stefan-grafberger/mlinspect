@@ -56,7 +56,10 @@ class AnnotationTestingAnalyzer(Analyzer):
                     operator_output.append(row.output)
                 yield annotation
         else:
-            yield None
+            for row in row_iterator:
+                assert isinstance(row, AnalyzerInputUnaryOperator)
+                annotation = row.annotation.get_value_by_column_index(0)
+                yield annotation
         self.operator_count += 1
         self._operator_output = operator_output
 

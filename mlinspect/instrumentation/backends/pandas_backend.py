@@ -124,6 +124,7 @@ class PandasBackend(Backend):
         annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
         analyzer_outputs = {}
         for analyzer in self.analyzers:
+            # TODO: Create arrays only once, return iterators over those same arrays repeatedly
             analyzer_output = analyzer.get_operator_annotation_after_visit()
             analyzer_outputs[analyzer] = analyzer_output
         self.code_reference_analyzer_output_map[code_reference] = analyzer_outputs

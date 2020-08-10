@@ -28,25 +28,26 @@ def test_sklearn_backend_annotation_propagation():
         assert AnnotationTestingAnalyzer(10) in analyzer_results
         result = analyzer_results[AnnotationTestingAnalyzer(10)]
 
-        assert len(result) == 3
+        assert len(result) == 4
 
 
 def test_sklearn_backend_annotation_propagation_multiple_analyzers():
     """
     Tests whether the capturing of module information works
     """
-    code = get_pandas_read_csv_and_dropna_code()  # FIXME
+    with open(FILE_PY) as file:
+        code = file.read()
 
-    analyzers = [AnnotationTestingAnalyzer(2), MaterializeFirstRowsAnalyzer(5), AnnotationTestingAnalyzer(10)]
+        analyzers = [AnnotationTestingAnalyzer(2), MaterializeFirstRowsAnalyzer(5), AnnotationTestingAnalyzer(10)]
 
-    inspection_result = PipelineInspector \
-        .on_pipeline_from_string(code) \
-        .add_analyzers(analyzers) \
-        .execute()
-    analyzer_results = inspection_result.analyzer_to_annotations
+        inspection_result = PipelineInspector \
+            .on_pipeline_from_string(code) \
+            .add_analyzers(analyzers) \
+            .execute()
+        analyzer_results = inspection_result.analyzer_to_annotations
 
-    for analyzer in analyzers:
-        assert analyzer in analyzer_results
-        result = analyzer_results[analyzer]
+        for analyzer in analyzers:
+            assert analyzer in analyzer_results
+            result = analyzer_results[analyzer]
 
-        assert len(result) == 2
+            assert len(result) == 4
