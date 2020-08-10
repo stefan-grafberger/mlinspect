@@ -13,6 +13,7 @@ from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, 
 from mlinspect.instrumentation.backends.backend import Backend
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
 from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
+from mlinspect.instrumentation.backends.sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer
 from mlinspect.instrumentation.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
 from mlinspect.instrumentation.dag_node import OperatorType
 
@@ -96,9 +97,13 @@ class SklearnBackend(Backend):
         if function_info == ('sklearn.preprocessing._label', 'label_binarize'):
             operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
             self.execute_analyzer_visits_df_input_np_output(operator_context, code_reference, return_value)
-        elif function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
-            # return_value = None
-            pass
+        elif function_info in {('sklearn.preprocessing._encoders', 'OneHotEncoder'),
+                               ('sklearn.preprocessing._data', 'StandardScaler'),
+                               ('sklearn.tree._classes', 'DecisionTreeClassifier'),
+                               ('sklearn.compose._column_transformer', 'ColumnTransformer'),
+                               ('sklearn.pipeline', 'Pipeline')}:
+            return_value = MlinspectEstimatorTransformer(return_value)
+            # TODO: Introduce a replacement map
 
         self.input_data = None
 
