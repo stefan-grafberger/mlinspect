@@ -102,8 +102,17 @@ class SklearnBackend(Backend):
                                ('sklearn.tree._classes', 'DecisionTreeClassifier'),
                                ('sklearn.compose._column_transformer', 'ColumnTransformer'),
                                ('sklearn.pipeline', 'Pipeline')}:
-            return_value = MlinspectEstimatorTransformer(return_value)
-            # TODO: Introduce a replacement map
+            return_value = MlinspectEstimatorTransformer(return_value, code_reference)
+            # TODO: The wrapped transformers now have the code reference and can save in a (ordered!)
+            #  list the output of the different analyzers. (or map from column to transformer etc)
+            #  We need a custom sklearn WIR postprocessing step
+            #  that can be called by the pipeline executor to add this information to the nodes.
+            #  We also to introduce new custom code in the pipeline executor because now multiple dag nodes can be
+            #  associated with one code reference. (Because of the column transformer). The major difficulty will
+            #  be the column-transformer when propagating annotations: it just calls each child column transformers once
+            #  with one df with multiple columns. We need to save multiple columns in the annotation_df then or have
+            #  multiple annotation dfs. Then, the child column transformers need to retrieve the correct annotations.
+            #  for the concat step, we also need to be careful to maintain proper annotation mapping.
 
         self.input_data = None
 

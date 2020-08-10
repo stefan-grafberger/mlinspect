@@ -6,6 +6,8 @@ import inspect
 
 from sklearn.base import BaseEstimator
 
+from mlinspect.instrumentation.dag_node import CodeReference
+
 
 class MlinspectEstimatorTransformer(BaseEstimator):
     """
@@ -14,10 +16,11 @@ class MlinspectEstimatorTransformer(BaseEstimator):
     See: https://scikit-learn.org/stable/developers/develop.html
     """
 
-    def __init__(self, transformer):
+    def __init__(self, transformer, code_reference: CodeReference):
         self.transformer = transformer
         self.name = transformer.__class__.__name__
         self.module_info = inspect.getmodule(transformer)
+        self.code_reference = code_reference
 
     def fit(self, X: list, y=None) -> 'MlinspectEstimatorTransformer':
         """

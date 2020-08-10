@@ -35,22 +35,22 @@ def get_expected_dag_adult_easy_py():
                                   ('sklearn.pipeline', 'fit', 'Train Data'))
     expected_graph.add_edge(expected_select, expected_train_data)
 
-    expected_pipeline_project_one = DagNode(34, OperatorType.PROJECTION, CodeReference(19, 75),
+    expected_pipeline_project_one = DagNode(34, OperatorType.PROJECTION, CodeReference(18, 25),
                                             ('sklearn.compose._column_transformer', 'ColumnTransformer',
                                              'Projection'),
                                             "to ['education']")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_one)
-    expected_pipeline_project_two = DagNode(35, OperatorType.PROJECTION, CodeReference(19, 88),
+    expected_pipeline_project_two = DagNode(35, OperatorType.PROJECTION, CodeReference(18, 25),
                                             ('sklearn.compose._column_transformer', 'ColumnTransformer',
                                              'Projection'),
                                             "to ['workclass']")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_two)
-    expected_pipeline_project_three = DagNode(40, OperatorType.PROJECTION, CodeReference(20, 49),
+    expected_pipeline_project_three = DagNode(40, OperatorType.PROJECTION, CodeReference(18, 25),
                                               ('sklearn.compose._column_transformer', 'ColumnTransformer',
                                                'Projection'),
                                               "to ['age']")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_three)
-    expected_pipeline_project_four = DagNode(41, OperatorType.PROJECTION, CodeReference(20, 56),
+    expected_pipeline_project_four = DagNode(41, OperatorType.PROJECTION, CodeReference(18, 25),
                                              ('sklearn.compose._column_transformer', 'ColumnTransformer',
                                               'Projection'),
                                              "to ['hours-per-week']")
@@ -126,22 +126,22 @@ def get_expected_dag_adult_easy_ipynb():
                                   ('sklearn.pipeline', 'fit', 'Train Data'))
     expected_graph.add_edge(expected_select, expected_train_data)
 
-    expected_pipeline_project_one = DagNode(34, OperatorType.PROJECTION, CodeReference(25, 75),
+    expected_pipeline_project_one = DagNode(34, OperatorType.PROJECTION, CodeReference(24, 25),
                                             ('sklearn.compose._column_transformer',
                                              'ColumnTransformer', 'Projection'),
                                             "to ['education']")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_one)
-    expected_pipeline_project_two = DagNode(35, OperatorType.PROJECTION, CodeReference(25, 88),
+    expected_pipeline_project_two = DagNode(35, OperatorType.PROJECTION, CodeReference(24, 25),
                                             ('sklearn.compose._column_transformer',
                                              'ColumnTransformer', 'Projection'),
                                             "to ['workclass']")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_two)
-    expected_pipeline_project_three = DagNode(40, OperatorType.PROJECTION, CodeReference(26, 49),
+    expected_pipeline_project_three = DagNode(40, OperatorType.PROJECTION, CodeReference(24, 25),
                                               ('sklearn.compose._column_transformer',
                                                'ColumnTransformer', 'Projection'),
                                               "to ['age']")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_three)
-    expected_pipeline_project_four = DagNode(41, OperatorType.PROJECTION, CodeReference(26, 56),
+    expected_pipeline_project_four = DagNode(41, OperatorType.PROJECTION, CodeReference(24, 25),
                                              ('sklearn.compose._column_transformer',
                                               'ColumnTransformer', 'Projection'),
                                              "to ['hours-per-week']")

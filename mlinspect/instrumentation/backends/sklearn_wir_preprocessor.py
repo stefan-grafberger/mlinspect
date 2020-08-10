@@ -218,7 +218,7 @@ class SklearnWirPreprocessor:
             projection_module = (node.module[0], node.module[1], "Projection")
             projection_description = "to {}".format([column_node.name])
             projection_wir = WirNode(column_node.node_id, column_node.name, node.operation,
-                                     column_node.code_reference, projection_module, projection_description)
+                                     node.code_reference, projection_module, projection_description)
             projection_wirs.append(projection_wir)
 
             start_transformers, end_transformer = self.preprocess_column_transformer_copy_transformer_per_column(
