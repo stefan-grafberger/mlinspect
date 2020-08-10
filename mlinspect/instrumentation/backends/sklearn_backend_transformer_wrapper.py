@@ -2,6 +2,8 @@
 A wrapper for sklearn transformers to capture method calls we do not see otherwise because of the pipeline
 definition style
 """
+import inspect
+
 from sklearn.base import BaseEstimator
 
 
@@ -15,6 +17,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
     def __init__(self, transformer):
         self.transformer = transformer
         self.name = transformer.__class__.__name__
+        self.module_info = inspect.getmodule(transformer)
 
     def fit(self, X: list, y=None) -> 'MlinspectEstimatorTransformer':
         """

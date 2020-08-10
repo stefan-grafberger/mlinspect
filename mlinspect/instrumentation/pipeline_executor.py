@@ -133,7 +133,7 @@ class PipelineExecutor:
         This is the method we want to insert into the DAG
         """
         # pylint: disable=too-many-arguments
-        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript)
+        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript, value_value)
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
             backend.before_call_used_value(function_info, subscript, call_code, value_code,
@@ -172,7 +172,7 @@ class PipelineExecutor:
         This is the method we want to insert into the DAG
         """
         # pylint: disable=too-many-arguments
-        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript)
+        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript, return_value)
 
         self.code_reference_to_module[code_reference] = function_info
 
@@ -183,7 +183,7 @@ class PipelineExecutor:
         return return_value
 
     @staticmethod
-    def get_function_info_and_prefix(call_code, subscript):
+    def get_function_info_and_prefix(call_code, subscript, value=None):
         """
         Get the function info and find out which backend to call
         """
@@ -201,6 +201,13 @@ class PipelineExecutor:
         if function_info[0] in PipelineExecutor.REPLACEMENT_TYPE_MAP:
             new_type = PipelineExecutor.REPLACEMENT_TYPE_MAP[function_info[0]]
             function_info = (new_type, function_info[1])
+
+        # FIXME: move this into sklearn backend
+        if value is not None and \
+                function_info[0] == 'mlinspect.instrumentation.backends.sklearn_backend_transformer_wrapper':
+            module_info = value.module_info
+            function_info = (module_info.__name__, str(function.split(".")[-1]))
+
         function_prefix = function_info[0].split(".", 1)[0]
 
         return function_info, function_prefix
