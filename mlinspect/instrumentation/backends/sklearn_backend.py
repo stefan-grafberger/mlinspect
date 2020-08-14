@@ -102,7 +102,7 @@ class SklearnBackend(Backend):
                                ('sklearn.tree._classes', 'DecisionTreeClassifier'),
                                ('sklearn.compose._column_transformer', 'ColumnTransformer'),
                                ('sklearn.pipeline', 'Pipeline')}:
-            return_value = MlinspectEstimatorTransformer(return_value, code_reference)
+            return_value = MlinspectEstimatorTransformer(return_value, code_reference, self.analyzers)
             # TODO: The wrapped transformers now have the code reference and can save in a (ordered!)
             #  list the output of the different analyzers. (or map from column to transformer etc)
             #  We need a custom sklearn WIR postprocessing step
