@@ -205,8 +205,7 @@ class PipelineExecutor:
         # FIXME: move this into sklearn backend
         if value is not None and \
                 function_info[0] == 'mlinspect.instrumentation.backends.sklearn_backend_transformer_wrapper':
-            module_info = value.module_info
-            function_info = (module_info.__name__, str(function.split(".")[-1]))
+            function_info = (value.module_name, str(function.split(".")[-1]))
 
         function_prefix = function_info[0].split(".", 1)[0]
 

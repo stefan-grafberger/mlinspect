@@ -19,7 +19,10 @@ class MlinspectEstimatorTransformer(BaseEstimator):
     def __init__(self, transformer, code_reference: CodeReference):
         self.transformer = transformer
         self.name = transformer.__class__.__name__
-        self.module_info = inspect.getmodule(transformer)
+
+        module = inspect.getmodule(transformer)
+        self.module_name = module.__name__
+        self.call_function_info = (module.__name__, transformer.__class__.__name__)
         self.code_reference = code_reference
 
     def fit(self, X: list, y=None) -> 'MlinspectEstimatorTransformer':
@@ -27,7 +30,10 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         Override fit
         """
         # pylint: disable=invalid-name
-        print(self.name)
+        if self.call_function_info == ('sklearn.pipeline', 'Pipeline'):
+            print("pipeline")
+            # TODO: returns nothing but allows a scan for train data and train labels. output is same as input
+        print(self.call_function_info[1])
         print("fit:")
         print("X")
         print(X)
@@ -41,7 +47,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         Override transform
         """
         # pylint: disable=invalid-name
-        print(self.name)
+        print(self.call_function_info[1])
         print("transform:")
         print("X")
         print(X)
@@ -55,7 +61,10 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         Override fit_transform
         """
         # pylint: disable=invalid-name
-        print(self.name)
+        if self.call_function_info == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
+            print("column transformer")
+
+        print(self.call_function_info[1])
         print("fit_transform:")
         print("X")
         print(X)
