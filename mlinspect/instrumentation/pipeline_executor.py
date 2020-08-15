@@ -74,9 +74,11 @@ class PipelineExecutor:
         """
         Get the analyzer DAG annotations from the backend and build a map with it for convenient usage
         """
-        code_reference_to_dag_node = {}
+        code_reference_to_dag_nodes = {}
         for node in dag.nodes:
-            code_reference_to_dag_node[node.code_reference] = node
+            current_dag_nodes = code_reference_to_dag_nodes.get(node.code_reference, set())
+            current_dag_nodes.add(node)
+            code_reference_to_dag_nodes[node.code_reference] = current_dag_nodes
 
         code_reference_to_annotation = {}
         for backend in self.backend_map.values():
@@ -86,8 +88,9 @@ class PipelineExecutor:
         for call_id, analyzer_output_map in code_reference_to_annotation.items():
             for analyzer, annotation in analyzer_output_map.items():
                 dag_node_to_annotation = analyzer_to_code_reference_to_annotation.get(analyzer, {})
-                dag_node = code_reference_to_dag_node[call_id]
-                dag_node_to_annotation[dag_node] = annotation
+                dag_nodes = code_reference_to_dag_nodes[call_id]
+                assert len(dag_nodes) == 1
+                dag_node_to_annotation[list(dag_nodes)[0]] = annotation
                 analyzer_to_code_reference_to_annotation[analyzer] = dag_node_to_annotation
         return analyzer_to_code_reference_to_annotation
 
