@@ -34,10 +34,14 @@ class Backend(metaclass=abc.ABCMeta):
         """The list of used data type replacements"""
         raise NotImplementedError
 
-    @staticmethod
     @abc.abstractmethod
-    def preprocess_wir(wir: networkx.DiGraph) -> networkx.DiGraph:
+    def preprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
         """Preprocess the wir if necessary"""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def postprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
+        """Postprocess the wir if necessary"""
         raise NotImplementedError
 
     @abc.abstractmethod

@@ -33,8 +33,13 @@ class PandasBackend(Backend):
         'mlinspect.instrumentation.backends.pandas_backend_frame_wrapper': 'pandas.core.frame'
     }
 
-    @staticmethod
-    def preprocess_wir(wir: networkx.DiGraph) -> networkx.DiGraph:
+    def preprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
+        """
+        Nothing to do here
+        """
+        return wir
+
+    def postprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
         """
         Nothing to do here
         """

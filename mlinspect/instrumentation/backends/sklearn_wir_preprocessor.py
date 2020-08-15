@@ -285,3 +285,23 @@ class SklearnWirPreprocessor:
         assert transformer.operation == "Call"
         assert transformer.module in self.KNOWN_SINGLE_STEPS.union(self.KNOWN_MULTI_STEPS)
         return transformer
+
+    def postprocess_wir(self, graph, wir_post_processing_map):
+        new_code_references = {}
+
+        def process_node(node, _):
+            if node.module in self.KNOWN_SINGLE_STEPS:
+                pass
+            elif node.module == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
+                pass
+            if node.module == ('sklearn.pipeline', 'Pipeline'):
+                pass
+            elif node.module == ('sklearn.pipeline', 'fit'):
+                code_reference = node.code_reference
+                sorted_parents = get_sorted_node_parents(graph, node)
+                pipeline_node = self.get_sklearn_call_wir_node(graph, sorted_parents[0])
+                annotations = wir_post_processing_map[pipeline_node.code_reference]['fit']
+                new_code_references[code_reference] = annotations
+
+        graph = traverse_graph_and_process_nodes(graph, process_node)
+        return new_code_references

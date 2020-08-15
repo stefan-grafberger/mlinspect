@@ -51,7 +51,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             function_info = (self.module_name, "fit")  # TODO: nested pipelines
             operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
             execute_analyzer_visits_df_input_df_output(operator_context, self.code_reference, X, X, self.analyzers,
-                                                       self.code_reference_analyzer_output_map)
+                                                       self.code_reference_analyzer_output_map, "fit")
             pass
         print(self.call_function_info[1])
         print("fit:")
@@ -99,7 +99,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
 
 def execute_analyzer_visits_df_input_df_output(operator_context, code_reference, input_data, output_data, analyzers,
-                                               code_reference_analyzer_output_map):
+                                               code_reference_analyzer_output_map, func_name):
     """Execute analyzers when the current operator has one parent in the DAG"""
     # assert "mlinspect_index" in output_data.columns
     assert isinstance(input_data, MlinspectDataFrame)
@@ -114,7 +114,7 @@ def execute_analyzer_visits_df_input_df_output(operator_context, code_reference,
         annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
         annotation_iterators.append(annotations_iterator)
     return_value = store_analyzer_outputs(annotation_iterators, code_reference, output_data, analyzers,
-                                          code_reference_analyzer_output_map)
+                                          code_reference_analyzer_output_map, func_name)
     return return_value
 
 
@@ -151,7 +151,7 @@ def get_df_row_iterator(dataframe):
 
 
 def store_analyzer_outputs(annotation_iterators, code_reference, return_value, analyzers,
-                           code_reference_analyzer_output_map):
+                           code_reference_analyzer_output_map, func_name):
     """
     Stores the analyzer annotations for the rows in the dataframe and the
     analyzer annotations for the DAG operators in a map
@@ -163,7 +163,10 @@ def store_analyzer_outputs(annotation_iterators, code_reference, return_value, a
     for analyzer in analyzers:
         analyzer_output = analyzer.get_operator_annotation_after_visit()
         analyzer_outputs[analyzer] = analyzer_output
-    # FIXME: code_reference_analyzer_output_map[code_reference] = analyzer_outputs
+
+    stored_analyzer_results = code_reference_analyzer_output_map.get(code_reference, {})
+    stored_analyzer_results["fit"] = analyzer_outputs
+    code_reference_analyzer_output_map[code_reference] = stored_analyzer_results
     # FIXME: Use the code_reference here. Then have a special mechanism for post-processing the wir with the
     #  sklearn backend. We can save in a map the analyzers with one or multiple code references.
     #  for  post processing the wir visit all nodes that are sklearn nodes. than lookup this map.

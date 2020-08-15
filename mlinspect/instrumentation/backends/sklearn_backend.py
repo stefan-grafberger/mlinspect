@@ -39,17 +39,28 @@ class SklearnBackend(Backend):
 
     replacement_type_map = {}
 
-    @staticmethod
-    def preprocess_wir(wir: networkx.DiGraph) -> networkx.DiGraph:
+    def preprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
         """
         Preprocess scikit-learn pipeline operations to hide the special pipeline
         declaration style from other parts of the library
         """
         return SklearnWirPreprocessor().preprocess_wir(wir)
 
+    def postprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
+        """
+        Preprocess scikit-learn pipeline operations to hide the special pipeline
+        declaration style from other parts of the library
+        """
+        new_code_references_analyzer_outputs = SklearnWirPreprocessor().postprocess_wir(wir,
+                                                                                        self.wir_post_processing_map)
+        self.code_reference_analyzer_output_map = {**self.code_reference_analyzer_output_map,
+                                                   **new_code_references_analyzer_outputs}
+        return wir
+
     def __init__(self):
         super().__init__()
         self.input_data = None
+        self.wir_post_processing_map = {}
 
     def before_call_used_value(self, function_info, subscript, call_code, value_code, value_value,
                                code_reference):
@@ -103,7 +114,7 @@ class SklearnBackend(Backend):
                                ('sklearn.compose._column_transformer', 'ColumnTransformer'),
                                ('sklearn.pipeline', 'Pipeline')}:
             return_value = MlinspectEstimatorTransformer(return_value, code_reference, self.analyzers,
-                                                         self.code_reference_analyzer_output_map)
+                                                         self.wir_post_processing_map)
             # TODO: The wrapped transformers now have the code reference and can save in a (ordered!)
             #  list the output of the different analyzers. (or map from column to transformer etc)
             #  We need a custom sklearn WIR postprocessing step
