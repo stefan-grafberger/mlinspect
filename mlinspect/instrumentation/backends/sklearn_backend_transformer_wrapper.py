@@ -41,6 +41,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         self.analyzers = analyzers
         self.code_reference_analyzer_output_map = code_reference_analyzer_output_map
         self.output_dimensions = output_dimensions
+        self.annotation_result_concat_workaround = None
         if transformer_uuid is None:
             self.transformer_uuid = uuid.uuid4()
         else:
@@ -131,9 +132,11 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             # Because Column transformer creates deep copies, we need to extract results here
             transformers_tuples = self.transformer.transformers_
             transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
-            for transformer in transformers[:-1]:
+            resulting_annotations = {}
+            for transformer in transformers[:-1]:  # FIXME: in a similar way we'll need to get the resulting annotations
                 self.code_reference_analyzer_output_map.update(transformer.code_reference_analyzer_output_map)
-                print("test")
+                resulting_annotations[transformer] = transformer.annotation_result_concat_workaround
+            print("test")
             # ---
             # Analyzers for concat, use the self.output dimensions attribute to associate result columns
         elif self.call_function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
@@ -150,7 +153,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
                 operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
                 description = "Numerical Encoder (StandardScaler), Column: {}".format(column)
-                execute_analyzer_visits_df_array_column_transformer(operator_context,
+                X_new = execute_analyzer_visits_df_array_column_transformer(operator_context,
                                                                     self.code_reference,
                                                                     X[[column]],
                                                                     X.annotations[self],
@@ -159,6 +162,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                                                     self.code_reference_analyzer_output_map,
                                                                     description)
                 # FIXME: return value with new annotations needs to be used. (Introduce X_new)
+                self.annotation_result_concat_workaround = X_new.annotations
         else:
             result = self.transformer.fit_transform(X, y)
 
