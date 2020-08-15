@@ -34,6 +34,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         self.code_reference = code_reference
         self.analyzers = analyzers
         self.code_reference_analyzer_output_map = code_reference_analyzer_output_map
+        self.output_dimensions = None
 
     def fit(self, X: list, y=None) -> 'MlinspectEstimatorTransformer':
         """
@@ -59,6 +60,8 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 execute_analyzer_visits_array_input_array_output(operator_context, self.code_reference, y, y,
                                                                  self.analyzers,
                                                                  self.code_reference_analyzer_output_map, "fit y")
+        elif self.call_function_info == ('sklearn.tree._classes', 'DecisionTreeClassifier'):
+            print("DecisionTreeClassifier")
         print(self.call_function_info[1])
         print("fit:")
         print("X")
@@ -90,7 +93,24 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         """
         # pylint: disable=invalid-name
         if self.call_function_info == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
+            transformers_tuples = self.transformer.transformers
+            columns = [column for transformer_tuple in transformers_tuples for column in transformer_tuple[2]]
+            # Analyzers for the different projections
+            # ---
+            result = self.transformer.fit_transform(X, y)
+            # ---
+            # Analyzers for concat, use the self.output dimensions attribute to associate result columns
             print("column transformer")
+        elif self.call_function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
+            print("OneHotEncoder")
+            result = self.transformer.fit_transform(X, y)
+            self.output_dimensions = [len(one_hot_categories) for one_hot_categories in self.transformer.categories_]
+        elif self.call_function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
+            result = self.transformer.fit_transform(X, y)
+            print("StandardScaler")
+            self.output_dimensions = [1 for _ in range(result.shape[1])]
+        else:
+            result = self.transformer.fit_transform(X, y)
 
         print(self.call_function_info[1])
         print("fit_transform:")
@@ -98,7 +118,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         print(X)
         print("y")
         print(y)
-        result = self.transformer.fit_transform(X, y)
+
         print("result")
         print(result)
         return result
