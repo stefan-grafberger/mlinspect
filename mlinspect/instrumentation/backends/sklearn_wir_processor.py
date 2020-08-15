@@ -223,7 +223,7 @@ class SklearnWirProcessor:
             projection_wirs.append(projection_wir)
 
             start_transformers, end_transformer = self.preprocess_column_transformer_copy_transformer_per_column(
-                graph, call_node, column_node.node_id)
+                graph, call_node, column_node.node_id, column_node.name)
 
             parents = list(graph.predecessors(node))
             for parent in parents:
@@ -233,7 +233,8 @@ class SklearnWirProcessor:
             graph.add_edge(end_transformer, concatenation_wir)
         self.wir_node_to_sub_pipeline_start[node].extend(projection_wirs)
 
-    def preprocess_column_transformer_copy_transformer_per_column(self, graph, transformer_node, new_node_id):
+    def preprocess_column_transformer_copy_transformer_per_column(self, graph, transformer_node, new_node_id,
+                                                                  description):
         """
         Preprocessing for ColumnTransformers: Each transformer in a ColumnTransformer needs to be copied for
         each column
@@ -248,8 +249,9 @@ class SklearnWirProcessor:
 
         def copy_node(current_node, _):
             new_module = (current_node.module[0], current_node.module[1], "Pipeline")
+            new_description = "{}, Column: {}".format(current_node.dag_operator_description, description)
             copied_wir = WirNode(new_node_id, current_node.name, current_node.operation,
-                                 current_node.code_reference, new_module, current_node.dag_operator_description)
+                                 current_node.code_reference, new_module, new_description)
 
             if current_node in start_copy:
                 start_transformers.append(copied_wir)
@@ -291,11 +293,6 @@ class SklearnWirProcessor:
         """Associate DAG nodes with the correct analyzer output from sklearn pipelines"""
         new_code_references = {}
 
-        node_id_to_column_name = {}
-        for dag_node in graph.nodes:
-            if dag_node.operator_type == OperatorType.PROJECTION:
-                node_id_to_column_name[dag_node.node_id] = dag_node.description
-
         def process_node(node, _):
             print(node.module)
             dag_node_identifier = DagNodeIdentifier(node.operator_type, node.code_reference, node.description)
@@ -308,8 +305,7 @@ class SklearnWirProcessor:
             elif node.module == ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'):
                 nonlocal graph
                 annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
-                column_name = node_id_to_column_name[node.node_id]
-                annotations_x = annotations_for_all_associated_dag_nodes[column_name]
+                annotations_x = annotations_for_all_associated_dag_nodes[node.description]
                 new_code_references[dag_node_identifier] = annotations_x
             elif node.module == ('sklearn.pipeline', 'fit', 'Train Data'):
                 annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
