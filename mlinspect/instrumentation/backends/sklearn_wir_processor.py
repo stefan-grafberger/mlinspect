@@ -4,7 +4,7 @@ Preprocess Sklearn WIR nodes to enable DAG extraction
 import networkx
 from more_itertools import pairwise
 
-from mlinspect.instrumentation.dag_node import DagNodeIdentifier
+from mlinspect.instrumentation.dag_node import DagNodeIdentifier, OperatorType
 from mlinspect.instrumentation.wir_node import WirNode
 from mlinspect.utils import traverse_graph_and_process_nodes, get_sorted_node_parents
 
@@ -291,6 +291,11 @@ class SklearnWirProcessor:
         """Associate DAG nodes with the correct analyzer output from sklearn pipelines"""
         new_code_references = {}
 
+        node_id_to_column_name = {}
+        for dag_node in graph.nodes:
+            if dag_node.operator_type == OperatorType.PROJECTION:
+                node_id_to_column_name[dag_node.node_id] = dag_node.description
+
         def process_node(node, _):
             print(node.module)
             dag_node_identifier = DagNodeIdentifier(node.operator_type, node.code_reference, node.description)
@@ -301,9 +306,10 @@ class SklearnWirProcessor:
             elif node.module == ('sklearn.pipeline', 'Pipeline'):
                 pass
             elif node.module == ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'):
+                nonlocal graph
                 annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
-
-                annotations_x = annotations_for_all_associated_dag_nodes['fit X']
+                column_name = node_id_to_column_name[node.node_id]
+                annotations_x = annotations_for_all_associated_dag_nodes[column_name]
                 new_code_references[dag_node_identifier] = annotations_x
             elif node.module == ('sklearn.pipeline', 'fit', 'Train Data'):
                 annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]

@@ -108,6 +108,12 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                               transformer)
             # ---
             result = self.transformer.fit_transform(X, y)
+            # Because Column transformer creates deep copies, we need to extract results here
+            transformers_tuples = self.transformer.transformers_
+            transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
+            for transformer in transformers[:-1]:
+                self.code_reference_analyzer_output_map.update(transformer.code_reference_analyzer_output_map)
+                print("test")
             # ---
             # Analyzers for concat, use the self.output dimensions attribute to associate result columns
         elif self.call_function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
@@ -123,13 +129,14 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             for column_index, column in enumerate(X.columns):
                 function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
                 operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
+                description = "to ['{}']".format(column)
                 execute_analyzer_visits_df_array_column_transformer(operator_context,
                                                                     self.code_reference,
                                                                     X[[column]],
                                                                     result[:, column_index],
                                                                     self.analyzers,
                                                                     self.code_reference_analyzer_output_map,
-                                                                    column)
+                                                                    description)
         else:
             result = self.transformer.fit_transform(X, y)
 
@@ -194,9 +201,9 @@ def execute_analyzer_visits_df_array_column_transformer(operator_context, code_r
     for analyzer in analyzers:
         analyzer_index = analyzers.index(analyzer)
         iterator_for_analyzer = iter_input_annotation_output_df_array(analyzer_index,
-                                                                   input_data,
-                                                                   input_data.annotations,
-                                                                   output_data)
+                                                                      input_data,
+                                                                      input_data.annotations,
+                                                                      output_data)
         annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
         annotation_iterators.append(annotations_iterator)
     return_value = store_analyzer_outputs_array(annotation_iterators, code_reference, output_data, analyzers,
