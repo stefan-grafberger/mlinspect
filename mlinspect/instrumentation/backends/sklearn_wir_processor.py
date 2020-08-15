@@ -9,7 +9,7 @@ from mlinspect.instrumentation.wir_node import WirNode
 from mlinspect.utils import traverse_graph_and_process_nodes, get_sorted_node_parents
 
 
-class SklearnWirPreprocessor:
+class SklearnWirProcessor:
     """
     Preprocess Sklearn WIR nodes to enable DAG extraction
     """
@@ -108,11 +108,11 @@ class SklearnWirPreprocessor:
 
         new_fit_module = (node.module[0], node.module[1], "Pipeline")
         new_pipeline_fit_node = WirNode(node.node_id, node.name, node.operation,
-                                        node.code_reference, new_fit_module)
+                                        actual_pipeline_node.code_reference, new_fit_module)
 
         new_train_data_module = (node.module[0], node.module[1], "Train Data")
         new_pipeline_train_data_node = WirNode(node.node_id, "Train Data", node.operation,
-                                               node.code_reference, new_train_data_module)
+                                               actual_pipeline_node.code_reference, new_train_data_module)
         graph.add_edge(data_node, new_pipeline_train_data_node)
         for start_node in pipeline_start:
             graph.add_edge(new_pipeline_train_data_node, start_node)
@@ -122,7 +122,7 @@ class SklearnWirPreprocessor:
         if target_node_or_none:
             new_train_data_module = (node.module[0], node.module[1], "Train Labels")
             new_pipeline_train_labels_node = WirNode(node.node_id, "Train Labels", node.operation,
-                                                     node.code_reference, new_train_data_module)
+                                                     actual_pipeline_node.code_reference, new_train_data_module)
             graph.add_edge(target_node_or_none, new_pipeline_train_labels_node)
             graph.add_edge(new_pipeline_train_labels_node, new_pipeline_fit_node)
 
@@ -287,30 +287,30 @@ class SklearnWirPreprocessor:
         assert transformer.module in self.KNOWN_SINGLE_STEPS.union(self.KNOWN_MULTI_STEPS)
         return transformer
 
-    def postprocess_wir(self, graph, wir_post_processing_map):
+    def postprocess_dag(self, graph, wir_post_processing_map):
         """Associate DAG nodes with the correct analyzer output from sklearn pipelines"""
         new_code_references = {}
 
         def process_node(node, _):
+            print(node.module)
             if node.module in self.KNOWN_SINGLE_STEPS:
                 pass
-            elif node.module == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
-                pass
+            elif node.module == ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'):
+                print("test")
             if node.module == ('sklearn.pipeline', 'Pipeline'):
                 pass
-            elif node.module == ('sklearn.pipeline', 'fit'):
-                sorted_parents = get_sorted_node_parents(graph, node)
-                pipeline_node = self.get_sklearn_call_wir_node(graph, sorted_parents[0])
-                annotations_for_all_associated_dag_nodes = wir_post_processing_map[pipeline_node.code_reference]
+            elif node.module == ('sklearn.pipeline', 'fit', 'Train Data'):
+                annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
 
                 annotations_x = annotations_for_all_associated_dag_nodes['fit X']
                 dag_node_identifier = DagNodeIdentifier(OperatorType.TRAIN_DATA, node.code_reference, None)
                 new_code_references[dag_node_identifier] = annotations_x
+            elif node.module == ('sklearn.pipeline', 'fit', 'Train Labels'):
+                annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
 
-                if "fit y" in annotations_for_all_associated_dag_nodes:
-                    annotations_y = annotations_for_all_associated_dag_nodes['fit y']
-                    dag_node_identifier = DagNodeIdentifier(OperatorType.TRAIN_LABELS, node.code_reference, None)
-                    new_code_references[dag_node_identifier] = annotations_y
+                annotations_y = annotations_for_all_associated_dag_nodes['fit y']
+                dag_node_identifier = DagNodeIdentifier(OperatorType.TRAIN_LABELS, node.code_reference, None)
+                new_code_references[dag_node_identifier] = annotations_y
 
         graph = traverse_graph_and_process_nodes(graph, process_node)
         return new_code_references

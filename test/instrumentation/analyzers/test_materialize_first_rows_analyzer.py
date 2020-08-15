@@ -76,7 +76,7 @@ def get_expected_result():
                     AnalyzerInputRow(values=[array(1)], fields=['array']),
                     AnalyzerInputRow(values=[array(1)], fields=['array'])],
         DagNode(node_id=56, operator_type=OperatorType.TRAIN_DATA, module=('sklearn.pipeline', 'fit', 'Train Data'),
-                code_reference=CodeReference(lineno=28, col_offset=0), description=None): [
+                code_reference=CodeReference(lineno=24, col_offset=18), description=None): [
                     AnalyzerInputRow(
                         values=[46, 'Private', 128645, 'Some-college', 10, 'Divorced', 'Prof-specialty',
                                 'Not-in-family', 'White', 'Female', 0, 0, 40, 'United-States', '<=50K', 1],
@@ -90,7 +90,7 @@ def get_expected_result():
                                 'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
                                 'hours-per-week', 'native-country', 'income-per-year', 'mlinspect_index'])],
         DagNode(node_id=56, operator_type=OperatorType.TRAIN_LABELS, module=('sklearn.pipeline', 'fit', 'Train Labels'),
-                code_reference=CodeReference(lineno=28, col_offset=0), description=None): [
+                code_reference=CodeReference(lineno=24, col_offset=18), description=None): [
                     AnalyzerInputRow(values=[array(1)], fields=['array']),
                     AnalyzerInputRow(values=[array(1)], fields=['array'])]
     }

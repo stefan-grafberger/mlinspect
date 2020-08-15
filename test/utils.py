@@ -31,7 +31,7 @@ def get_expected_dag_adult_easy_py():
                               "dropna")
     expected_graph.add_edge(expected_data_source, expected_select)
 
-    expected_train_data = DagNode(56, OperatorType.TRAIN_DATA, CodeReference(28, 0),
+    expected_train_data = DagNode(56, OperatorType.TRAIN_DATA, CodeReference(24, 18),
                                   ('sklearn.pipeline', 'fit', 'Train Data'))
     expected_graph.add_edge(expected_select, expected_train_data)
 
@@ -86,7 +86,7 @@ def get_expected_dag_adult_easy_py():
                                  "Decision Tree")
     expected_graph.add_edge(expected_pipeline_concatenation, expected_estimator)
 
-    expected_pipeline_fit = DagNode(56, OperatorType.FIT, CodeReference(28, 0), ('sklearn.pipeline', 'fit', 'Pipeline'))
+    expected_pipeline_fit = DagNode(56, OperatorType.FIT, CodeReference(24, 18), ('sklearn.pipeline', 'fit', 'Pipeline'))
     expected_graph.add_edge(expected_estimator, expected_pipeline_fit)
 
     expected_project = DagNode(23, OperatorType.PROJECTION, CodeReference(16, 38), ('pandas.core.frame', '__getitem__'),
@@ -98,7 +98,7 @@ def get_expected_dag_adult_easy_py():
                                       "label_binarize, classes: ['>50K', '<=50K']")
     expected_graph.add_edge(expected_project, expected_project_modify)
 
-    expected_train_labels = DagNode(56, OperatorType.TRAIN_LABELS, CodeReference(28, 0),
+    expected_train_labels = DagNode(56, OperatorType.TRAIN_LABELS, CodeReference(24, 18),
                                     ('sklearn.pipeline', 'fit', 'Train Labels'))
     expected_graph.add_edge(expected_project_modify, expected_train_labels)
     expected_graph.add_edge(expected_train_labels, expected_pipeline_fit)
@@ -122,7 +122,7 @@ def get_expected_dag_adult_easy_ipynb():
                               "dropna")
     expected_graph.add_edge(expected_data_source, expected_select)
 
-    expected_train_data = DagNode(56, OperatorType.TRAIN_DATA, CodeReference(34, 0),
+    expected_train_data = DagNode(56, OperatorType.TRAIN_DATA, CodeReference(30, 18),
                                   ('sklearn.pipeline', 'fit', 'Train Data'))
     expected_graph.add_edge(expected_select, expected_train_data)
 
@@ -182,8 +182,8 @@ def get_expected_dag_adult_easy_ipynb():
                                  "Decision Tree")
     expected_graph.add_edge(expected_pipeline_concatenation, expected_estimator)
 
-    expected_pipeline_fit = DagNode(56, OperatorType.FIT, CodeReference(34, 0), ('sklearn.pipeline', 'fit',
-                                                                                 'Pipeline'))
+    expected_pipeline_fit = DagNode(56, OperatorType.FIT, CodeReference(30, 18), ('sklearn.pipeline', 'fit',
+                                                                                  'Pipeline'))
     expected_graph.add_edge(expected_estimator, expected_pipeline_fit)
 
     expected_project = DagNode(23, OperatorType.PROJECTION, CodeReference(22, 38), ('pandas.core.frame', '__getitem__'),
@@ -195,7 +195,7 @@ def get_expected_dag_adult_easy_ipynb():
                                       "label_binarize, classes: ['>50K', '<=50K']")
     expected_graph.add_edge(expected_project, expected_project_modify)
 
-    expected_train_labels = DagNode(56, OperatorType.TRAIN_LABELS, CodeReference(34, 0),
+    expected_train_labels = DagNode(56, OperatorType.TRAIN_LABELS, CodeReference(30, 18),
                                     ('sklearn.pipeline', 'fit', 'Train Labels'))
     expected_graph.add_edge(expected_project_modify, expected_train_labels)
     expected_graph.add_edge(expected_train_labels, expected_pipeline_fit)

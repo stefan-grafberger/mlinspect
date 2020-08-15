@@ -95,8 +95,19 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         if self.call_function_info == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
             transformers_tuples = self.transformer.transformers
             columns = [column for transformer_tuple in transformers_tuples for column in transformer_tuple[2]]
+            for column in columns:
+                projected_df = X[[column]]
+                function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
+                operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
+                description = "project {}".format(column)
+                execute_analyzer_visits_df_input_df_output(operator_context, self.code_reference, projected_df,
+                                                           projected_df, self.analyzers,
+                                                           self.code_reference_analyzer_output_map, description)
+
             # Analyzers for the different projections
             # ---
+            # but how to select annotations? before calling fit_transform, replace annotations with a list of annotations
+            # for each transformer, call a method that sets an attribute with the index of the annotations
             result = self.transformer.fit_transform(X, y)
             # ---
             # Analyzers for concat, use the self.output dimensions attribute to associate result columns

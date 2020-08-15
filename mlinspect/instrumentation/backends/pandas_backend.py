@@ -39,7 +39,7 @@ class PandasBackend(Backend):
         """
         return wir
 
-    def postprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
+    def postprocess_dag(self, wir: networkx.DiGraph) -> networkx.DiGraph:
         """
         Nothing to do here
         """
