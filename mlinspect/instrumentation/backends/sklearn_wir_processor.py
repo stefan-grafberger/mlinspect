@@ -4,7 +4,7 @@ Preprocess Sklearn WIR nodes to enable DAG extraction
 import networkx
 from more_itertools import pairwise
 
-from mlinspect.instrumentation.dag_node import OperatorType, DagNodeIdentifier
+from mlinspect.instrumentation.dag_node import DagNodeIdentifier
 from mlinspect.instrumentation.wir_node import WirNode
 from mlinspect.utils import traverse_graph_and_process_nodes, get_sorted_node_parents
 

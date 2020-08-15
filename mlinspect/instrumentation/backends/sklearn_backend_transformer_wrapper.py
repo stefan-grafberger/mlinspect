@@ -23,6 +23,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
     definition style
     See: https://scikit-learn.org/stable/developers/develop.html
     """
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, transformer, code_reference: CodeReference, analyzers, code_reference_analyzer_output_map):
         self.transformer = transformer

@@ -92,6 +92,26 @@ def get_expected_result():
         DagNode(node_id=56, operator_type=OperatorType.TRAIN_LABELS, module=('sklearn.pipeline', 'fit', 'Train Labels'),
                 code_reference=CodeReference(lineno=24, col_offset=18), description=None): [
                     AnalyzerInputRow(values=[array(1)], fields=['array']),
-                    AnalyzerInputRow(values=[array(1)], fields=['array'])]
+                    AnalyzerInputRow(values=[array(1)], fields=['array'])],
+        DagNode(node_id=40, operator_type=OperatorType.PROJECTION, code_reference=CodeReference(18, 25),
+                module=('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'),
+                description="to ['age']"): [
+                    AnalyzerInputRow(values=[46], fields=['age']), AnalyzerInputRow(values=[29], fields=['age'])],
+        DagNode(node_id=34, operator_type=OperatorType.PROJECTION, code_reference=CodeReference(18, 25),
+                module=('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'),
+                description="to ['education']"): [
+                    AnalyzerInputRow(values=['Some-college'], fields=['education']),
+                    AnalyzerInputRow(values=['Some-college'], fields=['education'])],
+        DagNode(node_id=41, operator_type=OperatorType.PROJECTION, code_reference=CodeReference(18, 25),
+                module=('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'),
+                description="to ['hours-per-week']"): [
+                    AnalyzerInputRow(values=[40], fields=['hours-per-week']),
+                    AnalyzerInputRow(values=[50], fields=['hours-per-week'])],
+        DagNode(node_id=35, operator_type=OperatorType.PROJECTION, code_reference=CodeReference(18, 25),
+                module=('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'),
+                description="to ['workclass']"): [
+                    AnalyzerInputRow(values=['Private'], fields=['workclass']),
+                    AnalyzerInputRow(values=['Local-gov'], fields=['workclass'])],
+
     }
     return expected_result

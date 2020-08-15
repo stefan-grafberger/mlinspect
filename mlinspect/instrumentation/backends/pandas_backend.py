@@ -39,11 +39,11 @@ class PandasBackend(Backend):
         """
         return wir
 
-    def postprocess_dag(self, wir: networkx.DiGraph) -> networkx.DiGraph:
+    def postprocess_dag(self, dag: networkx.DiGraph) -> networkx.DiGraph:
         """
         Nothing to do here
         """
-        return wir
+        return dag
 
     def __init__(self):
         super().__init__()
