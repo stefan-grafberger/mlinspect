@@ -75,5 +75,19 @@ def get_expected_result():
                 description="label_binarize, classes: ['>50K', '<=50K']"): [
                     AnalyzerInputRow(values=[array(1)], fields=['array']),
                     AnalyzerInputRow(values=[array(1)], fields=['array'])],
+        DagNode(node_id=56, operator_type=OperatorType.TRAIN_DATA,  module=('sklearn.pipeline', 'fit', 'Train Data'),
+                code_reference=CodeReference(lineno=28, col_offset=0), description=None): [
+                    AnalyzerInputRow(
+                        values=[46, 'Private', 128645, 'Some-college', 10, 'Divorced', 'Prof-specialty', 'Not-in-family', 'White',
+                                'Female', 0, 0, 40, 'United-States', '<=50K', 1],
+                        fields=['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status', 'occupation',
+                                'relationship', 'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country',
+                                'income-per-year', 'mlinspect_index']),
+                    AnalyzerInputRow(
+                        values=[29, 'Local-gov', 115585, 'Some-college', 10, 'Never-married', 'Handlers-cleaners', 'Not-in-family',
+                                'White', 'Male', 0, 0, 50, 'United-States', '<=50K', 2],
+                        fields=['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status', 'occupation',
+                                'relationship', 'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country',
+                                'income-per-year', 'mlinspect_index'])]
     }
     return expected_result

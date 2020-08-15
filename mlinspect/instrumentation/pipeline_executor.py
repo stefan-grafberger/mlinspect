@@ -11,7 +11,7 @@ from nbconvert import PythonExporter
 from .analyzers.analyzer import Analyzer
 from .backends.all_backends import get_all_backends
 from .call_capture_transformer import CallCaptureTransformer
-from .dag_node import CodeReference
+from .dag_node import CodeReference, DagNodeIdentifier
 from .inspection_result import InspectionResult
 from .wir_extractor import WirExtractor
 from .wir_to_dag_transformer import WirToDagTransformer
@@ -74,25 +74,23 @@ class PipelineExecutor:
         """
         Get the analyzer DAG annotations from the backend and build a map with it for convenient usage
         """
-        code_reference_to_dag_nodes = {}
+        dag_node_identifiers_to_dag_nodes = {}
         for node in dag.nodes:
-            current_dag_nodes = code_reference_to_dag_nodes.get(node.code_reference, set())
-            current_dag_nodes.add(node)
-            code_reference_to_dag_nodes[node.code_reference] = current_dag_nodes
+            dag_node_identifier = DagNodeIdentifier(node.operator_type, node.code_reference, node.description)
+            dag_node_identifiers_to_dag_nodes[dag_node_identifier] = node
 
-        code_reference_to_annotation = {}
+        dag_node_identifier_to_analyzer_output = {}
         for backend in self.backend_map.values():
-            code_reference_to_annotation = {**code_reference_to_annotation,
-                                            **backend.code_reference_analyzer_output_map}
-        analyzer_to_code_reference_to_annotation = {}
-        for call_id, analyzer_output_map in code_reference_to_annotation.items():
+            dag_node_identifier_to_analyzer_output = {**dag_node_identifier_to_analyzer_output,
+                                                      **backend.dag_node_identifier_to_analyzer_output}
+        analyzer_to_dag_node_to_annotation = {}
+        for dag_node_identifier, analyzer_output_map in dag_node_identifier_to_analyzer_output.items():
             for analyzer, annotation in analyzer_output_map.items():
-                dag_node_to_annotation = analyzer_to_code_reference_to_annotation.get(analyzer, {})
-                dag_nodes = code_reference_to_dag_nodes[call_id]
-                assert len(dag_nodes) == 1
-                dag_node_to_annotation[list(dag_nodes)[0]] = annotation
-                analyzer_to_code_reference_to_annotation[analyzer] = dag_node_to_annotation
-        return analyzer_to_code_reference_to_annotation
+                dag_node_to_annotation = analyzer_to_dag_node_to_annotation.get(analyzer, {})
+                dag_node = dag_node_identifiers_to_dag_nodes[dag_node_identifier]
+                dag_node_to_annotation[dag_node] = annotation
+                analyzer_to_dag_node_to_annotation[analyzer] = dag_node_to_annotation
+        return analyzer_to_dag_node_to_annotation
 
     @staticmethod
     def instrument_pipeline(parsed_ast):

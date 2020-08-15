@@ -13,7 +13,7 @@ class Backend(metaclass=abc.ABCMeta):
 
     def __init__(self):
         self.code_reference_to_description = {}
-        self.code_reference_analyzer_output_map = {}
+        self.dag_node_identifier_to_analyzer_output = {}
         self.analyzers = []
 
     @property

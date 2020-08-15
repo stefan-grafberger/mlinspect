@@ -4,6 +4,7 @@ Preprocess Sklearn WIR nodes to enable DAG extraction
 import networkx
 from more_itertools import pairwise
 
+from mlinspect.instrumentation.dag_node import OperatorType, DagNodeIdentifier
 from mlinspect.instrumentation.wir_node import WirNode
 from mlinspect.utils import traverse_graph_and_process_nodes, get_sorted_node_parents
 
@@ -297,11 +298,11 @@ class SklearnWirPreprocessor:
             if node.module == ('sklearn.pipeline', 'Pipeline'):
                 pass
             elif node.module == ('sklearn.pipeline', 'fit'):
-                code_reference = node.code_reference
                 sorted_parents = get_sorted_node_parents(graph, node)
                 pipeline_node = self.get_sklearn_call_wir_node(graph, sorted_parents[0])
                 annotations = wir_post_processing_map[pipeline_node.code_reference]['fit']
-                new_code_references[code_reference] = annotations
+                dag_node_identifier = DagNodeIdentifier(OperatorType.TRAIN_DATA, node.code_reference, None)
+                new_code_references[dag_node_identifier] = annotations
 
         graph = traverse_graph_and_process_nodes(graph, process_node)
         return new_code_references

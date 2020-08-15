@@ -13,7 +13,7 @@ from mlinspect.instrumentation.analyzers.analyzer_input import AnalyzerInputUnar
     AnalyzerInputDataSource, OperatorContext
 from mlinspect.instrumentation.backends.backend import Backend
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
-from mlinspect.instrumentation.dag_node import OperatorType
+from mlinspect.instrumentation.dag_node import OperatorType, DagNodeIdentifier
 
 
 class PandasBackend(Backend):
@@ -96,12 +96,14 @@ class PandasBackend(Backend):
                                                                     return_value, function_info)
         elif function_info == ('pandas.core.frame', 'dropna'):
             operator_context = OperatorContext(OperatorType.SELECTION, function_info)
-            return_value = self.execute_analyzer_visits_unary_operator(operator_context, code_reference, return_value)
+            return_value = self.execute_analyzer_visits_unary_operator(operator_context, code_reference, return_value,
+                                                                       function_info)
         elif function_info == ('pandas.core.frame', '__getitem__'):
             # TODO: Can this also be a select
             operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
             return_value['mlinspect_index'] = range(1, len(return_value) + 1)
-            return_value = self.execute_analyzer_visits_unary_operator(operator_context, code_reference, return_value)
+            return_value = self.execute_analyzer_visits_unary_operator(operator_context, code_reference, return_value,
+                                                                       function_info)
 
         self.input_data = None
 
@@ -115,10 +117,10 @@ class PandasBackend(Backend):
             iterator_for_analyzer = iter_input_data_source(return_value)
             annotation_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
             annotation_iterators.append(annotation_iterator)
-        return_value = self.store_analyzer_outputs(annotation_iterators, code_reference, return_value)
+        return_value = self.store_analyzer_outputs(annotation_iterators, code_reference, return_value, function_info)
         return return_value
 
-    def store_analyzer_outputs(self, annotation_iterators, code_reference, return_value):
+    def store_analyzer_outputs(self, annotation_iterators, code_reference, return_value, function_info):
         """
         Stores the analyzer annotations for the rows in the dataframe and the
         analyzer annotations for the DAG operators in a map
@@ -132,7 +134,9 @@ class PandasBackend(Backend):
             # TODO: Create arrays only once, return iterators over those same arrays repeatedly
             analyzer_output = analyzer.get_operator_annotation_after_visit()
             analyzer_outputs[analyzer] = analyzer_output
-        self.code_reference_analyzer_output_map[code_reference] = analyzer_outputs
+        dag_node_identifier = DagNodeIdentifier(self.operator_map[function_info], code_reference,
+                                                self.code_reference_to_description.get(code_reference))
+        self.dag_node_identifier_to_analyzer_output[dag_node_identifier] = analyzer_outputs
         return_value = MlinspectDataFrame(return_value)
         return_value.annotations = annotations_df
         self.input_data = None
@@ -142,7 +146,7 @@ class PandasBackend(Backend):
         assert isinstance(return_value, MlinspectDataFrame)
         return return_value
 
-    def execute_analyzer_visits_unary_operator(self, operator_context, code_reference, return_value):
+    def execute_analyzer_visits_unary_operator(self, operator_context, code_reference, return_value, function_info):
         """Execute analyzers when the current operator has one parent in the DAG"""
         assert "mlinspect_index" in return_value.columns
         assert isinstance(self.input_data, MlinspectDataFrame)
@@ -157,7 +161,7 @@ class PandasBackend(Backend):
                                                                  return_value)
             annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
             annotation_iterators.append(annotations_iterator)
-        return_value = self.store_analyzer_outputs(annotation_iterators, code_reference, return_value)
+        return_value = self.store_analyzer_outputs(annotation_iterators, code_reference, return_value, function_info)
         return return_value
 
 

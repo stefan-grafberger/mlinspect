@@ -15,7 +15,7 @@ from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import Mlin
 from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
 from mlinspect.instrumentation.backends.sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer
 from mlinspect.instrumentation.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
-from mlinspect.instrumentation.dag_node import OperatorType
+from mlinspect.instrumentation.dag_node import OperatorType, DagNodeIdentifier
 
 
 class SklearnBackend(Backend):
@@ -51,10 +51,11 @@ class SklearnBackend(Backend):
         Preprocess scikit-learn pipeline operations to hide the special pipeline
         declaration style from other parts of the library
         """
-        new_code_references_analyzer_outputs = SklearnWirPreprocessor().postprocess_wir(wir,
-                                                                                        self.wir_post_processing_map)
-        self.code_reference_analyzer_output_map = {**self.code_reference_analyzer_output_map,
-                                                   **new_code_references_analyzer_outputs}
+        new_dag_node_identifier_to_analyzer_output = SklearnWirPreprocessor()\
+            .postprocess_wir(wir, self.wir_post_processing_map)
+
+        self.dag_node_identifier_to_analyzer_output = {**self.dag_node_identifier_to_analyzer_output,
+                                                       **new_dag_node_identifier_to_analyzer_output}
         return wir
 
     def __init__(self):
@@ -107,7 +108,8 @@ class SklearnBackend(Backend):
         # pylint: disable=too-many-arguments, unused-argument, no-self-use
         if function_info == ('sklearn.preprocessing._label', 'label_binarize'):
             operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
-            self.execute_analyzer_visits_df_input_np_output(operator_context, code_reference, return_value)
+            self.execute_analyzer_visits_df_input_np_output(operator_context, code_reference, return_value,
+                                                            function_info)
         elif function_info in {('sklearn.preprocessing._encoders', 'OneHotEncoder'),
                                ('sklearn.preprocessing._data', 'StandardScaler'),
                                ('sklearn.tree._classes', 'DecisionTreeClassifier'),
@@ -132,7 +134,7 @@ class SklearnBackend(Backend):
 
         return return_value
 
-    def execute_analyzer_visits_df_input_np_output(self, operator_context, code_reference, return_value):
+    def execute_analyzer_visits_df_input_np_output(self, operator_context, code_reference, return_value, function_info):
         """Execute analyzers when the current operator has one parent in the DAG"""
         assert isinstance(self.input_data, MlinspectDataFrame)
         annotation_iterators = []
@@ -145,11 +147,11 @@ class SklearnBackend(Backend):
                                                                  return_value)
             annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
             annotation_iterators.append(annotations_iterator)
-        return_value = self.store_analyzer_outputs(annotation_iterators, code_reference, return_value)
+        return_value = self.store_analyzer_outputs(annotation_iterators, code_reference, return_value, function_info)
         assert isinstance(return_value, MlinspectNdarray)
         return return_value
 
-    def store_analyzer_outputs(self, annotation_iterators, code_reference, return_value):
+    def store_analyzer_outputs(self, annotation_iterators, code_reference, return_value, function_info):
         """
         Stores the analyzer annotations for the rows in the dataframe and the
         analyzer annotations for the DAG operators in a map
@@ -161,7 +163,9 @@ class SklearnBackend(Backend):
         for analyzer in self.analyzers:
             analyzer_output = analyzer.get_operator_annotation_after_visit()
             analyzer_outputs[analyzer] = analyzer_output
-        self.code_reference_analyzer_output_map[code_reference] = analyzer_outputs
+        dag_node_identifier = DagNodeIdentifier(self.operator_map[function_info], code_reference,
+                                                self.code_reference_to_description.get(code_reference))
+        self.dag_node_identifier_to_analyzer_output[dag_node_identifier] = analyzer_outputs
         return_value = MlinspectNdarray(return_value)
         return_value.annotations = annotations_df
         self.input_data = None

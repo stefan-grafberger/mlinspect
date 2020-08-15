@@ -45,3 +45,13 @@ class DagNode:
 
     def __hash__(self):
         return hash(self.node_id)
+
+
+@dataclasses.dataclass(frozen=True)
+class DagNodeIdentifier:
+    """
+    Identifies a function call in the user pipeline code
+    """
+    operator_type: OperatorType
+    code_reference: CodeReference
+    description: str or None

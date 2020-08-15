@@ -165,7 +165,7 @@ def store_analyzer_outputs(annotation_iterators, code_reference, return_value, a
         analyzer_outputs[analyzer] = analyzer_output
 
     stored_analyzer_results = code_reference_analyzer_output_map.get(code_reference, {})
-    stored_analyzer_results["fit"] = analyzer_outputs
+    stored_analyzer_results[func_name] = analyzer_outputs
     code_reference_analyzer_output_map[code_reference] = stored_analyzer_results
     # FIXME: Use the code_reference here. Then have a special mechanism for post-processing the wir with the
     #  sklearn backend. We can save in a map the analyzers with one or multiple code references.
