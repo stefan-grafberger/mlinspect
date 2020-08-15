@@ -133,9 +133,11 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             transformers_tuples = self.transformer.transformers_
             transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
             resulting_annotations = {}
+            result_dims = []
             for transformer in transformers[:-1]:  # FIXME: in a similar way we'll need to get the resulting annotations
                 self.code_reference_analyzer_output_map.update(transformer.code_reference_analyzer_output_map)
                 resulting_annotations[transformer] = transformer.annotation_result_concat_workaround
+                result_dims.extend(transformer.output_dimensions)
             print("test")
             # ---
             # Analyzers for concat, use the self.output dimensions attribute to associate result columns
