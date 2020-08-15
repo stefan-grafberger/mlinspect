@@ -1,10 +1,10 @@
 """
 A wrapper for numpy ndarrays to store our additional annotations
 """
-import numpy as np
+import numpy
 
 
-class MlinspectNdarray(np.ndarray):
+class MlinspectNdarray(numpy.ndarray):
     """
     A wrapper for numpy ndarrays to store our additional annotations.
     See https://docs.scipy.org/doc/numpy-1.13.0/user/basics.subclassing.html
@@ -13,7 +13,7 @@ class MlinspectNdarray(np.ndarray):
     def __new__(cls, input_array, annotations=None):
         # Input array is an already formed ndarray instance
         # We first cast to be our class type
-        obj = np.asarray(input_array).view(cls)
+        obj = numpy.asarray(input_array).view(cls)
         # add the new attribute to the created instance
         obj.annotations = annotations
         # Finally, we must return the newly created object:

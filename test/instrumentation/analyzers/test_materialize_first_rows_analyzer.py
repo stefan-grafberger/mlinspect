@@ -88,6 +88,10 @@ def get_expected_result():
                                 'Not-in-family', 'White', 'Male', 0, 0, 50, 'United-States', '<=50K', 2],
                         fields=['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status',
                                 'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
-                                'hours-per-week', 'native-country', 'income-per-year', 'mlinspect_index'])]
+                                'hours-per-week', 'native-country', 'income-per-year', 'mlinspect_index'])],
+        DagNode(node_id=56, operator_type=OperatorType.TRAIN_LABELS, module=('sklearn.pipeline', 'fit', 'Train Labels'),
+                code_reference=CodeReference(lineno=28, col_offset=0), description=None): [
+                    AnalyzerInputRow(values=[array(1)], fields=['array']),
+                    AnalyzerInputRow(values=[array(1)], fields=['array'])]
     }
     return expected_result

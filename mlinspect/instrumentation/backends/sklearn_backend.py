@@ -108,8 +108,8 @@ class SklearnBackend(Backend):
         # pylint: disable=too-many-arguments, unused-argument, no-self-use
         if function_info == ('sklearn.preprocessing._label', 'label_binarize'):
             operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
-            self.execute_analyzer_visits_df_input_np_output(operator_context, code_reference, return_value,
-                                                            function_info)
+            return_value = self.execute_analyzer_visits_df_input_np_output(operator_context, code_reference,
+                                                                           return_value, function_info)
         elif function_info in {('sklearn.preprocessing._encoders', 'OneHotEncoder'),
                                ('sklearn.preprocessing._data', 'StandardScaler'),
                                ('sklearn.tree._classes', 'DecisionTreeClassifier'),

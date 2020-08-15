@@ -6,6 +6,7 @@ import inspect
 import itertools
 from functools import partial
 
+import numpy
 from pandas import DataFrame
 from sklearn.base import BaseEstimator
 
@@ -51,7 +52,13 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             function_info = (self.module_name, "fit")  # TODO: nested pipelines
             operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
             execute_analyzer_visits_df_input_df_output(operator_context, self.code_reference, X, X, self.analyzers,
-                                                       self.code_reference_analyzer_output_map, "fit")
+                                                       self.code_reference_analyzer_output_map, "fit X")
+            if y is not None:
+                assert isinstance(y, MlinspectNdarray)
+                operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
+                execute_analyzer_visits_array_input_array_output(operator_context, self.code_reference, y, y,
+                                                                 self.analyzers,
+                                                                 self.code_reference_analyzer_output_map, "fit y")
         print(self.call_function_info[1])
         print("fit:")
         print("X")
@@ -111,8 +118,29 @@ def execute_analyzer_visits_df_input_df_output(operator_context, code_reference,
                                                                    output_data)
         annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_analyzer_outputs(annotation_iterators, code_reference, output_data, analyzers,
-                                          code_reference_analyzer_output_map, func_name)
+    return_value = store_analyzer_outputs_df(annotation_iterators, code_reference, output_data, analyzers,
+                                             code_reference_analyzer_output_map, func_name)
+    assert isinstance(return_value, MlinspectDataFrame)
+    return return_value
+
+
+def execute_analyzer_visits_array_input_array_output(operator_context, code_reference, input_data, output_data,
+                                                     analyzers, code_reference_analyzer_output_map, func_name):
+    """Execute analyzers when the current operator has one parent in the DAG"""
+    # pylint: disable=too-many-arguments
+    assert isinstance(input_data, MlinspectNdarray)
+    annotation_iterators = []
+    for analyzer in analyzers:
+        analyzer_index = analyzers.index(analyzer)
+        iterator_for_analyzer = iter_input_annotation_output_array_array(analyzer_index,
+                                                                         input_data,
+                                                                         input_data.annotations,
+                                                                         output_data)
+        annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
+        annotation_iterators.append(annotations_iterator)
+    return_value = store_analyzer_outputs_array(annotation_iterators, code_reference, output_data, analyzers,
+                                                code_reference_analyzer_output_map, func_name)
+    assert isinstance(return_value, MlinspectNdarray)
     return return_value
 
 
@@ -123,12 +151,34 @@ def iter_input_annotation_output_df_df(analyzer_index, input_df, annotation_df, 
     # pylint: disable=too-many-locals
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+    assert isinstance(input_df, DataFrame)
+    assert isinstance(output_df, DataFrame)
 
     annotation_df_view = annotation_df.iloc[:, analyzer_index:analyzer_index + 1]
 
     input_rows = get_df_row_iterator(input_df)
     annotation_rows = get_df_row_iterator(annotation_df_view)
     output_rows = get_df_row_iterator(output_df)
+
+    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
+               zip(input_rows, annotation_rows, output_rows))
+
+
+def iter_input_annotation_output_array_array(analyzer_index, input_df, annotation_df, output_df):
+    """
+    Create an efficient iterator for the analyzer input for operators with one parent.
+    """
+    # pylint: disable=too-many-locals
+    # Performance tips:
+    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+    assert isinstance(input_df, numpy.ndarray)
+    assert isinstance(output_df, numpy.ndarray)
+
+    annotation_df_view = annotation_df.iloc[:, analyzer_index:analyzer_index + 1]
+
+    input_rows = get_numpy_array_row_iterator(input_df)
+    annotation_rows = get_df_row_iterator(annotation_df_view)
+    output_rows = get_numpy_array_row_iterator(output_df)
 
     return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
@@ -148,8 +198,45 @@ def get_df_row_iterator(dataframe):
     return test
 
 
-def store_analyzer_outputs(annotation_iterators, code_reference, return_value, analyzers,
-                           code_reference_analyzer_output_map, func_name):
+def get_numpy_array_row_iterator(nparray):
+    """
+    Create an efficient iterator for the data frame rows.
+    The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
+    """
+    fields = list(["array"])
+    numpy_iterator = numpy.nditer(nparray, ["refs_ok"])
+    partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
+
+    test = map(partial_func_create_row, map(list, zip(numpy_iterator)))
+    return test
+
+
+def store_analyzer_outputs_df(annotation_iterators, code_reference, return_value, analyzers,
+                              code_reference_analyzer_output_map, func_name):
+    """
+    Stores the analyzer annotations for the rows in the dataframe and the
+    analyzer annotations for the DAG operators in a map
+    """
+    # pylint: disable=too-many-arguments
+    annotation_iterators = itertools.zip_longest(*annotation_iterators)
+    analyzer_names = [str(analyzer) for analyzer in analyzers]
+    annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
+    analyzer_outputs = {}
+    for analyzer in analyzers:
+        analyzer_output = analyzer.get_operator_annotation_after_visit()
+        analyzer_outputs[analyzer] = analyzer_output
+
+    stored_analyzer_results = code_reference_analyzer_output_map.get(code_reference, {})
+    stored_analyzer_results[func_name] = analyzer_outputs
+    code_reference_analyzer_output_map[code_reference] = stored_analyzer_results
+    return_value = MlinspectDataFrame(return_value)
+    return_value.annotations = annotations_df
+    assert isinstance(return_value, MlinspectDataFrame)
+    return return_value
+
+
+def store_analyzer_outputs_array(annotation_iterators, code_reference, return_value, analyzers,
+                                 code_reference_analyzer_output_map, func_name):
     """
     Stores the analyzer annotations for the rows in the dataframe and the
     analyzer annotations for the DAG operators in a map

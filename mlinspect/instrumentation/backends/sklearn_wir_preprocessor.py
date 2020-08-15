@@ -301,9 +301,16 @@ class SklearnWirPreprocessor:
             elif node.module == ('sklearn.pipeline', 'fit'):
                 sorted_parents = get_sorted_node_parents(graph, node)
                 pipeline_node = self.get_sklearn_call_wir_node(graph, sorted_parents[0])
-                annotations = wir_post_processing_map[pipeline_node.code_reference]['fit']
+                annotations_for_all_associated_dag_nodes = wir_post_processing_map[pipeline_node.code_reference]
+
+                annotations_x = annotations_for_all_associated_dag_nodes['fit X']
                 dag_node_identifier = DagNodeIdentifier(OperatorType.TRAIN_DATA, node.code_reference, None)
-                new_code_references[dag_node_identifier] = annotations
+                new_code_references[dag_node_identifier] = annotations_x
+
+                if "fit y" in annotations_for_all_associated_dag_nodes:
+                    annotations_y = annotations_for_all_associated_dag_nodes['fit y']
+                    dag_node_identifier = DagNodeIdentifier(OperatorType.TRAIN_LABELS, node.code_reference, None)
+                    new_code_references[dag_node_identifier] = annotations_y
 
         graph = traverse_graph_and_process_nodes(graph, process_node)
         return new_code_references
