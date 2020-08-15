@@ -137,14 +137,12 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             # ---
             # Analyzers for concat, use the self.output dimensions attribute to associate result columns
         elif self.call_function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
-            assert hasattr(X, "annotations")
-            assert isinstance(X.annotations, dict)
-            assert self in X.annotations
+            assert isinstance(X.annotations, dict) and self in X.annotations
             print("OneHotEncoder")
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [len(one_hot_categories) for one_hot_categories in self.transformer.categories_]
         elif self.call_function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
-            assert self.column_transformer_annotations is not None
+            assert isinstance(X.annotations, dict) and self in X.annotations
             result = self.transformer.fit_transform(X, y)
             print("StandardScaler")
             self.output_dimensions = [1 for _ in range(result.shape[1])]
@@ -155,10 +153,12 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 execute_analyzer_visits_df_array_column_transformer(operator_context,
                                                                     self.code_reference,
                                                                     X[[column]],
+                                                                    X.annotations[self],
                                                                     result[:, column_index],
                                                                     self.analyzers,
                                                                     self.code_reference_analyzer_output_map,
                                                                     description)
+                # FIXME: return value with new annotations needs to be used. (Introduce X_new)
         else:
             result = self.transformer.fit_transform(X, y)
 
@@ -215,7 +215,7 @@ def execute_analyzer_visits_df_df(operator_context, code_reference, input_data, 
 
 
 def execute_analyzer_visits_df_array_column_transformer(operator_context, code_reference,
-                                                        input_data, output_data, analyzers,
+                                                        input_data, annotations, output_data, analyzers,
                                                         code_reference_analyzer_output_map,
                                                         func_name, transformer=None):
     """Execute analyzers when the current operator has one parent in the DAG"""
@@ -226,7 +226,7 @@ def execute_analyzer_visits_df_array_column_transformer(operator_context, code_r
         analyzer_index = analyzers.index(analyzer)
         iterator_for_analyzer = iter_input_annotation_output_df_array(analyzer_index,
                                                                       input_data,
-                                                                      input_data.annotations,
+                                                                      annotations,
                                                                       output_data)
         annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
         annotation_iterators.append(annotations_iterator)
