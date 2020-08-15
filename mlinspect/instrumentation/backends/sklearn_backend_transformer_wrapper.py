@@ -99,7 +99,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 projected_df = X[[column]]
                 function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
                 operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
-                description = "project {}".format(column)
+                description = "to ['{}']".format(column)
                 execute_analyzer_visits_df_input_df_output(operator_context, self.code_reference, projected_df,
                                                            projected_df, self.analyzers,
                                                            self.code_reference_analyzer_output_map, description)
