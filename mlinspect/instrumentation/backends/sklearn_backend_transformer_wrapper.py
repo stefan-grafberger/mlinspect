@@ -25,7 +25,8 @@ class MlinspectEstimatorTransformer(BaseEstimator):
     """
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, transformer, code_reference: CodeReference, analyzers, code_reference_analyzer_output_map):
+    def __init__(self, transformer, code_reference: CodeReference, analyzers, code_reference_analyzer_output_map,
+                 output_dimensions=None, column_transformer_annotations=None):
         self.transformer = transformer
         self.name = transformer.__class__.__name__
 
@@ -35,22 +36,17 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         self.code_reference = code_reference
         self.analyzers = analyzers
         self.code_reference_analyzer_output_map = code_reference_analyzer_output_map
-        self.output_dimensions = None
+        self.output_dimensions = output_dimensions
+        self.column_transformer_annotations = column_transformer_annotations
 
     def fit(self, X: list, y=None) -> 'MlinspectEstimatorTransformer':
         """
         Override fit
         """
-        # FIXME: move this somewhere else
-        #  associate this with the DAG node
-
         # pylint: disable=invalid-name
         if self.call_function_info == ('sklearn.pipeline', 'Pipeline'):
             # Pipeline.fit returns nothing (trained models get no edge in our DAG)
             # Only need to do two scans for train data and train labels
-            # train data:
-
-            # TODO: returns nothing but allows a scan for train data and train labels. output is same as input
             function_info = (self.module_name, "fit")  # TODO: nested pipelines
             operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
             execute_analyzer_visits_df_input_df_output(operator_context, self.code_reference, X, X, self.analyzers,
@@ -94,30 +90,30 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         """
         # pylint: disable=invalid-name
         if self.call_function_info == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
+            # Analyzers for the different projections
             transformers_tuples = self.transformer.transformers
-            columns = [column for transformer_tuple in transformers_tuples for column in transformer_tuple[2]]
-            for column in columns:
+            columns_with_transformer = [(column, transformer_tuple[1]) for transformer_tuple in transformers_tuples
+                                        for column in transformer_tuple[2]]
+            for column, transformer in columns_with_transformer:
                 projected_df = X[[column]]
                 function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
                 operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
                 description = "to ['{}']".format(column)
                 execute_analyzer_visits_df_input_df_output(operator_context, self.code_reference, projected_df,
                                                            projected_df, self.analyzers,
-                                                           self.code_reference_analyzer_output_map, description)
-
-            # Analyzers for the different projections
+                                                           self.code_reference_analyzer_output_map, description,
+                                                           transformer)
             # ---
-            # but how to select annotations? before calling fit_transform, replace annotations with a list of annotations
-            # for each transformer, call a method that sets an attribute with the index of the annotations
             result = self.transformer.fit_transform(X, y)
             # ---
             # Analyzers for concat, use the self.output dimensions attribute to associate result columns
-            print("column transformer")
         elif self.call_function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
+            assert self.column_transformer_annotations is not None
             print("OneHotEncoder")
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [len(one_hot_categories) for one_hot_categories in self.transformer.categories_]
         elif self.call_function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
+            assert self.column_transformer_annotations is not None
             result = self.transformer.fit_transform(X, y)
             print("StandardScaler")
             self.output_dimensions = [1 for _ in range(result.shape[1])]
@@ -137,7 +133,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
 
 def execute_analyzer_visits_df_input_df_output(operator_context, code_reference, input_data, output_data, analyzers,
-                                               code_reference_analyzer_output_map, func_name):
+                                               code_reference_analyzer_output_map, func_name, transformer=None):
     """Execute analyzers when the current operator has one parent in the DAG"""
     # pylint: disable=too-many-arguments
     assert isinstance(input_data, MlinspectDataFrame)
@@ -151,7 +147,7 @@ def execute_analyzer_visits_df_input_df_output(operator_context, code_reference,
         annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
         annotation_iterators.append(annotations_iterator)
     return_value = store_analyzer_outputs_df(annotation_iterators, code_reference, output_data, analyzers,
-                                             code_reference_analyzer_output_map, func_name)
+                                             code_reference_analyzer_output_map, func_name, transformer)
     assert isinstance(return_value, MlinspectDataFrame)
     return return_value
 
@@ -244,7 +240,7 @@ def get_numpy_array_row_iterator(nparray):
 
 
 def store_analyzer_outputs_df(annotation_iterators, code_reference, return_value, analyzers,
-                              code_reference_analyzer_output_map, func_name):
+                              code_reference_analyzer_output_map, func_name, transformer=None):
     """
     Stores the analyzer annotations for the rows in the dataframe and the
     analyzer annotations for the DAG operators in a map
@@ -262,7 +258,17 @@ def store_analyzer_outputs_df(annotation_iterators, code_reference, return_value
     stored_analyzer_results[func_name] = analyzer_outputs
     code_reference_analyzer_output_map[code_reference] = stored_analyzer_results
     return_value = MlinspectDataFrame(return_value)
-    return_value.annotations = annotations_df
+
+    # if the transformer is a column transformer, we have multiple annotations we need to pass to different transformers
+    # if we do not want to override internal column transformer functions, we have to work around these black
+    # box functions and pass the annotations using a different mechanism
+    if transformer is None:
+        return_value.annotations = annotations_df
+    else:
+        return_value.annotations = None
+        previous_annotations = transformer.column_transformer_annotations or []
+        previous_annotations.append(annotations_df)
+        transformer.column_transformer_annotations = previous_annotations
     assert isinstance(return_value, MlinspectDataFrame)
     return return_value
 
