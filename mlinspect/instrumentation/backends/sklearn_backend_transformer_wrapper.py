@@ -325,7 +325,7 @@ def store_analyzer_outputs_df(annotation_iterators, code_reference, return_value
     if transformer is None:
         return_value.annotations = annotations_df
     else:
-        return_value.annotations = None
+        return_value.annotations=None  # FIXME: Set annotations to a map instead of doing this wierd stuff. Remove values from init
         previous_annotations = transformer.column_transformer_annotations or []
         previous_annotations.append(annotations_df)
         transformer.column_transformer_annotations = previous_annotations
