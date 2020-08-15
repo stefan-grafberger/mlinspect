@@ -294,14 +294,17 @@ class SklearnWirProcessor:
         def process_node(node, _):
             print(node.module)
             dag_node_identifier = DagNodeIdentifier(node.operator_type, node.code_reference, node.description)
-            if node.module in self.KNOWN_SINGLE_STEPS:
-                pass
-            elif node.module == ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'):
+            if node.module == ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'):
                 annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
                 annotation = annotations_for_all_associated_dag_nodes[node.description]
                 new_code_references[dag_node_identifier] = annotation
-            if node.module == ('sklearn.pipeline', 'Pipeline'):
+            elif node.module == ('sklearn.pipeline', 'Pipeline'):
                 pass
+            elif node.module == ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'):
+                annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
+
+                annotations_x = annotations_for_all_associated_dag_nodes['fit X']
+                new_code_references[dag_node_identifier] = annotations_x
             elif node.module == ('sklearn.pipeline', 'fit', 'Train Data'):
                 annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
 

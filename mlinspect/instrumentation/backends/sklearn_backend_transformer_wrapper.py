@@ -27,6 +27,9 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
     def __init__(self, transformer, code_reference: CodeReference, analyzers, code_reference_analyzer_output_map,
                  output_dimensions=None, column_transformer_annotations=None):
+        # pylint: disable=too-many-arguments
+        # None arguments are not passed directly when we create them. Still needed though because the
+        # Column transformer clones child transformers and does not pass parameters otherwise
         self.transformer = transformer
         self.name = transformer.__class__.__name__
 
@@ -49,14 +52,14 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             # Only need to do two scans for train data and train labels
             function_info = (self.module_name, "fit")  # TODO: nested pipelines
             operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
-            execute_analyzer_visits_df_input_df_output(operator_context, self.code_reference, X, X, self.analyzers,
-                                                       self.code_reference_analyzer_output_map, "fit X")
+            execute_analyzer_visits_df_df(operator_context, self.code_reference, X, X, self.analyzers,
+                                          self.code_reference_analyzer_output_map, "fit X")
             if y is not None:
                 assert isinstance(y, MlinspectNdarray)
                 operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
-                execute_analyzer_visits_array_input_array_output(operator_context, self.code_reference, y, y,
-                                                                 self.analyzers,
-                                                                 self.code_reference_analyzer_output_map, "fit y")
+                execute_analyzer_visits_array_array(operator_context, self.code_reference, y, y,
+                                                    self.analyzers,
+                                                    self.code_reference_analyzer_output_map, "fit y")
         elif self.call_function_info == ('sklearn.tree._classes', 'DecisionTreeClassifier'):
             print("DecisionTreeClassifier")
         print(self.call_function_info[1])
@@ -99,10 +102,10 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
                 operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
                 description = "to ['{}']".format(column)
-                execute_analyzer_visits_df_input_df_output(operator_context, self.code_reference, projected_df,
-                                                           projected_df, self.analyzers,
-                                                           self.code_reference_analyzer_output_map, description,
-                                                           transformer)
+                execute_analyzer_visits_df_df(operator_context, self.code_reference, projected_df,
+                                              projected_df, self.analyzers,
+                                              self.code_reference_analyzer_output_map, description,
+                                              transformer)
             # ---
             result = self.transformer.fit_transform(X, y)
             # ---
@@ -117,6 +120,16 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             result = self.transformer.fit_transform(X, y)
             print("StandardScaler")
             self.output_dimensions = [1 for _ in range(result.shape[1])]
+            for column_index, column in enumerate(X.columns):
+                function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
+                operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
+                execute_analyzer_visits_df_array_column_transformer(operator_context,
+                                                                    self.code_reference,
+                                                                    X[[column]],
+                                                                    result[:, column_index],
+                                                                    self.analyzers,
+                                                                    self.code_reference_analyzer_output_map,
+                                                                    column)
         else:
             result = self.transformer.fit_transform(X, y)
 
@@ -132,8 +145,26 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         return result
 
 
-def execute_analyzer_visits_df_input_df_output(operator_context, code_reference, input_data, output_data, analyzers,
-                                               code_reference_analyzer_output_map, func_name, transformer=None):
+def iter_input_annotation_output_df_array(analyzer_index, input_data, annotations, output_data):
+    """
+    Create an efficient iterator for the analyzer input for operators with one parent.
+    """
+    # pylint: disable=too-many-locals
+    # Performance tips:
+    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+
+    annotation_df_view = annotations.iloc[:, analyzer_index:analyzer_index + 1]
+
+    input_rows = get_df_row_iterator(input_data)
+    annotation_rows = get_df_row_iterator(annotation_df_view)
+    output_rows = get_numpy_array_row_iterator(output_data)
+
+    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
+               zip(input_rows, annotation_rows, output_rows))
+
+
+def execute_analyzer_visits_df_df(operator_context, code_reference, input_data, output_data, analyzers,
+                                  code_reference_analyzer_output_map, func_name, transformer=None):
     """Execute analyzers when the current operator has one parent in the DAG"""
     # pylint: disable=too-many-arguments
     assert isinstance(input_data, MlinspectDataFrame)
@@ -152,8 +183,30 @@ def execute_analyzer_visits_df_input_df_output(operator_context, code_reference,
     return return_value
 
 
-def execute_analyzer_visits_array_input_array_output(operator_context, code_reference, input_data, output_data,
-                                                     analyzers, code_reference_analyzer_output_map, func_name):
+def execute_analyzer_visits_df_array_column_transformer(operator_context, code_reference,
+                                                        input_data, output_data, analyzers,
+                                                        code_reference_analyzer_output_map,
+                                                        func_name, transformer=None):
+    """Execute analyzers when the current operator has one parent in the DAG"""
+    # pylint: disable=too-many-arguments
+    assert isinstance(input_data, MlinspectDataFrame)
+    annotation_iterators = []
+    for analyzer in analyzers:
+        analyzer_index = analyzers.index(analyzer)
+        iterator_for_analyzer = iter_input_annotation_output_df_array(analyzer_index,
+                                                                   input_data,
+                                                                   input_data.annotations,
+                                                                   output_data)
+        annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
+        annotation_iterators.append(annotations_iterator)
+    return_value = store_analyzer_outputs_array(annotation_iterators, code_reference, output_data, analyzers,
+                                                code_reference_analyzer_output_map, func_name)
+    assert isinstance(return_value, MlinspectNdarray)
+    return return_value
+
+
+def execute_analyzer_visits_array_array(operator_context, code_reference, input_data, output_data,
+                                        analyzers, code_reference_analyzer_output_map, func_name):
     """Execute analyzers when the current operator has one parent in the DAG"""
     # pylint: disable=too-many-arguments
     assert isinstance(input_data, MlinspectNdarray)
