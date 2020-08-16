@@ -152,7 +152,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             columns_with_transformer = [(column, transformer_tuple[1]) for transformer_tuple in transformers_tuples
                                         for column in transformer_tuple[2]]
             for index, _ in enumerate(columns_with_transformer):
-                data = result[:, result_indices[index]:result_indices[index+1]]
+                data = result[:, result_indices[index]:result_indices[index + 1]]
                 annotation = annotations[index]
                 transformer_data_with_annotations.append((data, annotation))
             print("test")
@@ -160,10 +160,9 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             operator_context = OperatorContext(OperatorType.CONCATENATION, function_info)
             description = "concat"
             # TODO: Run analyzers
-            #X_new[0] = execute_analyzer_visits_csr_list_csr(operator_context, self.code_reference, projected_df,
-             #                                            projected_df, self.analyzers,
-              #                                           self.code_reference_analyzer_output_map, description,
-               #                                          transformer))
+            X_new[0] = execute_analyzer_visits_csr_list_csr(operator_context, self.code_reference,
+                                                            transformer_data_with_annotations, result, self.analyzers,
+                                                            self.code_reference_analyzer_output_map, description)
             # ---
         elif self.call_function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
             assert isinstance(X.annotations, dict) and self in X.annotations
@@ -260,6 +259,46 @@ def iter_input_annotation_output_df_csr(analyzer_index, input_data, annotations,
 
     return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
+
+
+def iter_input_annotation_output_csr_list_csr(analyzer_index, transformer_data_with_annotations, output_data):
+    """
+        Create an efficient iterator for the analyzer input for operators with one parent.
+        """
+    # pylint: disable=too-many-locals
+    # Performance tips:
+    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+
+    for input_data, annotations in transformer_data_with_annotations:
+        annotation_df_view = annotations.iloc[:, analyzer_index:analyzer_index + 1]
+
+        input_rows = get_csr_row_iterator(input_data)
+        annotation_rows = get_df_row_iterator(annotation_df_view)
+
+    output_rows = get_csr_row_iterator(output_data)
+    # FIXME: Function work in progress
+    # FIXME: Create new AnalyzerInput class. Maybe model input with annotation as tuple?
+    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
+               zip(input_rows, annotation_rows, output_rows))
+
+
+def execute_analyzer_visits_csr_list_csr(operator_context, code_reference, transformer_data_with_annotations,
+                                         output_data, analyzers,
+                                         code_reference_analyzer_output_map, func_name):
+    """Execute analyzers when the current operator has multiple parents in the DAG"""
+    # pylint: disable=too-many-argument
+    annotation_iterators = []
+    for analyzer in analyzers:
+        analyzer_index = analyzers.index(analyzer)
+        iterator_for_analyzer = iter_input_annotation_output_csr_list_csr(analyzer_index,
+                                                                          transformer_data_with_annotations,
+                                                                          output_data)
+        annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
+        annotation_iterators.append(annotations_iterator)
+    return_value = store_analyzer_outputs_csr(annotation_iterators, code_reference, output_data, analyzers,
+                                              code_reference_analyzer_output_map, func_name)
+    assert isinstance(return_value, MlinspectCsrMatrix)
+    return return_value
 
 
 def execute_analyzer_visits_df_df(operator_context, code_reference, input_data, output_data, analyzers,
