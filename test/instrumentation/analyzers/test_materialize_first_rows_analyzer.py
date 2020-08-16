@@ -1,8 +1,10 @@
 """
 Tests whether the MaterializeFirstRowsAnalyzer works
 """
+
 import os
 
+from testfixtures import compare, RangeComparison
 from numpy.ma import array
 
 from mlinspect.instrumentation.analyzers.analyzer_input import AnalyzerInputRow
@@ -26,7 +28,7 @@ def test_materialize_first_rows_analyzer():
     assert MaterializeFirstRowsAnalyzer(2) in analyzer_results
     result = analyzer_results[MaterializeFirstRowsAnalyzer(2)]
 
-    assert result == get_expected_result()
+    compare(result, get_expected_result())
 
 
 def get_expected_result():
@@ -112,6 +114,16 @@ def get_expected_result():
                 description="to ['workclass']"): [
                     AnalyzerInputRow(values=['Private'], fields=['workclass']),
                     AnalyzerInputRow(values=['Local-gov'], fields=['workclass'])],
+        DagNode(node_id=40, operator_type=OperatorType.TRANSFORMER, code_reference=CodeReference(20, 16),
+                module=('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'),
+                description="Numerical Encoder (StandardScaler), Column: 'age'"): [
+                    AnalyzerInputRow(values=[array(RangeComparison(0.5, 0.6))], fields=['array']),
+                    AnalyzerInputRow(values=[array(RangeComparison(-0.8, -0.7))], fields=['array'])],
+        DagNode(node_id=41, operator_type=OperatorType.TRANSFORMER, code_reference=CodeReference(20, 16),
+                module=('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'),
+                description="Numerical Encoder (StandardScaler), Column: 'hours-per-week'"): [
+                    AnalyzerInputRow(values=[array(RangeComparison(-0.09, -0.08))], fields=['array']),
+                    AnalyzerInputRow(values=[array(RangeComparison(0.7, 0.8))], fields=['array'])],
 
     }
     return expected_result

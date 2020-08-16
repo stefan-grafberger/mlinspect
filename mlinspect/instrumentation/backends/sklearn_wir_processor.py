@@ -249,7 +249,7 @@ class SklearnWirProcessor:
 
         def copy_node(current_node, _):
             new_module = (current_node.module[0], current_node.module[1], "Pipeline")
-            new_description = "{}, Column: {}".format(current_node.dag_operator_description, description)
+            new_description = "{}, Column: '{}'".format(current_node.dag_operator_description, description)
             copied_wir = WirNode(new_node_id, current_node.name, current_node.operation,
                                  current_node.code_reference, new_module, new_description)
 

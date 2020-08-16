@@ -154,7 +154,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             for column_index, column in enumerate(X.columns):
                 function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
                 operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
-                description = "Numerical Encoder (StandardScaler), Column: {}".format(column)
+                description = "Numerical Encoder (StandardScaler), Column: '{}'".format(column)
                 X_new = execute_analyzer_visits_df_array_column_transformer(operator_context,
                                                                     self.code_reference,
                                                                     X[[column]],
