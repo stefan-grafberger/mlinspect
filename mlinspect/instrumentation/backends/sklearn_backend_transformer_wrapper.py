@@ -64,13 +64,13 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             function_info = (self.module_name, "fit")  # TODO: nested pipelines
             operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
             X_new = execute_analyzer_visits_df_df(operator_context, self.code_reference, X, X, self.analyzers,
-                                              self.code_reference_analyzer_output_map, "fit X")
+                                                  self.code_reference_analyzer_output_map, "fit X")
             if y is not None:
                 assert isinstance(y, MlinspectNdarray)
                 operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
                 y_new = execute_analyzer_visits_array_array(operator_context, self.code_reference, y, y,
-                                                        self.analyzers,
-                                                        self.code_reference_analyzer_output_map, "fit y")
+                                                            self.analyzers,
+                                                            self.code_reference_analyzer_output_map, "fit y")
             else:
                 y_new = None
         elif self.call_function_info == ('sklearn.tree._classes', 'DecisionTreeClassifier'):
@@ -109,7 +109,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         """
         Override fit_transform
         """
-        # pylint: disable=invalid-name
+        # pylint: disable=invalid-name, too-many-locals
         if self.call_function_info == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
             # Analyzers for the different projections
             transformers_tuples = self.transformer.transformers
@@ -124,9 +124,9 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
                 description = "to ['{}']".format(column)
                 X_new[0] = execute_analyzer_visits_df_df(operator_context, self.code_reference, projected_df,
-                                              projected_df, self.analyzers,
-                                              self.code_reference_analyzer_output_map, description,
-                                              transformer, X_new[0])
+                                                         projected_df, self.analyzers,
+                                                         self.code_reference_analyzer_output_map, description,
+                                                         transformer, X_new[0])
             # ---
             result = self.transformer.fit_transform(X_new[0], y_new[0])
             # Because Column transformer creates deep copies, we need to extract results here
@@ -156,13 +156,13 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
                 description = "Numerical Encoder (StandardScaler), Column: '{}'".format(column)
                 X_new = execute_analyzer_visits_df_array_column_transformer(operator_context,
-                                                                    self.code_reference,
-                                                                    X[[column]],
-                                                                    X.annotations[self],
-                                                                    result[:, column_index],
-                                                                    self.analyzers,
-                                                                    self.code_reference_analyzer_output_map,
-                                                                    description)
+                                                                            self.code_reference,
+                                                                            X[[column]],
+                                                                            X.annotations[self],
+                                                                            result[:, column_index],
+                                                                            self.analyzers,
+                                                                            self.code_reference_analyzer_output_map,
+                                                                            description)
                 # FIXME: return value with new annotations needs to be used. (Introduce X_new)
                 self.annotation_result_concat_workaround = X_new.annotations
         else:
@@ -223,7 +223,7 @@ def execute_analyzer_visits_df_df(operator_context, code_reference, input_data, 
 def execute_analyzer_visits_df_array_column_transformer(operator_context, code_reference,
                                                         input_data, annotations, output_data, analyzers,
                                                         code_reference_analyzer_output_map,
-                                                        func_name, transformer=None):
+                                                        func_name):
     """Execute analyzers when the current operator has one parent in the DAG"""
     # pylint: disable=too-many-arguments
     assert isinstance(input_data, MlinspectDataFrame)
@@ -335,7 +335,7 @@ def store_analyzer_outputs_df(annotation_iterators, code_reference, return_value
     Stores the analyzer annotations for the rows in the dataframe and the
     analyzer annotations for the DAG operators in a map
     """
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-locals
     annotation_iterators = itertools.zip_longest(*annotation_iterators)
     analyzer_names = [str(analyzer) for analyzer in analyzers]
     annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
@@ -355,9 +355,7 @@ def store_analyzer_outputs_df(annotation_iterators, code_reference, return_value
         assert full_return_value is None
         new_return_value = MlinspectDataFrame(return_value)
         new_return_value.annotations = annotations_df
-        return return_value
     else:
-        # FIXME: Set annotations to a map instead of doing this wierd stuff. Remove values from init # FIXME2: the output from standard scaler needs to be propagated properly
         if not isinstance(full_return_value, MlinspectDataFrame):
             new_return_value = MlinspectDataFrame(full_return_value)
         else:

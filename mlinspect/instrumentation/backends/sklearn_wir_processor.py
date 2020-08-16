@@ -4,7 +4,7 @@ Preprocess Sklearn WIR nodes to enable DAG extraction
 import networkx
 from more_itertools import pairwise
 
-from mlinspect.instrumentation.dag_node import DagNodeIdentifier, OperatorType
+from mlinspect.instrumentation.dag_node import DagNodeIdentifier
 from mlinspect.instrumentation.wir_node import WirNode
 from mlinspect.utils import traverse_graph_and_process_nodes, get_sorted_node_parents
 
@@ -289,7 +289,8 @@ class SklearnWirProcessor:
         assert transformer.module in self.KNOWN_SINGLE_STEPS.union(self.KNOWN_MULTI_STEPS)
         return transformer
 
-    def postprocess_dag(self, graph, wir_post_processing_map):
+    @staticmethod
+    def postprocess_dag(graph, wir_post_processing_map):
         """Associate DAG nodes with the correct analyzer output from sklearn pipelines"""
         new_code_references = {}
 
