@@ -4,7 +4,7 @@ Tests whether the DAG extraction works
 import networkx
 
 from mlinspect.instrumentation.dag_node import CodeReference
-from mlinspect.instrumentation.backends.sklearn_wir_processor import SklearnWirProcessor
+from mlinspect.instrumentation.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
 from mlinspect.instrumentation.wir_to_dag_transformer import WirToDagTransformer
 from mlinspect.instrumentation.wir_node import WirNode
 from mlinspect.instrumentation.wir_extractor import WirExtractor
@@ -33,7 +33,7 @@ def test_remove_all_non_operators_and_update_names():
     """
     Tests whether the WIR Extraction works for the adult_easy pipeline
     """
-    preprocessed_wir = SklearnWirProcessor().preprocess_wir(get_test_wir())
+    preprocessed_wir = SklearnWirPreprocessor().preprocess_wir(get_test_wir())
     cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(preprocessed_wir)
     dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
 

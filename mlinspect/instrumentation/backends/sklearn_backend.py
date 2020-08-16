@@ -14,7 +14,8 @@ from mlinspect.instrumentation.backends.backend import Backend
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
 from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
 from mlinspect.instrumentation.backends.sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer
-from mlinspect.instrumentation.backends.sklearn_wir_processor import SklearnWirProcessor
+from mlinspect.instrumentation.backends.sklearn_dag_postprocessor import SklearnDagPostprocessor
+from mlinspect.instrumentation.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
 from mlinspect.instrumentation.dag_node import OperatorType, DagNodeIdentifier
 
 
@@ -44,14 +45,14 @@ class SklearnBackend(Backend):
         Preprocess scikit-learn pipeline operations to hide the special pipeline
         declaration style from other parts of the library
         """
-        return SklearnWirProcessor().preprocess_wir(wir)
+        return SklearnWirPreprocessor().preprocess_wir(wir)
 
     def postprocess_dag(self, dag: networkx.DiGraph) -> networkx.DiGraph:
         """
         Preprocess scikit-learn pipeline operations to hide the special pipeline
         declaration style from other parts of the library
         """
-        new_dag_node_identifier_to_analyzer_output = SklearnWirProcessor()\
+        new_dag_node_identifier_to_analyzer_output = SklearnDagPostprocessor()\
             .postprocess_dag(dag, self.wir_post_processing_map)
 
         self.dag_node_identifier_to_analyzer_output = {**self.dag_node_identifier_to_analyzer_output,

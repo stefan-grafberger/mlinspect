@@ -15,11 +15,11 @@ class RowIndexAnnotationTestingAnalyzer(Analyzer):
 
     def __init__(self, row_count: int):
         self.row_count = row_count
-        self._operator_count = 0
         self._analyzer_id = self.row_count
+
+        self._operator_count = 0
         self._operator_output = None
         self._operator_type = None
-        self._rows_to_random_numbers_operator_0 = {}
 
     def visit_operator(self, operator_context: OperatorContext,
                        row_iterator: Union[Iterable[AnalyzerInputDataSource], Iterable[AnalyzerInputUnaryOperator]])\
