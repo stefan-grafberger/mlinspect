@@ -111,7 +111,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         """
         Override fit_transform
         """
-        # pylint: disable=invalid-name, too-many-locals
+        # pylint: disable=invalid-name, too-many-locals, too-many-statements
         if self.call_function_info == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
             # Analyzers for the different projections
             transformers_tuples = self.transformer.transformers

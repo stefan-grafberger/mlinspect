@@ -4,6 +4,8 @@ Data classes used as input for the analyzers
 import dataclasses
 from typing import Tuple
 
+import numpy
+
 from mlinspect.instrumentation.dag_node import OperatorType
 
 
@@ -28,6 +30,11 @@ class AnalyzerInputRow:
         Get the value at some index
         """
         return self.values[index]
+
+    def __eq__(self, other):
+        return (isinstance(other, AnalyzerInputRow) and
+                numpy.array_equal(self.values, other.values) and
+                self.fields == other.fields)
 
 
 @dataclasses.dataclass(frozen=True)
