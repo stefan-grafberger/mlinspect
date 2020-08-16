@@ -12,7 +12,7 @@ from pandas import DataFrame
 from sklearn.base import BaseEstimator
 
 from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputRow, \
-    AnalyzerInputUnaryOperator, AnalyzerInputNAryOperator
+    AnalyzerInputUnaryOperator, AnalyzerInputNAryOperator, AnalyzerInputSinkOperator
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
 from mlinspect.instrumentation.backends.sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
 from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
@@ -67,17 +67,24 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
             X_new = execute_analyzer_visits_df_df(operator_context, self.code_reference, X, X, self.analyzers,
                                                   self.code_reference_analyzer_output_map, "fit X")
-            if y is not None:
-                assert isinstance(y, MlinspectNdarray)
-                operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
-                y_new = execute_analyzer_visits_array_array(operator_context, self.code_reference, y, y,
-                                                            self.analyzers,
-                                                            self.code_reference_analyzer_output_map, "fit y")
-            else:
-                y_new = None
+            assert y is not None
+            assert isinstance(y, MlinspectNdarray)
+            operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
+            y_new = execute_analyzer_visits_array_array(operator_context, self.code_reference, y, y,
+                                                        self.analyzers,
+                                                        self.code_reference_analyzer_output_map, "fit y")
+            assert isinstance(y_new, MlinspectNdarray)
         elif self.call_function_info == ('sklearn.tree._classes', 'DecisionTreeClassifier'):
             print("DecisionTreeClassifier")
-            X_new = X
+            function_info = (self.module_name, "fit")  # TODO: nested pipelines
+            assert y is not None
+            operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
+            description = "fit"
+
+            execute_analyzer_visits_estimator_input_nothing(operator_context, self.code_reference,
+                                                            X, y, self.analyzers,
+                                                            self.code_reference_analyzer_output_map, description)
+            X_new = None
             y_new = y
         else:
             X_new = X
@@ -159,11 +166,9 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
             operator_context = OperatorContext(OperatorType.CONCATENATION, function_info)
             description = "concat"
-            # TODO: Run analyzers
-            X_new[0] = execute_analyzer_visits_csr_list_csr(operator_context, self.code_reference,
-                                                            transformer_data_with_annotations, result, self.analyzers,
-                                                            self.code_reference_analyzer_output_map, description)
-            # ---
+            result = execute_analyzer_visits_csr_list_csr(operator_context, self.code_reference,
+                                                          transformer_data_with_annotations, result, self.analyzers,
+                                                          self.code_reference_analyzer_output_map, description)
         elif self.call_function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
             assert isinstance(X.annotations, dict) and self in X.annotations
             result = self.transformer.fit_transform(X, y)
@@ -286,6 +291,32 @@ def iter_input_annotation_output_csr_list_csr(analyzer_index, transformer_data_w
                zip(input_rows, annotation_rows, output_rows))
 
 
+def iter_input_annotation_output_estimator_nothing(analyzer_index, X, y):
+    """
+        Create an efficient iterator for the analyzer input for operators with one parent.
+        """
+    # pylint: disable=too-many-locals
+    # Performance tips:
+    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+
+    input_iterators = []
+    annotation_iterators = []
+
+    X_annotation_df_view = X.annotations.iloc[:, analyzer_index:analyzer_index + 1]
+    input_iterators.append(get_csr_row_iterator(X))
+    annotation_iterators.append(get_df_row_iterator(X_annotation_df_view))
+
+    y_annotation_df_view = y.annotations.iloc[:, analyzer_index:analyzer_index + 1]
+    input_iterators.append(get_numpy_array_row_iterator(y))
+    annotation_iterators.append(get_df_row_iterator(y_annotation_df_view))
+
+    input_rows = map(list, zip(*input_iterators))
+    annotation_rows = map(list, zip(*annotation_iterators))
+
+    return map(lambda input_tuple: AnalyzerInputSinkOperator(*input_tuple),
+               zip(input_rows, annotation_rows))
+
+
 def execute_analyzer_visits_csr_list_csr(operator_context, code_reference, transformer_data_with_annotations,
                                          output_data, analyzers,
                                          code_reference_analyzer_output_map, func_name):
@@ -303,6 +334,22 @@ def execute_analyzer_visits_csr_list_csr(operator_context, code_reference, trans
                                               code_reference_analyzer_output_map, func_name)
     assert isinstance(return_value, MlinspectCsrMatrix)
     return return_value
+
+
+def execute_analyzer_visits_estimator_input_nothing(operator_context, code_reference, X, y,
+                                                    analyzers, code_reference_analyzer_output_map, func_name):
+    """Execute analyzers when the current operator has multiple parents in the DAG"""
+    # pylint: disable=too-many-arguments
+    assert isinstance(X, MlinspectCsrMatrix)
+    assert isinstance(y, MlinspectNdarray)
+    annotation_iterators = []
+    for analyzer in analyzers:
+        analyzer_index = analyzers.index(analyzer)
+        iterator_for_analyzer = iter_input_annotation_output_estimator_nothing(analyzer_index, X, y)
+        annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
+        annotation_iterators.append(annotations_iterator)
+    store_analyzer_outputs_estimator(annotation_iterators, code_reference, analyzers,
+                                     code_reference_analyzer_output_map, func_name)
 
 
 def execute_analyzer_visits_df_df(operator_context, code_reference, input_data, output_data, analyzers,
@@ -561,3 +608,22 @@ def store_analyzer_outputs_csr(annotation_iterators, code_reference, return_valu
     return_value.annotations = annotations_df
     assert isinstance(return_value, MlinspectCsrMatrix)
     return return_value
+
+
+def store_analyzer_outputs_estimator(annotation_iterators, code_reference, analyzers,
+                                     code_reference_analyzer_output_map, func_name):
+    """
+    Stores the analyzer annotations for the rows in the dataframe and the
+    analyzer annotations for the DAG operators in a map
+    """
+    # pylint: disable=too-many-arguments
+    annotation_iterators = itertools.zip_longest(*annotation_iterators)
+    analyzer_names = [str(analyzer) for analyzer in analyzers]
+    analyzer_outputs = {}
+    for analyzer in analyzers:
+        analyzer_output = analyzer.get_operator_annotation_after_visit()
+        analyzer_outputs[analyzer] = analyzer_output
+
+    stored_analyzer_results = code_reference_analyzer_output_map.get(code_reference, {})
+    stored_analyzer_results[func_name] = analyzer_outputs
+    code_reference_analyzer_output_map[code_reference] = stored_analyzer_results

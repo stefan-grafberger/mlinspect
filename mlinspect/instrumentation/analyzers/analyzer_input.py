@@ -66,6 +66,15 @@ class AnalyzerInputNAryOperator:
 
 
 @dataclasses.dataclass(frozen=True)
+class AnalyzerInputSinkOperator:
+    """
+    Wrapper class for operators like Estimators that only get fitted
+    """
+    input: List[AnalyzerInputRow]
+    annotation: List[AnalyzerInputRow]
+
+
+@dataclasses.dataclass(frozen=True)
 class OperatorContext:
     """
     Additional context for the analyzer. Contains, most importantly, the operator type.
