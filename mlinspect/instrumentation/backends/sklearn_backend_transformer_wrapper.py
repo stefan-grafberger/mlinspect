@@ -159,13 +159,13 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 index_end = output_dimension_index[column_index + 1]
 
                 X_new = execute_analyzer_visits_df_csr_column_transformer(operator_context,
-                                                                            self.code_reference,
-                                                                            X[[column]],
-                                                                            X.annotations[self],
-                                                                            result[:, index_start:index_end],
-                                                                            self.analyzers,
-                                                                            self.code_reference_analyzer_output_map,
-                                                                            description)
+                                                                          self.code_reference,
+                                                                          X[[column]],
+                                                                          X.annotations[self],
+                                                                          result[:, index_start:index_end],
+                                                                          self.analyzers,
+                                                                          self.code_reference_analyzer_output_map,
+                                                                          description)
                 self.annotation_result_concat_workaround = X_new.annotations
         elif self.call_function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
             assert isinstance(X.annotations, dict) and self in X.annotations
@@ -213,6 +213,24 @@ def iter_input_annotation_output_df_array(analyzer_index, input_data, annotation
     input_rows = get_df_row_iterator(input_data)
     annotation_rows = get_df_row_iterator(annotation_df_view)
     output_rows = get_numpy_array_row_iterator(output_data)
+
+    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
+               zip(input_rows, annotation_rows, output_rows))
+
+
+def iter_input_annotation_output_df_csr(analyzer_index, input_data, annotations, output_data):
+    """
+    Create an efficient iterator for the analyzer input for operators with one parent.
+    """
+    # pylint: disable=too-many-locals
+    # Performance tips:
+    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+
+    annotation_df_view = annotations.iloc[:, analyzer_index:analyzer_index + 1]
+
+    input_rows = get_df_row_iterator(input_data)
+    annotation_rows = get_df_row_iterator(annotation_df_view)
+    output_rows = get_csr_row_iterator(output_data)
 
     return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
@@ -272,10 +290,10 @@ def execute_analyzer_visits_df_csr_column_transformer(operator_context, code_ref
     annotation_iterators = []
     for analyzer in analyzers:
         analyzer_index = analyzers.index(analyzer)
-        iterator_for_analyzer = iter_input_annotation_output_df_array(analyzer_index,
-                                                                      input_data,
-                                                                      annotations,
-                                                                      output_data.toarray())
+        iterator_for_analyzer = iter_input_annotation_output_df_csr(analyzer_index,
+                                                                    input_data,
+                                                                    annotations,
+                                                                    output_data)
         annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
         annotation_iterators.append(annotations_iterator)
     return_value = store_analyzer_outputs_array(annotation_iterators, code_reference, output_data, analyzers,
@@ -365,6 +383,22 @@ def get_numpy_array_row_iterator(nparray):
     """
     fields = list(["array"])
     numpy_iterator = numpy.nditer(nparray, ["refs_ok"])
+    partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
+
+    test = map(partial_func_create_row, map(list, zip(numpy_iterator)))
+    return test
+
+
+def get_csr_row_iterator(csr):
+    """
+    Create an efficient iterator for csr rows.
+    The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
+    """
+    # TODO: Maybe there is a way to use sparse rows that is faster
+    #  However, this is the fastest way I discovered so far
+    np_array = csr.toarray()
+    fields = list(["array"])
+    numpy_iterator = np_array.__iter__()
     partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
 
     test = map(partial_func_create_row, map(list, zip(numpy_iterator)))
