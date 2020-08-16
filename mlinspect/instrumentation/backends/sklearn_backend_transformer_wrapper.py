@@ -12,7 +12,7 @@ from pandas import DataFrame
 from sklearn.base import BaseEstimator
 
 from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputRow, \
-    AnalyzerInputUnaryOperator
+    AnalyzerInputUnaryOperator, AnalyzerInputNAryOperator
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
 from mlinspect.instrumentation.backends.sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
 from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
@@ -269,16 +269,20 @@ def iter_input_annotation_output_csr_list_csr(analyzer_index, transformer_data_w
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
 
+    input_iterators = []
+    annotation_iterators = []
     for input_data, annotations in transformer_data_with_annotations:
         annotation_df_view = annotations.iloc[:, analyzer_index:analyzer_index + 1]
 
-        input_rows = get_csr_row_iterator(input_data)
-        annotation_rows = get_df_row_iterator(annotation_df_view)
+        input_iterators.append(get_csr_row_iterator(input_data))
+        annotation_iterators.append(get_df_row_iterator(annotation_df_view))
+
+    input_rows = map(list, zip(*input_iterators))
+    annotation_rows = map(list, zip(*annotation_iterators))
 
     output_rows = get_csr_row_iterator(output_data)
-    # FIXME: Function work in progress
-    # FIXME: Create new AnalyzerInput class. Maybe model input with annotation as tuple?
-    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
+
+    return map(lambda input_tuple: AnalyzerInputNAryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
 
 

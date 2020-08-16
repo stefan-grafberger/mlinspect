@@ -2,7 +2,7 @@
 Data classes used as input for the analyzers
 """
 import dataclasses
-from typing import Tuple
+from typing import Tuple, List
 
 import numpy
 
@@ -52,6 +52,16 @@ class AnalyzerInputUnaryOperator:
     """
     input: AnalyzerInputRow
     annotation: AnalyzerInputRow
+    output: AnalyzerInputRow
+
+
+@dataclasses.dataclass(frozen=True)
+class AnalyzerInputNAryOperator:
+    """
+    Wrapper class for the operators with multiple parents like Concatenations
+    """
+    input: List[AnalyzerInputRow]
+    annotation: List[AnalyzerInputRow]
     output: AnalyzerInputRow
 
 
