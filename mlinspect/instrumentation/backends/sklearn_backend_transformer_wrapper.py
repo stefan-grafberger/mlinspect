@@ -167,7 +167,9 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                                                           self.analyzers,
                                                                           self.code_reference_analyzer_output_map,
                                                                           description)
-                self.annotation_result_concat_workaround = X_new.annotations
+                annotation_map = self.annotation_result_concat_workaround or {}
+                annotation_map[column] = X_new.annotations
+                self.annotation_result_concat_workaround = annotation_map
         elif self.call_function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
             assert isinstance(X.annotations, dict) and self in X.annotations
             result = self.transformer.fit_transform(X, y)
@@ -184,7 +186,9 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                                                             self.analyzers,
                                                                             self.code_reference_analyzer_output_map,
                                                                             description)
-                self.annotation_result_concat_workaround = X_new.annotations
+                annotation_map = self.annotation_result_concat_workaround or {}
+                annotation_map[column] = X_new.annotations
+                self.annotation_result_concat_workaround = annotation_map
         else:
             result = self.transformer.fit_transform(X, y)
 
