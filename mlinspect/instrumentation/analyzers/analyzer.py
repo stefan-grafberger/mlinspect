@@ -5,7 +5,7 @@ import abc
 from typing import Union, Iterable
 
 from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputDataSource, \
-    AnalyzerInputUnaryOperator
+    AnalyzerInputUnaryOperator, AnalyzerInputNAryOperator, AnalyzerInputSinkOperator
 
 
 class Analyzer(metaclass=abc.ABCMeta):
@@ -21,7 +21,8 @@ class Analyzer(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def visit_operator(self, operator_context: OperatorContext,
-                       row_iterator: Union[Iterable[AnalyzerInputDataSource], Iterable[AnalyzerInputUnaryOperator]])\
+                       row_iterator: Union[Iterable[AnalyzerInputDataSource], Iterable[AnalyzerInputUnaryOperator],
+                                           Iterable[AnalyzerInputNAryOperator], Iterable[AnalyzerInputSinkOperator]])\
             -> Iterable[any]:
         """Visit an operator in the DAG"""
         raise NotImplementedError

@@ -5,7 +5,7 @@ import random
 from typing import Iterable, Union
 
 from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputDataSource, \
-    AnalyzerInputUnaryOperator, AnalyzerInputNAryOperator
+    AnalyzerInputUnaryOperator, AnalyzerInputNAryOperator, AnalyzerInputSinkOperator
 from mlinspect.instrumentation.analyzers.analyzer import Analyzer
 
 
@@ -58,7 +58,8 @@ class AnnotationTestingAnalyzer(Analyzer):
                 yield annotation
         else:
             for row in row_iterator:
-                assert isinstance(row, (AnalyzerInputUnaryOperator, AnalyzerInputNAryOperator))
+                assert isinstance(row, (AnalyzerInputUnaryOperator, AnalyzerInputNAryOperator,
+                                        AnalyzerInputSinkOperator))
                 if isinstance(row, AnalyzerInputUnaryOperator):
                     annotation = row.annotation.get_value_by_column_index(0)
                 else:
