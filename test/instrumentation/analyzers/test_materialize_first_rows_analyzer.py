@@ -124,6 +124,20 @@ def get_expected_result():
                 description="Numerical Encoder (StandardScaler), Column: 'hours-per-week'"): [
                     AnalyzerInputRow(values=[array(RangeComparison(-0.09, -0.08))], fields=['array']),
                     AnalyzerInputRow(values=[array(RangeComparison(0.7, 0.8))], fields=['array'])],
+        DagNode(node_id=34, operator_type=OperatorType.TRANSFORMER, code_reference=CodeReference(19, 20),
+                module=('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'),
+                description="Categorical Encoder (OneHotEncoder), Column: 'education'"): [
+                    AnalyzerInputRow(
+                        values=[array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.])],
+                        fields=['array']),
+                    AnalyzerInputRow(
+                        values=[array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.])],
+                        fields=['array'])],
+        DagNode(node_id=35, operator_type=OperatorType.TRANSFORMER, code_reference=CodeReference(19, 20),
+                module=('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'),
+                description="Categorical Encoder (OneHotEncoder), Column: 'workclass'"): [
+                    AnalyzerInputRow(values=[array([0., 0., 1., 0., 0., 0., 0.])], fields=['array']),
+                    AnalyzerInputRow(values=[array([0., 1., 0., 0., 0., 0., 0.])], fields=['array'])]
 
     }
     return expected_result

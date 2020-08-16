@@ -146,7 +146,6 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         elif self.call_function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
             assert isinstance(X.annotations, dict) and self in X.annotations
             result = self.transformer.fit_transform(X, y)
-            print("StandardScaler")
             self.output_dimensions = [len(one_hot_categories) for one_hot_categories in
                                       self.transformer.categories_]
             output_dimension_index = [0]
@@ -155,7 +154,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             for column_index, column in enumerate(X.columns):
                 function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
                 operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
-                description = "Categorical Encoder (OnehotEncoder), Column: '{}'".format(column)
+                description = "Categorical Encoder (OneHotEncoder), Column: '{}'".format(column)
 
                 index_start = output_dimension_index[column_index]
                 index_end = output_dimension_index[column_index + 1]
@@ -172,7 +171,6 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         elif self.call_function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
             assert isinstance(X.annotations, dict) and self in X.annotations
             result = self.transformer.fit_transform(X, y)
-            print("StandardScaler")
             self.output_dimensions = [1 for _ in range(result.shape[1])]
             for column_index, column in enumerate(X.columns):
                 function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines

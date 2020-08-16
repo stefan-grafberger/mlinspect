@@ -304,7 +304,10 @@ class SklearnWirProcessor:
             elif node.module == ('sklearn.pipeline', 'Pipeline'):
                 pass
             elif node.module == ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'):
-                nonlocal graph
+                annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
+                annotations_x = annotations_for_all_associated_dag_nodes[node.description]
+                new_code_references[dag_node_identifier] = annotations_x
+            elif node.module == ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'):
                 annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
                 annotations_x = annotations_for_all_associated_dag_nodes[node.description]
                 new_code_references[dag_node_identifier] = annotations_x
