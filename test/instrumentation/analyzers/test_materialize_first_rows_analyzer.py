@@ -143,11 +143,13 @@ def get_expected_result():
                 description=None): [
                     AnalyzerInputRow(values=[array([0., 0., 0., 0., 0., 0.,  0.,  0.,  0.,  0.,
                                                     0., 0., 0., 0., 0., 1.,  0.,  0.,  1.,  0.,
-                                                    0., 0., 0., 0.57272928, -0.08076598])],
+                                                    0., 0., 0., RangeComparison(0.5, 0.6),
+                                                    RangeComparison(-0.09, -0.08)])],
                                      fields=['array']),
                     AnalyzerInputRow(values=[array([0., 0., 0., 0., 0., 0.,  0.,  0.,  0.,  0.,
                                                     0., 0., 0., 0., 0., 1.,  0.,  1.,  0.,  0.,
-                                                    0., 0., 0., -0.72248831, 0.75246815])],
+                                                    0., 0., 0., RangeComparison(-0.8, -0.7),
+                                                    RangeComparison(0.7, 0.8)])],
                                      fields=['array'])]
 
     }
