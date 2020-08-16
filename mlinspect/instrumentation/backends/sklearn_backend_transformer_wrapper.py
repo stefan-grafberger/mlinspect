@@ -125,7 +125,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
                 operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
                 description = "to ['{}']".format(column)
-                X_new[0] = execute_analyzer_visits_df_df(operator_context, self.code_reference, projected_df,
+                X_new[0] = execute_analyzer_visits_df_df(operator_context, self.code_reference, X_old,
                                                          projected_df, self.analyzers,
                                                          self.code_reference_analyzer_output_map, description,
                                                          transformer, X_new[0])
@@ -160,6 +160,10 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             operator_context = OperatorContext(OperatorType.CONCATENATION, function_info)
             description = "concat"
             # TODO: Run analyzers
+            #X_new[0] = execute_analyzer_visits_csr_list_csr(operator_context, self.code_reference, projected_df,
+             #                                            projected_df, self.analyzers,
+              #                                           self.code_reference_analyzer_output_map, description,
+               #                                          transformer))
             # ---
         elif self.call_function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
             assert isinstance(X.annotations, dict) and self in X.annotations
