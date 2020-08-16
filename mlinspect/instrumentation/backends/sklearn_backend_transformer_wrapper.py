@@ -75,7 +75,6 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                                         self.code_reference_analyzer_output_map, "fit y")
             assert isinstance(y_new, MlinspectNdarray)
         elif self.call_function_info == ('sklearn.tree._classes', 'DecisionTreeClassifier'):
-            print("DecisionTreeClassifier")
             function_info = (self.module_name, "fit")  # TODO: nested pipelines
             assert y is not None
             operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
@@ -89,15 +88,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         else:
             X_new = X
             y_new = y
-        print(self.call_function_info[1])
-        print("fit:")
-        print("X")
-        print(X)
-        print("y")
-        print(y)
         self.transformer = self.transformer.fit(X_new, y_new)
-        print("analyzer output:")
-        print(self.code_reference_analyzer_output_map)
         return self
 
     def transform(self, X: list) -> list:
@@ -105,13 +96,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         Override transform
         """
         # pylint: disable=invalid-name
-        print(self.call_function_info[1])
-        print("transform:")
-        print("X")
-        print(X)
         result = self.transformer.transform(X)
-        print("result")
-        print(result)
         return result
 
     def fit_transform(self, X: list, y=None) -> list:  # TODO: There can be some additional kwargs sometimes
@@ -162,7 +147,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 data = result[:, result_indices[index]:result_indices[index + 1]]
                 annotation = annotations[index]
                 transformer_data_with_annotations.append((data, annotation))
-            print("test")
+
             function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
             operator_context = OperatorContext(OperatorType.CONCATENATION, function_info)
             description = "concat"
@@ -218,15 +203,6 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         else:
             result = self.transformer.fit_transform(X, y)
 
-        print(self.call_function_info[1])
-        print("fit_transform:")
-        print("X")
-        print(X)
-        print("y")
-        print(y)
-
-        print("result")
-        print(result)
         return result
 
 
@@ -554,9 +530,6 @@ def store_analyzer_outputs_df(annotation_iterators, code_reference, return_value
             new_return_value = full_return_value
         if not hasattr(new_return_value, "annotations") or not isinstance(new_return_value.annotations, dict):
             new_return_value.annotations = dict()
-        else:
-            test = new_return_value.annotations
-            print(test)
         new_return_value.annotations[transformer] = annotations_df
     assert isinstance(new_return_value, MlinspectDataFrame)
     return new_return_value
