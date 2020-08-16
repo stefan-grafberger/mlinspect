@@ -14,6 +14,7 @@ from sklearn.base import BaseEstimator
 from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputRow, \
     AnalyzerInputUnaryOperator
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
+from mlinspect.instrumentation.backends.sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
 from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
 from mlinspect.instrumentation.dag_node import CodeReference, OperatorType
 
@@ -24,6 +25,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
     definition style
     See: https://scikit-learn.org/stable/developers/develop.html
     """
+
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self, transformer, code_reference: CodeReference, analyzers, code_reference_analyzer_output_map,
@@ -296,9 +298,9 @@ def execute_analyzer_visits_df_csr_column_transformer(operator_context, code_ref
                                                                     output_data)
         annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_analyzer_outputs_array(annotation_iterators, code_reference, output_data, analyzers,
-                                                code_reference_analyzer_output_map, func_name)
-    assert isinstance(return_value, MlinspectNdarray)
+    return_value = store_analyzer_outputs_csr(annotation_iterators, code_reference, output_data, analyzers,
+                                              code_reference_analyzer_output_map, func_name)
+    assert isinstance(return_value, MlinspectCsrMatrix)
     return return_value
 
 
@@ -467,4 +469,28 @@ def store_analyzer_outputs_array(annotation_iterators, code_reference, return_va
     return_value = MlinspectNdarray(return_value)
     return_value.annotations = annotations_df
     assert isinstance(return_value, MlinspectNdarray)
+    return return_value
+
+
+def store_analyzer_outputs_csr(annotation_iterators, code_reference, return_value, analyzers,
+                               code_reference_analyzer_output_map, func_name):
+    """
+    Stores the analyzer annotations for the rows in the dataframe and the
+    analyzer annotations for the DAG operators in a map
+    """
+    # pylint: disable=too-many-arguments
+    annotation_iterators = itertools.zip_longest(*annotation_iterators)
+    analyzer_names = [str(analyzer) for analyzer in analyzers]
+    annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
+    analyzer_outputs = {}
+    for analyzer in analyzers:
+        analyzer_output = analyzer.get_operator_annotation_after_visit()
+        analyzer_outputs[analyzer] = analyzer_output
+
+    stored_analyzer_results = code_reference_analyzer_output_map.get(code_reference, {})
+    stored_analyzer_results[func_name] = analyzer_outputs
+    code_reference_analyzer_output_map[code_reference] = stored_analyzer_results
+    return_value = MlinspectCsrMatrix(return_value)
+    return_value.annotations = annotations_df
+    assert isinstance(return_value, MlinspectCsrMatrix)
     return return_value
