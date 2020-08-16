@@ -290,7 +290,7 @@ def execute_analyzer_visits_csr_list_csr(operator_context, code_reference, trans
                                          output_data, analyzers,
                                          code_reference_analyzer_output_map, func_name):
     """Execute analyzers when the current operator has multiple parents in the DAG"""
-    # pylint: disable=too-many-argument
+    # pylint: disable=too-many-arguments
     annotation_iterators = []
     for analyzer in analyzers:
         analyzer_index = analyzers.index(analyzer)

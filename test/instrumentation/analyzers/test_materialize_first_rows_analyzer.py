@@ -141,13 +141,13 @@ def get_expected_result():
         DagNode(node_id=46, operator_type=OperatorType.CONCATENATION, code_reference=CodeReference(18, 25),
                 module=('sklearn.compose._column_transformer', 'ColumnTransformer', 'Concatenation'),
                 description=None): [
-                    AnalyzerInputRow(values=[array([0., 0., 0., 0., 0., 0.,  0.,  0.,  0.,  0.,
-                                                    0., 0., 0., 0., 0., 1.,  0.,  0.,  1.,  0.,
+                    AnalyzerInputRow(values=[array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                                                    0., 0., 0., 0., 0., 1., 0., 0., 1., 0.,
                                                     0., 0., 0., RangeComparison(0.5, 0.6),
                                                     RangeComparison(-0.09, -0.08)])],
                                      fields=['array']),
-                    AnalyzerInputRow(values=[array([0., 0., 0., 0., 0., 0.,  0.,  0.,  0.,  0.,
-                                                    0., 0., 0., 0., 0., 1.,  0.,  1.,  0.,  0.,
+                    AnalyzerInputRow(values=[array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                                                    0., 0., 0., 0., 0., 1., 0., 1., 0., 0.,
                                                     0., 0., 0., RangeComparison(-0.8, -0.7),
                                                     RangeComparison(0.7, 0.8)])],
                                      fields=['array'])]

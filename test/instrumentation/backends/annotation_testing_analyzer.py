@@ -5,7 +5,7 @@ import random
 from typing import Iterable, Union
 
 from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputDataSource, \
-    AnalyzerInputUnaryOperator
+    AnalyzerInputUnaryOperator, AnalyzerInputNAryOperator
 from mlinspect.instrumentation.analyzers.analyzer import Analyzer
 
 
@@ -25,6 +25,7 @@ class AnnotationTestingAnalyzer(Analyzer):
                        row_iterator: Union[Iterable[AnalyzerInputDataSource], Iterable[AnalyzerInputUnaryOperator]])\
             -> Iterable[any]:
         """Visit an operator, generate random number annotations and check whether they get propagated correctly"""
+        # pylint: disable=too-many-branches
         operator_output = []
         current_count = - 1
 
@@ -57,8 +58,11 @@ class AnnotationTestingAnalyzer(Analyzer):
                 yield annotation
         else:
             for row in row_iterator:
-                assert isinstance(row, AnalyzerInputUnaryOperator)
-                annotation = row.annotation.get_value_by_column_index(0)
+                assert isinstance(row, (AnalyzerInputUnaryOperator, AnalyzerInputNAryOperator))
+                if isinstance(row, AnalyzerInputUnaryOperator):
+                    annotation = row.annotation.get_value_by_column_index(0)
+                else:
+                    annotation = row.annotation[0].get_value_by_column_index(0)
                 yield annotation
         self.operator_count += 1
         self._operator_output = operator_output
