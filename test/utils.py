@@ -58,19 +58,19 @@ def get_expected_dag_adult_easy_py():
 
     expected_pipeline_transformer_one = DagNode(34, OperatorType.TRANSFORMER, CodeReference(19, 20),
                                                 ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'),
-                                                "Categorical Encoder (OneHotEncoder)")
+                                                "Categorical Encoder (OneHotEncoder), Column: 'education'")
     expected_graph.add_edge(expected_pipeline_project_one, expected_pipeline_transformer_one)
     expected_pipeline_transformer_two = DagNode(35, OperatorType.TRANSFORMER, CodeReference(19, 20),
                                                 ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'),
-                                                "Categorical Encoder (OneHotEncoder)")
+                                                "Categorical Encoder (OneHotEncoder), Column: 'workclass'")
     expected_graph.add_edge(expected_pipeline_project_two, expected_pipeline_transformer_two)
     expected_pipeline_transformer_three = DagNode(40, OperatorType.TRANSFORMER, CodeReference(20, 16),
                                                   ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'),
-                                                  "Numerical Encoder (StandardScaler)")
+                                                  "Numerical Encoder (StandardScaler), Column: 'age'")
     expected_graph.add_edge(expected_pipeline_project_three, expected_pipeline_transformer_three)
     expected_pipeline_transformer_four = DagNode(41, OperatorType.TRANSFORMER, CodeReference(20, 16),
                                                  ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'),
-                                                 "Numerical Encoder (StandardScaler)")
+                                                 "Numerical Encoder (StandardScaler), Column: 'hours-per-week'")
     expected_graph.add_edge(expected_pipeline_project_four, expected_pipeline_transformer_four)
 
     expected_pipeline_concatenation = DagNode(46, OperatorType.CONCATENATION, CodeReference(18, 25),
@@ -150,22 +150,22 @@ def get_expected_dag_adult_easy_ipynb():
     expected_pipeline_transformer_one = DagNode(34, OperatorType.TRANSFORMER, CodeReference(25, 20),
                                                 ('sklearn.preprocessing._encoders',
                                                  'OneHotEncoder', 'Pipeline'),
-                                                "Categorical Encoder (OneHotEncoder)")
+                                                "Categorical Encoder (OneHotEncoder), Column: 'education'")
     expected_graph.add_edge(expected_pipeline_project_one, expected_pipeline_transformer_one)
     expected_pipeline_transformer_two = DagNode(35, OperatorType.TRANSFORMER, CodeReference(25, 20),
                                                 ('sklearn.preprocessing._encoders',
                                                  'OneHotEncoder', 'Pipeline'),
-                                                "Categorical Encoder (OneHotEncoder)")
+                                                "Categorical Encoder (OneHotEncoder), Column: 'workclass'")
     expected_graph.add_edge(expected_pipeline_project_two, expected_pipeline_transformer_two)
     expected_pipeline_transformer_three = DagNode(40, OperatorType.TRANSFORMER, CodeReference(26, 16),
                                                   ('sklearn.preprocessing._data',
                                                    'StandardScaler', 'Pipeline'),
-                                                  "Numerical Encoder (StandardScaler)")
+                                                  "Numerical Encoder (StandardScaler), Column: 'age'")
     expected_graph.add_edge(expected_pipeline_project_three, expected_pipeline_transformer_three)
     expected_pipeline_transformer_four = DagNode(41, OperatorType.TRANSFORMER, CodeReference(26, 16),
                                                  ('sklearn.preprocessing._data',
                                                   'StandardScaler', 'Pipeline'),
-                                                 "Numerical Encoder (StandardScaler)")
+                                                 "Numerical Encoder (StandardScaler), Column: 'hours-per-week'")
     expected_graph.add_edge(expected_pipeline_project_four, expected_pipeline_transformer_four)
 
     expected_pipeline_concatenation = DagNode(46, OperatorType.CONCATENATION, CodeReference(24, 25),
