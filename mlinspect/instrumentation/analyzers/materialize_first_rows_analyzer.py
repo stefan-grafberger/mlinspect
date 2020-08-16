@@ -4,7 +4,7 @@ A simple example analyzer
 from typing import Union, Iterable
 
 from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputDataSource, \
-    AnalyzerInputUnaryOperator, AnalyzerInputSinkOperator
+    AnalyzerInputUnaryOperator
 from mlinspect.instrumentation.analyzers.analyzer import Analyzer
 from mlinspect.instrumentation.dag_node import OperatorType
 
@@ -54,6 +54,5 @@ class MaterializeFirstRowsAnalyzer(Analyzer):
             self._operator_output = None
             self.operator_type = None
             return result
-        else:
-            self.operator_type = None
-            return None
+        self.operator_type = None
+        return None

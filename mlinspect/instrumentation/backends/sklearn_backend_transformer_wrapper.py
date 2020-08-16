@@ -291,7 +291,7 @@ def iter_input_annotation_output_csr_list_csr(analyzer_index, transformer_data_w
                zip(input_rows, annotation_rows, output_rows))
 
 
-def iter_input_annotation_output_estimator_nothing(analyzer_index, X, y):
+def iter_input_annotation_output_estimator_nothing(analyzer_index, data, target):
     """
         Create an efficient iterator for the analyzer input for operators with one parent.
         """
@@ -302,13 +302,13 @@ def iter_input_annotation_output_estimator_nothing(analyzer_index, X, y):
     input_iterators = []
     annotation_iterators = []
 
-    X_annotation_df_view = X.annotations.iloc[:, analyzer_index:analyzer_index + 1]
-    input_iterators.append(get_csr_row_iterator(X))
-    annotation_iterators.append(get_df_row_iterator(X_annotation_df_view))
+    data_annotation_df_view = data.annotations.iloc[:, analyzer_index:analyzer_index + 1]
+    input_iterators.append(get_csr_row_iterator(data))
+    annotation_iterators.append(get_df_row_iterator(data_annotation_df_view))
 
-    y_annotation_df_view = y.annotations.iloc[:, analyzer_index:analyzer_index + 1]
-    input_iterators.append(get_numpy_array_row_iterator(y))
-    annotation_iterators.append(get_df_row_iterator(y_annotation_df_view))
+    target_annotation_df_view = target.annotations.iloc[:, analyzer_index:analyzer_index + 1]
+    input_iterators.append(get_numpy_array_row_iterator(target))
+    annotation_iterators.append(get_df_row_iterator(target_annotation_df_view))
 
     input_rows = map(list, zip(*input_iterators))
     annotation_rows = map(list, zip(*annotation_iterators))
@@ -336,16 +336,16 @@ def execute_analyzer_visits_csr_list_csr(operator_context, code_reference, trans
     return return_value
 
 
-def execute_analyzer_visits_estimator_input_nothing(operator_context, code_reference, X, y,
+def execute_analyzer_visits_estimator_input_nothing(operator_context, code_reference, data, target,
                                                     analyzers, code_reference_analyzer_output_map, func_name):
     """Execute analyzers when the current operator has multiple parents in the DAG"""
     # pylint: disable=too-many-arguments
-    assert isinstance(X, MlinspectCsrMatrix)
-    assert isinstance(y, MlinspectNdarray)
+    assert isinstance(data, MlinspectCsrMatrix)
+    assert isinstance(target, MlinspectNdarray)
     annotation_iterators = []
     for analyzer in analyzers:
         analyzer_index = analyzers.index(analyzer)
-        iterator_for_analyzer = iter_input_annotation_output_estimator_nothing(analyzer_index, X, y)
+        iterator_for_analyzer = iter_input_annotation_output_estimator_nothing(analyzer_index, data, target)
         annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
         annotation_iterators.append(annotations_iterator)
     store_analyzer_outputs_estimator(annotation_iterators, code_reference, analyzers,
@@ -620,7 +620,7 @@ def store_analyzer_outputs_estimator(annotation_iterators, code_reference, analy
     annotation_iterators = itertools.zip_longest(*annotation_iterators)
     analyzer_names = [str(analyzer) for analyzer in analyzers]
     DataFrame(annotation_iterators, columns=analyzer_names)
-    
+
     analyzer_outputs = {}
     for analyzer in analyzers:
         analyzer_output = analyzer.get_operator_annotation_after_visit()
