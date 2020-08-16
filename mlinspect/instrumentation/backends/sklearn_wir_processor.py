@@ -321,6 +321,11 @@ class SklearnWirProcessor:
 
                 annotations_y = annotations_for_all_associated_dag_nodes['fit y']
                 new_code_references[dag_node_identifier] = annotations_y
+            elif node.module == ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Concatenation'):
+                annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
+
+                annotations = annotations_for_all_associated_dag_nodes['concat']
+                new_code_references[dag_node_identifier] = annotations
 
         graph = traverse_graph_and_process_nodes(graph, process_node)
         return new_code_references

@@ -137,7 +137,18 @@ def get_expected_result():
                 module=('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'),
                 description="Categorical Encoder (OneHotEncoder), Column: 'workclass'"): [
                     AnalyzerInputRow(values=[array([0., 0., 1., 0., 0., 0., 0.])], fields=['array']),
-                    AnalyzerInputRow(values=[array([0., 1., 0., 0., 0., 0., 0.])], fields=['array'])]
+                    AnalyzerInputRow(values=[array([0., 1., 0., 0., 0., 0., 0.])], fields=['array'])],
+        DagNode(node_id=46, operator_type=OperatorType.CONCATENATION, code_reference=CodeReference(18, 25),
+                module=('sklearn.compose._column_transformer', 'ColumnTransformer', 'Concatenation'),
+                description=None): [
+                    AnalyzerInputRow(values=[array([0., 0., 0., 0., 0., 0.,  0.,  0.,  0.,  0.,
+                                                    0., 0., 0., 0., 0., 1.,  0.,  0.,  1.,  0.,
+                                                    0., 0., 0., 0.57272928, -0.08076598])],
+                                     fields=['array']),
+                    AnalyzerInputRow(values=[array([0., 0., 0., 0., 0., 0.,  0.,  0.,  0.,  0.,
+                                                    0., 0., 0., 0., 0., 1.,  0.,  1.,  0.,  0.,
+                                                    0., 0., 0., -0.72248831, 0.75246815])],
+                                     fields=['array'])]
 
     }
     return expected_result
