@@ -326,6 +326,11 @@ class SklearnWirProcessor:
 
                 annotations = annotations_for_all_associated_dag_nodes['concat']
                 new_code_references[dag_node_identifier] = annotations
+            elif node.module == ('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'):
+                annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
+
+                annotations = annotations_for_all_associated_dag_nodes['fit']
+                new_code_references[dag_node_identifier] = annotations
 
         graph = traverse_graph_and_process_nodes(graph, process_node)
         return new_code_references

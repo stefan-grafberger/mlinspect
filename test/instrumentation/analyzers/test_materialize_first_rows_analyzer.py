@@ -150,7 +150,9 @@ def get_expected_result():
                                                     0., 0., 0., 0., 0., 1., 0., 1., 0., 0.,
                                                     0., 0., 0., RangeComparison(-0.8, -0.7),
                                                     RangeComparison(0.7, 0.8)])],
-                                     fields=['array'])]
-
+                                     fields=['array'])],
+        DagNode(node_id=51, operator_type=OperatorType.ESTIMATOR, code_reference=CodeReference(26, 19),
+                module=('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'),
+                description='Decision Tree'): None
     }
     return expected_result

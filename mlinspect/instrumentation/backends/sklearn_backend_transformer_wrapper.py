@@ -84,7 +84,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             execute_analyzer_visits_estimator_input_nothing(operator_context, self.code_reference,
                                                             X, y, self.analyzers,
                                                             self.code_reference_analyzer_output_map, description)
-            X_new = None
+            X_new = X
             y_new = y
         else:
             X_new = X
@@ -619,6 +619,8 @@ def store_analyzer_outputs_estimator(annotation_iterators, code_reference, analy
     # pylint: disable=too-many-arguments
     annotation_iterators = itertools.zip_longest(*annotation_iterators)
     analyzer_names = [str(analyzer) for analyzer in analyzers]
+    DataFrame(annotation_iterators, columns=analyzer_names)
+    
     analyzer_outputs = {}
     for analyzer in analyzers:
         analyzer_output = analyzer.get_operator_annotation_after_visit()

@@ -27,7 +27,7 @@ def test_sklearn_backend_annotation_propagation():
         assert AnnotationTestingAnalyzer(10) in analyzer_results
         result = analyzer_results[AnnotationTestingAnalyzer(10)]
 
-        assert len(result) == 15
+        assert len(result) == 16
 
 
 def test_sklearn_backend_annotation_propagation_multiple_analyzers():
@@ -49,4 +49,4 @@ def test_sklearn_backend_annotation_propagation_multiple_analyzers():
             assert analyzer in analyzer_results
             result = analyzer_results[analyzer]
 
-            assert len(result) == 15
+            assert len(result) == 16
