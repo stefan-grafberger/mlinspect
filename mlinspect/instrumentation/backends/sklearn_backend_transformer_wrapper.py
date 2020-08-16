@@ -132,17 +132,35 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             # ---
             result = self.transformer.fit_transform(X_new[0], y_new[0])
             # Because Column transformer creates deep copies, we need to extract results here
-            transformers_tuples = self.transformer.transformers_
+            transformers_tuples = self.transformer.transformers_[:-1]
             transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
-            resulting_annotations = {}
-            result_dims = []
-            for transformer in transformers[:-1]:  # FIXME: in a similar way we'll need to get the resulting annotations
+            for transformer in transformers:
                 self.code_reference_analyzer_output_map.update(transformer.code_reference_analyzer_output_map)
-                resulting_annotations[transformer] = transformer.annotation_result_concat_workaround
-                result_dims.extend(transformer.output_dimensions)
+
+            # --- concat
+            result_indices = [0]
+            annotations = []
+            transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
+            for transformer in transformers:
+                result_dims = transformer.output_dimensions
+                annotations.extend(transformer.annotation_result_concat_workaround)
+                for dim in result_dims:
+                    result_indices.append(result_indices[-1] + dim)
+
+            transformer_data_with_annotations = []
+            transformers_tuples = self.transformer.transformers_[:-1]
+            columns_with_transformer = [(column, transformer_tuple[1]) for transformer_tuple in transformers_tuples
+                                        for column in transformer_tuple[2]]
+            for index, _ in enumerate(columns_with_transformer):
+                data = result[:, result_indices[index]:result_indices[index+1]]
+                annotation = annotations[index]
+                transformer_data_with_annotations.append((data, annotation))
             print("test")
+            function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
+            operator_context = OperatorContext(OperatorType.CONCATENATION, function_info)
+            description = "concat"
+            # TODO: Run analyzers
             # ---
-            # Analyzers for concat, use the self.output dimensions attribute to associate result columns
         elif self.call_function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
             assert isinstance(X.annotations, dict) and self in X.annotations
             result = self.transformer.fit_transform(X, y)
@@ -167,9 +185,9 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                                                           self.analyzers,
                                                                           self.code_reference_analyzer_output_map,
                                                                           description)
-                annotation_map = self.annotation_result_concat_workaround or {}
-                annotation_map[column] = X_new.annotations
-                self.annotation_result_concat_workaround = annotation_map
+                annotations_for_columns = self.annotation_result_concat_workaround or []
+                annotations_for_columns.append(X_new.annotations)
+                self.annotation_result_concat_workaround = annotations_for_columns
         elif self.call_function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
             assert isinstance(X.annotations, dict) and self in X.annotations
             result = self.transformer.fit_transform(X, y)
@@ -186,9 +204,9 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                                                             self.analyzers,
                                                                             self.code_reference_analyzer_output_map,
                                                                             description)
-                annotation_map = self.annotation_result_concat_workaround or {}
-                annotation_map[column] = X_new.annotations
-                self.annotation_result_concat_workaround = annotation_map
+                annotations_for_columns = self.annotation_result_concat_workaround or []
+                annotations_for_columns.append(X_new.annotations)
+                self.annotation_result_concat_workaround = annotations_for_columns
         else:
             result = self.transformer.fit_transform(X, y)
 
