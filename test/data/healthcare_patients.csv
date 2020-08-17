@@ -1,0 +1,1001 @@
+id,first_name,last_name,race,county,num_children,income,age_group,ssn
+1,Abdul,Hodinton,Mexican,Iowa,5,17853.33,10,200-07-2687
+2,Wandis,Adamou,Argentinian,District of Columbia,2,34900.06,9,381-66-7740
+3,Dennet,Crankshaw,Venezuelan,Florida,2,112087.11,10,458-28-1925
+4,Erroll,Slimon,Cree,Virginia,5,163648.16,7,711-64-6999
+5,Renelle,Pude,Crow,California,4,80818.15,4,651-76-6901
+6,Hyacinthe,Larkings,,,4,84743.44,8,751-40-0453
+7,Ondrea,Jain,Tohono O'Odham,Ohio,1,40150.54,7,631-75-2819
+8,Godfrey,Mabbett,Kiowa,Indiana,1,101745.49,8,129-93-8189
+9,Jaine,Shoveller,Yakama,Missouri,4,31651.33,8,325-38-2287
+10,Harmonie,Fraanchyonok,White,Massachusetts,1,104444.32,3,440-46-6444
+11,Maynord,Phuprate,Ottawa,Florida,4,52375.98,5,555-33-7590
+12,Valery,Budd,Cheyenne,Connecticut,4,153120.05,1,332-08-1534
+13,Dennison,Milesop,Puerto Rican,Texas,0,174807.65,5,786-45-4387
+14,Gertie,Vanlint,Japanese,North Carolina,1,123574.0,5,102-53-1531
+15,Culver,Cocker,Venezuelan,California,2,94621.45,10,340-01-5519
+16,Doe,McGloughlin,Chippewa,California,0,121261.37,9,745-02-7880
+17,Hilary,McGaugan,Chamorro,Nevada,0,39360.95,9,668-63-1905
+18,Taylor,Merwood,Delaware,Texas,4,138852.83,1,780-60-0406
+19,Vic,Anmore,Shoshone,Vermont,4,13649.74,9,229-58-2017
+20,Gavin,Seven,Samoan,California,1,23765.13,3,774-80-8026
+21,Rutledge,Liley,Polynesian,Colorado,4,79726.91,4,519-58-1936
+22,Libbi,Saich,Iroquois,Alabama,0,14561.25,9,247-96-8242
+23,Bobbette,Kilgrove,Thai,Indiana,1,163732.36,2,515-23-2704
+24,Lombard,Gottelier,Indonesian,Wisconsin,4,119790.08,4,800-87-5209
+25,Lil,Shayes,Creek,Iowa,5,36613.58,9,367-37-2875
+26,Nahum,Kubyszek,Ute,New York,3,83806.36,5,662-19-9927
+27,Genovera,Rapper,Choctaw,Ohio,4,113155.51,7,672-36-2966
+28,Osborn,Tasseler,Salvadoran,Idaho,1,104792.64,10,213-16-3147
+29,Andra,Jumeau,Pakistani,Florida,0,14400.26,7,299-64-6927
+30,Antony,Mirfield,Salvadoran,Florida,0,123361.96,10,644-76-5332
+31,Kassi,Skone,,,4,161538.18,0,486-31-5627
+32,Elisabet,Landsbury,Hmong,Texas,2,114196.9,9,706-03-3286
+33,Ambrose,Bernt,Alaska Native,Missouri,3,48129.23,2,593-38-7515
+34,Doy,Roscher,Pima,Missouri,5,101973.5,9,895-47-6002
+35,Jourdan,Midner,Potawatomi,Iowa,1,113221.54,1,114-72-0229
+36,Gerianna,Menci,Aleut,North Carolina,3,137263.86,8,198-92-6206
+37,Thalia,Marien,Crow,Virginia,5,46597.19,6,780-07-3789
+38,Monro,Pocknoll,,,5,97944.4,10,593-45-3869
+39,Crissie,Dresche,Kiowa,New York,3,48107.05,7,112-66-2652
+40,Nestor,Jeannequin,Japanese,New York,5,105431.98,5,364-65-8998
+41,Lionel,Housbie,Taiwanese,Texas,5,48440.93,0,409-70-7746
+42,Diarmid,Trenoweth,Black or African American,New York,4,58500.85,9,809-55-9393
+43,Fremont,Sedworth,Lumbee,Texas,4,29685.41,8,377-97-5828
+44,Mickie,Tabram,Yaqui,Colorado,4,48812.94,3,573-62-0905
+45,Sallee,Doxey,Seminole,New York,4,11598.35,7,499-43-4140
+46,Kimball,Altham,Pima,Texas,5,37565.51,5,399-88-4325
+47,Gloriane,Teager,Asian Indian,Illinois,1,162721.31,2,819-25-5621
+48,Wilfrid,Mancer,Delaware,Illinois,5,10871.86,7,379-08-0046
+49,Eziechiele,Shotboult,Ottawa,New York,2,139336.43,4,544-38-6361
+50,Lily,Bryers,Costa Rican,Texas,0,96444.62,10,473-09-2341
+51,Dillon,Siddons,Asian,Pennsylvania,2,92168.03,9,635-95-0891
+52,Lucila,Beebe,Nicaraguan,Michigan,1,138188.95,2,148-88-1945
+53,Brit,Baxstair,Cambodian,Texas,1,140029.21,7,802-03-4577
+54,Salomon,Ayerst,Korean,California,3,159079.69,7,264-40-9725
+55,Christoffer,Crayke,Delaware,New York,0,128002.08,8,597-93-8919
+56,Kris,Weldon,Houma,Florida,1,130733.35,6,402-80-6658
+57,Guthrey,Heaselgrave,Seminole,Florida,1,121605.64,3,646-52-4745
+58,Koressa,Portriss,American Indian and Alaska Native (AIAN),Maryland,5,125660.5,7,413-57-5724
+59,Edsel,Bromley,,,0,81485.31,4,399-74-3258
+60,Hildagarde,Bowlesworth,Filipino,Alabama,2,14123.95,5,257-31-8662
+61,Loralee,Antonov,Hmong,Ohio,1,134589.11,10,366-33-9709
+62,Reina,Burnard,Chickasaw,California,4,134874.29,4,540-35-8962
+63,Sanford,Wotton,Blackfeet,Florida,1,145990.88,10,266-71-3901
+64,Prentiss,Maywood,Blackfeet,Virginia,2,56786.08,0,603-99-7563
+65,Sheffie,Lownes,Iroquois,Kentucky,3,150359.42,1,840-18-5387
+66,Mickie,Beushaw,Japanese,Oregon,0,22199.48,9,827-03-6179
+67,Loleta,Prazor,Polynesian,Nebraska,2,125259.83,10,277-47-2552
+68,Fianna,Winslow,Ottawa,Indiana,5,37599.39,8,621-18-8247
+69,Seka,Norcock,,,4,89072.75,9,417-43-9350
+70,Fonzie,Bidwell,Chippewa,California,2,147406.34,8,894-48-1400
+71,Vania,Paulon,Ecuadorian,Connecticut,4,70385.68,3,586-09-1368
+72,Cynde,Stivers,Spaniard,Wisconsin,4,164742.52,6,613-61-8844
+73,Denys,Oattes,Cambodian,Texas,2,69197.09,4,767-30-5358
+74,Donaugh,Mogg,Polynesian,Florida,2,148146.91,9,694-55-4160
+75,Wallache,Thornthwaite,Filipino,Washington,3,63397.71,9,375-19-1055
+76,Gert,Duce,,,3,59724.48,8,694-15-9986
+77,Oralia,Melby,Crow,Kansas,4,92611.31,8,581-41-7889
+78,Jamima,Fosdick,Kiowa,Indiana,5,41887.26,2,595-50-9435
+79,Arnoldo,Caunter,Bolivian,Florida,4,150077.96,8,219-41-8822
+80,Lib,Casero,American Indian,West Virginia,4,123676.77,4,240-63-7243
+81,Keven,Wynch,Lumbee,Hawaii,5,25975.75,3,668-12-8750
+82,Lewiss,Kline,Aleut,Indiana,0,32497.02,1,115-74-6875
+83,Masha,Shivlin,Samoan,Colorado,1,163114.18,2,126-91-8768
+84,Viki,Dunsford,Paraguayan,Colorado,2,113902.91,2,372-48-8692
+85,Maurie,Pirouet,Ute,Washington,4,137580.18,0,292-51-9269
+86,Noby,Lambert-Ciorwyn,Micronesian,California,5,24524.88,4,772-46-5288
+87,Harrie,Josskowitz,Samoan,Iowa,2,86686.43,0,538-77-1324
+88,Janeczka,Lugden,Melanesian,Georgia,3,136761.59,4,123-79-3381
+89,Inna,Pettingill,Osage,Washington,3,172644.45,10,844-92-4907
+90,Rheta,MacDwyer,Korean,Colorado,1,107254.74,4,574-81-8664
+91,Kay,Prescot,Honduran,Georgia,0,57415.89,9,407-38-2335
+92,Quincey,Cesconi,Yaqui,Florida,0,176422.98,10,195-96-7180
+93,Sloan,Trousdell,Chickasaw,Texas,4,37119.35,6,313-61-1883
+94,Fee,Planks,Indonesian,California,5,143039.89,3,671-66-0306
+95,Birgitta,Vice,Bolivian,California,5,31375.22,9,865-83-1872
+96,Liliane,Dwire,Paraguayan,Florida,0,130190.77,4,146-99-0527
+97,Jess,Mollon,Paiute,Florida,5,112081.33,4,600-91-8124
+98,Jermayne,Davall,Chilean,California,0,133504.38,8,711-54-2197
+99,Kacey,Birds,Indonesian,Connecticut,2,124286.58,9,866-33-4071
+100,Dodi,Sarjent,Iroquois,Texas,0,52865.62,10,500-56-6196
+101,Madella,Despenser,Native Hawaiian and Other Pacific Islander (NHPI),New York,1,70311.14,4,898-15-5800
+102,Keelia,Corrett,Delaware,Oregon,3,74775.18,7,643-33-0308
+103,Anestassia,Nelthrop,Indonesian,Ohio,1,12715.27,10,363-73-9625
+104,Meade,Ouldred,Colville,Pennsylvania,4,128504.77,5,562-39-9633
+105,Agnes,Smeaton,,,0,143627.15,5,699-77-1609
+106,Lyn,Smorthwaite,,,2,34941.29,5,419-84-8534
+107,Dinah,Odhams,Salvadoran,Indiana,1,55995.9,4,791-74-6699
+108,Rufe,Cleal,Ute,South Carolina,3,149726.82,10,792-86-4329
+109,Casandra,Davitashvili,Thai,Massachusetts,2,79718.83,9,661-91-8015
+110,Micheline,Trenam,Iroquois,Tennessee,0,158917.44,1,160-97-8391
+111,Evangelin,McMeeking,Comanche,Florida,5,141667.13,5,452-03-0158
+112,Sofia,Band,Seminole,North Carolina,4,105494.26,8,515-30-6334
+113,Brantley,Brodie,Choctaw,Colorado,2,62799.06,6,272-14-4678
+114,Serene,Spittall,Lumbee,Florida,0,41368.65,0,360-77-0830
+115,Pauletta,Bensen,,,1,21883.32,1,691-23-2290
+116,Normand,Fraczak,Tohono O'Odham,New York,1,95868.14,3,385-49-4527
+117,Mufinella,Rosoman,Comanche,New York,2,44590.92,0,119-57-4742
+118,Kathlin,Haslam,Thai,California,5,161916.83,9,379-79-2899
+119,Marge,Oris,Panamanian,New York,4,45228.42,10,815-58-7073
+120,Teddi,Beany,Bolivian,Texas,5,128687.26,9,315-37-4106
+121,Ahmed,Roulston,Samoan,Alabama,0,100889.74,6,563-05-4472
+122,Dexter,Trimme,Salvadoran,Louisiana,1,60343.95,1,521-25-0882
+123,Giffard,Farnaby,Osage,Wisconsin,0,113718.59,5,624-74-9035
+124,Darcie,Orteu,Venezuelan,California,1,52481.78,3,867-83-7085
+125,Jerry,Bynold,Puget Sound Salish,California,3,128885.21,8,563-95-8077
+126,Niko,Mintram,Mexican,Delaware,5,162135.38,9,482-44-9777
+127,Donny,Stansfield,Ottawa,Arkansas,5,73812.01,4,363-12-0582
+128,Reggie,Fernely,,,2,161219.0,4,768-21-8624
+129,Zaria,Sans,Central American,Texas,2,173272.68,7,395-07-3560
+130,Arden,Narducci,Hmong,Texas,5,75016.2,4,686-10-8205
+131,Konstantin,Trowsdale,Chamorro,Louisiana,5,160965.9,2,439-85-3262
+132,Annice,Marioneau,Houma,Texas,3,74330.75,0,391-66-2732
+133,Lorena,Clemencet,Creek,South Carolina,1,108585.41,6,862-23-9219
+134,Lonny,Saipy,Cambodian,North Carolina,1,138474.72,7,572-26-3692
+135,Shep,Merrilees,Chilean,Virginia,3,128134.22,6,145-48-6679
+136,Jerrie,Linneman,Native Hawaiian,Georgia,1,65199.62,10,375-54-0718
+137,Brnaby,Korneluk,Samoan,Oklahoma,2,11465.55,7,581-05-2776
+138,Willie,Jaggard,American Indian,New Mexico,5,82308.62,9,757-25-7940
+139,Pet,Lockett,Asian Indian,Texas,5,22111.12,5,610-41-6670
+140,Karalynn,Durbridge,Cuban,Illinois,0,99904.22,7,712-97-1554
+141,Rossy,Gravenor,Crow,New Mexico,1,35819.45,4,415-35-2607
+142,Britney,Pideon,Bolivian,California,2,98513.62,10,872-74-7664
+143,Lothaire,Gockeler,Yakama,California,3,161802.9,5,704-98-5596
+144,Daveta,Jacop,Chickasaw,Idaho,1,118428.89,4,824-53-7581
+145,Roi,Hackwell,Paraguayan,California,1,112977.61,3,609-06-0947
+146,Luce,MacGiany,Crow,California,4,31177.65,10,667-34-5134
+147,Jolyn,Mayte,Apache,California,5,167302.68,5,414-12-5875
+148,Veronike,Tanman,Kiowa,California,0,90481.09,8,298-11-5723
+149,Ahmed,Thomel,American Indian,New York,3,63806.24,0,161-05-3922
+150,Trace,Van Merwe,Costa Rican,Nevada,5,159482.92,5,615-42-3393
+151,Aime,Kantor,Colombian,Indiana,3,169318.61,4,753-98-9884
+152,Glenine,Hingeley,Shoshone,Louisiana,0,89926.2,1,430-67-0523
+153,Gabbi,Grimsdyke,Polynesian,Kentucky,3,102569.67,8,356-85-5960
+154,Evaleen,Jakeman,Japanese,Nevada,1,138126.65,5,614-38-4446
+155,Veda,Menilove,Peruvian,Alabama,3,43353.02,10,597-20-6742
+156,Doro,Zanazzi,,,1,79600.07,6,404-30-8975
+157,Kathryn,Eingerfield,Chilean,Washington,2,36147.22,7,180-49-3948
+158,Alf,Gillhespy,Comanche,Illinois,5,174872.08,8,643-82-4085
+159,Selie,Bosomworth,Chickasaw,Florida,2,102365.92,0,798-24-9854
+160,Darb,Axston,Japanese,Alabama,5,73805.08,3,760-51-1495
+161,Gus,Fawkes,Japanese,California,4,115380.69,10,870-64-9818
+162,Tobit,Romera,Malaysian,Texas,3,28652.91,2,544-02-8529
+163,Claudetta,Philpotts,Central American,New Mexico,1,43458.18,4,221-19-5850
+164,Ardyth,Squibbs,Yakama,California,4,172608.14,9,333-57-0802
+165,Ruthie,Silvermann,Paiute,Washington,3,25898.62,4,742-53-1869
+166,Jesse,Wassell,Polynesian,Pennsylvania,2,68423.32,6,412-18-0050
+167,Alys,Forsyth,Polynesian,Pennsylvania,1,18257.57,1,101-65-7692
+168,Christan,Furney,Cuban,Kentucky,0,70012.68,5,754-09-8382
+169,Emalia,O'Brien,Japanese,Arkansas,1,23537.24,9,450-91-8566
+170,Tiffani,Meneux,Bangladeshi,Virginia,0,178477.26,1,612-43-7890
+171,Olvan,Trewman,Korean,Alabama,3,59285.56,5,867-69-3722
+172,Tobe,Blaver,Colville,Minnesota,3,130475.02,6,142-81-1186
+173,Staford,Berdale,Japanese,Alabama,0,95952.91,4,281-12-1109
+174,Iseabal,Antrack,Asian Indian,West Virginia,4,22681.79,10,365-56-6786
+175,Natty,Berriman,Yakama,Ohio,3,147050.74,9,260-57-7003
+176,Miguel,Vibert,Tohono O'Odham,North Carolina,2,92603.9,8,785-57-2926
+177,Berk,Capon,Costa Rican,District of Columbia,2,78301.57,8,206-08-6176
+178,Maxim,Pinkerton,Spaniard,Florida,2,124890.72,0,595-68-4085
+179,Elayne,Goodboddy,Peruvian,Indiana,0,74338.65,4,148-64-4800
+180,Meredeth,Pallin,Argentinian,Colorado,4,150984.74,3,106-60-7947
+181,Allix,Wavish,Colombian,Virginia,5,99952.06,4,430-16-1257
+182,Basilio,Coutts,Panamanian,New Mexico,1,109655.66,4,639-10-1160
+183,Deonne,Borzone,Bangladeshi,New York,1,121851.54,4,649-09-0708
+184,Arturo,Mellodey,Navajo,New York,2,13807.87,6,269-01-7953
+185,Lane,Decourcy,Comanche,Florida,4,28039.12,0,639-37-1760
+186,Onofredo,Lewsy,,,4,53130.86,3,576-48-1269
+187,Ashlen,Robak,Yaqui,North Carolina,1,134105.86,2,539-19-8023
+188,Josey,Bassom,Puget Sound Salish,Pennsylvania,1,115542.09,9,532-47-1997
+189,Hilarius,Negal,Cree,Florida,4,35393.17,0,763-30-1358
+190,Smith,Rider,Bangladeshi,Texas,0,158422.69,5,221-54-3029
+191,Rici,Hellin,Apache,Texas,1,141421.0,4,168-31-4294
+192,Chad,Boreham,Yaqui,Pennsylvania,0,33948.45,2,781-69-6893
+193,Lev,Olcot,Paiute,New York,2,142738.37,10,398-33-3270
+194,Hildagarde,Botham,Yakama,Massachusetts,5,80199.31,6,313-76-2325
+195,Ty,Astbury,Asian,Georgia,3,162920.8,9,217-65-8390
+196,Teirtza,Jakoub,,,0,76760.8,6,531-88-0714
+197,Rycca,Dayce,Taiwanese,Minnesota,1,19910.81,2,864-18-8171
+198,York,Hundall,Vietnamese,Pennsylvania,1,164003.75,10,767-77-0196
+199,Angela,Emptage,Cree,Florida,3,157522.22,7,265-77-9233
+200,Emmott,Coggen,Asian,Alabama,2,148599.11,1,198-57-3727
+201,Aurlie,Mennithorp,Venezuelan,Georgia,4,98160.6,4,466-42-5938
+202,Aprilette,Weerdenburg,Sioux,Texas,5,135877.66,1,513-51-4957
+203,Karena,Greeno,Honduran,Pennsylvania,2,87282.4,8,651-59-7580
+204,Violetta,Hammerstone,Potawatomi,Illinois,3,167432.71,7,688-79-0854
+205,Jasmina,Mawtus,Japanese,Texas,5,151840.64,1,166-24-9644
+206,Janifer,Russe,American Indian,Ohio,3,41643.93,2,818-44-4178
+207,Cleopatra,Causley,Pakistani,Washington,1,51660.56,1,519-27-8466
+208,Othilie,Marconi,Cree,Illinois,5,52013.92,9,857-10-3364
+209,Hattie,Lattos,Yakama,Ohio,0,165814.11,7,119-19-0397
+210,Anica,Gail,Sioux,Washington,5,34000.09,4,728-73-6950
+211,Godwin,Martine,Spaniard,Georgia,5,30840.19,3,663-59-5018
+212,Eugene,De Vaan,Colombian,Florida,1,148229.85,4,790-87-1450
+213,Langston,Shoebotham,Navajo,Alabama,5,117382.98,7,353-53-0495
+214,Eadith,Shelton,Pueblo,Massachusetts,0,169707.95,0,314-58-0622
+215,Julianna,Osipenko,Guatemalan,Florida,0,121156.48,6,749-01-2214
+216,Jephthah,Kightly,Chickasaw,Wisconsin,0,48201.23,5,820-46-9325
+217,Nathanial,Tickner,Yakama,Utah,4,165846.35,1,588-14-1010
+218,Pearline,Carillo,Polynesian,Pennsylvania,0,58137.27,7,340-42-0308
+219,Gerhardt,Thandi,Apache,Delaware,0,11362.06,9,578-80-4324
+220,Diena,Hourican,Cuban,California,2,86780.69,4,734-67-0400
+221,Joyann,Gilmore,Kiowa,Wisconsin,1,147349.76,1,205-70-4639
+222,Hamid,Probyn,Polynesian,Massachusetts,5,46697.34,3,461-80-1075
+223,Annmaria,Ditch,Native Hawaiian and Other Pacific Islander (NHPI),California,2,18745.56,10,856-63-8602
+224,Alida,Annakin,Indonesian,Nebraska,0,55810.36,3,446-23-8301
+225,Aron,Tween,Eskimo,Rhode Island,4,74906.02,4,748-56-3881
+226,Buffy,Battey,Menominee,District of Columbia,5,37810.47,2,219-23-1577
+227,Rickert,Cowley,Yuman,California,0,54498.67,4,736-15-4301
+228,Desi,Wanell,Houma,Connecticut,1,56594.98,3,864-50-2454
+229,Abram,Bending,Taiwanese,Maryland,3,128437.87,2,573-14-0143
+230,Almeria,Youson,Honduran,Virginia,0,127371.05,0,544-24-4928
+231,Ellette,Cominello,Navajo,Texas,5,59139.67,0,815-96-9389
+232,Edmund,Querrard,Fijian,Missouri,2,19902.82,4,298-30-3395
+233,Hortensia,Bownas,Costa Rican,Ohio,1,168940.4,10,106-30-4401
+234,Zach,Kenner,Mexican,Alabama,2,123316.65,4,696-49-7154
+235,Dulciana,Collidge,Yakama,California,3,56899.1,4,824-09-3687
+236,Hartwell,McGillivrie,Alaska Native,Virginia,2,119324.44,4,268-79-4453
+237,Royal,Ridgway,Sioux,Colorado,4,25186.39,10,892-87-3505
+238,Gan,Fitzsymons,Delaware,Virginia,1,141715.21,6,658-14-9331
+239,Somerset,Linden,Comanche,Texas,1,140722.71,4,854-67-1541
+240,Emanuele,Walework,Cree,Illinois,1,117706.88,2,118-13-2606
+241,Benedict,Creelman,Salvadoran,North Carolina,5,96364.9,4,322-83-5320
+242,Melinde,Corwood,Laotian,Pennsylvania,1,62798.08,7,597-80-8654
+243,Wanda,Bleyman,Choctaw,Indiana,4,34002.76,10,290-92-9559
+244,Star,Press,Native Hawaiian,Virginia,0,52390.7,0,516-91-4385
+245,Merry,Vagges,Melanesian,Nevada,2,109619.61,3,749-67-6311
+246,Ashly,Cocklin,Uruguayan,Texas,0,156127.83,1,767-27-5795
+247,Mela,Molson,Bolivian,Florida,2,33288.11,0,837-80-3751
+248,Clementina,Dodamead,Native Hawaiian and Other Pacific Islander (NHPI),Pennsylvania,2,65135.32,1,769-58-0334
+249,Sigfrid,Giacomazzo,Yuman,Oklahoma,2,144562.37,1,798-60-4316
+250,Christiana,Espadas,Houma,Ohio,2,152350.33,8,107-26-8917
+251,Lilias,Morrel,Chippewa,District of Columbia,3,38373.35,10,276-76-8715
+252,Hubert,Durrand,Peruvian,Florida,4,142689.23,6,649-16-0067
+253,Shepperd,Reynard,Potawatomi,Florida,3,60120.75,9,274-28-6393
+254,Vallie,Greening,Menominee,Alabama,0,114637.26,10,551-53-6730
+255,Sheff,Ehlerding,,,0,140602.27,2,315-66-4528
+256,Chrysler,Ongin,Thai,Arizona,4,151105.67,4,868-68-7144
+257,Nady,Janout,Choctaw,Oregon,3,64528.9,6,606-57-2377
+258,Jeana,Saladino,Cheyenne,District of Columbia,2,44789.09,10,234-75-6632
+259,Sari,Schermick,Navajo,Tennessee,3,75615.09,7,444-79-6427
+260,Che,Tellenbach,Houma,Ohio,4,84365.79,7,826-77-4368
+261,Flemming,Evill,Vietnamese,Florida,4,50840.62,6,461-72-6583
+262,Rachel,Krzysztof,Polynesian,Kansas,0,113527.68,6,898-76-2373
+263,Zerk,Novacek,Chippewa,Utah,5,108312.32,4,355-42-6728
+264,Marjorie,Frackiewicz,Native Hawaiian and Other Pacific Islander (NHPI),Michigan,3,118848.0,9,236-15-2514
+265,Cody,Gunton,,,4,78025.52,1,633-87-8661
+266,Chrisy,Hentzer,Navajo,Washington,5,28877.23,8,687-45-2529
+267,Persis,Dike,Blackfeet,Texas,4,84612.89,6,858-95-2290
+268,Elaine,Ferneley,Sri Lankan,Virginia,0,91136.13,10,889-19-3931
+269,Cece,McAuliffe,Peruvian,Nevada,0,101789.5,3,319-43-6186
+270,Andie,Loftus,Honduran,Georgia,1,123511.01,3,651-01-7128
+271,Arabelle,Getcliff,Aleut,Georgia,4,10267.51,5,890-95-2477
+272,Jacques,Bickerdicke,Tlingit-Haida,Tennessee,3,85568.27,5,241-04-1900
+273,Belicia,Haimes,Chickasaw,Florida,5,27664.05,6,652-04-8785
+274,Mahala,Kerrich,Houma,Florida,2,79812.49,6,381-15-1839
+275,Abigale,Leeming,Choctaw,District of Columbia,5,166330.86,4,198-80-6634
+276,Vanni,O'Carmody,American Indian,Pennsylvania,2,99733.32,6,467-18-0365
+277,Scarlett,Pilcher,Crow,Ohio,4,66652.02,0,866-21-2009
+278,Inesita,Warton,Guamanian,South Carolina,5,107103.76,4,829-08-7988
+279,Vivianna,Karlsen,White,Illinois,3,98029.0,6,195-38-1737
+280,Putnam,Sugarman,Chippewa,Kentucky,0,37741.58,6,634-84-6463
+281,Kyrstin,Davies,Bangladeshi,Oregon,4,113675.09,4,721-80-6243
+282,Gwyneth,Gendrich,Chickasaw,Montana,5,39222.94,3,207-18-8643
+283,Corny,Leith-Harvey,Taiwanese,California,0,96794.71,5,167-08-9517
+284,Borden,Kerford,Panamanian,New York,3,15736.03,6,791-50-3819
+285,Ashlan,Yoakley,Panamanian,Pennsylvania,0,116930.45,9,474-33-3511
+286,Mindy,Stithe,Alaska Native,Virginia,5,140055.31,1,517-22-2746
+287,Orson,Jollye,,,4,105129.97,7,194-35-2682
+288,Norean,Flaune,Houma,West Virginia,2,113984.08,1,458-17-6115
+289,Boyd,Heck,Cheyenne,Ohio,3,125823.11,9,200-98-9745
+290,Cletis,Handscombe,Sri Lankan,Nevada,0,137891.21,10,234-38-6187
+291,Daryl,Croneen,Peruvian,Florida,5,29424.55,6,842-94-2974
+292,Kendrick,Bynold,Navajo,District of Columbia,3,142969.86,2,838-45-2288
+293,Freddy,de Keep,Mexican,Kentucky,2,137265.99,0,464-67-1787
+294,Othella,Tune,,,4,88389.07,4,668-14-7093
+295,Corenda,Verner,Colville,New York,5,125625.42,0,854-48-4270
+296,Hedwiga,Fist,Puget Sound Salish,Texas,3,155096.18,2,325-07-3441
+297,Berthe,Barnhill,Costa Rican,New York,1,118316.99,7,471-67-7647
+298,Cesya,Bras,Osage,Oklahoma,4,143010.09,8,614-39-9394
+299,Danna,Vamplew,Salvadoran,District of Columbia,0,49694.88,7,740-61-4803
+300,Glynnis,Mandrake,Tongan,Illinois,1,142559.91,6,812-68-7927
+301,Olia,Fridd,Polynesian,Kentucky,1,42931.29,5,794-52-0337
+302,Nikoletta,Devigne,Houma,Florida,0,61919.96,7,518-55-9421
+303,Patience,Drache,Cherokee,New York,4,27041.59,5,888-88-7547
+304,Cyrill,Mowen,Fijian,Illinois,0,164969.15,4,363-64-7617
+305,Brenden,Gossart,Dominican (Dominican Republic),New York,2,133984.83,6,109-23-4659
+306,Missy,Grichukhanov,Native Hawaiian and Other Pacific Islander (NHPI),Arkansas,2,132240.08,6,469-51-5941
+307,Ardelia,Orchard,Seminole,Texas,1,140819.61,4,384-64-9902
+308,Stern,Worling,Venezuelan,Louisiana,1,82071.24,2,880-09-7483
+309,Garold,McWard,Chilean,Washington,0,143654.86,9,803-84-2086
+310,Ebenezer,Whieldon,Chippewa,California,2,73407.11,1,136-77-8014
+311,Lonny,Conre,Venezuelan,District of Columbia,3,67893.27,5,366-32-7717
+312,Delbert,Heinschke,Indonesian,California,4,104976.66,5,504-18-5511
+313,Leontyne,Bisacre,Filipino,Alabama,1,100514.48,9,499-93-8022
+314,Sabra,Chavrin,Panamanian,Oklahoma,4,94639.37,5,240-23-9119
+315,Alyss,Basey,Sri Lankan,Texas,1,32518.32,5,315-49-8988
+316,Codie,Hurles,Ute,Texas,2,159301.95,5,269-64-0738
+317,Adolphe,Durand,South American,South Carolina,5,16963.59,6,653-59-8769
+318,Foss,Treace,Thai,Texas,4,39343.22,9,352-66-1652
+319,Rozina,Euplate,Tlingit-Haida,Nevada,3,13430.9,9,382-73-6283
+320,Antonino,Wolfer,Comanche,Tennessee,1,102768.7,3,669-44-8305
+321,Amelia,Albasiny,Sri Lankan,California,2,53229.53,10,640-61-1292
+322,Kirbee,Ricciardelli,Cuban,Colorado,5,35910.73,10,357-44-0433
+323,Susan,Stanborough,Ottawa,Ohio,1,144041.45,5,113-13-1125
+324,Joscelin,Voss,Korean,California,4,59402.51,2,320-67-5870
+325,Jemmy,Gavrieli,Cheyenne,Ohio,2,121986.57,6,456-67-3306
+326,Leanor,Beaulieu,Mexican,Texas,5,177593.72,10,814-68-5182
+327,Isador,Yankin,Fijian,Florida,5,111854.3,5,608-63-2716
+328,Georgeanne,Dearle-Palser,Alaskan Athabascan,Florida,4,105763.18,1,472-13-0826
+329,Klarrisa,Doyley,,,1,139924.59,6,440-96-3494
+330,Renata,Holttom,Pakistani,Florida,5,23703.04,4,105-89-3230
+331,Roscoe,Stuckey,Malaysian,New York,1,18393.29,6,240-81-5117
+332,Juditha,Rickhuss,,,4,25239.39,8,601-53-0179
+333,Claudio,Dowsing,,,1,69246.52,2,708-07-8276
+334,Fayina,Laslett,Salvadoran,Indiana,5,166343.0,4,575-60-6614
+335,Thomasa,Smoote,Japanese,Indiana,0,37036.93,3,311-31-5159
+336,Louis,Taplow,Iroquois,California,2,70589.66,6,331-63-8872
+337,Christiano,Pley,Spaniard,New York,3,28872.97,0,152-71-2377
+338,Patsy,McGlue,White,Colorado,5,66130.95,2,842-80-4328
+339,Doretta,Isacq,Tohono O'Odham,Ohio,2,139409.52,3,853-79-6721
+340,Preston,McCrudden,Puerto Rican,California,1,55412.47,9,789-41-5583
+341,Blithe,Drivers,Alaska Native,Connecticut,5,122984.31,0,284-15-7471
+342,Anne-marie,Besse,Delaware,Pennsylvania,1,143774.88,7,549-30-8577
+343,Elisha,Keatley,American Indian and Alaska Native (AIAN),Minnesota,0,171296.5,8,550-98-4073
+344,Flossy,Topley,Polynesian,New York,3,43534.42,7,787-75-0528
+345,Efrem,Bewlie,Potawatomi,California,3,156905.22,10,632-63-0462
+346,Oliver,Cristofol,Korean,Oklahoma,2,133916.62,9,318-35-8170
+347,Hayden,Mordecai,Iroquois,California,1,92358.81,10,218-56-5265
+348,Daveta,Dregan,Asian,Louisiana,5,107501.56,6,537-89-2462
+349,Bil,MacCole,Paraguayan,Montana,3,129102.9,1,223-01-8191
+350,Stephen,Sorrell,Tlingit-Haida,Kansas,4,141056.67,8,135-25-6011
+351,Kikelia,Garnsworth,Colombian,California,0,126152.0,7,773-72-5139
+352,Saleem,Royden,Yakama,District of Columbia,4,97115.13,9,818-92-0762
+353,Flory,Fender,Filipino,Oregon,4,159335.95,3,260-75-3011
+354,Olva,Freathy,Polynesian,Minnesota,1,39104.84,8,876-05-4005
+355,Chas,Maplethorpe,Seminole,Pennsylvania,4,62153.0,4,448-65-0805
+356,Ansell,Vamplers,Blackfeet,District of Columbia,4,101318.11,3,375-10-9171
+357,Hedi,Defty,Central American,North Dakota,4,62909.96,1,350-05-5669
+358,Nessa,Pollastrone,,,5,58031.19,9,889-77-8467
+359,Mathilda,Killich,Comanche,California,4,38884.06,1,893-87-7992
+360,Ivonne,Gumby,Guatemalan,Pennsylvania,0,113568.41,0,418-43-7621
+361,Roselia,McCathy,White,Maryland,0,24360.83,1,329-99-4864
+362,Kevin,Furmedge,,,1,50018.48,1,575-39-5999
+363,Frazier,Jermy,Uruguayan,Louisiana,2,89316.31,6,461-10-1064
+364,Jessika,Cowles,Argentinian,Illinois,4,130366.5,2,608-39-1303
+365,Ronna,Jamson,Native Hawaiian,Texas,5,159417.9,5,845-18-7864
+366,Jenelle,Itzkovici,Lumbee,Virginia,5,80056.2,6,674-30-6939
+367,Becky,Akaster,Sri Lankan,California,5,53869.53,10,680-73-6919
+368,Mendy,Jansey,Sioux,California,1,83383.28,9,209-94-9387
+369,Danila,Bradtke,Dominican (Dominican Republic),Connecticut,4,120348.87,0,495-86-8907
+370,Tulley,Boxer,Bolivian,Texas,2,111793.14,10,762-60-8977
+371,Kelvin,Rittmeier,Venezuelan,Utah,3,148099.0,1,419-36-0001
+372,Vance,Deinhardt,Comanche,Florida,0,102853.7,8,519-35-3924
+373,Humphrey,Jackes,,,3,123905.85,3,423-31-9556
+374,Corette,Trevon,Tohono O'Odham,Connecticut,4,154954.37,9,350-87-9285
+375,Carlin,Spelling,Tlingit-Haida,Arizona,5,160577.81,7,353-57-5383
+376,Geri,Hindhaugh,Uruguayan,Massachusetts,3,71774.12,5,233-81-6516
+377,Melantha,Espadero,Navajo,California,2,71661.94,10,236-30-3782
+378,Agnella,Hadland,Alaskan Athabascan,California,3,112075.96,1,267-01-4786
+379,Rani,Edmonson,Ute,Colorado,1,46076.13,2,457-89-0859
+380,Raven,Simpkins,Korean,Kansas,5,18323.53,7,251-15-0985
+381,Mitzi,Cogger,Paraguayan,Texas,0,56526.07,9,816-54-3780
+382,Cyb,Christopherson,American Indian and Alaska Native (AIAN),Washington,2,131605.54,0,252-95-4011
+383,Matt,Dimond,Uruguayan,California,2,149712.05,6,879-35-4209
+384,Pearl,Bryett,Honduran,Florida,0,99402.62,3,533-21-8797
+385,Paten,Harmston,Tongan,Texas,0,79257.41,4,591-64-8153
+386,Ingaberg,Whyberd,Chickasaw,South Carolina,2,104073.27,0,167-49-6081
+387,Ellene,Frangione,Black or African American,Pennsylvania,3,129448.66,9,710-68-8757
+388,Claudie,Gilhouley,Honduran,Washington,1,61493.28,1,852-78-0108
+389,Regan,Hazzard,Iroquois,California,4,62319.17,0,643-91-9800
+390,Korrie,Chellenham,Nicaraguan,California,1,39593.59,4,369-32-1126
+391,Cordi,Showalter,,,1,146045.08,8,719-04-3520
+392,Stacee,Guilloneau,Cherokee,California,1,125581.99,0,498-01-2481
+393,Theodosia,Sifflett,Menominee,District of Columbia,1,122666.41,2,884-33-7004
+394,Selie,O'Bruen,Japanese,California,1,93085.79,4,601-50-5516
+395,Blithe,Gossling,Japanese,District of Columbia,1,35786.95,4,396-74-0189
+396,Greg,Quantrell,Taiwanese,Nevada,1,84504.82,9,105-59-1049
+397,Chelsea,Stannering,Peruvian,Texas,3,64727.38,2,664-89-8168
+398,Claresta,DelaField,Venezuelan,New York,5,13152.12,2,884-87-5625
+399,Jerrie,Cust,Venezuelan,Massachusetts,0,91973.04,0,399-72-3467
+400,Lowe,Jeune,Colville,Texas,2,170286.52,2,777-66-3292
+401,Bay,Proom,Native Hawaiian,Florida,5,115561.73,7,584-23-7586
+402,Stephannie,Finlater,Puget Sound Salish,Oklahoma,4,178830.0,2,769-29-2104
+403,Fidela,Oakeby,Fijian,Iowa,4,25555.68,7,301-55-9522
+404,Candra,Rutgers,Kiowa,Nebraska,0,110976.45,5,626-09-0607
+405,Jessamine,Richly,Cherokee,California,5,46518.34,2,207-79-2279
+406,Noel,Kasbye,Melanesian,New York,0,94626.01,8,440-55-8491
+407,Frederick,Barkaway,Filipino,Texas,4,87146.74,1,359-92-2553
+408,Renaud,Daughtry,Panamanian,Tennessee,0,102707.23,1,757-06-5379
+409,Tybie,Burdekin,Central American,California,1,104676.98,1,485-86-2585
+410,Giacobo,Barnsdall,,,2,178785.08,5,133-16-6221
+411,Lonni,Calleja,Polynesian,Minnesota,0,102318.18,4,191-77-0656
+412,Jacquetta,Gilbank,Guamanian,Texas,1,17247.74,7,121-07-4375
+413,Blanche,Acheson,Puerto Rican,Missouri,1,20539.72,1,445-99-3734
+414,Imelda,Neiland,Lumbee,Ohio,3,136005.71,9,426-64-5350
+415,Alfi,Piechnik,Guamanian,Virginia,2,110231.05,10,864-88-9165
+416,Elvina,Millard,Delaware,Nevada,4,64240.8,3,319-88-4676
+417,Estelle,Tighe,Colville,Florida,2,114740.38,2,613-69-5524
+418,Nananne,Altoft,Thai,Colorado,0,100736.64,3,867-86-3797
+419,Waylin,Allardyce,Delaware,Ohio,1,50402.2,10,449-38-2103
+420,Krissy,Pinchback,Tongan,Tennessee,5,119237.81,1,744-72-5405
+421,Clem,Jolland,Ecuadorian,Oklahoma,0,166140.83,2,371-57-2534
+422,Shae,Myers,Indonesian,Texas,5,134139.78,6,466-53-2916
+423,Merla,MacCaughan,,,4,156891.91,2,895-68-2360
+424,Riccardo,Trappe,Pakistani,Texas,5,27719.82,3,663-73-2592
+425,Toma,Gadney,Argentinian,California,3,74560.13,0,780-73-4101
+426,Prinz,Coggeshall,Apache,Alabama,5,56201.77,5,884-85-5698
+427,Ninnetta,Isacke,Cambodian,California,0,94450.26,3,739-81-1062
+428,Kendell,Innett,Taiwanese,Virginia,1,47477.07,6,618-93-8942
+429,Bibbie,Alexandre,Native Hawaiian,West Virginia,4,85036.08,7,181-58-1952
+430,Guglielmo,Orgen,Shoshone,North Carolina,1,162828.31,8,327-15-5444
+431,Layton,Mitchard,Shoshone,Michigan,5,16869.36,0,648-49-4165
+432,Edwina,Allard,Nicaraguan,Colorado,4,110547.19,2,272-96-8984
+433,Tibold,Saffin,Colville,Kansas,2,173646.79,2,306-41-5044
+434,Brande,Byers,Paiute,Texas,2,145385.49,10,542-21-2667
+435,Rooney,Breens,Melanesian,Texas,4,59697.45,8,163-69-4458
+436,Orelia,Lohering,Paiute,Nevada,0,34543.86,9,656-81-4965
+437,Rudolfo,Eilhermann,,,5,108104.69,0,689-32-5770
+438,Marina,Boylund,Native Hawaiian,California,5,118461.37,3,204-75-4925
+439,Dasi,Midner,Chippewa,Maryland,1,97893.35,9,882-97-5334
+440,Corliss,Swalteridge,Tlingit-Haida,Minnesota,3,59218.35,7,652-53-4392
+441,Braden,Hevner,Peruvian,Missouri,0,133737.23,7,763-90-9156
+442,Mikey,Sturte,Mexican,District of Columbia,2,56237.39,1,556-56-6526
+443,Ariela,Dunstan,American Indian and Alaska Native (AIAN),Texas,0,79542.99,6,405-07-0491
+444,Chucho,Solano,Bangladeshi,Alabama,1,147050.37,3,711-40-9086
+445,Teena,Mee,Alaskan Athabascan,Massachusetts,2,33296.55,3,374-37-4640
+446,Dareen,Peascod,Blackfeet,Arizona,3,19797.19,5,881-37-9806
+447,Amalia,Piddocke,Korean,Pennsylvania,0,122548.99,7,393-37-1595
+448,Tedmund,Valentino,Uruguayan,Illinois,3,82782.0,5,750-80-6571
+449,Linc,Manach,Tlingit-Haida,Florida,0,165951.97,7,492-62-1378
+450,Lisetta,Berridge,Chilean,Texas,0,154721.44,1,669-47-1897
+451,Nanice,Piatkowski,Houma,California,5,66990.06,5,383-45-6693
+452,Ericka,Durtnel,Yakama,Pennsylvania,3,148116.25,6,634-42-9683
+453,Adlai,Clopton,Comanche,California,4,75181.09,4,246-39-1944
+454,Gladi,Gumb,Malaysian,Maryland,4,87712.03,8,168-78-0731
+455,Nyssa,Kinney,Puerto Rican,District of Columbia,2,37569.32,10,374-78-9149
+456,Burnard,Hacksby,Pueblo,Idaho,1,86552.0,10,738-36-2685
+457,Baudoin,Beamont,Tlingit-Haida,Michigan,1,45518.31,9,231-91-8605
+458,Berrie,Mildner,Taiwanese,Indiana,5,63570.05,5,657-22-9609
+459,Meagan,Zoephel,Aleut,Colorado,5,122485.99,7,509-65-0185
+460,Bonnibelle,Veneur,Fijian,Georgia,1,104285.02,1,169-02-1610
+461,Averil,Middell,Chippewa,Missouri,5,91253.46,7,453-40-3111
+462,Doralyn,Morse,Native Hawaiian and Other Pacific Islander (NHPI),Texas,1,60275.55,0,354-56-6095
+463,Tristam,Beadnell,Native Hawaiian and Other Pacific Islander (NHPI),Kentucky,4,22579.93,7,847-38-1579
+464,Valencia,Hinkley,Blackfeet,New York,3,139208.24,5,247-57-9110
+465,Jazmin,Hurcombe,Indonesian,Tennessee,0,37345.27,2,241-06-7736
+466,Rogers,Ruggs,Dominican (Dominican Republic),Kentucky,1,96167.89,9,308-63-1622
+467,Jerad,Goudge,Honduran,Arizona,5,179337.37,5,842-60-0908
+468,Melisande,Woltman,Indonesian,Arizona,4,21802.66,9,635-50-9312
+469,Livvyy,Duiguid,Black or African American,North Carolina,2,108998.65,6,664-65-9623
+470,Fidelio,MacCartan,Sioux,Florida,4,41600.86,1,488-90-0536
+471,Jacques,Shiel,Costa Rican,Virginia,3,135008.39,0,803-91-3153
+472,Zachery,Johnke,Yakama,Texas,2,179661.65,3,149-46-5354
+473,Tanner,Askell,Native Hawaiian and Other Pacific Islander (NHPI),Texas,4,40358.42,7,424-76-4959
+474,Aurel,Lassen,Micronesian,Virginia,4,64941.2,9,159-41-4041
+475,Iago,Thomann,Yaqui,New York,2,41650.86,7,247-44-9558
+476,Ola,Dodd,Honduran,Nevada,5,139866.52,1,884-91-2907
+477,Cindy,Janisson,Alaskan Athabascan,California,4,151879.88,2,239-79-5291
+478,Krissie,Twidle,Venezuelan,Florida,1,110466.85,0,794-54-7117
+479,Lindon,Shera,Yaqui,Georgia,0,164455.67,9,718-27-8908
+480,Byron,Wordley,Taiwanese,Florida,5,29721.44,5,341-49-9103
+481,Egan,Harlowe,Peruvian,California,4,32429.27,9,889-34-2801
+482,Nehemiah,Leander,Puerto Rican,Missouri,2,102974.86,3,765-09-1798
+483,Clerc,Gilhouley,Sri Lankan,District of Columbia,2,170814.76,0,778-93-8175
+484,Bryan,Oxe,Chilean,California,2,86282.89,8,887-18-6857
+485,Carolee,Brader,Sri Lankan,Texas,3,79020.33,0,748-34-3711
+486,Julius,Nesbeth,,,5,84320.88,7,643-25-7212
+487,Callie,Fane,Taiwanese,South Carolina,3,139212.62,10,121-42-9084
+488,Ronnie,Abley,Argentinian,Indiana,3,171299.4,6,750-29-8960
+489,Willabella,Pendred,Uruguayan,Massachusetts,0,133927.11,7,842-73-2247
+490,Veronica,Sinkin,Cuban,Mississippi,2,111431.83,2,413-90-9248
+491,Gearard,Slaughter,Mexican,Missouri,5,37949.53,8,581-56-7620
+492,Ferdie,Bourbon,Crow,Kansas,1,33402.95,2,571-78-4728
+493,Clevey,Lander,Cheyenne,New York,4,90298.01,2,149-42-8860
+494,Pate,Henfre,Venezuelan,California,4,167085.18,9,368-34-8442
+495,Charley,Townley,Nicaraguan,New York,5,112500.45,5,443-87-2612
+496,Huntlee,Lassetter,Cheyenne,Alabama,5,147297.65,10,129-09-2730
+497,Poul,Wilcott,Honduran,Texas,1,17394.42,1,734-75-9573
+498,Eva,Cominello,Eskimo,Texas,3,53153.49,1,138-71-1711
+499,Daryl,Aizikovitz,Choctaw,California,5,133726.76,10,858-90-2436
+500,Clari,Gerrard,,,4,26725.58,0,845-11-7843
+501,Karlotte,Cusworth,Ecuadorian,North Carolina,4,163093.4,10,603-58-5305
+502,Ignacius,Farrow,Hmong,California,2,129558.17,6,760-34-8075
+503,Latia,Coughtrey,White,California,3,25910.81,5,747-15-8264
+504,Aubry,Dorricott,Apache,New York,3,38016.8,3,626-66-8712
+505,Margot,Lackie,Yuman,Minnesota,0,93721.56,8,879-20-5912
+506,Enoch,Steadman,White,Texas,0,20304.82,5,447-13-2999
+507,Henry,Folli,Malaysian,Texas,0,147110.28,1,322-30-9747
+508,Olav,Smitton,Puget Sound Salish,Arizona,0,114359.06,5,803-71-9789
+509,Aylmar,Somerfield,,,4,141004.7,3,548-25-6801
+510,Robinet,Bettanay,Eskimo,Washington,4,27018.55,4,311-32-5968
+511,Clarice,Szapiro,Paraguayan,Pennsylvania,4,124922.69,6,416-06-1813
+512,Kasper,Clubbe,Tohono O'Odham,Virginia,2,137859.5,5,780-65-7195
+513,Evin,Ickowics,Hmong,California,4,41222.39,3,754-84-9334
+514,Lilli,Shallo,Chinese,New York,1,133236.71,4,609-08-8604
+515,Kathrine,Jessel,Pima,South Dakota,5,109713.71,8,664-41-5982
+516,Minette,Westrey,Vietnamese,Oklahoma,5,167481.59,6,836-62-8538
+517,Alan,Shillam,Cambodian,Arizona,1,53806.75,2,792-51-6111
+518,Meta,Dronsfield,,,2,85611.53,6,226-77-0899
+519,Joann,Cottrell,Salvadoran,District of Columbia,5,105252.4,4,871-75-3630
+520,Mommy,Cappel,,,5,122508.24,1,714-77-8348
+521,Kin,Boichat,Pima,California,4,95192.54,0,188-49-3109
+522,Ilario,Libermore,Central American,North Carolina,1,34068.97,9,311-79-6092
+523,Chaim,Gudde,Argentinian,North Carolina,0,115021.16,8,276-68-9533
+524,Casi,Isaacs,Yakama,Maryland,1,28829.0,2,407-24-9161
+525,Hammad,Waddington,Korean,New York,4,51040.26,1,537-36-9405
+526,Tandi,Impey,Yakama,Alabama,2,83527.22,2,184-13-4190
+527,Jeddy,Jakubovits,Pakistani,Florida,1,75970.25,8,145-02-1672
+528,Carolynn,Teffrey,,,2,87619.82,1,389-31-4888
+529,Hally,Sheehan,Malaysian,Texas,1,36650.17,5,206-42-6447
+530,Heriberto,Shorey,Tongan,Oklahoma,2,146573.63,7,665-81-4232
+531,Ignacius,Arnke,American Indian,Minnesota,5,163821.0,1,557-54-8357
+532,Karen,Heater,Yaqui,Oklahoma,5,115005.77,8,798-95-9669
+533,Dulsea,MacQuarrie,Shoshone,Florida,2,132815.31,3,393-72-0416
+534,Faythe,Lie,Sioux,Arkansas,5,45809.01,1,423-48-9181
+535,Bryna,St. Hill,Vietnamese,Oregon,2,104422.01,6,486-22-1926
+536,Merwin,Lydster,Malaysian,Oregon,0,50606.69,4,716-87-8616
+537,Kimberlyn,Naden,Dominican (Dominican Republic),Georgia,2,169956.07,3,190-70-7249
+538,Freddy,Slesser,Choctaw,California,0,119795.23,2,282-52-9963
+539,Johny,Cheeke,Sioux,Kansas,5,60929.97,7,161-47-4621
+540,Ronnica,Castagnaro,Ottawa,Colorado,2,174300.86,2,599-91-8620
+541,Nettle,Wyant,Cuban,New Jersey,3,142406.63,6,121-81-8426
+542,Sharleen,Triswell,Pima,North Carolina,0,114105.0,5,782-08-3016
+543,Lotte,Hemshall,Cuban,North Carolina,4,63297.94,9,600-53-9268
+544,Ara,Beever,Micronesian,Nebraska,3,88128.45,1,663-69-9843
+545,Tori,Northgraves,Kiowa,Utah,1,160561.04,10,178-26-9605
+546,Alanah,Rowney,Black or African American,Colorado,4,42663.59,8,190-47-5760
+547,Shirlene,Varfalameev,Yakama,Virginia,1,13578.75,8,418-17-4473
+548,Elna,Le Bosse,Shoshone,District of Columbia,2,53697.56,8,669-54-0724
+549,Marney,Thams,Native Hawaiian and Other Pacific Islander (NHPI),California,5,175173.26,6,526-01-6694
+550,Iosep,Sally,Asian,District of Columbia,4,117955.9,5,701-35-5629
+551,Devy,Bourke,Cuban,California,5,121192.8,1,101-73-8710
+552,Stacia,Bytheway,Thai,Minnesota,5,106149.15,8,427-64-7347
+553,Shanta,Gurnett,Mexican,New York,4,165751.32,8,742-86-5121
+554,Maurine,McRoberts,Vietnamese,Georgia,0,101422.43,2,656-99-3444
+555,Kris,Ryle,Colville,Massachusetts,4,51819.05,8,558-41-2798
+556,Welby,Faunt,,,1,114934.11,0,806-55-1699
+557,Adrianna,Brandacci,Nicaraguan,Texas,2,131835.49,10,417-76-3433
+558,Monroe,Eingerfield,Yaqui,Utah,2,83879.77,4,409-62-3059
+559,Rafferty,Toler,Creek,North Carolina,4,72396.77,2,418-34-7606
+560,Rafa,Alberts,Menominee,North Carolina,2,46239.99,6,183-66-1159
+561,Burty,Knotte,Thai,Wisconsin,4,140444.76,2,134-39-3912
+562,Miguela,Kubach,Ute,North Carolina,2,172857.07,7,336-76-5328
+563,Grant,Calderbank,Lumbee,Pennsylvania,1,55826.64,8,877-09-1378
+564,Merna,Cutchie,Chilean,West Virginia,1,104485.74,5,221-98-4842
+565,Hetty,Riha,Nicaraguan,Oklahoma,3,174677.72,7,845-08-6825
+566,Oona,McCallum,Alaskan Athabascan,Texas,5,20789.44,10,263-42-0100
+567,Irina,Agg,Kiowa,Wisconsin,5,146168.01,7,575-28-0670
+568,Ammamaria,Worpole,Polynesian,California,2,146433.63,4,828-58-0158
+569,Avrom,MacCafferky,White,Florida,5,18388.12,0,285-63-5386
+570,Dory,Aylesbury,Yaqui,District of Columbia,0,160181.71,4,197-99-4013
+571,Fredericka,Ortner,Central American,Texas,1,173064.45,9,115-86-3030
+572,Lalo,Whiffin,Cree,Florida,5,123456.84,2,515-50-3093
+573,Nancey,Orrum,Puerto Rican,California,4,174804.98,0,216-64-9079
+574,Brod,O'Fergus,Asian,West Virginia,1,108566.51,10,858-24-0527
+575,Walton,Hindshaw,Pueblo,Colorado,3,35586.28,3,884-08-7404
+576,Dougie,Callington,Chippewa,California,2,106440.44,5,501-68-4107
+577,Krissie,Normavell,Native Hawaiian,California,3,58997.73,5,132-74-6967
+578,Alysia,Ethelston,Lumbee,Pennsylvania,2,10018.06,0,550-49-0689
+579,Ward,Marrison,Costa Rican,California,2,116080.89,6,476-01-4703
+580,Isabel,Reffe,Uruguayan,California,2,164546.99,6,149-80-1736
+581,Daile,McAlinion,Cherokee,Illinois,3,86180.45,3,892-10-2422
+582,Joye,Nelhams,Yakama,New York,2,164680.87,3,602-35-4663
+583,Tillie,Attwell,Colombian,Florida,4,121858.43,2,116-99-8435
+584,Loydie,Ong,Puget Sound Salish,Indiana,4,174055.44,3,216-12-8430
+585,Lucian,Slany,Navajo,Ohio,2,17014.84,6,452-63-5768
+586,Hamid,Freckelton,Yakama,Virginia,4,126208.09,3,588-65-5107
+587,Livia,Billo,Panamanian,Florida,2,179004.77,6,832-93-5504
+588,Neysa,Remer,Dominican (Dominican Republic),California,0,175716.94,8,160-99-5221
+589,Morganica,Swanbourne,Cuban,Pennsylvania,4,179167.92,9,543-57-8605
+590,Ambrosio,Loughman,Salvadoran,Ohio,2,46465.9,6,883-13-6857
+591,Hobart,Parnall,,,5,110446.83,3,421-27-0679
+592,Esme,Pelham,Native Hawaiian,Michigan,5,166615.61,9,604-50-5465
+593,Tory,Halstead,American Indian,Texas,2,68497.9,4,702-12-8487
+594,Larisa,Ledward,Colombian,New Hampshire,4,126177.31,5,841-77-4581
+595,Oren,Milan,Chickasaw,California,2,138779.13,6,729-45-7987
+596,Nat,Smeeth,Vietnamese,California,2,15107.62,5,813-11-6057
+597,Adi,McJarrow,Pueblo,Georgia,4,91866.05,2,289-26-7330
+598,Redford,Spaughton,Ecuadorian,Arizona,5,177890.0,8,795-62-5934
+599,Thibaut,Lazell,Peruvian,New York,4,72953.79,2,833-70-7932
+600,Florenza,Crowley,Peruvian,Pennsylvania,1,26503.79,2,704-73-1781
+601,Alexandrina,Phonix,Latin American Indian,Texas,1,64795.85,5,425-64-8948
+602,Charmian,Fulkes,Yaqui,Illinois,3,115172.1,7,432-82-6626
+603,Bellanca,Comiskey,Cree,Arkansas,1,22337.07,7,799-61-5285
+604,Thibaut,Bremen,Guamanian,California,1,167318.67,5,846-89-4343
+605,Melloney,Greenall,Mexican,Minnesota,2,155163.98,3,160-10-5159
+606,Curr,Gland,Melanesian,North Carolina,5,92040.72,4,543-15-8209
+607,Felike,Raisbeck,Sri Lankan,Louisiana,1,138051.72,0,791-03-5350
+608,Cris,Suett,Eskimo,California,1,52929.3,4,556-29-9885
+609,Ree,Camilletti,Paiute,Missouri,0,30952.54,8,728-52-2614
+610,Jae,Schimon,Peruvian,New York,2,61545.3,3,885-35-8945
+611,Ulla,Yitzhakov,Blackfeet,Nevada,5,37874.38,8,390-06-4032
+612,Daren,Grimwood,Malaysian,Indiana,3,61894.1,1,151-50-7533
+613,Ferdinand,Dady,Thai,Hawaii,1,123090.86,1,671-01-0362
+614,Zahara,Evett,Crow,Arizona,1,46020.8,1,577-62-6438
+615,Bathsheba,Corker,Alaska Native,Pennsylvania,5,145965.92,10,899-34-4068
+616,Allegra,d' Elboux,Puget Sound Salish,New York,4,125651.73,8,164-38-5614
+617,Aubine,Reinbech,Polynesian,Virginia,2,135176.7,6,186-18-3571
+618,Eadie,Bevis,Chinese,New York,3,39657.56,9,819-83-8712
+619,Harriot,Astbury,Panamanian,New York,2,48614.11,8,391-69-2048
+620,Dulcine,Tollow,,,2,124331.97,2,583-84-4620
+621,Gunilla,Brashaw,Costa Rican,Wisconsin,2,130611.35,7,238-99-1548
+622,Andros,Saynor,Argentinian,Florida,0,30615.91,4,554-47-6770
+623,Ania,Glisane,Bangladeshi,Pennsylvania,5,41166.57,3,855-79-2508
+624,Rosanne,Sargant,Laotian,California,4,65773.77,6,220-87-7849
+625,Josey,Leppard,Shoshone,Michigan,3,25410.57,4,636-63-1550
+626,Leoine,Camock,Polynesian,Minnesota,4,83091.73,3,749-19-6920
+627,Orren,Vida,Alaskan Athabascan,Georgia,4,119670.17,6,627-51-1698
+628,Louella,Gillanders,Chinese,Texas,5,66921.67,8,746-83-8738
+629,Mirabel,Djakovic,Chamorro,District of Columbia,3,89501.47,1,398-25-3785
+630,Engelbert,Jacques,Cree,Maryland,1,30757.31,5,140-13-5522
+631,Verna,Gonoude,Samoan,Minnesota,0,128262.64,8,162-18-9011
+632,Don,Illingsworth,Paraguayan,California,5,34420.73,5,410-56-7258
+633,Ronny,Deshorts,Creek,North Carolina,3,43697.41,5,434-97-2998
+634,Kermit,Caddy,Guatemalan,Virginia,3,141903.41,7,670-12-6387
+635,Raphaela,Chipping,Panamanian,Alabama,5,60738.28,2,430-03-7013
+636,Rora,Heel,South American,Minnesota,5,127979.46,3,492-40-6115
+637,Roseanna,Becconsall,Yuman,Texas,0,104992.59,5,347-79-0139
+638,Dall,McLaren,Ute,Virginia,4,57222.9,10,741-03-9341
+639,Theodosia,Grevel,Taiwanese,Virginia,3,133521.74,8,131-80-8204
+640,Standford,Killigrew,,,4,107979.56,7,626-42-7130
+641,Vernice,Daymond,Yakama,Virginia,3,90574.53,5,826-39-0986
+642,Sandra,Joanaud,Indonesian,Missouri,2,25820.29,1,529-63-6249
+643,Valentine,Pearsall,Filipino,Florida,0,175892.02,7,427-39-1029
+644,Imogene,Grim,Potawatomi,Florida,0,170538.23,8,704-79-4927
+645,Jeffrey,Piotrkowski,Black or African American,Ohio,0,85343.46,7,782-50-4136
+646,Monro,Leadbitter,Puerto Rican,Maryland,5,38662.23,9,157-44-2998
+647,Elisa,Panchen,Venezuelan,Ohio,0,18573.15,9,844-38-3533
+648,Pernell,Gullifant,Peruvian,Virginia,0,155099.62,7,511-11-0142
+649,Millisent,Bourley,Samoan,West Virginia,0,122290.78,4,471-41-7422
+650,Renelle,Feldharker,Seminole,Nebraska,3,30430.91,1,780-81-8944
+651,Barry,Axleby,Korean,Florida,3,23814.21,5,849-94-6920
+652,Stanislaus,Meindl,Yakama,Texas,0,96902.88,10,321-56-5444
+653,Kincaid,Shevlin,Panamanian,Florida,4,28119.45,0,386-74-3740
+654,Magdaia,Train,,,3,48834.16,3,860-36-4231
+655,Florencia,Gislebert,Ottawa,Florida,1,75317.72,7,332-43-3594
+656,Tiphany,Baily,Korean,Minnesota,0,131880.57,10,580-51-4021
+657,Buffy,Halsall,Argentinian,California,3,109030.52,8,706-59-3324
+658,Idette,Clashe,Honduran,Texas,1,170751.86,5,877-68-0053
+659,Richmond,Possa,Houma,Utah,1,113399.79,6,181-72-2298
+660,Del,Benedyktowicz,Ute,Oregon,1,166872.98,2,510-81-4183
+661,Lionello,Atkins,Uruguayan,New York,3,128886.88,6,696-26-1388
+662,Armin,Carlson,American Indian and Alaska Native (AIAN),Nevada,3,21452.84,3,138-08-7846
+663,Herold,Bartoszinski,Polynesian,Florida,2,23857.99,2,847-64-0892
+664,Ginnifer,Redish,Korean,Michigan,5,105512.86,2,489-35-2999
+665,Pincus,Feacham,Native Hawaiian,New York,2,91618.26,6,838-02-8228
+666,Horatius,Corps,Chamorro,Iowa,3,87728.39,4,566-07-5118
+667,Murray,Kinnon,Aleut,Nevada,5,63256.75,3,645-91-0715
+668,Manon,Heatherington,Puerto Rican,Connecticut,5,120060.34,3,462-93-8432
+669,Stacee,Carstairs,Lumbee,Missouri,2,76910.8,9,558-90-2506
+670,Codi,Mapplebeck,Honduran,Maine,2,65268.33,10,694-78-0932
+671,Bonnie,Assante,Menominee,Virginia,3,84474.04,10,302-48-4633
+672,Charlene,Arnoldi,Panamanian,Pennsylvania,0,83190.36,2,789-84-9047
+673,Herbie,Dart,Houma,California,3,133238.38,10,452-30-1098
+674,Bryce,Wilmut,Spaniard,New York,3,47516.78,2,590-88-6519
+675,Delano,Cammidge,Puerto Rican,New Jersey,0,27552.7,7,446-34-4119
+676,Ramon,Holhouse,Micronesian,New York,0,162503.99,0,739-14-8378
+677,Rolland,Glasson,American Indian and Alaska Native (AIAN),South Carolina,0,140757.93,8,143-47-4801
+678,Christine,Heyfield,Thai,New York,3,54147.55,1,670-30-1131
+679,Herve,Goadbie,Shoshone,Indiana,0,61849.48,10,433-37-9867
+680,Vern,Philpots,Apache,Virginia,3,23734.34,9,406-83-7716
+681,Sidnee,Meyer,Puget Sound Salish,Maryland,0,107922.95,4,696-95-8809
+682,Arlan,Mattevi,Colombian,District of Columbia,5,34708.73,1,801-49-2493
+683,Cally,McGinley,Blackfeet,Arizona,5,151673.92,3,440-86-6068
+684,Jeane,Keasy,Indonesian,North Carolina,3,82624.08,6,533-60-0646
+685,Leone,Winram,American Indian,New York,1,38423.0,1,181-29-0792
+686,Riley,Shorter,Pueblo,Florida,4,73613.03,1,108-67-3936
+687,Des,Sievewright,Panamanian,West Virginia,3,68885.82,8,522-90-9903
+688,Caty,Channer,Vietnamese,Colorado,3,29809.23,3,526-61-0624
+689,Flory,Geggie,American Indian,New York,4,177816.34,9,125-15-9457
+690,Helyn,Sloat,Apache,Illinois,1,163613.39,1,450-10-7469
+691,Selene,Dumbreck,,,1,132153.72,10,586-43-1079
+692,Shayna,Norway,,,3,22377.04,10,898-05-6823
+693,Carmina,Arnaudi,Blackfeet,North Carolina,3,108293.09,7,814-31-0414
+694,Tandie,Chelsom,Yuman,Illinois,4,18250.65,8,165-17-5075
+695,Benji,Mayworth,Uruguayan,Pennsylvania,4,116180.12,2,310-42-4732
+696,Jack,Bucky,Panamanian,Ohio,3,108037.91,2,841-16-0252
+697,Cordy,By,,,2,159387.04,6,430-44-8766
+698,Craggie,Kinsley,Uruguayan,Texas,5,154472.65,8,492-30-4900
+699,Raffaello,Hek,Menominee,Kentucky,1,114040.33,5,229-61-1956
+700,Layne,Huglin,Choctaw,California,2,151561.7,3,527-68-6278
+701,Vladimir,Habden,Crow,Oregon,5,25460.16,4,116-84-1952
+702,Estella,Wind,Yakama,Florida,5,21875.8,2,194-16-9218
+703,Ken,Lambrook,Chamorro,Arizona,5,79080.38,7,400-78-6280
+704,Clemens,Broadbere,Colombian,Pennsylvania,3,49855.49,5,552-79-0845
+705,Sidonia,Kirvell,,,2,45965.59,8,729-93-4540
+706,Antonin,Ram,Malaysian,Texas,5,176504.85,0,247-37-5271
+707,Jordon,Corpe,Tohono O'Odham,California,3,91446.43,5,221-10-8194
+708,Gregor,Casarili,Ute,Texas,2,11660.43,10,534-97-6929
+709,Rosalinda,Harold,Cambodian,Washington,4,67061.66,4,599-11-2563
+710,Aidan,MacKintosh,Crow,District of Columbia,4,70422.08,3,389-57-7355
+711,Whit,Bratton,White,Pennsylvania,5,28669.56,3,476-06-6930
+712,Bartolemo,Oakes,Guamanian,Connecticut,3,130864.27,6,149-09-2688
+713,Hilliard,Neath,Alaska Native,New Mexico,3,85111.41,1,669-16-1704
+714,Kirstyn,Beeby,Mexican,Texas,3,156337.06,3,509-69-3087
+715,Kate,Dwerryhouse,Chamorro,Florida,4,51256.82,1,139-25-7363
+716,Virgil,Leythley,Shoshone,Arizona,1,174979.31,9,774-09-8078
+717,Barri,Cheshir,Micronesian,California,0,178218.78,0,563-44-1680
+718,Yevette,Espadas,Chilean,District of Columbia,4,90625.07,4,293-79-3172
+719,Vidovic,Dykins,Choctaw,Florida,5,140824.97,3,422-41-5064
+720,Benedetta,Giamelli,Apache,Idaho,1,76440.0,8,604-51-3603
+721,Shara,Castiglio,Alaskan Athabascan,Louisiana,1,170060.18,0,640-69-6431
+722,Modesty,Riccio,Chickasaw,Georgia,2,164978.16,1,244-70-8054
+723,Marguerite,Akehurst,Puget Sound Salish,Kansas,1,18426.36,5,414-22-2349
+724,Quinn,Bricknell,Tlingit-Haida,Minnesota,2,63159.43,6,294-84-9603
+725,Kelly,Woolam,Indonesian,California,2,86419.5,3,409-95-5279
+726,Eduard,Cheshir,Yuman,Virginia,1,159784.8,3,829-99-4559
+727,Frank,Hulson,Spaniard,California,1,65128.59,4,842-69-6652
+728,Kiele,Manning,Pakistani,Massachusetts,3,42380.03,1,846-57-7022
+729,Thea,Haversham,Indonesian,Illinois,2,68538.52,4,510-78-1499
+730,Sonni,Cooksley,Japanese,Minnesota,4,66817.66,2,792-07-2651
+731,Octavia,Hovee,Bolivian,Nevada,4,129528.99,8,659-33-6604
+732,Merla,Talloe,Pueblo,Tennessee,3,115392.08,8,110-68-6288
+733,Jinny,Jouandet,Latin American Indian,Idaho,1,177715.94,5,796-11-0533
+734,Nola,Franssen,Polynesian,Massachusetts,0,100016.9,6,247-45-7800
+735,Randolf,Hancox,Tohono O'Odham,District of Columbia,5,41071.94,9,348-19-3294
+736,Truman,Flobert,,,1,81191.13,2,163-53-9470
+737,Duane,Lillegard,Sioux,Kansas,2,112438.78,3,244-60-8973
+738,Ranice,Birchill,Comanche,Virginia,2,59310.12,6,648-79-8160
+739,Jae,Headford,Black or African American,New York,3,158620.12,7,345-89-5947
+740,Corrina,Lambourne,Osage,Texas,1,77336.29,4,673-96-3256
+741,Kayle,Venner,Cree,District of Columbia,0,96759.47,0,893-10-7630
+742,Warren,Adshede,Colombian,Florida,3,40931.68,6,696-07-8583
+743,Charlena,Eads,Ute,Georgia,4,153578.12,5,429-02-5991
+744,Carlo,Caneo,Japanese,Texas,1,56833.6,3,836-28-4879
+745,Dulcine,Worrill,Vietnamese,Florida,2,103973.85,9,695-20-4585
+746,Rand,Dunrige,,,1,26021.4,5,607-43-3452
+747,Clemmie,Bisley,Thai,Texas,2,53555.7,6,217-56-2895
+748,Tuck,Dowrey,Chippewa,Kansas,1,139701.39,2,323-28-0766
+749,Kelsey,Goold,Tlingit-Haida,Alabama,0,150860.17,3,503-68-3784
+750,Che,Bovaird,Cuban,New Jersey,1,103951.11,4,828-54-2927
+751,Katalin,Kirkhouse,Samoan,New York,0,165607.87,5,181-06-5516
+752,Thekla,Derobert,Comanche,Colorado,0,161591.85,1,203-28-8908
+753,Mira,Sussex,Indonesian,Florida,0,120669.24,5,822-77-1358
+754,Ardelia,Laingmaid,Choctaw,Florida,5,139417.9,6,158-91-9340
+755,Carmella,Sautter,Paraguayan,Kentucky,4,47727.04,5,311-96-8796
+756,Ossie,Tunstall,Samoan,New York,3,77232.82,8,743-17-7899
+757,Hanny,Carcass,Sri Lankan,Washington,0,74256.08,7,669-05-6411
+758,Clemente,Spragg,Eskimo,Virginia,5,136207.13,6,202-76-9840
+759,Tonnie,Dorkens,Alaska Native,Washington,0,161726.55,2,211-75-6775
+760,Dugald,Buckston,Cree,Texas,0,124079.51,10,683-91-5815
+761,Maury,Cussins,Ute,Texas,5,59164.02,10,317-94-1600
+762,Caril,MacAlroy,Lumbee,Pennsylvania,5,18649.53,4,720-11-4699
+763,Bondy,Druhan,Chilean,California,1,45677.9,8,664-95-9532
+764,Allyn,McFaell,Eskimo,Connecticut,0,22733.59,7,536-10-6834
+765,Freddi,Wiffen,Chamorro,Texas,4,178471.2,1,126-85-4656
+766,Killie,Wilfinger,Yaqui,Massachusetts,2,100508.35,1,564-50-4232
+767,Ivonne,Pugh,Costa Rican,Florida,1,99378.22,7,194-68-7153
+768,Rollin,Crowther,Honduran,Iowa,4,144775.68,4,124-74-0468
+769,Brendon,Pembry,Bangladeshi,Florida,1,164073.44,6,125-01-1404
+770,Rebeca,Parkisson,Uruguayan,Wisconsin,2,56434.63,0,197-46-7666
+771,Erwin,Larn,,,4,121718.23,0,265-87-7950
+772,Katleen,Derham,Shoshone,Nevada,1,60077.59,2,775-70-3941
+773,Nikola,Dungey,,,2,64428.24,0,845-90-3811
+774,Marsha,Jowle,Fijian,Arizona,4,55034.39,9,604-81-9052
+775,Leanor,Paris,Ecuadorian,Virginia,5,117773.19,4,667-29-7992
+776,Orton,Stoneham,Ecuadorian,District of Columbia,2,113350.5,7,686-43-7460
+777,Erwin,Tomasicchio,Mexican,New Jersey,3,37442.42,1,846-70-3540
+778,Dean,Howsley,Colombian,California,5,26823.37,4,278-44-6293
+779,Edie,Takos,Panamanian,West Virginia,2,18375.01,6,260-46-8333
+780,Garrek,Ciccotti,Ute,District of Columbia,0,135524.8,1,322-02-8669
+781,Dianne,Guidini,Chilean,Iowa,3,105979.65,4,132-52-6241
+782,Gabbie,Wye,Korean,New York,4,145916.35,6,868-99-2419
+783,Angie,Camp,South American,Wisconsin,2,162673.66,10,197-75-5132
+784,Carol,Dummer,Sioux,Florida,3,175060.66,5,833-06-3073
+785,Alli,Fanton,,,2,46064.44,7,605-05-0644
+786,Hewe,Chaffyn,Sri Lankan,Tennessee,3,61760.05,0,269-41-3439
+787,Siana,Pauler,Chippewa,Virginia,3,39461.64,4,880-82-4374
+788,Dacie,Sancraft,Cuban,Florida,0,46902.61,10,168-90-2416
+789,Shaylynn,Guerrieri,Salvadoran,New York,5,168426.7,1,267-20-8189
+790,Valerye,Lorenzo,Hmong,California,2,68700.67,2,246-84-4183
+791,Nero,Coxall,Bolivian,Missouri,5,18772.09,2,775-17-9167
+792,Larry,Rasper,Fijian,District of Columbia,2,68858.1,4,875-79-5814
+793,Corabel,Yoodall,Samoan,Florida,2,134650.52,10,874-61-5101
+794,Early,Crebott,Cree,Florida,1,33634.13,7,515-65-3392
+795,Denys,Piddlehinton,Polynesian,New York,5,13470.24,8,860-21-7090
+796,Johan,Oxterby,Latin American Indian,Delaware,4,145044.71,6,893-28-7171
+797,Torie,Birrell,Ecuadorian,Tennessee,5,153965.72,7,281-73-9720
+798,Lennie,O'Longain,Yaqui,Ohio,5,166666.32,0,387-74-5796
+799,Jesus,Sellers,Yaqui,Texas,2,89626.54,2,286-37-4503
+800,Evin,Rolfi,Nicaraguan,Washington,4,55023.42,8,427-69-0438
+801,Gerianna,Klimushev,Cheyenne,Ohio,1,140274.28,4,695-16-3757
+802,Lotte,Catley,Guatemalan,District of Columbia,1,35153.81,1,240-71-1395
+803,Dulsea,Nockells,Thai,Florida,3,89148.29,4,462-05-6839
+804,Gertrud,Lorrain,Cree,Texas,2,54389.49,5,243-40-8415
+805,Gustaf,Tomsett,Aleut,Tennessee,4,114239.26,8,810-81-3199
+806,Dacey,Coleborn,Puget Sound Salish,Colorado,2,121537.88,3,719-40-5662
+807,Raine,Tyres,Shoshone,Missouri,0,85487.19,8,629-59-2560
+808,Valentin,Dickinson,Bangladeshi,Texas,1,99665.9,8,655-89-6930
+809,Brandy,Bidmead,Choctaw,District of Columbia,1,116232.35,10,762-69-3370
+810,Anastasia,Skellen,Sioux,Missouri,4,128284.6,10,522-50-1372
+811,Derek,Codlin,Comanche,Texas,0,13463.74,10,385-62-3650
+812,Pacorro,Lent,Indonesian,Florida,2,19727.47,9,256-87-4294
+813,Patrica,Gerner,Uruguayan,Florida,5,127706.18,8,597-47-2119
+814,Gayle,Carillo,,,4,41378.45,6,456-67-0029
+815,Sauveur,Burchess,Eskimo,Florida,5,126310.46,4,473-78-6058
+816,Issie,Severns,Chickasaw,Indiana,5,167778.46,6,606-13-3329
+817,Trude,Holberry,Chippewa,Minnesota,3,56824.57,3,665-92-6319
+818,Randal,Pile,Bolivian,Utah,1,167442.38,3,217-41-2171
+819,Alexandre,Stollberger,Crow,Florida,2,21057.46,6,591-49-6553
+820,Janka,Goldsmith,Venezuelan,Connecticut,4,121511.51,9,673-76-6333
+821,Harrietta,Yarranton,Apache,Nebraska,0,56881.48,5,446-88-6371
+822,Fawne,Beldum,Cherokee,Tennessee,4,137577.8,4,436-70-8800
+823,Chloris,Keener,Cherokee,Indiana,2,111231.87,4,387-25-5969
+824,Hester,Dann,Navajo,California,1,155195.05,3,559-69-4385
+825,Shaylah,Chiddy,Native Hawaiian and Other Pacific Islander (NHPI),Tennessee,0,147152.93,4,807-14-8750
+826,Donny,Philler,Korean,Alabama,3,108170.8,5,406-51-8097
+827,Ilise,Mc Kellen,Houma,District of Columbia,2,26941.34,10,885-63-4863
+828,Norby,Maybury,Korean,Maryland,4,169421.91,5,489-72-0900
+829,Neron,Boundey,,,5,51745.06,9,813-33-6292
+830,Tamarra,Bettles,Ottawa,California,1,100830.26,7,168-55-2079
+831,Nani,Canby,Chamorro,Arizona,0,14434.39,1,118-67-5412
+832,Deena,de Chastelain,Pakistani,Florida,2,53300.79,9,502-43-1052
+833,Jojo,Stag,Apache,Massachusetts,4,84195.46,0,346-82-9492
+834,Merla,Espine,Latin American Indian,Ohio,3,149525.77,3,656-64-0058
+835,Rosanne,Chittey,,,4,56612.99,4,155-53-9141
+836,Ransom,Keal,Sioux,Georgia,4,23617.33,9,894-02-9037
+837,Burty,Laborde,Paiute,District of Columbia,3,166694.96,3,406-50-4174
+838,Gonzalo,Verry,Navajo,Alabama,0,170271.15,7,280-85-1631
+839,Tobey,Flacknoe,Sri Lankan,Oklahoma,0,164726.44,6,641-90-5345
+840,Ilyse,Quince,Japanese,Minnesota,1,83119.94,2,842-82-4271
+841,Ludwig,Iglesias,Pueblo,Illinois,2,65750.54,7,486-66-9966
+842,Carroll,Vanetti,Puget Sound Salish,Kansas,4,179707.03,10,321-95-0379
+843,Bone,Besnardeau,,,3,37573.54,6,386-23-9460
+844,Glyn,Aris,Pakistani,Texas,5,67468.43,4,166-03-2246
+845,Yoshiko,Antoniat,Peruvian,Texas,5,10040.57,5,136-96-2741
+846,Helaine,Dovey,Pakistani,Minnesota,3,86311.78,8,446-30-4521
+847,Abraham,Farnorth,Aleut,Georgia,3,11686.99,10,333-75-8578
+848,Mildrid,Ebden,Asian,Colorado,0,155868.52,5,317-75-6574
+849,Kelcy,Wythill,Indonesian,Ohio,4,78794.63,1,618-33-8710
+850,Aurilia,Casel,Spaniard,New York,0,104142.6,6,181-50-0482
+851,Pierson,Gorvin,Salvadoran,Illinois,3,42473.32,1,202-93-3706
+852,Liliane,Eliesco,Pueblo,California,4,86015.7,1,217-03-3180
+853,Saundra,Butterfint,Chippewa,Florida,5,70899.16,4,737-98-1547
+854,Lorinda,Nassy,Argentinian,Georgia,4,87105.22,3,720-65-6589
+855,Jaymie,Wilcher,Pueblo,California,4,86480.02,4,296-43-1459
+856,Byrann,Shury,Yakama,Tennessee,3,34756.91,4,341-11-6537
+857,Kipp,Folker,Chilean,Georgia,1,52608.7,1,385-48-5908
+858,Delphinia,Crinkley,Sri Lankan,Florida,4,67557.16,7,409-37-2848
+859,Conan,Deniso,Sioux,Minnesota,5,75719.22,7,631-81-8623
+860,Tannie,Marrett,Tongan,Delaware,3,68151.87,3,681-43-6320
+861,Margarete,Aulsford,Dominican (Dominican Republic),Virginia,2,155740.62,2,169-42-5667
+862,Shaine,Broadbear,Argentinian,Pennsylvania,2,116523.61,3,257-15-2341
+863,Ariella,Coat,,,1,49304.99,8,580-08-9059
+864,Pattin,Jordon,Peruvian,Michigan,3,65644.9,4,745-55-8383
+865,Hubie,Rolf,Honduran,California,4,27187.67,3,210-55-2097
+866,Umeko,Francais,Uruguayan,District of Columbia,0,117967.32,1,829-09-2072
+867,Allyce,Prestige,Apache,Arizona,5,97627.49,10,383-80-9000
+868,Bendix,McFadyen,Black or African American,Kentucky,0,79156.71,0,461-50-8981
+869,Briney,Scragg,Chickasaw,Alabama,1,45902.76,0,829-69-8161
+870,Barbabas,McRonald,Dominican (Dominican Republic),Tennessee,3,115250.06,7,617-53-6205
+871,Maurita,Phayre,Tohono O'Odham,New York,4,165192.59,7,832-24-6793
+872,Desmond,Headech,Apache,California,0,103029.05,4,280-50-5226
+873,Sonny,Joburn,Japanese,Texas,2,24450.06,7,307-96-0473
+874,Enid,Delafoy,Sioux,California,4,152124.95,10,390-11-0728
+875,Courtenay,Teague,Cheyenne,California,4,97528.79,7,385-78-4066
+876,Arturo,Baily,,,3,157669.02,8,397-10-8429
+877,Fax,Bardell,Puget Sound Salish,North Carolina,0,56630.17,5,424-18-2787
+878,Gerianne,Mewis,Creek,New York,3,72121.05,4,777-54-0374
+879,Michaeline,Peyro,Guatemalan,Texas,3,116987.48,4,160-99-1930
+880,Madelene,Amy,Fijian,California,1,155103.38,1,595-24-4452
+881,Say,Goodacre,Venezuelan,California,0,120264.62,8,520-13-9288
+882,Katherina,Matthews,Colville,Ohio,3,35263.03,10,291-32-0717
+883,Dorice,Coughan,Osage,Florida,1,164988.25,2,676-81-0993
+884,Merissa,Coom,Comanche,Florida,4,136976.8,7,764-62-2126
+885,Emlynne,Emsley,Asian Indian,North Carolina,0,98619.05,1,131-34-2571
+886,Rosina,Eva,Bolivian,North Carolina,4,11098.34,0,590-47-2147
+887,Cathee,Casaccia,Micronesian,Pennsylvania,4,163445.01,4,442-74-1536
+888,Annmaria,Darrell,Malaysian,Florida,0,127906.75,9,755-66-5350
+889,Sher,Goodlett,Lumbee,California,0,18629.71,10,735-43-5206
+890,Beverlee,Penhaleurack,Bolivian,Ohio,0,79830.03,10,861-06-4923
+891,Peder,Dunbabin,Iroquois,Kentucky,4,143347.84,6,591-23-6282
+892,Armin,Tesauro,Yuman,Illinois,2,51668.38,0,780-58-4437
+893,Glyn,Maltman,Colville,California,4,99435.89,3,539-27-8325
+894,Niel,Worvill,Ottawa,Maryland,1,66862.56,6,659-63-3368
+895,Claudelle,Bruhnke,Filipino,Missouri,4,38310.72,6,731-71-2431
+896,Essie,Benitti,Latin American Indian,Texas,1,26948.04,3,108-67-7835
+897,Clair,Gasgarth,Colville,Tennessee,0,47457.62,7,663-25-6214
+898,Micheline,Yukhtin,Malaysian,New Jersey,2,48048.24,4,747-37-0135
+899,Elbertina,Yanin,South American,Texas,4,173374.15,6,465-67-0181
+900,Dorey,Jaskowicz,Korean,Mississippi,2,145398.64,5,163-18-7664
+901,Abagail,Cleaton,,,0,21330.25,1,109-85-2255
+902,Salmon,Lansly,Hmong,Texas,2,40125.34,8,827-62-9777
+903,Georgy,Matuska,Panamanian,Nevada,4,123163.72,0,456-45-0753
+904,Cally,McCague,Asian Indian,Michigan,3,95159.67,1,839-97-4474
+905,Lawry,Jankowski,Colombian,Idaho,2,22369.02,3,351-81-7589
+906,Forster,Carrack,Malaysian,Texas,1,78581.55,2,625-89-1418
+907,Christiana,Stother,Bangladeshi,Pennsylvania,2,95289.99,4,427-36-8755
+908,Jamima,Ferrieres,Native Hawaiian and Other Pacific Islander (NHPI),Pennsylvania,0,127598.87,7,591-15-9936
+909,Giulio,Fowkes,Navajo,North Carolina,0,46061.7,5,193-78-4571
+910,Glenden,Villaret,Tohono O'Odham,Florida,4,71635.63,0,221-92-7886
+911,Gerianne,Ebbage,Polynesian,New York,0,16174.4,4,151-05-3863
+912,Esme,Perillo,Chamorro,Washington,1,136375.2,10,337-79-7800
+913,Craggy,Bediss,Cree,Florida,3,145134.01,9,773-49-6400
+914,Starr,Grebner,Eskimo,Florida,5,26708.14,3,562-83-5540
+915,Karim,Jencken,Ecuadorian,Florida,2,84937.91,7,667-70-8126
+916,Dianna,Agate,Sioux,Illinois,1,25536.37,0,835-24-3365
+917,Terry,Deguara,Colville,Arizona,3,60182.65,1,659-09-5308
+918,Belle,Jowsey,Cheyenne,Texas,5,12671.39,8,198-70-0176
+919,Kenna,Gorger,Aleut,Texas,0,82781.78,10,167-21-3901
+920,Napoleon,Swinn,Shoshone,Kansas,5,162092.41,6,740-49-2969
+921,Zia,Justham,Pakistani,Virginia,1,33438.04,10,319-97-6109
+922,Miran,Standeven,Eskimo,Minnesota,2,141850.0,7,690-81-0287
+923,Norrie,Sutter,Ute,Wisconsin,2,59170.3,5,336-65-5536
+924,Allix,Uttley,Malaysian,District of Columbia,2,64022.43,9,754-61-1256
+925,Barnaby,Bellsham,Hmong,Virginia,3,121994.32,10,679-27-4739
+926,Madelaine,Eccleshare,Puget Sound Salish,Connecticut,5,74651.64,0,189-07-0410
+927,Jule,De Filippi,Central American,Georgia,1,68852.05,2,840-90-7814
+928,Jedidiah,Jaspar,Houma,Texas,1,150184.16,5,793-39-8000
+929,Dav,Heifer,Native Hawaiian and Other Pacific Islander (NHPI),District of Columbia,0,67795.56,4,685-18-8643
+930,Isacco,Trippack,Cree,Oklahoma,1,55420.17,1,253-66-2508
+931,Fairfax,Warbeys,Kiowa,Florida,1,12118.82,4,891-94-3465
+932,Marion,Phorsby,Kiowa,Alabama,2,165437.07,3,654-37-5021
+933,Kimbra,Fullick,Korean,Florida,2,129062.83,6,737-60-5429
+934,Matthaeus,Prujean,Alaska Native,Ohio,3,84125.66,4,490-13-9957
+935,Audrey,Pring,Comanche,Texas,4,45702.14,10,344-52-9094
+936,Jackie,Louthe,Native Hawaiian and Other Pacific Islander (NHPI),California,1,20814.62,10,470-38-3686
+937,Reynold,Hynam,Colombian,Connecticut,0,133001.91,3,771-27-2571
+938,Dorey,Cowie,Houma,Colorado,1,45257.72,7,644-37-3110
+939,Deny,Kynnd,Indonesian,Pennsylvania,0,16354.8,1,688-36-9577
+940,Erasmus,Ravel,Costa Rican,Ohio,1,38002.04,9,120-57-0103
+941,Nickola,Tingly,Chickasaw,Connecticut,3,93325.78,8,843-94-5046
+942,Don,Chaffyn,Fijian,Arizona,5,135665.08,2,265-28-9210
+943,Ara,Probat,Korean,Wisconsin,5,44826.97,8,880-32-9935
+944,Eberhard,McTeggart,Fijian,Washington,0,145925.06,2,337-40-2909
+945,August,Dainton,Filipino,South Carolina,5,40369.54,0,828-23-4649
+946,Brew,Kryszka,Dominican (Dominican Republic),Texas,0,15183.64,1,708-41-9816
+947,Mikaela,Columbine,Alaska Native,Wisconsin,0,25834.03,6,230-59-5432
+948,Kathi,Ofen,Yuman,Louisiana,5,176971.48,8,433-64-4940
+949,Randi,Crookall,Navajo,District of Columbia,1,12601.05,0,800-12-3502
+950,Adoree,Colhoun,Mexican,Massachusetts,1,41855.15,6,326-78-6764
+951,Gualterio,Lenox,Puerto Rican,Virginia,4,56785.32,10,750-29-8432
+952,Jilly,Abbes,Japanese,North Carolina,4,86601.64,9,645-13-8013
+953,Northrop,Fussell,Samoan,Texas,5,34085.35,5,645-64-2403
+954,Art,Giuron,Chilean,Maryland,2,162534.72,3,389-20-3266
+955,Dorella,Erat,Mexican,Florida,3,99535.97,2,766-88-5985
+956,Ashlie,Enden,Chilean,Texas,3,11397.34,2,591-96-0180
+957,Kellsie,Metts,Bolivian,Nevada,3,136996.06,9,429-66-0149
+958,Red,Kleinfeld,Yaqui,Florida,1,174953.18,6,793-28-4245
+959,Anstice,Brushneen,Polynesian,Pennsylvania,4,81914.36,8,530-77-4589
+960,Stan,Haly,Pima,Virginia,3,34931.2,4,884-58-2940
+961,Celestine,Strathearn,Mexican,Texas,5,126995.88,4,490-55-3993
+962,Bellanca,Inkpen,Salvadoran,Texas,3,31264.01,6,393-38-8077
+963,Devon,Butt,,,3,36864.05,6,478-86-7389
+964,Jeni,Dufaur,Cuban,Tennessee,0,56780.29,2,781-23-3003
+965,Deena,Pigney,Dominican (Dominican Republic),Alabama,0,110397.52,4,203-49-2639
+966,Angeline,Mayzes,Sri Lankan,Massachusetts,3,15638.45,5,610-18-3742
+967,Yvon,Camin,Lumbee,Florida,5,128968.52,3,550-80-3498
+968,Rodi,Frantzen,Chilean,Florida,5,71942.48,4,620-70-4965
+969,Daffie,Curnucke,Paiute,Maryland,0,115078.4,3,785-98-7950
+970,Jorie,Grieg,American Indian,Indiana,1,54143.35,7,135-10-0901
+971,Maureene,MacDavitt,Chinese,North Carolina,1,60218.76,4,556-31-9496
+972,Bruis,Joust,Iroquois,Massachusetts,2,68797.22,9,887-61-5579
+973,Elyssa,Evelyn,Dominican (Dominican Republic),District of Columbia,3,107996.92,6,200-45-7935
+974,Dode,Mathieu,Paiute,Tennessee,5,108951.55,2,532-12-5556
+975,Quent,Pashen,Nicaraguan,Illinois,3,112123.92,0,684-09-6069
+976,Dilan,Showl,Iroquois,Michigan,0,174442.41,2,251-90-8306
+977,Aimee,Byrnes,Sioux,California,1,28223.06,2,701-58-1415
+978,Drucie,Ledington,Cherokee,Missouri,1,165328.04,5,255-22-0455
+979,Roddy,Vasyukov,Vietnamese,Colorado,1,93122.44,7,189-20-6662
+980,Murray,Stanbrooke,Potawatomi,Florida,2,127634.23,10,561-15-5506
+981,Sherill,Twitchett,Paiute,Tennessee,0,49857.31,5,647-78-8100
+982,Reese,Elam,Alaska Native,Virginia,5,54013.98,0,780-44-1246
+983,Trip,MacKonochie,Panamanian,Colorado,3,125365.79,10,865-04-1871
+984,Renard,Jack,Korean,Tennessee,5,85727.78,3,769-66-3310
+985,Mic,Leate,Puget Sound Salish,Louisiana,4,140363.58,3,431-38-8344
+986,Raynell,Mumbray,Lumbee,Illinois,3,79803.52,8,294-39-8824
+987,Bettye,Ricker,Laotian,Minnesota,2,81108.0,3,485-34-7594
+988,Alikee,Judkins,Navajo,California,0,67224.68,9,577-01-0598
+989,Hali,Raigatt,Crow,California,0,11343.24,1,157-66-6821
+990,Audy,Tuerena,,,4,172368.93,8,872-59-1949
+991,Alfy,Slopier,Lumbee,North Carolina,2,42204.63,9,828-64-3731
+992,Toiboid,Ramas,Bangladeshi,Oklahoma,0,63606.96,9,583-80-3664
+993,Aline,Anthoin,Korean,Georgia,0,127811.48,10,319-54-8572
+994,Wake,Springell,Yaqui,Tennessee,0,71711.97,1,135-69-7126
+995,Justinian,Spellesy,Honduran,Florida,5,63580.41,0,675-52-4663
+996,Hertha,Stranio,American Indian,Ohio,3,76246.17,0,449-53-4876
+997,Rahel,Rintoul,Panamanian,District of Columbia,4,57160.36,10,574-83-5242
+998,Henderson,Coneybeer,Tohono O'Odham,California,1,101145.09,9,295-82-4854
+999,Scarface,Holyard,Cree,Texas,3,125743.73,10,330-22-5561
+1000,Fan,Vargas,Korean,District of Columbia,5,52625.26,5,495-19-6395

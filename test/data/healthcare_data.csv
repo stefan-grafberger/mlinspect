@@ -1,0 +1,1001 @@
+id,first_name,last_name,smoker,county,race,num_children,income,complications,age_group,ssn
+1,Abdul,Hodinton,true,Iowa,Mexican,5,17853.33,10,10,200-07-2687
+2,Wandis,Adamou,true,District of Columbia,Argentinian,2,34900.06,4,9,381-66-7740
+3,Dennet,Crankshaw,true,Florida,Venezuelan,2,112087.11,3,10,458-28-1925
+4,Erroll,Slimon,true,Virginia,Cree,5,163648.16,4,7,711-64-6999
+5,Renelle,Pude,true,California,Crow,4,80818.15,6,4,651-76-6901
+6,Hyacinthe,Larkings,,,,4,84743.44,6,8,751-40-0453
+7,Ondrea,Jain,false,Ohio,Tohono O'Odham,1,40150.54,4,7,631-75-2819
+8,Godfrey,Mabbett,true,Indiana,Kiowa,1,101745.49,10,8,129-93-8189
+9,Jaine,Shoveller,true,Missouri,Yakama,4,31651.33,4,8,325-38-2287
+10,Harmonie,Fraanchyonok,false,Massachusetts,White,1,104444.32,8,3,440-46-6444
+11,Maynord,Phuprate,false,Florida,Ottawa,4,52375.98,7,5,555-33-7590
+12,Valery,Budd,false,Connecticut,Cheyenne,4,153120.05,6,1,332-08-1534
+13,Dennison,Milesop,false,Texas,Puerto Rican,0,174807.65,5,5,786-45-4387
+14,Gertie,Vanlint,false,North Carolina,Japanese,1,123574.0,4,5,102-53-1531
+15,Culver,Cocker,true,California,Venezuelan,2,94621.45,6,10,340-01-5519
+16,Doe,McGloughlin,false,California,Chippewa,0,121261.37,0,9,745-02-7880
+17,Hilary,McGaugan,false,Nevada,Chamorro,0,39360.95,5,9,668-63-1905
+18,Taylor,Merwood,true,Texas,Delaware,4,138852.83,6,1,780-60-0406
+19,Vic,Anmore,true,Vermont,Shoshone,4,13649.74,6,9,229-58-2017
+20,Gavin,Seven,false,California,Samoan,1,23765.13,7,3,774-80-8026
+21,Rutledge,Liley,true,Colorado,Polynesian,4,79726.91,4,4,519-58-1936
+22,Libbi,Saich,true,Alabama,Iroquois,0,14561.25,5,9,247-96-8242
+23,Bobbette,Kilgrove,true,Indiana,Thai,1,163732.36,0,2,515-23-2704
+24,Lombard,Gottelier,false,Wisconsin,Indonesian,4,119790.08,5,4,800-87-5209
+25,Lil,Shayes,true,Iowa,Creek,5,36613.58,2,9,367-37-2875
+26,Nahum,Kubyszek,false,New York,Ute,3,83806.36,6,5,662-19-9927
+27,Genovera,Rapper,true,Ohio,Choctaw,4,113155.51,0,7,672-36-2966
+28,Osborn,Tasseler,true,Idaho,Salvadoran,1,104792.64,7,10,213-16-3147
+29,Andra,Jumeau,false,Florida,Pakistani,0,14400.26,8,7,299-64-6927
+30,Antony,Mirfield,true,Florida,Salvadoran,0,123361.96,8,10,644-76-5332
+31,Kassi,Skone,,,,4,161538.18,9,0,486-31-5627
+32,Elisabet,Landsbury,true,Texas,Hmong,2,114196.9,9,9,706-03-3286
+33,Ambrose,Bernt,true,Missouri,Alaska Native,3,48129.23,2,2,593-38-7515
+34,Doy,Roscher,true,Missouri,Pima,5,101973.5,10,9,895-47-6002
+35,Jourdan,Midner,true,Iowa,Potawatomi,1,113221.54,2,1,114-72-0229
+36,Gerianna,Menci,false,North Carolina,Aleut,3,137263.86,9,8,198-92-6206
+37,Thalia,Marien,true,Virginia,Crow,5,46597.19,7,6,780-07-3789
+38,Monro,Pocknoll,,,,5,97944.4,1,10,593-45-3869
+39,Crissie,Dresche,true,New York,Kiowa,3,48107.05,1,7,112-66-2652
+40,Nestor,Jeannequin,false,New York,Japanese,5,105431.98,0,5,364-65-8998
+41,Lionel,Housbie,false,Texas,Taiwanese,5,48440.93,1,0,409-70-7746
+42,Diarmid,Trenoweth,true,New York,Black or African American,4,58500.85,1,9,809-55-9393
+43,Fremont,Sedworth,false,Texas,Lumbee,4,29685.41,0,8,377-97-5828
+44,Mickie,Tabram,false,Colorado,Yaqui,4,48812.94,0,3,573-62-0905
+45,Sallee,Doxey,false,New York,Seminole,4,11598.35,3,7,499-43-4140
+46,Kimball,Altham,true,Texas,Pima,5,37565.51,0,5,399-88-4325
+47,Gloriane,Teager,false,Illinois,Asian Indian,1,162721.31,10,2,819-25-5621
+48,Wilfrid,Mancer,false,Illinois,Delaware,5,10871.86,7,7,379-08-0046
+49,Eziechiele,Shotboult,false,New York,Ottawa,2,139336.43,2,4,544-38-6361
+50,Lily,Bryers,false,Texas,Costa Rican,0,96444.62,3,10,473-09-2341
+51,Dillon,Siddons,false,Pennsylvania,Asian,2,92168.03,5,9,635-95-0891
+52,Lucila,Beebe,false,Michigan,Nicaraguan,1,138188.95,9,2,148-88-1945
+53,Brit,Baxstair,false,Texas,Cambodian,1,140029.21,6,7,802-03-4577
+54,Salomon,Ayerst,false,California,Korean,3,159079.69,9,7,264-40-9725
+55,Christoffer,Crayke,false,New York,Delaware,0,128002.08,3,8,597-93-8919
+56,Kris,Weldon,false,Florida,Houma,1,130733.35,8,6,402-80-6658
+57,Guthrey,Heaselgrave,false,Florida,Seminole,1,121605.64,10,3,646-52-4745
+58,Koressa,Portriss,false,Maryland,American Indian and Alaska Native (AIAN),5,125660.5,2,7,413-57-5724
+59,Edsel,Bromley,,,,0,81485.31,8,4,399-74-3258
+60,Hildagarde,Bowlesworth,false,Alabama,Filipino,2,14123.95,9,5,257-31-8662
+61,Loralee,Antonov,true,Ohio,Hmong,1,134589.11,7,10,366-33-9709
+62,Reina,Burnard,true,California,Chickasaw,4,134874.29,8,4,540-35-8962
+63,Sanford,Wotton,false,Florida,Blackfeet,1,145990.88,6,10,266-71-3901
+64,Prentiss,Maywood,false,Virginia,Blackfeet,2,56786.08,7,0,603-99-7563
+65,Sheffie,Lownes,true,Kentucky,Iroquois,3,150359.42,2,1,840-18-5387
+66,Mickie,Beushaw,false,Oregon,Japanese,0,22199.48,10,9,827-03-6179
+67,Loleta,Prazor,false,Nebraska,Polynesian,2,125259.83,6,10,277-47-2552
+68,Fianna,Winslow,false,Indiana,Ottawa,5,37599.39,10,8,621-18-8247
+69,Seka,Norcock,,,,4,89072.75,0,9,417-43-9350
+70,Fonzie,Bidwell,false,California,Chippewa,2,147406.34,10,8,894-48-1400
+71,Vania,Paulon,true,Connecticut,Ecuadorian,4,70385.68,2,3,586-09-1368
+72,Cynde,Stivers,false,Wisconsin,Spaniard,4,164742.52,4,6,613-61-8844
+73,Denys,Oattes,true,Texas,Cambodian,2,69197.09,2,4,767-30-5358
+74,Donaugh,Mogg,true,Florida,Polynesian,2,148146.91,5,9,694-55-4160
+75,Wallache,Thornthwaite,false,Washington,Filipino,3,63397.71,0,9,375-19-1055
+76,Gert,Duce,,,,3,59724.48,8,8,694-15-9986
+77,Oralia,Melby,false,Kansas,Crow,4,92611.31,8,8,581-41-7889
+78,Jamima,Fosdick,false,Indiana,Kiowa,5,41887.26,0,2,595-50-9435
+79,Arnoldo,Caunter,false,Florida,Bolivian,4,150077.96,6,8,219-41-8822
+80,Lib,Casero,false,West Virginia,American Indian,4,123676.77,10,4,240-63-7243
+81,Keven,Wynch,true,Hawaii,Lumbee,5,25975.75,9,3,668-12-8750
+82,Lewiss,Kline,true,Indiana,Aleut,0,32497.02,9,1,115-74-6875
+83,Masha,Shivlin,false,Colorado,Samoan,1,163114.18,1,2,126-91-8768
+84,Viki,Dunsford,false,Colorado,Paraguayan,2,113902.91,10,2,372-48-8692
+85,Maurie,Pirouet,true,Washington,Ute,4,137580.18,4,0,292-51-9269
+86,Noby,Lambert-Ciorwyn,true,California,Micronesian,5,24524.88,0,4,772-46-5288
+87,Harrie,Josskowitz,true,Iowa,Samoan,2,86686.43,4,0,538-77-1324
+88,Janeczka,Lugden,false,Georgia,Melanesian,3,136761.59,0,4,123-79-3381
+89,Inna,Pettingill,false,Washington,Osage,3,172644.45,4,10,844-92-4907
+90,Rheta,MacDwyer,true,Colorado,Korean,1,107254.74,6,4,574-81-8664
+91,Kay,Prescot,true,Georgia,Honduran,0,57415.89,10,9,407-38-2335
+92,Quincey,Cesconi,false,Florida,Yaqui,0,176422.98,5,10,195-96-7180
+93,Sloan,Trousdell,false,Texas,Chickasaw,4,37119.35,7,6,313-61-1883
+94,Fee,Planks,false,California,Indonesian,5,143039.89,10,3,671-66-0306
+95,Birgitta,Vice,false,California,Bolivian,5,31375.22,0,9,865-83-1872
+96,Liliane,Dwire,false,Florida,Paraguayan,0,130190.77,1,4,146-99-0527
+97,Jess,Mollon,false,Florida,Paiute,5,112081.33,1,4,600-91-8124
+98,Jermayne,Davall,true,California,Chilean,0,133504.38,2,8,711-54-2197
+99,Kacey,Birds,false,Connecticut,Indonesian,2,124286.58,9,9,866-33-4071
+100,Dodi,Sarjent,false,Texas,Iroquois,0,52865.62,7,10,500-56-6196
+101,Madella,Despenser,false,New York,Native Hawaiian and Other Pacific Islander (NHPI),1,70311.14,4,4,898-15-5800
+102,Keelia,Corrett,false,Oregon,Delaware,3,74775.18,1,7,643-33-0308
+103,Anestassia,Nelthrop,true,Ohio,Indonesian,1,12715.27,6,10,363-73-9625
+104,Meade,Ouldred,true,Pennsylvania,Colville,4,128504.77,3,5,562-39-9633
+105,Agnes,Smeaton,,,,0,143627.15,0,5,699-77-1609
+106,Lyn,Smorthwaite,,,,2,34941.29,10,5,419-84-8534
+107,Dinah,Odhams,true,Indiana,Salvadoran,1,55995.9,6,4,791-74-6699
+108,Rufe,Cleal,true,South Carolina,Ute,3,149726.82,9,10,792-86-4329
+109,Casandra,Davitashvili,true,Massachusetts,Thai,2,79718.83,2,9,661-91-8015
+110,Micheline,Trenam,false,Tennessee,Iroquois,0,158917.44,6,1,160-97-8391
+111,Evangelin,McMeeking,false,Florida,Comanche,5,141667.13,1,5,452-03-0158
+112,Sofia,Band,true,North Carolina,Seminole,4,105494.26,10,8,515-30-6334
+113,Brantley,Brodie,true,Colorado,Choctaw,2,62799.06,9,6,272-14-4678
+114,Serene,Spittall,true,Florida,Lumbee,0,41368.65,8,0,360-77-0830
+115,Pauletta,Bensen,,,,1,21883.32,2,1,691-23-2290
+116,Normand,Fraczak,true,New York,Tohono O'Odham,1,95868.14,3,3,385-49-4527
+117,Mufinella,Rosoman,true,New York,Comanche,2,44590.92,1,0,119-57-4742
+118,Kathlin,Haslam,false,California,Thai,5,161916.83,8,9,379-79-2899
+119,Marge,Oris,false,New York,Panamanian,4,45228.42,0,10,815-58-7073
+120,Teddi,Beany,true,Texas,Bolivian,5,128687.26,4,9,315-37-4106
+121,Ahmed,Roulston,true,Alabama,Samoan,0,100889.74,9,6,563-05-4472
+122,Dexter,Trimme,true,Louisiana,Salvadoran,1,60343.95,1,1,521-25-0882
+123,Giffard,Farnaby,false,Wisconsin,Osage,0,113718.59,5,5,624-74-9035
+124,Darcie,Orteu,true,California,Venezuelan,1,52481.78,7,3,867-83-7085
+125,Jerry,Bynold,false,California,Puget Sound Salish,3,128885.21,0,8,563-95-8077
+126,Niko,Mintram,true,Delaware,Mexican,5,162135.38,0,9,482-44-9777
+127,Donny,Stansfield,false,Arkansas,Ottawa,5,73812.01,2,4,363-12-0582
+128,Reggie,Fernely,,,,2,161219.0,4,4,768-21-8624
+129,Zaria,Sans,true,Texas,Central American,2,173272.68,7,7,395-07-3560
+130,Arden,Narducci,false,Texas,Hmong,5,75016.2,7,4,686-10-8205
+131,Konstantin,Trowsdale,true,Louisiana,Chamorro,5,160965.9,8,2,439-85-3262
+132,Annice,Marioneau,true,Texas,Houma,3,74330.75,6,0,391-66-2732
+133,Lorena,Clemencet,true,South Carolina,Creek,1,108585.41,1,6,862-23-9219
+134,Lonny,Saipy,false,North Carolina,Cambodian,1,138474.72,9,7,572-26-3692
+135,Shep,Merrilees,true,Virginia,Chilean,3,128134.22,2,6,145-48-6679
+136,Jerrie,Linneman,false,Georgia,Native Hawaiian,1,65199.62,3,10,375-54-0718
+137,Brnaby,Korneluk,true,Oklahoma,Samoan,2,11465.55,3,7,581-05-2776
+138,Willie,Jaggard,true,New Mexico,American Indian,5,82308.62,3,9,757-25-7940
+139,Pet,Lockett,true,Texas,Asian Indian,5,22111.12,3,5,610-41-6670
+140,Karalynn,Durbridge,true,Illinois,Cuban,0,99904.22,6,7,712-97-1554
+141,Rossy,Gravenor,false,New Mexico,Crow,1,35819.45,10,4,415-35-2607
+142,Britney,Pideon,true,California,Bolivian,2,98513.62,5,10,872-74-7664
+143,Lothaire,Gockeler,false,California,Yakama,3,161802.9,9,5,704-98-5596
+144,Daveta,Jacop,false,Idaho,Chickasaw,1,118428.89,7,4,824-53-7581
+145,Roi,Hackwell,false,California,Paraguayan,1,112977.61,1,3,609-06-0947
+146,Luce,MacGiany,true,California,Crow,4,31177.65,1,10,667-34-5134
+147,Jolyn,Mayte,false,California,Apache,5,167302.68,3,5,414-12-5875
+148,Veronike,Tanman,true,California,Kiowa,0,90481.09,2,8,298-11-5723
+149,Ahmed,Thomel,false,New York,American Indian,3,63806.24,0,0,161-05-3922
+150,Trace,Van Merwe,false,Nevada,Costa Rican,5,159482.92,10,5,615-42-3393
+151,Aime,Kantor,false,Indiana,Colombian,3,169318.61,5,4,753-98-9884
+152,Glenine,Hingeley,false,Louisiana,Shoshone,0,89926.2,1,1,430-67-0523
+153,Gabbi,Grimsdyke,true,Kentucky,Polynesian,3,102569.67,5,8,356-85-5960
+154,Evaleen,Jakeman,false,Nevada,Japanese,1,138126.65,7,5,614-38-4446
+155,Veda,Menilove,false,Alabama,Peruvian,3,43353.02,9,10,597-20-6742
+156,Doro,Zanazzi,,,,1,79600.07,6,6,404-30-8975
+157,Kathryn,Eingerfield,false,Washington,Chilean,2,36147.22,4,7,180-49-3948
+158,Alf,Gillhespy,false,Illinois,Comanche,5,174872.08,10,8,643-82-4085
+159,Selie,Bosomworth,true,Florida,Chickasaw,2,102365.92,3,0,798-24-9854
+160,Darb,Axston,true,Alabama,Japanese,5,73805.08,1,3,760-51-1495
+161,Gus,Fawkes,false,California,Japanese,4,115380.69,4,10,870-64-9818
+162,Tobit,Romera,true,Texas,Malaysian,3,28652.91,8,2,544-02-8529
+163,Claudetta,Philpotts,false,New Mexico,Central American,1,43458.18,2,4,221-19-5850
+164,Ardyth,Squibbs,true,California,Yakama,4,172608.14,0,9,333-57-0802
+165,Ruthie,Silvermann,true,Washington,Paiute,3,25898.62,5,4,742-53-1869
+166,Jesse,Wassell,true,Pennsylvania,Polynesian,2,68423.32,10,6,412-18-0050
+167,Alys,Forsyth,false,Pennsylvania,Polynesian,1,18257.57,7,1,101-65-7692
+168,Christan,Furney,false,Kentucky,Cuban,0,70012.68,7,5,754-09-8382
+169,Emalia,O'Brien,true,Arkansas,Japanese,1,23537.24,0,9,450-91-8566
+170,Tiffani,Meneux,false,Virginia,Bangladeshi,0,178477.26,1,1,612-43-7890
+171,Olvan,Trewman,true,Alabama,Korean,3,59285.56,0,5,867-69-3722
+172,Tobe,Blaver,false,Minnesota,Colville,3,130475.02,2,6,142-81-1186
+173,Staford,Berdale,true,Alabama,Japanese,0,95952.91,4,4,281-12-1109
+174,Iseabal,Antrack,true,West Virginia,Asian Indian,4,22681.79,3,10,365-56-6786
+175,Natty,Berriman,true,Ohio,Yakama,3,147050.74,9,9,260-57-7003
+176,Miguel,Vibert,false,North Carolina,Tohono O'Odham,2,92603.9,7,8,785-57-2926
+177,Berk,Capon,true,District of Columbia,Costa Rican,2,78301.57,9,8,206-08-6176
+178,Maxim,Pinkerton,false,Florida,Spaniard,2,124890.72,1,0,595-68-4085
+179,Elayne,Goodboddy,true,Indiana,Peruvian,0,74338.65,10,4,148-64-4800
+180,Meredeth,Pallin,true,Colorado,Argentinian,4,150984.74,0,3,106-60-7947
+181,Allix,Wavish,false,Virginia,Colombian,5,99952.06,9,4,430-16-1257
+182,Basilio,Coutts,false,New Mexico,Panamanian,1,109655.66,7,4,639-10-1160
+183,Deonne,Borzone,true,New York,Bangladeshi,1,121851.54,5,4,649-09-0708
+184,Arturo,Mellodey,true,New York,Navajo,2,13807.87,1,6,269-01-7953
+185,Lane,Decourcy,false,Florida,Comanche,4,28039.12,0,0,639-37-1760
+186,Onofredo,Lewsy,,,,4,53130.86,9,3,576-48-1269
+187,Ashlen,Robak,true,North Carolina,Yaqui,1,134105.86,5,2,539-19-8023
+188,Josey,Bassom,false,Pennsylvania,Puget Sound Salish,1,115542.09,5,9,532-47-1997
+189,Hilarius,Negal,false,Florida,Cree,4,35393.17,2,0,763-30-1358
+190,Smith,Rider,false,Texas,Bangladeshi,0,158422.69,0,5,221-54-3029
+191,Rici,Hellin,true,Texas,Apache,1,141421.0,9,4,168-31-4294
+192,Chad,Boreham,false,Pennsylvania,Yaqui,0,33948.45,6,2,781-69-6893
+193,Lev,Olcot,true,New York,Paiute,2,142738.37,0,10,398-33-3270
+194,Hildagarde,Botham,false,Massachusetts,Yakama,5,80199.31,6,6,313-76-2325
+195,Ty,Astbury,false,Georgia,Asian,3,162920.8,9,9,217-65-8390
+196,Teirtza,Jakoub,,,,0,76760.8,4,6,531-88-0714
+197,Rycca,Dayce,true,Minnesota,Taiwanese,1,19910.81,10,2,864-18-8171
+198,York,Hundall,false,Pennsylvania,Vietnamese,1,164003.75,10,10,767-77-0196
+199,Angela,Emptage,false,Florida,Cree,3,157522.22,6,7,265-77-9233
+200,Emmott,Coggen,true,Alabama,Asian,2,148599.11,5,1,198-57-3727
+201,Aurlie,Mennithorp,true,Georgia,Venezuelan,4,98160.6,0,4,466-42-5938
+202,Aprilette,Weerdenburg,false,Texas,Sioux,5,135877.66,4,1,513-51-4957
+203,Karena,Greeno,true,Pennsylvania,Honduran,2,87282.4,8,8,651-59-7580
+204,Violetta,Hammerstone,true,Illinois,Potawatomi,3,167432.71,8,7,688-79-0854
+205,Jasmina,Mawtus,true,Texas,Japanese,5,151840.64,9,1,166-24-9644
+206,Janifer,Russe,false,Ohio,American Indian,3,41643.93,8,2,818-44-4178
+207,Cleopatra,Causley,true,Washington,Pakistani,1,51660.56,8,1,519-27-8466
+208,Othilie,Marconi,false,Illinois,Cree,5,52013.92,3,9,857-10-3364
+209,Hattie,Lattos,true,Ohio,Yakama,0,165814.11,0,7,119-19-0397
+210,Anica,Gail,false,Washington,Sioux,5,34000.09,0,4,728-73-6950
+211,Godwin,Martine,false,Georgia,Spaniard,5,30840.19,10,3,663-59-5018
+212,Eugene,De Vaan,true,Florida,Colombian,1,148229.85,1,4,790-87-1450
+213,Langston,Shoebotham,false,Alabama,Navajo,5,117382.98,6,7,353-53-0495
+214,Eadith,Shelton,true,Massachusetts,Pueblo,0,169707.95,5,0,314-58-0622
+215,Julianna,Osipenko,true,Florida,Guatemalan,0,121156.48,4,6,749-01-2214
+216,Jephthah,Kightly,false,Wisconsin,Chickasaw,0,48201.23,7,5,820-46-9325
+217,Nathanial,Tickner,false,Utah,Yakama,4,165846.35,7,1,588-14-1010
+218,Pearline,Carillo,false,Pennsylvania,Polynesian,0,58137.27,6,7,340-42-0308
+219,Gerhardt,Thandi,false,Delaware,Apache,0,11362.06,9,9,578-80-4324
+220,Diena,Hourican,false,California,Cuban,2,86780.69,1,4,734-67-0400
+221,Joyann,Gilmore,true,Wisconsin,Kiowa,1,147349.76,9,1,205-70-4639
+222,Hamid,Probyn,false,Massachusetts,Polynesian,5,46697.34,4,3,461-80-1075
+223,Annmaria,Ditch,true,California,Native Hawaiian and Other Pacific Islander (NHPI),2,18745.56,4,10,856-63-8602
+224,Alida,Annakin,true,Nebraska,Indonesian,0,55810.36,5,3,446-23-8301
+225,Aron,Tween,false,Rhode Island,Eskimo,4,74906.02,4,4,748-56-3881
+226,Buffy,Battey,true,District of Columbia,Menominee,5,37810.47,7,2,219-23-1577
+227,Rickert,Cowley,false,California,Yuman,0,54498.67,10,4,736-15-4301
+228,Desi,Wanell,true,Connecticut,Houma,1,56594.98,9,3,864-50-2454
+229,Abram,Bending,false,Maryland,Taiwanese,3,128437.87,5,2,573-14-0143
+230,Almeria,Youson,true,Virginia,Honduran,0,127371.05,4,0,544-24-4928
+231,Ellette,Cominello,true,Texas,Navajo,5,59139.67,7,0,815-96-9389
+232,Edmund,Querrard,true,Missouri,Fijian,2,19902.82,2,4,298-30-3395
+233,Hortensia,Bownas,true,Ohio,Costa Rican,1,168940.4,3,10,106-30-4401
+234,Zach,Kenner,true,Alabama,Mexican,2,123316.65,10,4,696-49-7154
+235,Dulciana,Collidge,false,California,Yakama,3,56899.1,3,4,824-09-3687
+236,Hartwell,McGillivrie,false,Virginia,Alaska Native,2,119324.44,10,4,268-79-4453
+237,Royal,Ridgway,false,Colorado,Sioux,4,25186.39,4,10,892-87-3505
+238,Gan,Fitzsymons,false,Virginia,Delaware,1,141715.21,1,6,658-14-9331
+239,Somerset,Linden,true,Texas,Comanche,1,140722.71,10,4,854-67-1541
+240,Emanuele,Walework,true,Illinois,Cree,1,117706.88,8,2,118-13-2606
+241,Benedict,Creelman,true,North Carolina,Salvadoran,5,96364.9,5,4,322-83-5320
+242,Melinde,Corwood,true,Pennsylvania,Laotian,1,62798.08,9,7,597-80-8654
+243,Wanda,Bleyman,true,Indiana,Choctaw,4,34002.76,5,10,290-92-9559
+244,Star,Press,false,Virginia,Native Hawaiian,0,52390.7,1,0,516-91-4385
+245,Merry,Vagges,false,Nevada,Melanesian,2,109619.61,10,3,749-67-6311
+246,Ashly,Cocklin,true,Texas,Uruguayan,0,156127.83,6,1,767-27-5795
+247,Mela,Molson,false,Florida,Bolivian,2,33288.11,1,0,837-80-3751
+248,Clementina,Dodamead,false,Pennsylvania,Native Hawaiian and Other Pacific Islander (NHPI),2,65135.32,3,1,769-58-0334
+249,Sigfrid,Giacomazzo,true,Oklahoma,Yuman,2,144562.37,8,1,798-60-4316
+250,Christiana,Espadas,true,Ohio,Houma,2,152350.33,9,8,107-26-8917
+251,Lilias,Morrel,false,District of Columbia,Chippewa,3,38373.35,6,10,276-76-8715
+252,Hubert,Durrand,false,Florida,Peruvian,4,142689.23,6,6,649-16-0067
+253,Shepperd,Reynard,false,Florida,Potawatomi,3,60120.75,1,9,274-28-6393
+254,Vallie,Greening,false,Alabama,Menominee,0,114637.26,10,10,551-53-6730
+255,Sheff,Ehlerding,,,,0,140602.27,3,2,315-66-4528
+256,Chrysler,Ongin,false,Arizona,Thai,4,151105.67,0,4,868-68-7144
+257,Nady,Janout,true,Oregon,Choctaw,3,64528.9,0,6,606-57-2377
+258,Jeana,Saladino,true,District of Columbia,Cheyenne,2,44789.09,7,10,234-75-6632
+259,Sari,Schermick,true,Tennessee,Navajo,3,75615.09,3,7,444-79-6427
+260,Che,Tellenbach,false,Ohio,Houma,4,84365.79,6,7,826-77-4368
+261,Flemming,Evill,false,Florida,Vietnamese,4,50840.62,9,6,461-72-6583
+262,Rachel,Krzysztof,false,Kansas,Polynesian,0,113527.68,4,6,898-76-2373
+263,Zerk,Novacek,false,Utah,Chippewa,5,108312.32,4,4,355-42-6728
+264,Marjorie,Frackiewicz,false,Michigan,Native Hawaiian and Other Pacific Islander (NHPI),3,118848.0,5,9,236-15-2514
+265,Cody,Gunton,,,,4,78025.52,10,1,633-87-8661
+266,Chrisy,Hentzer,true,Washington,Navajo,5,28877.23,7,8,687-45-2529
+267,Persis,Dike,true,Texas,Blackfeet,4,84612.89,7,6,858-95-2290
+268,Elaine,Ferneley,false,Virginia,Sri Lankan,0,91136.13,1,10,889-19-3931
+269,Cece,McAuliffe,true,Nevada,Peruvian,0,101789.5,9,3,319-43-6186
+270,Andie,Loftus,false,Georgia,Honduran,1,123511.01,8,3,651-01-7128
+271,Arabelle,Getcliff,true,Georgia,Aleut,4,10267.51,5,5,890-95-2477
+272,Jacques,Bickerdicke,true,Tennessee,Tlingit-Haida,3,85568.27,9,5,241-04-1900
+273,Belicia,Haimes,true,Florida,Chickasaw,5,27664.05,9,6,652-04-8785
+274,Mahala,Kerrich,false,Florida,Houma,2,79812.49,6,6,381-15-1839
+275,Abigale,Leeming,true,District of Columbia,Choctaw,5,166330.86,8,4,198-80-6634
+276,Vanni,O'Carmody,false,Pennsylvania,American Indian,2,99733.32,7,6,467-18-0365
+277,Scarlett,Pilcher,false,Ohio,Crow,4,66652.02,9,0,866-21-2009
+278,Inesita,Warton,false,South Carolina,Guamanian,5,107103.76,6,4,829-08-7988
+279,Vivianna,Karlsen,false,Illinois,White,3,98029.0,6,6,195-38-1737
+280,Putnam,Sugarman,true,Kentucky,Chippewa,0,37741.58,6,6,634-84-6463
+281,Kyrstin,Davies,false,Oregon,Bangladeshi,4,113675.09,5,4,721-80-6243
+282,Gwyneth,Gendrich,true,Montana,Chickasaw,5,39222.94,10,3,207-18-8643
+283,Corny,Leith-Harvey,true,California,Taiwanese,0,96794.71,6,5,167-08-9517
+284,Borden,Kerford,true,New York,Panamanian,3,15736.03,3,6,791-50-3819
+285,Ashlan,Yoakley,false,Pennsylvania,Panamanian,0,116930.45,7,9,474-33-3511
+286,Mindy,Stithe,false,Virginia,Alaska Native,5,140055.31,3,1,517-22-2746
+287,Orson,Jollye,,,,4,105129.97,0,7,194-35-2682
+288,Norean,Flaune,false,West Virginia,Houma,2,113984.08,6,1,458-17-6115
+289,Boyd,Heck,true,Ohio,Cheyenne,3,125823.11,6,9,200-98-9745
+290,Cletis,Handscombe,false,Nevada,Sri Lankan,0,137891.21,6,10,234-38-6187
+291,Daryl,Croneen,false,Florida,Peruvian,5,29424.55,7,6,842-94-2974
+292,Kendrick,Bynold,false,District of Columbia,Navajo,3,142969.86,8,2,838-45-2288
+293,Freddy,de Keep,true,Kentucky,Mexican,2,137265.99,3,0,464-67-1787
+294,Othella,Tune,,,,4,88389.07,3,4,668-14-7093
+295,Corenda,Verner,true,New York,Colville,5,125625.42,5,0,854-48-4270
+296,Hedwiga,Fist,true,Texas,Puget Sound Salish,3,155096.18,7,2,325-07-3441
+297,Berthe,Barnhill,true,New York,Costa Rican,1,118316.99,7,7,471-67-7647
+298,Cesya,Bras,false,Oklahoma,Osage,4,143010.09,4,8,614-39-9394
+299,Danna,Vamplew,false,District of Columbia,Salvadoran,0,49694.88,10,7,740-61-4803
+300,Glynnis,Mandrake,false,Illinois,Tongan,1,142559.91,1,6,812-68-7927
+301,Olia,Fridd,true,Kentucky,Polynesian,1,42931.29,6,5,794-52-0337
+302,Nikoletta,Devigne,true,Florida,Houma,0,61919.96,5,7,518-55-9421
+303,Patience,Drache,false,New York,Cherokee,4,27041.59,5,5,888-88-7547
+304,Cyrill,Mowen,true,Illinois,Fijian,0,164969.15,7,4,363-64-7617
+305,Brenden,Gossart,true,New York,Dominican (Dominican Republic),2,133984.83,6,6,109-23-4659
+306,Missy,Grichukhanov,false,Arkansas,Native Hawaiian and Other Pacific Islander (NHPI),2,132240.08,8,6,469-51-5941
+307,Ardelia,Orchard,false,Texas,Seminole,1,140819.61,2,4,384-64-9902
+308,Stern,Worling,true,Louisiana,Venezuelan,1,82071.24,6,2,880-09-7483
+309,Garold,McWard,false,Washington,Chilean,0,143654.86,1,9,803-84-2086
+310,Ebenezer,Whieldon,true,California,Chippewa,2,73407.11,8,1,136-77-8014
+311,Lonny,Conre,true,District of Columbia,Venezuelan,3,67893.27,1,5,366-32-7717
+312,Delbert,Heinschke,false,California,Indonesian,4,104976.66,3,5,504-18-5511
+313,Leontyne,Bisacre,false,Alabama,Filipino,1,100514.48,1,9,499-93-8022
+314,Sabra,Chavrin,true,Oklahoma,Panamanian,4,94639.37,10,5,240-23-9119
+315,Alyss,Basey,true,Texas,Sri Lankan,1,32518.32,6,5,315-49-8988
+316,Codie,Hurles,true,Texas,Ute,2,159301.95,8,5,269-64-0738
+317,Adolphe,Durand,false,South Carolina,South American,5,16963.59,0,6,653-59-8769
+318,Foss,Treace,true,Texas,Thai,4,39343.22,3,9,352-66-1652
+319,Rozina,Euplate,false,Nevada,Tlingit-Haida,3,13430.9,8,9,382-73-6283
+320,Antonino,Wolfer,false,Tennessee,Comanche,1,102768.7,1,3,669-44-8305
+321,Amelia,Albasiny,false,California,Sri Lankan,2,53229.53,8,10,640-61-1292
+322,Kirbee,Ricciardelli,false,Colorado,Cuban,5,35910.73,1,10,357-44-0433
+323,Susan,Stanborough,true,Ohio,Ottawa,1,144041.45,0,5,113-13-1125
+324,Joscelin,Voss,true,California,Korean,4,59402.51,6,2,320-67-5870
+325,Jemmy,Gavrieli,false,Ohio,Cheyenne,2,121986.57,6,6,456-67-3306
+326,Leanor,Beaulieu,true,Texas,Mexican,5,177593.72,2,10,814-68-5182
+327,Isador,Yankin,false,Florida,Fijian,5,111854.3,1,5,608-63-2716
+328,Georgeanne,Dearle-Palser,false,Florida,Alaskan Athabascan,4,105763.18,0,1,472-13-0826
+329,Klarrisa,Doyley,,,,1,139924.59,2,6,440-96-3494
+330,Renata,Holttom,false,Florida,Pakistani,5,23703.04,2,4,105-89-3230
+331,Roscoe,Stuckey,true,New York,Malaysian,1,18393.29,0,6,240-81-5117
+332,Juditha,Rickhuss,,,,4,25239.39,10,8,601-53-0179
+333,Claudio,Dowsing,,,,1,69246.52,10,2,708-07-8276
+334,Fayina,Laslett,true,Indiana,Salvadoran,5,166343.0,5,4,575-60-6614
+335,Thomasa,Smoote,true,Indiana,Japanese,0,37036.93,3,3,311-31-5159
+336,Louis,Taplow,false,California,Iroquois,2,70589.66,7,6,331-63-8872
+337,Christiano,Pley,true,New York,Spaniard,3,28872.97,10,0,152-71-2377
+338,Patsy,McGlue,false,Colorado,White,5,66130.95,5,2,842-80-4328
+339,Doretta,Isacq,true,Ohio,Tohono O'Odham,2,139409.52,4,3,853-79-6721
+340,Preston,McCrudden,true,California,Puerto Rican,1,55412.47,5,9,789-41-5583
+341,Blithe,Drivers,false,Connecticut,Alaska Native,5,122984.31,7,0,284-15-7471
+342,Anne-marie,Besse,false,Pennsylvania,Delaware,1,143774.88,10,7,549-30-8577
+343,Elisha,Keatley,false,Minnesota,American Indian and Alaska Native (AIAN),0,171296.5,8,8,550-98-4073
+344,Flossy,Topley,false,New York,Polynesian,3,43534.42,10,7,787-75-0528
+345,Efrem,Bewlie,true,California,Potawatomi,3,156905.22,1,10,632-63-0462
+346,Oliver,Cristofol,true,Oklahoma,Korean,2,133916.62,1,9,318-35-8170
+347,Hayden,Mordecai,true,California,Iroquois,1,92358.81,6,10,218-56-5265
+348,Daveta,Dregan,true,Louisiana,Asian,5,107501.56,4,6,537-89-2462
+349,Bil,MacCole,false,Montana,Paraguayan,3,129102.9,1,1,223-01-8191
+350,Stephen,Sorrell,false,Kansas,Tlingit-Haida,4,141056.67,8,8,135-25-6011
+351,Kikelia,Garnsworth,true,California,Colombian,0,126152.0,6,7,773-72-5139
+352,Saleem,Royden,false,District of Columbia,Yakama,4,97115.13,9,9,818-92-0762
+353,Flory,Fender,true,Oregon,Filipino,4,159335.95,3,3,260-75-3011
+354,Olva,Freathy,true,Minnesota,Polynesian,1,39104.84,6,8,876-05-4005
+355,Chas,Maplethorpe,false,Pennsylvania,Seminole,4,62153.0,10,4,448-65-0805
+356,Ansell,Vamplers,true,District of Columbia,Blackfeet,4,101318.11,6,3,375-10-9171
+357,Hedi,Defty,true,North Dakota,Central American,4,62909.96,3,1,350-05-5669
+358,Nessa,Pollastrone,,,,5,58031.19,10,9,889-77-8467
+359,Mathilda,Killich,true,California,Comanche,4,38884.06,6,1,893-87-7992
+360,Ivonne,Gumby,true,Pennsylvania,Guatemalan,0,113568.41,9,0,418-43-7621
+361,Roselia,McCathy,false,Maryland,White,0,24360.83,2,1,329-99-4864
+362,Kevin,Furmedge,,,,1,50018.48,8,1,575-39-5999
+363,Frazier,Jermy,false,Louisiana,Uruguayan,2,89316.31,0,6,461-10-1064
+364,Jessika,Cowles,false,Illinois,Argentinian,4,130366.5,1,2,608-39-1303
+365,Ronna,Jamson,false,Texas,Native Hawaiian,5,159417.9,0,5,845-18-7864
+366,Jenelle,Itzkovici,true,Virginia,Lumbee,5,80056.2,6,6,674-30-6939
+367,Becky,Akaster,true,California,Sri Lankan,5,53869.53,8,10,680-73-6919
+368,Mendy,Jansey,true,California,Sioux,1,83383.28,6,9,209-94-9387
+369,Danila,Bradtke,true,Connecticut,Dominican (Dominican Republic),4,120348.87,5,0,495-86-8907
+370,Tulley,Boxer,true,Texas,Bolivian,2,111793.14,8,10,762-60-8977
+371,Kelvin,Rittmeier,true,Utah,Venezuelan,3,148099.0,1,1,419-36-0001
+372,Vance,Deinhardt,true,Florida,Comanche,0,102853.7,8,8,519-35-3924
+373,Humphrey,Jackes,,,,3,123905.85,0,3,423-31-9556
+374,Corette,Trevon,false,Connecticut,Tohono O'Odham,4,154954.37,8,9,350-87-9285
+375,Carlin,Spelling,false,Arizona,Tlingit-Haida,5,160577.81,1,7,353-57-5383
+376,Geri,Hindhaugh,true,Massachusetts,Uruguayan,3,71774.12,10,5,233-81-6516
+377,Melantha,Espadero,true,California,Navajo,2,71661.94,6,10,236-30-3782
+378,Agnella,Hadland,false,California,Alaskan Athabascan,3,112075.96,3,1,267-01-4786
+379,Rani,Edmonson,true,Colorado,Ute,1,46076.13,4,2,457-89-0859
+380,Raven,Simpkins,true,Kansas,Korean,5,18323.53,3,7,251-15-0985
+381,Mitzi,Cogger,true,Texas,Paraguayan,0,56526.07,1,9,816-54-3780
+382,Cyb,Christopherson,true,Washington,American Indian and Alaska Native (AIAN),2,131605.54,7,0,252-95-4011
+383,Matt,Dimond,false,California,Uruguayan,2,149712.05,4,6,879-35-4209
+384,Pearl,Bryett,true,Florida,Honduran,0,99402.62,9,3,533-21-8797
+385,Paten,Harmston,true,Texas,Tongan,0,79257.41,1,4,591-64-8153
+386,Ingaberg,Whyberd,false,South Carolina,Chickasaw,2,104073.27,7,0,167-49-6081
+387,Ellene,Frangione,false,Pennsylvania,Black or African American,3,129448.66,7,9,710-68-8757
+388,Claudie,Gilhouley,true,Washington,Honduran,1,61493.28,3,1,852-78-0108
+389,Regan,Hazzard,true,California,Iroquois,4,62319.17,8,0,643-91-9800
+390,Korrie,Chellenham,true,California,Nicaraguan,1,39593.59,0,4,369-32-1126
+391,Cordi,Showalter,,,,1,146045.08,7,8,719-04-3520
+392,Stacee,Guilloneau,false,California,Cherokee,1,125581.99,6,0,498-01-2481
+393,Theodosia,Sifflett,false,District of Columbia,Menominee,1,122666.41,1,2,884-33-7004
+394,Selie,O'Bruen,true,California,Japanese,1,93085.79,3,4,601-50-5516
+395,Blithe,Gossling,false,District of Columbia,Japanese,1,35786.95,5,4,396-74-0189
+396,Greg,Quantrell,true,Nevada,Taiwanese,1,84504.82,8,9,105-59-1049
+397,Chelsea,Stannering,false,Texas,Peruvian,3,64727.38,6,2,664-89-8168
+398,Claresta,DelaField,false,New York,Venezuelan,5,13152.12,5,2,884-87-5625
+399,Jerrie,Cust,false,Massachusetts,Venezuelan,0,91973.04,6,0,399-72-3467
+400,Lowe,Jeune,true,Texas,Colville,2,170286.52,9,2,777-66-3292
+401,Bay,Proom,false,Florida,Native Hawaiian,5,115561.73,4,7,584-23-7586
+402,Stephannie,Finlater,true,Oklahoma,Puget Sound Salish,4,178830.0,7,2,769-29-2104
+403,Fidela,Oakeby,true,Iowa,Fijian,4,25555.68,8,7,301-55-9522
+404,Candra,Rutgers,false,Nebraska,Kiowa,0,110976.45,3,5,626-09-0607
+405,Jessamine,Richly,false,California,Cherokee,5,46518.34,10,2,207-79-2279
+406,Noel,Kasbye,false,New York,Melanesian,0,94626.01,7,8,440-55-8491
+407,Frederick,Barkaway,false,Texas,Filipino,4,87146.74,2,1,359-92-2553
+408,Renaud,Daughtry,true,Tennessee,Panamanian,0,102707.23,9,1,757-06-5379
+409,Tybie,Burdekin,true,California,Central American,1,104676.98,5,1,485-86-2585
+410,Giacobo,Barnsdall,,,,2,178785.08,3,5,133-16-6221
+411,Lonni,Calleja,false,Minnesota,Polynesian,0,102318.18,9,4,191-77-0656
+412,Jacquetta,Gilbank,true,Texas,Guamanian,1,17247.74,4,7,121-07-4375
+413,Blanche,Acheson,false,Missouri,Puerto Rican,1,20539.72,9,1,445-99-3734
+414,Imelda,Neiland,false,Ohio,Lumbee,3,136005.71,6,9,426-64-5350
+415,Alfi,Piechnik,false,Virginia,Guamanian,2,110231.05,8,10,864-88-9165
+416,Elvina,Millard,true,Nevada,Delaware,4,64240.8,9,3,319-88-4676
+417,Estelle,Tighe,false,Florida,Colville,2,114740.38,8,2,613-69-5524
+418,Nananne,Altoft,false,Colorado,Thai,0,100736.64,7,3,867-86-3797
+419,Waylin,Allardyce,false,Ohio,Delaware,1,50402.2,4,10,449-38-2103
+420,Krissy,Pinchback,true,Tennessee,Tongan,5,119237.81,9,1,744-72-5405
+421,Clem,Jolland,false,Oklahoma,Ecuadorian,0,166140.83,10,2,371-57-2534
+422,Shae,Myers,true,Texas,Indonesian,5,134139.78,3,6,466-53-2916
+423,Merla,MacCaughan,,,,4,156891.91,1,2,895-68-2360
+424,Riccardo,Trappe,false,Texas,Pakistani,5,27719.82,9,3,663-73-2592
+425,Toma,Gadney,false,California,Argentinian,3,74560.13,9,0,780-73-4101
+426,Prinz,Coggeshall,true,Alabama,Apache,5,56201.77,8,5,884-85-5698
+427,Ninnetta,Isacke,true,California,Cambodian,0,94450.26,1,3,739-81-1062
+428,Kendell,Innett,false,Virginia,Taiwanese,1,47477.07,10,6,618-93-8942
+429,Bibbie,Alexandre,false,West Virginia,Native Hawaiian,4,85036.08,7,7,181-58-1952
+430,Guglielmo,Orgen,true,North Carolina,Shoshone,1,162828.31,7,8,327-15-5444
+431,Layton,Mitchard,true,Michigan,Shoshone,5,16869.36,9,0,648-49-4165
+432,Edwina,Allard,false,Colorado,Nicaraguan,4,110547.19,0,2,272-96-8984
+433,Tibold,Saffin,false,Kansas,Colville,2,173646.79,7,2,306-41-5044
+434,Brande,Byers,true,Texas,Paiute,2,145385.49,2,10,542-21-2667
+435,Rooney,Breens,true,Texas,Melanesian,4,59697.45,1,8,163-69-4458
+436,Orelia,Lohering,false,Nevada,Paiute,0,34543.86,3,9,656-81-4965
+437,Rudolfo,Eilhermann,,,,5,108104.69,10,0,689-32-5770
+438,Marina,Boylund,false,California,Native Hawaiian,5,118461.37,0,3,204-75-4925
+439,Dasi,Midner,true,Maryland,Chippewa,1,97893.35,7,9,882-97-5334
+440,Corliss,Swalteridge,true,Minnesota,Tlingit-Haida,3,59218.35,8,7,652-53-4392
+441,Braden,Hevner,true,Missouri,Peruvian,0,133737.23,4,7,763-90-9156
+442,Mikey,Sturte,false,District of Columbia,Mexican,2,56237.39,0,1,556-56-6526
+443,Ariela,Dunstan,false,Texas,American Indian and Alaska Native (AIAN),0,79542.99,9,6,405-07-0491
+444,Chucho,Solano,true,Alabama,Bangladeshi,1,147050.37,7,3,711-40-9086
+445,Teena,Mee,true,Massachusetts,Alaskan Athabascan,2,33296.55,10,3,374-37-4640
+446,Dareen,Peascod,true,Arizona,Blackfeet,3,19797.19,3,5,881-37-9806
+447,Amalia,Piddocke,true,Pennsylvania,Korean,0,122548.99,10,7,393-37-1595
+448,Tedmund,Valentino,false,Illinois,Uruguayan,3,82782.0,10,5,750-80-6571
+449,Linc,Manach,true,Florida,Tlingit-Haida,0,165951.97,9,7,492-62-1378
+450,Lisetta,Berridge,true,Texas,Chilean,0,154721.44,5,1,669-47-1897
+451,Nanice,Piatkowski,false,California,Houma,5,66990.06,2,5,383-45-6693
+452,Ericka,Durtnel,false,Pennsylvania,Yakama,3,148116.25,8,6,634-42-9683
+453,Adlai,Clopton,false,California,Comanche,4,75181.09,4,4,246-39-1944
+454,Gladi,Gumb,true,Maryland,Malaysian,4,87712.03,1,8,168-78-0731
+455,Nyssa,Kinney,true,District of Columbia,Puerto Rican,2,37569.32,1,10,374-78-9149
+456,Burnard,Hacksby,true,Idaho,Pueblo,1,86552.0,2,10,738-36-2685
+457,Baudoin,Beamont,true,Michigan,Tlingit-Haida,1,45518.31,8,9,231-91-8605
+458,Berrie,Mildner,true,Indiana,Taiwanese,5,63570.05,1,5,657-22-9609
+459,Meagan,Zoephel,true,Colorado,Aleut,5,122485.99,4,7,509-65-0185
+460,Bonnibelle,Veneur,true,Georgia,Fijian,1,104285.02,6,1,169-02-1610
+461,Averil,Middell,false,Missouri,Chippewa,5,91253.46,5,7,453-40-3111
+462,Doralyn,Morse,true,Texas,Native Hawaiian and Other Pacific Islander (NHPI),1,60275.55,1,0,354-56-6095
+463,Tristam,Beadnell,true,Kentucky,Native Hawaiian and Other Pacific Islander (NHPI),4,22579.93,1,7,847-38-1579
+464,Valencia,Hinkley,false,New York,Blackfeet,3,139208.24,7,5,247-57-9110
+465,Jazmin,Hurcombe,true,Tennessee,Indonesian,0,37345.27,0,2,241-06-7736
+466,Rogers,Ruggs,true,Kentucky,Dominican (Dominican Republic),1,96167.89,0,9,308-63-1622
+467,Jerad,Goudge,false,Arizona,Honduran,5,179337.37,9,5,842-60-0908
+468,Melisande,Woltman,true,Arizona,Indonesian,4,21802.66,7,9,635-50-9312
+469,Livvyy,Duiguid,true,North Carolina,Black or African American,2,108998.65,5,6,664-65-9623
+470,Fidelio,MacCartan,false,Florida,Sioux,4,41600.86,2,1,488-90-0536
+471,Jacques,Shiel,true,Virginia,Costa Rican,3,135008.39,6,0,803-91-3153
+472,Zachery,Johnke,false,Texas,Yakama,2,179661.65,8,3,149-46-5354
+473,Tanner,Askell,false,Texas,Native Hawaiian and Other Pacific Islander (NHPI),4,40358.42,5,7,424-76-4959
+474,Aurel,Lassen,true,Virginia,Micronesian,4,64941.2,8,9,159-41-4041
+475,Iago,Thomann,true,New York,Yaqui,2,41650.86,1,7,247-44-9558
+476,Ola,Dodd,false,Nevada,Honduran,5,139866.52,9,1,884-91-2907
+477,Cindy,Janisson,false,California,Alaskan Athabascan,4,151879.88,1,2,239-79-5291
+478,Krissie,Twidle,true,Florida,Venezuelan,1,110466.85,2,0,794-54-7117
+479,Lindon,Shera,false,Georgia,Yaqui,0,164455.67,4,9,718-27-8908
+480,Byron,Wordley,false,Florida,Taiwanese,5,29721.44,3,5,341-49-9103
+481,Egan,Harlowe,false,California,Peruvian,4,32429.27,3,9,889-34-2801
+482,Nehemiah,Leander,false,Missouri,Puerto Rican,2,102974.86,3,3,765-09-1798
+483,Clerc,Gilhouley,true,District of Columbia,Sri Lankan,2,170814.76,10,0,778-93-8175
+484,Bryan,Oxe,false,California,Chilean,2,86282.89,5,8,887-18-6857
+485,Carolee,Brader,true,Texas,Sri Lankan,3,79020.33,2,0,748-34-3711
+486,Julius,Nesbeth,,,,5,84320.88,0,7,643-25-7212
+487,Callie,Fane,true,South Carolina,Taiwanese,3,139212.62,9,10,121-42-9084
+488,Ronnie,Abley,true,Indiana,Argentinian,3,171299.4,9,6,750-29-8960
+489,Willabella,Pendred,true,Massachusetts,Uruguayan,0,133927.11,7,7,842-73-2247
+490,Veronica,Sinkin,true,Mississippi,Cuban,2,111431.83,0,2,413-90-9248
+491,Gearard,Slaughter,false,Missouri,Mexican,5,37949.53,2,8,581-56-7620
+492,Ferdie,Bourbon,true,Kansas,Crow,1,33402.95,9,2,571-78-4728
+493,Clevey,Lander,false,New York,Cheyenne,4,90298.01,2,2,149-42-8860
+494,Pate,Henfre,true,California,Venezuelan,4,167085.18,1,9,368-34-8442
+495,Charley,Townley,true,New York,Nicaraguan,5,112500.45,9,5,443-87-2612
+496,Huntlee,Lassetter,false,Alabama,Cheyenne,5,147297.65,0,10,129-09-2730
+497,Poul,Wilcott,false,Texas,Honduran,1,17394.42,1,1,734-75-9573
+498,Eva,Cominello,false,Texas,Eskimo,3,53153.49,9,1,138-71-1711
+499,Daryl,Aizikovitz,false,California,Choctaw,5,133726.76,6,10,858-90-2436
+500,Clari,Gerrard,,,,4,26725.58,6,0,845-11-7843
+501,Karlotte,Cusworth,true,North Carolina,Ecuadorian,4,163093.4,8,10,603-58-5305
+502,Ignacius,Farrow,false,California,Hmong,2,129558.17,4,6,760-34-8075
+503,Latia,Coughtrey,true,California,White,3,25910.81,9,5,747-15-8264
+504,Aubry,Dorricott,true,New York,Apache,3,38016.8,10,3,626-66-8712
+505,Margot,Lackie,true,Minnesota,Yuman,0,93721.56,3,8,879-20-5912
+506,Enoch,Steadman,false,Texas,White,0,20304.82,7,5,447-13-2999
+507,Henry,Folli,false,Texas,Malaysian,0,147110.28,1,1,322-30-9747
+508,Olav,Smitton,true,Arizona,Puget Sound Salish,0,114359.06,10,5,803-71-9789
+509,Aylmar,Somerfield,,,,4,141004.7,5,3,548-25-6801
+510,Robinet,Bettanay,true,Washington,Eskimo,4,27018.55,10,4,311-32-5968
+511,Clarice,Szapiro,true,Pennsylvania,Paraguayan,4,124922.69,3,6,416-06-1813
+512,Kasper,Clubbe,false,Virginia,Tohono O'Odham,2,137859.5,10,5,780-65-7195
+513,Evin,Ickowics,true,California,Hmong,4,41222.39,3,3,754-84-9334
+514,Lilli,Shallo,false,New York,Chinese,1,133236.71,8,4,609-08-8604
+515,Kathrine,Jessel,false,South Dakota,Pima,5,109713.71,10,8,664-41-5982
+516,Minette,Westrey,false,Oklahoma,Vietnamese,5,167481.59,10,6,836-62-8538
+517,Alan,Shillam,true,Arizona,Cambodian,1,53806.75,7,2,792-51-6111
+518,Meta,Dronsfield,,,,2,85611.53,4,6,226-77-0899
+519,Joann,Cottrell,true,District of Columbia,Salvadoran,5,105252.4,1,4,871-75-3630
+520,Mommy,Cappel,,,,5,122508.24,2,1,714-77-8348
+521,Kin,Boichat,false,California,Pima,4,95192.54,5,0,188-49-3109
+522,Ilario,Libermore,false,North Carolina,Central American,1,34068.97,10,9,311-79-6092
+523,Chaim,Gudde,false,North Carolina,Argentinian,0,115021.16,0,8,276-68-9533
+524,Casi,Isaacs,true,Maryland,Yakama,1,28829.0,9,2,407-24-9161
+525,Hammad,Waddington,true,New York,Korean,4,51040.26,7,1,537-36-9405
+526,Tandi,Impey,true,Alabama,Yakama,2,83527.22,1,2,184-13-4190
+527,Jeddy,Jakubovits,true,Florida,Pakistani,1,75970.25,5,8,145-02-1672
+528,Carolynn,Teffrey,,,,2,87619.82,9,1,389-31-4888
+529,Hally,Sheehan,true,Texas,Malaysian,1,36650.17,1,5,206-42-6447
+530,Heriberto,Shorey,true,Oklahoma,Tongan,2,146573.63,2,7,665-81-4232
+531,Ignacius,Arnke,true,Minnesota,American Indian,5,163821.0,9,1,557-54-8357
+532,Karen,Heater,false,Oklahoma,Yaqui,5,115005.77,9,8,798-95-9669
+533,Dulsea,MacQuarrie,false,Florida,Shoshone,2,132815.31,9,3,393-72-0416
+534,Faythe,Lie,false,Arkansas,Sioux,5,45809.01,1,1,423-48-9181
+535,Bryna,St. Hill,true,Oregon,Vietnamese,2,104422.01,4,6,486-22-1926
+536,Merwin,Lydster,false,Oregon,Malaysian,0,50606.69,9,4,716-87-8616
+537,Kimberlyn,Naden,false,Georgia,Dominican (Dominican Republic),2,169956.07,10,3,190-70-7249
+538,Freddy,Slesser,false,California,Choctaw,0,119795.23,0,2,282-52-9963
+539,Johny,Cheeke,false,Kansas,Sioux,5,60929.97,9,7,161-47-4621
+540,Ronnica,Castagnaro,false,Colorado,Ottawa,2,174300.86,7,2,599-91-8620
+541,Nettle,Wyant,false,New Jersey,Cuban,3,142406.63,9,6,121-81-8426
+542,Sharleen,Triswell,false,North Carolina,Pima,0,114105.0,6,5,782-08-3016
+543,Lotte,Hemshall,false,North Carolina,Cuban,4,63297.94,1,9,600-53-9268
+544,Ara,Beever,false,Nebraska,Micronesian,3,88128.45,3,1,663-69-9843
+545,Tori,Northgraves,true,Utah,Kiowa,1,160561.04,2,10,178-26-9605
+546,Alanah,Rowney,false,Colorado,Black or African American,4,42663.59,6,8,190-47-5760
+547,Shirlene,Varfalameev,true,Virginia,Yakama,1,13578.75,1,8,418-17-4473
+548,Elna,Le Bosse,false,District of Columbia,Shoshone,2,53697.56,8,8,669-54-0724
+549,Marney,Thams,true,California,Native Hawaiian and Other Pacific Islander (NHPI),5,175173.26,10,6,526-01-6694
+550,Iosep,Sally,false,District of Columbia,Asian,4,117955.9,5,5,701-35-5629
+551,Devy,Bourke,true,California,Cuban,5,121192.8,1,1,101-73-8710
+552,Stacia,Bytheway,false,Minnesota,Thai,5,106149.15,9,8,427-64-7347
+553,Shanta,Gurnett,true,New York,Mexican,4,165751.32,0,8,742-86-5121
+554,Maurine,McRoberts,true,Georgia,Vietnamese,0,101422.43,3,2,656-99-3444
+555,Kris,Ryle,false,Massachusetts,Colville,4,51819.05,6,8,558-41-2798
+556,Welby,Faunt,,,,1,114934.11,7,0,806-55-1699
+557,Adrianna,Brandacci,false,Texas,Nicaraguan,2,131835.49,7,10,417-76-3433
+558,Monroe,Eingerfield,false,Utah,Yaqui,2,83879.77,6,4,409-62-3059
+559,Rafferty,Toler,true,North Carolina,Creek,4,72396.77,9,2,418-34-7606
+560,Rafa,Alberts,false,North Carolina,Menominee,2,46239.99,2,6,183-66-1159
+561,Burty,Knotte,true,Wisconsin,Thai,4,140444.76,8,2,134-39-3912
+562,Miguela,Kubach,false,North Carolina,Ute,2,172857.07,8,7,336-76-5328
+563,Grant,Calderbank,true,Pennsylvania,Lumbee,1,55826.64,0,8,877-09-1378
+564,Merna,Cutchie,true,West Virginia,Chilean,1,104485.74,7,5,221-98-4842
+565,Hetty,Riha,false,Oklahoma,Nicaraguan,3,174677.72,0,7,845-08-6825
+566,Oona,McCallum,false,Texas,Alaskan Athabascan,5,20789.44,8,10,263-42-0100
+567,Irina,Agg,true,Wisconsin,Kiowa,5,146168.01,5,7,575-28-0670
+568,Ammamaria,Worpole,false,California,Polynesian,2,146433.63,4,4,828-58-0158
+569,Avrom,MacCafferky,true,Florida,White,5,18388.12,2,0,285-63-5386
+570,Dory,Aylesbury,false,District of Columbia,Yaqui,0,160181.71,3,4,197-99-4013
+571,Fredericka,Ortner,false,Texas,Central American,1,173064.45,9,9,115-86-3030
+572,Lalo,Whiffin,true,Florida,Cree,5,123456.84,0,2,515-50-3093
+573,Nancey,Orrum,false,California,Puerto Rican,4,174804.98,8,0,216-64-9079
+574,Brod,O'Fergus,false,West Virginia,Asian,1,108566.51,5,10,858-24-0527
+575,Walton,Hindshaw,true,Colorado,Pueblo,3,35586.28,3,3,884-08-7404
+576,Dougie,Callington,true,California,Chippewa,2,106440.44,6,5,501-68-4107
+577,Krissie,Normavell,true,California,Native Hawaiian,3,58997.73,8,5,132-74-6967
+578,Alysia,Ethelston,true,Pennsylvania,Lumbee,2,10018.06,6,0,550-49-0689
+579,Ward,Marrison,true,California,Costa Rican,2,116080.89,3,6,476-01-4703
+580,Isabel,Reffe,true,California,Uruguayan,2,164546.99,10,6,149-80-1736
+581,Daile,McAlinion,true,Illinois,Cherokee,3,86180.45,4,3,892-10-2422
+582,Joye,Nelhams,true,New York,Yakama,2,164680.87,7,3,602-35-4663
+583,Tillie,Attwell,true,Florida,Colombian,4,121858.43,7,2,116-99-8435
+584,Loydie,Ong,true,Indiana,Puget Sound Salish,4,174055.44,1,3,216-12-8430
+585,Lucian,Slany,true,Ohio,Navajo,2,17014.84,2,6,452-63-5768
+586,Hamid,Freckelton,false,Virginia,Yakama,4,126208.09,0,3,588-65-5107
+587,Livia,Billo,true,Florida,Panamanian,2,179004.77,3,6,832-93-5504
+588,Neysa,Remer,false,California,Dominican (Dominican Republic),0,175716.94,0,8,160-99-5221
+589,Morganica,Swanbourne,false,Pennsylvania,Cuban,4,179167.92,9,9,543-57-8605
+590,Ambrosio,Loughman,true,Ohio,Salvadoran,2,46465.9,8,6,883-13-6857
+591,Hobart,Parnall,,,,5,110446.83,8,3,421-27-0679
+592,Esme,Pelham,true,Michigan,Native Hawaiian,5,166615.61,10,9,604-50-5465
+593,Tory,Halstead,true,Texas,American Indian,2,68497.9,2,4,702-12-8487
+594,Larisa,Ledward,true,New Hampshire,Colombian,4,126177.31,7,5,841-77-4581
+595,Oren,Milan,false,California,Chickasaw,2,138779.13,1,6,729-45-7987
+596,Nat,Smeeth,true,California,Vietnamese,2,15107.62,9,5,813-11-6057
+597,Adi,McJarrow,true,Georgia,Pueblo,4,91866.05,10,2,289-26-7330
+598,Redford,Spaughton,true,Arizona,Ecuadorian,5,177890.0,7,8,795-62-5934
+599,Thibaut,Lazell,true,New York,Peruvian,4,72953.79,6,2,833-70-7932
+600,Florenza,Crowley,false,Pennsylvania,Peruvian,1,26503.79,5,2,704-73-1781
+601,Alexandrina,Phonix,true,Texas,Latin American Indian,1,64795.85,5,5,425-64-8948
+602,Charmian,Fulkes,true,Illinois,Yaqui,3,115172.1,1,7,432-82-6626
+603,Bellanca,Comiskey,true,Arkansas,Cree,1,22337.07,9,7,799-61-5285
+604,Thibaut,Bremen,false,California,Guamanian,1,167318.67,0,5,846-89-4343
+605,Melloney,Greenall,true,Minnesota,Mexican,2,155163.98,5,3,160-10-5159
+606,Curr,Gland,true,North Carolina,Melanesian,5,92040.72,8,4,543-15-8209
+607,Felike,Raisbeck,false,Louisiana,Sri Lankan,1,138051.72,10,0,791-03-5350
+608,Cris,Suett,true,California,Eskimo,1,52929.3,9,4,556-29-9885
+609,Ree,Camilletti,true,Missouri,Paiute,0,30952.54,4,8,728-52-2614
+610,Jae,Schimon,true,New York,Peruvian,2,61545.3,4,3,885-35-8945
+611,Ulla,Yitzhakov,true,Nevada,Blackfeet,5,37874.38,10,8,390-06-4032
+612,Daren,Grimwood,false,Indiana,Malaysian,3,61894.1,6,1,151-50-7533
+613,Ferdinand,Dady,false,Hawaii,Thai,1,123090.86,1,1,671-01-0362
+614,Zahara,Evett,false,Arizona,Crow,1,46020.8,6,1,577-62-6438
+615,Bathsheba,Corker,false,Pennsylvania,Alaska Native,5,145965.92,0,10,899-34-4068
+616,Allegra,d' Elboux,false,New York,Puget Sound Salish,4,125651.73,6,8,164-38-5614
+617,Aubine,Reinbech,false,Virginia,Polynesian,2,135176.7,4,6,186-18-3571
+618,Eadie,Bevis,true,New York,Chinese,3,39657.56,2,9,819-83-8712
+619,Harriot,Astbury,false,New York,Panamanian,2,48614.11,8,8,391-69-2048
+620,Dulcine,Tollow,,,,2,124331.97,7,2,583-84-4620
+621,Gunilla,Brashaw,true,Wisconsin,Costa Rican,2,130611.35,6,7,238-99-1548
+622,Andros,Saynor,true,Florida,Argentinian,0,30615.91,2,4,554-47-6770
+623,Ania,Glisane,true,Pennsylvania,Bangladeshi,5,41166.57,2,3,855-79-2508
+624,Rosanne,Sargant,false,California,Laotian,4,65773.77,4,6,220-87-7849
+625,Josey,Leppard,false,Michigan,Shoshone,3,25410.57,3,4,636-63-1550
+626,Leoine,Camock,false,Minnesota,Polynesian,4,83091.73,1,3,749-19-6920
+627,Orren,Vida,false,Georgia,Alaskan Athabascan,4,119670.17,3,6,627-51-1698
+628,Louella,Gillanders,false,Texas,Chinese,5,66921.67,5,8,746-83-8738
+629,Mirabel,Djakovic,false,District of Columbia,Chamorro,3,89501.47,9,1,398-25-3785
+630,Engelbert,Jacques,true,Maryland,Cree,1,30757.31,8,5,140-13-5522
+631,Verna,Gonoude,false,Minnesota,Samoan,0,128262.64,4,8,162-18-9011
+632,Don,Illingsworth,false,California,Paraguayan,5,34420.73,4,5,410-56-7258
+633,Ronny,Deshorts,true,North Carolina,Creek,3,43697.41,9,5,434-97-2998
+634,Kermit,Caddy,false,Virginia,Guatemalan,3,141903.41,5,7,670-12-6387
+635,Raphaela,Chipping,true,Alabama,Panamanian,5,60738.28,2,2,430-03-7013
+636,Rora,Heel,false,Minnesota,South American,5,127979.46,9,3,492-40-6115
+637,Roseanna,Becconsall,false,Texas,Yuman,0,104992.59,5,5,347-79-0139
+638,Dall,McLaren,false,Virginia,Ute,4,57222.9,5,10,741-03-9341
+639,Theodosia,Grevel,false,Virginia,Taiwanese,3,133521.74,7,8,131-80-8204
+640,Standford,Killigrew,,,,4,107979.56,4,7,626-42-7130
+641,Vernice,Daymond,false,Virginia,Yakama,3,90574.53,8,5,826-39-0986
+642,Sandra,Joanaud,false,Missouri,Indonesian,2,25820.29,5,1,529-63-6249
+643,Valentine,Pearsall,true,Florida,Filipino,0,175892.02,10,7,427-39-1029
+644,Imogene,Grim,true,Florida,Potawatomi,0,170538.23,5,8,704-79-4927
+645,Jeffrey,Piotrkowski,true,Ohio,Black or African American,0,85343.46,9,7,782-50-4136
+646,Monro,Leadbitter,false,Maryland,Puerto Rican,5,38662.23,5,9,157-44-2998
+647,Elisa,Panchen,false,Ohio,Venezuelan,0,18573.15,8,9,844-38-3533
+648,Pernell,Gullifant,true,Virginia,Peruvian,0,155099.62,1,7,511-11-0142
+649,Millisent,Bourley,true,West Virginia,Samoan,0,122290.78,3,4,471-41-7422
+650,Renelle,Feldharker,false,Nebraska,Seminole,3,30430.91,2,1,780-81-8944
+651,Barry,Axleby,false,Florida,Korean,3,23814.21,4,5,849-94-6920
+652,Stanislaus,Meindl,true,Texas,Yakama,0,96902.88,3,10,321-56-5444
+653,Kincaid,Shevlin,false,Florida,Panamanian,4,28119.45,5,0,386-74-3740
+654,Magdaia,Train,,,,3,48834.16,6,3,860-36-4231
+655,Florencia,Gislebert,true,Florida,Ottawa,1,75317.72,0,7,332-43-3594
+656,Tiphany,Baily,true,Minnesota,Korean,0,131880.57,3,10,580-51-4021
+657,Buffy,Halsall,false,California,Argentinian,3,109030.52,1,8,706-59-3324
+658,Idette,Clashe,true,Texas,Honduran,1,170751.86,10,5,877-68-0053
+659,Richmond,Possa,false,Utah,Houma,1,113399.79,10,6,181-72-2298
+660,Del,Benedyktowicz,true,Oregon,Ute,1,166872.98,4,2,510-81-4183
+661,Lionello,Atkins,false,New York,Uruguayan,3,128886.88,3,6,696-26-1388
+662,Armin,Carlson,false,Nevada,American Indian and Alaska Native (AIAN),3,21452.84,2,3,138-08-7846
+663,Herold,Bartoszinski,false,Florida,Polynesian,2,23857.99,9,2,847-64-0892
+664,Ginnifer,Redish,false,Michigan,Korean,5,105512.86,8,2,489-35-2999
+665,Pincus,Feacham,false,New York,Native Hawaiian,2,91618.26,7,6,838-02-8228
+666,Horatius,Corps,false,Iowa,Chamorro,3,87728.39,1,4,566-07-5118
+667,Murray,Kinnon,false,Nevada,Aleut,5,63256.75,9,3,645-91-0715
+668,Manon,Heatherington,false,Connecticut,Puerto Rican,5,120060.34,6,3,462-93-8432
+669,Stacee,Carstairs,true,Missouri,Lumbee,2,76910.8,2,9,558-90-2506
+670,Codi,Mapplebeck,false,Maine,Honduran,2,65268.33,0,10,694-78-0932
+671,Bonnie,Assante,false,Virginia,Menominee,3,84474.04,9,10,302-48-4633
+672,Charlene,Arnoldi,true,Pennsylvania,Panamanian,0,83190.36,1,2,789-84-9047
+673,Herbie,Dart,false,California,Houma,3,133238.38,2,10,452-30-1098
+674,Bryce,Wilmut,true,New York,Spaniard,3,47516.78,6,2,590-88-6519
+675,Delano,Cammidge,true,New Jersey,Puerto Rican,0,27552.7,3,7,446-34-4119
+676,Ramon,Holhouse,true,New York,Micronesian,0,162503.99,6,0,739-14-8378
+677,Rolland,Glasson,false,South Carolina,American Indian and Alaska Native (AIAN),0,140757.93,3,8,143-47-4801
+678,Christine,Heyfield,false,New York,Thai,3,54147.55,8,1,670-30-1131
+679,Herve,Goadbie,false,Indiana,Shoshone,0,61849.48,7,10,433-37-9867
+680,Vern,Philpots,false,Virginia,Apache,3,23734.34,2,9,406-83-7716
+681,Sidnee,Meyer,false,Maryland,Puget Sound Salish,0,107922.95,7,4,696-95-8809
+682,Arlan,Mattevi,true,District of Columbia,Colombian,5,34708.73,9,1,801-49-2493
+683,Cally,McGinley,false,Arizona,Blackfeet,5,151673.92,1,3,440-86-6068
+684,Jeane,Keasy,false,North Carolina,Indonesian,3,82624.08,2,6,533-60-0646
+685,Leone,Winram,true,New York,American Indian,1,38423.0,1,1,181-29-0792
+686,Riley,Shorter,true,Florida,Pueblo,4,73613.03,2,1,108-67-3936
+687,Des,Sievewright,true,West Virginia,Panamanian,3,68885.82,0,8,522-90-9903
+688,Caty,Channer,true,Colorado,Vietnamese,3,29809.23,3,3,526-61-0624
+689,Flory,Geggie,false,New York,American Indian,4,177816.34,4,9,125-15-9457
+690,Helyn,Sloat,false,Illinois,Apache,1,163613.39,8,1,450-10-7469
+691,Selene,Dumbreck,,,,1,132153.72,4,10,586-43-1079
+692,Shayna,Norway,,,,3,22377.04,5,10,898-05-6823
+693,Carmina,Arnaudi,false,North Carolina,Blackfeet,3,108293.09,10,7,814-31-0414
+694,Tandie,Chelsom,true,Illinois,Yuman,4,18250.65,3,8,165-17-5075
+695,Benji,Mayworth,false,Pennsylvania,Uruguayan,4,116180.12,8,2,310-42-4732
+696,Jack,Bucky,false,Ohio,Panamanian,3,108037.91,1,2,841-16-0252
+697,Cordy,By,,,,2,159387.04,9,6,430-44-8766
+698,Craggie,Kinsley,false,Texas,Uruguayan,5,154472.65,10,8,492-30-4900
+699,Raffaello,Hek,false,Kentucky,Menominee,1,114040.33,9,5,229-61-1956
+700,Layne,Huglin,false,California,Choctaw,2,151561.7,0,3,527-68-6278
+701,Vladimir,Habden,false,Oregon,Crow,5,25460.16,3,4,116-84-1952
+702,Estella,Wind,true,Florida,Yakama,5,21875.8,9,2,194-16-9218
+703,Ken,Lambrook,true,Arizona,Chamorro,5,79080.38,3,7,400-78-6280
+704,Clemens,Broadbere,true,Pennsylvania,Colombian,3,49855.49,7,5,552-79-0845
+705,Sidonia,Kirvell,,,,2,45965.59,4,8,729-93-4540
+706,Antonin,Ram,true,Texas,Malaysian,5,176504.85,0,0,247-37-5271
+707,Jordon,Corpe,true,California,Tohono O'Odham,3,91446.43,2,5,221-10-8194
+708,Gregor,Casarili,false,Texas,Ute,2,11660.43,10,10,534-97-6929
+709,Rosalinda,Harold,true,Washington,Cambodian,4,67061.66,0,4,599-11-2563
+710,Aidan,MacKintosh,false,District of Columbia,Crow,4,70422.08,8,3,389-57-7355
+711,Whit,Bratton,false,Pennsylvania,White,5,28669.56,3,3,476-06-6930
+712,Bartolemo,Oakes,true,Connecticut,Guamanian,3,130864.27,8,6,149-09-2688
+713,Hilliard,Neath,true,New Mexico,Alaska Native,3,85111.41,0,1,669-16-1704
+714,Kirstyn,Beeby,true,Texas,Mexican,3,156337.06,1,3,509-69-3087
+715,Kate,Dwerryhouse,true,Florida,Chamorro,4,51256.82,6,1,139-25-7363
+716,Virgil,Leythley,false,Arizona,Shoshone,1,174979.31,6,9,774-09-8078
+717,Barri,Cheshir,false,California,Micronesian,0,178218.78,0,0,563-44-1680
+718,Yevette,Espadas,true,District of Columbia,Chilean,4,90625.07,6,4,293-79-3172
+719,Vidovic,Dykins,false,Florida,Choctaw,5,140824.97,8,3,422-41-5064
+720,Benedetta,Giamelli,false,Idaho,Apache,1,76440.0,9,8,604-51-3603
+721,Shara,Castiglio,false,Louisiana,Alaskan Athabascan,1,170060.18,3,0,640-69-6431
+722,Modesty,Riccio,false,Georgia,Chickasaw,2,164978.16,8,1,244-70-8054
+723,Marguerite,Akehurst,false,Kansas,Puget Sound Salish,1,18426.36,6,5,414-22-2349
+724,Quinn,Bricknell,true,Minnesota,Tlingit-Haida,2,63159.43,8,6,294-84-9603
+725,Kelly,Woolam,false,California,Indonesian,2,86419.5,7,3,409-95-5279
+726,Eduard,Cheshir,true,Virginia,Yuman,1,159784.8,9,3,829-99-4559
+727,Frank,Hulson,true,California,Spaniard,1,65128.59,1,4,842-69-6652
+728,Kiele,Manning,true,Massachusetts,Pakistani,3,42380.03,0,1,846-57-7022
+729,Thea,Haversham,true,Illinois,Indonesian,2,68538.52,10,4,510-78-1499
+730,Sonni,Cooksley,true,Minnesota,Japanese,4,66817.66,6,2,792-07-2651
+731,Octavia,Hovee,false,Nevada,Bolivian,4,129528.99,8,8,659-33-6604
+732,Merla,Talloe,true,Tennessee,Pueblo,3,115392.08,0,8,110-68-6288
+733,Jinny,Jouandet,false,Idaho,Latin American Indian,1,177715.94,6,5,796-11-0533
+734,Nola,Franssen,true,Massachusetts,Polynesian,0,100016.9,3,6,247-45-7800
+735,Randolf,Hancox,false,District of Columbia,Tohono O'Odham,5,41071.94,3,9,348-19-3294
+736,Truman,Flobert,,,,1,81191.13,5,2,163-53-9470
+737,Duane,Lillegard,true,Kansas,Sioux,2,112438.78,9,3,244-60-8973
+738,Ranice,Birchill,true,Virginia,Comanche,2,59310.12,0,6,648-79-8160
+739,Jae,Headford,false,New York,Black or African American,3,158620.12,5,7,345-89-5947
+740,Corrina,Lambourne,false,Texas,Osage,1,77336.29,4,4,673-96-3256
+741,Kayle,Venner,true,District of Columbia,Cree,0,96759.47,9,0,893-10-7630
+742,Warren,Adshede,false,Florida,Colombian,3,40931.68,6,6,696-07-8583
+743,Charlena,Eads,true,Georgia,Ute,4,153578.12,10,5,429-02-5991
+744,Carlo,Caneo,false,Texas,Japanese,1,56833.6,6,3,836-28-4879
+745,Dulcine,Worrill,false,Florida,Vietnamese,2,103973.85,8,9,695-20-4585
+746,Rand,Dunrige,,,,1,26021.4,9,5,607-43-3452
+747,Clemmie,Bisley,true,Texas,Thai,2,53555.7,9,6,217-56-2895
+748,Tuck,Dowrey,true,Kansas,Chippewa,1,139701.39,8,2,323-28-0766
+749,Kelsey,Goold,true,Alabama,Tlingit-Haida,0,150860.17,1,3,503-68-3784
+750,Che,Bovaird,true,New Jersey,Cuban,1,103951.11,4,4,828-54-2927
+751,Katalin,Kirkhouse,false,New York,Samoan,0,165607.87,3,5,181-06-5516
+752,Thekla,Derobert,false,Colorado,Comanche,0,161591.85,8,1,203-28-8908
+753,Mira,Sussex,false,Florida,Indonesian,0,120669.24,8,5,822-77-1358
+754,Ardelia,Laingmaid,true,Florida,Choctaw,5,139417.9,8,6,158-91-9340
+755,Carmella,Sautter,true,Kentucky,Paraguayan,4,47727.04,6,5,311-96-8796
+756,Ossie,Tunstall,false,New York,Samoan,3,77232.82,6,8,743-17-7899
+757,Hanny,Carcass,true,Washington,Sri Lankan,0,74256.08,9,7,669-05-6411
+758,Clemente,Spragg,true,Virginia,Eskimo,5,136207.13,5,6,202-76-9840
+759,Tonnie,Dorkens,false,Washington,Alaska Native,0,161726.55,10,2,211-75-6775
+760,Dugald,Buckston,true,Texas,Cree,0,124079.51,2,10,683-91-5815
+761,Maury,Cussins,true,Texas,Ute,5,59164.02,8,10,317-94-1600
+762,Caril,MacAlroy,false,Pennsylvania,Lumbee,5,18649.53,6,4,720-11-4699
+763,Bondy,Druhan,false,California,Chilean,1,45677.9,1,8,664-95-9532
+764,Allyn,McFaell,false,Connecticut,Eskimo,0,22733.59,10,7,536-10-6834
+765,Freddi,Wiffen,false,Texas,Chamorro,4,178471.2,7,1,126-85-4656
+766,Killie,Wilfinger,true,Massachusetts,Yaqui,2,100508.35,0,1,564-50-4232
+767,Ivonne,Pugh,false,Florida,Costa Rican,1,99378.22,2,7,194-68-7153
+768,Rollin,Crowther,false,Iowa,Honduran,4,144775.68,6,4,124-74-0468
+769,Brendon,Pembry,false,Florida,Bangladeshi,1,164073.44,9,6,125-01-1404
+770,Rebeca,Parkisson,false,Wisconsin,Uruguayan,2,56434.63,4,0,197-46-7666
+771,Erwin,Larn,,,,4,121718.23,3,0,265-87-7950
+772,Katleen,Derham,true,Nevada,Shoshone,1,60077.59,2,2,775-70-3941
+773,Nikola,Dungey,,,,2,64428.24,10,0,845-90-3811
+774,Marsha,Jowle,false,Arizona,Fijian,4,55034.39,4,9,604-81-9052
+775,Leanor,Paris,true,Virginia,Ecuadorian,5,117773.19,9,4,667-29-7992
+776,Orton,Stoneham,true,District of Columbia,Ecuadorian,2,113350.5,5,7,686-43-7460
+777,Erwin,Tomasicchio,false,New Jersey,Mexican,3,37442.42,9,1,846-70-3540
+778,Dean,Howsley,true,California,Colombian,5,26823.37,8,4,278-44-6293
+779,Edie,Takos,false,West Virginia,Panamanian,2,18375.01,10,6,260-46-8333
+780,Garrek,Ciccotti,true,District of Columbia,Ute,0,135524.8,6,1,322-02-8669
+781,Dianne,Guidini,true,Iowa,Chilean,3,105979.65,0,4,132-52-6241
+782,Gabbie,Wye,true,New York,Korean,4,145916.35,5,6,868-99-2419
+783,Angie,Camp,true,Wisconsin,South American,2,162673.66,7,10,197-75-5132
+784,Carol,Dummer,false,Florida,Sioux,3,175060.66,10,5,833-06-3073
+785,Alli,Fanton,,,,2,46064.44,4,7,605-05-0644
+786,Hewe,Chaffyn,false,Tennessee,Sri Lankan,3,61760.05,1,0,269-41-3439
+787,Siana,Pauler,false,Virginia,Chippewa,3,39461.64,0,4,880-82-4374
+788,Dacie,Sancraft,true,Florida,Cuban,0,46902.61,9,10,168-90-2416
+789,Shaylynn,Guerrieri,true,New York,Salvadoran,5,168426.7,7,1,267-20-8189
+790,Valerye,Lorenzo,false,California,Hmong,2,68700.67,9,2,246-84-4183
+791,Nero,Coxall,true,Missouri,Bolivian,5,18772.09,7,2,775-17-9167
+792,Larry,Rasper,true,District of Columbia,Fijian,2,68858.1,8,4,875-79-5814
+793,Corabel,Yoodall,false,Florida,Samoan,2,134650.52,0,10,874-61-5101
+794,Early,Crebott,true,Florida,Cree,1,33634.13,6,7,515-65-3392
+795,Denys,Piddlehinton,false,New York,Polynesian,5,13470.24,4,8,860-21-7090
+796,Johan,Oxterby,true,Delaware,Latin American Indian,4,145044.71,10,6,893-28-7171
+797,Torie,Birrell,true,Tennessee,Ecuadorian,5,153965.72,10,7,281-73-9720
+798,Lennie,O'Longain,true,Ohio,Yaqui,5,166666.32,6,0,387-74-5796
+799,Jesus,Sellers,false,Texas,Yaqui,2,89626.54,2,2,286-37-4503
+800,Evin,Rolfi,true,Washington,Nicaraguan,4,55023.42,5,8,427-69-0438
+801,Gerianna,Klimushev,false,Ohio,Cheyenne,1,140274.28,1,4,695-16-3757
+802,Lotte,Catley,false,District of Columbia,Guatemalan,1,35153.81,8,1,240-71-1395
+803,Dulsea,Nockells,true,Florida,Thai,3,89148.29,4,4,462-05-6839
+804,Gertrud,Lorrain,false,Texas,Cree,2,54389.49,8,5,243-40-8415
+805,Gustaf,Tomsett,true,Tennessee,Aleut,4,114239.26,10,8,810-81-3199
+806,Dacey,Coleborn,false,Colorado,Puget Sound Salish,2,121537.88,0,3,719-40-5662
+807,Raine,Tyres,true,Missouri,Shoshone,0,85487.19,10,8,629-59-2560
+808,Valentin,Dickinson,true,Texas,Bangladeshi,1,99665.9,8,8,655-89-6930
+809,Brandy,Bidmead,false,District of Columbia,Choctaw,1,116232.35,6,10,762-69-3370
+810,Anastasia,Skellen,true,Missouri,Sioux,4,128284.6,7,10,522-50-1372
+811,Derek,Codlin,false,Texas,Comanche,0,13463.74,1,10,385-62-3650
+812,Pacorro,Lent,true,Florida,Indonesian,2,19727.47,10,9,256-87-4294
+813,Patrica,Gerner,false,Florida,Uruguayan,5,127706.18,5,8,597-47-2119
+814,Gayle,Carillo,,,,4,41378.45,0,6,456-67-0029
+815,Sauveur,Burchess,true,Florida,Eskimo,5,126310.46,8,4,473-78-6058
+816,Issie,Severns,true,Indiana,Chickasaw,5,167778.46,5,6,606-13-3329
+817,Trude,Holberry,false,Minnesota,Chippewa,3,56824.57,0,3,665-92-6319
+818,Randal,Pile,true,Utah,Bolivian,1,167442.38,10,3,217-41-2171
+819,Alexandre,Stollberger,false,Florida,Crow,2,21057.46,1,6,591-49-6553
+820,Janka,Goldsmith,false,Connecticut,Venezuelan,4,121511.51,3,9,673-76-6333
+821,Harrietta,Yarranton,true,Nebraska,Apache,0,56881.48,5,5,446-88-6371
+822,Fawne,Beldum,true,Tennessee,Cherokee,4,137577.8,1,4,436-70-8800
+823,Chloris,Keener,false,Indiana,Cherokee,2,111231.87,8,4,387-25-5969
+824,Hester,Dann,false,California,Navajo,1,155195.05,10,3,559-69-4385
+825,Shaylah,Chiddy,false,Tennessee,Native Hawaiian and Other Pacific Islander (NHPI),0,147152.93,9,4,807-14-8750
+826,Donny,Philler,false,Alabama,Korean,3,108170.8,1,5,406-51-8097
+827,Ilise,Mc Kellen,true,District of Columbia,Houma,2,26941.34,9,10,885-63-4863
+828,Norby,Maybury,false,Maryland,Korean,4,169421.91,2,5,489-72-0900
+829,Neron,Boundey,,,,5,51745.06,9,9,813-33-6292
+830,Tamarra,Bettles,false,California,Ottawa,1,100830.26,2,7,168-55-2079
+831,Nani,Canby,true,Arizona,Chamorro,0,14434.39,10,1,118-67-5412
+832,Deena,de Chastelain,true,Florida,Pakistani,2,53300.79,9,9,502-43-1052
+833,Jojo,Stag,false,Massachusetts,Apache,4,84195.46,9,0,346-82-9492
+834,Merla,Espine,false,Ohio,Latin American Indian,3,149525.77,9,3,656-64-0058
+835,Rosanne,Chittey,,,,4,56612.99,6,4,155-53-9141
+836,Ransom,Keal,false,Georgia,Sioux,4,23617.33,7,9,894-02-9037
+837,Burty,Laborde,false,District of Columbia,Paiute,3,166694.96,1,3,406-50-4174
+838,Gonzalo,Verry,true,Alabama,Navajo,0,170271.15,9,7,280-85-1631
+839,Tobey,Flacknoe,false,Oklahoma,Sri Lankan,0,164726.44,8,6,641-90-5345
+840,Ilyse,Quince,true,Minnesota,Japanese,1,83119.94,8,2,842-82-4271
+841,Ludwig,Iglesias,true,Illinois,Pueblo,2,65750.54,4,7,486-66-9966
+842,Carroll,Vanetti,true,Kansas,Puget Sound Salish,4,179707.03,1,10,321-95-0379
+843,Bone,Besnardeau,,,,3,37573.54,6,6,386-23-9460
+844,Glyn,Aris,false,Texas,Pakistani,5,67468.43,10,4,166-03-2246
+845,Yoshiko,Antoniat,false,Texas,Peruvian,5,10040.57,5,5,136-96-2741
+846,Helaine,Dovey,true,Minnesota,Pakistani,3,86311.78,4,8,446-30-4521
+847,Abraham,Farnorth,true,Georgia,Aleut,3,11686.99,5,10,333-75-8578
+848,Mildrid,Ebden,false,Colorado,Asian,0,155868.52,3,5,317-75-6574
+849,Kelcy,Wythill,false,Ohio,Indonesian,4,78794.63,8,1,618-33-8710
+850,Aurilia,Casel,true,New York,Spaniard,0,104142.6,8,6,181-50-0482
+851,Pierson,Gorvin,false,Illinois,Salvadoran,3,42473.32,4,1,202-93-3706
+852,Liliane,Eliesco,false,California,Pueblo,4,86015.7,9,1,217-03-3180
+853,Saundra,Butterfint,false,Florida,Chippewa,5,70899.16,1,4,737-98-1547
+854,Lorinda,Nassy,true,Georgia,Argentinian,4,87105.22,6,3,720-65-6589
+855,Jaymie,Wilcher,true,California,Pueblo,4,86480.02,4,4,296-43-1459
+856,Byrann,Shury,false,Tennessee,Yakama,3,34756.91,3,4,341-11-6537
+857,Kipp,Folker,true,Georgia,Chilean,1,52608.7,7,1,385-48-5908
+858,Delphinia,Crinkley,false,Florida,Sri Lankan,4,67557.16,2,7,409-37-2848
+859,Conan,Deniso,false,Minnesota,Sioux,5,75719.22,0,7,631-81-8623
+860,Tannie,Marrett,false,Delaware,Tongan,3,68151.87,0,3,681-43-6320
+861,Margarete,Aulsford,true,Virginia,Dominican (Dominican Republic),2,155740.62,7,2,169-42-5667
+862,Shaine,Broadbear,false,Pennsylvania,Argentinian,2,116523.61,8,3,257-15-2341
+863,Ariella,Coat,,,,1,49304.99,4,8,580-08-9059
+864,Pattin,Jordon,false,Michigan,Peruvian,3,65644.9,10,4,745-55-8383
+865,Hubie,Rolf,false,California,Honduran,4,27187.67,3,3,210-55-2097
+866,Umeko,Francais,true,District of Columbia,Uruguayan,0,117967.32,0,1,829-09-2072
+867,Allyce,Prestige,true,Arizona,Apache,5,97627.49,1,10,383-80-9000
+868,Bendix,McFadyen,false,Kentucky,Black or African American,0,79156.71,5,0,461-50-8981
+869,Briney,Scragg,true,Alabama,Chickasaw,1,45902.76,1,0,829-69-8161
+870,Barbabas,McRonald,false,Tennessee,Dominican (Dominican Republic),3,115250.06,5,7,617-53-6205
+871,Maurita,Phayre,false,New York,Tohono O'Odham,4,165192.59,9,7,832-24-6793
+872,Desmond,Headech,false,California,Apache,0,103029.05,4,4,280-50-5226
+873,Sonny,Joburn,true,Texas,Japanese,2,24450.06,1,7,307-96-0473
+874,Enid,Delafoy,true,California,Sioux,4,152124.95,3,10,390-11-0728
+875,Courtenay,Teague,false,California,Cheyenne,4,97528.79,10,7,385-78-4066
+876,Arturo,Baily,,,,3,157669.02,7,8,397-10-8429
+877,Fax,Bardell,false,North Carolina,Puget Sound Salish,0,56630.17,6,5,424-18-2787
+878,Gerianne,Mewis,true,New York,Creek,3,72121.05,9,4,777-54-0374
+879,Michaeline,Peyro,true,Texas,Guatemalan,3,116987.48,3,4,160-99-1930
+880,Madelene,Amy,true,California,Fijian,1,155103.38,10,1,595-24-4452
+881,Say,Goodacre,false,California,Venezuelan,0,120264.62,7,8,520-13-9288
+882,Katherina,Matthews,true,Ohio,Colville,3,35263.03,8,10,291-32-0717
+883,Dorice,Coughan,false,Florida,Osage,1,164988.25,6,2,676-81-0993
+884,Merissa,Coom,false,Florida,Comanche,4,136976.8,1,7,764-62-2126
+885,Emlynne,Emsley,false,North Carolina,Asian Indian,0,98619.05,4,1,131-34-2571
+886,Rosina,Eva,false,North Carolina,Bolivian,4,11098.34,4,0,590-47-2147
+887,Cathee,Casaccia,false,Pennsylvania,Micronesian,4,163445.01,10,4,442-74-1536
+888,Annmaria,Darrell,true,Florida,Malaysian,0,127906.75,1,9,755-66-5350
+889,Sher,Goodlett,true,California,Lumbee,0,18629.71,0,10,735-43-5206
+890,Beverlee,Penhaleurack,true,Ohio,Bolivian,0,79830.03,5,10,861-06-4923
+891,Peder,Dunbabin,true,Kentucky,Iroquois,4,143347.84,10,6,591-23-6282
+892,Armin,Tesauro,false,Illinois,Yuman,2,51668.38,0,0,780-58-4437
+893,Glyn,Maltman,false,California,Colville,4,99435.89,10,3,539-27-8325
+894,Niel,Worvill,false,Maryland,Ottawa,1,66862.56,8,6,659-63-3368
+895,Claudelle,Bruhnke,false,Missouri,Filipino,4,38310.72,6,6,731-71-2431
+896,Essie,Benitti,true,Texas,Latin American Indian,1,26948.04,7,3,108-67-7835
+897,Clair,Gasgarth,true,Tennessee,Colville,0,47457.62,5,7,663-25-6214
+898,Micheline,Yukhtin,false,New Jersey,Malaysian,2,48048.24,8,4,747-37-0135
+899,Elbertina,Yanin,false,Texas,South American,4,173374.15,5,6,465-67-0181
+900,Dorey,Jaskowicz,false,Mississippi,Korean,2,145398.64,8,5,163-18-7664
+901,Abagail,Cleaton,,,,0,21330.25,5,1,109-85-2255
+902,Salmon,Lansly,false,Texas,Hmong,2,40125.34,2,8,827-62-9777
+903,Georgy,Matuska,true,Nevada,Panamanian,4,123163.72,9,0,456-45-0753
+904,Cally,McCague,false,Michigan,Asian Indian,3,95159.67,8,1,839-97-4474
+905,Lawry,Jankowski,false,Idaho,Colombian,2,22369.02,4,3,351-81-7589
+906,Forster,Carrack,false,Texas,Malaysian,1,78581.55,0,2,625-89-1418
+907,Christiana,Stother,true,Pennsylvania,Bangladeshi,2,95289.99,8,4,427-36-8755
+908,Jamima,Ferrieres,false,Pennsylvania,Native Hawaiian and Other Pacific Islander (NHPI),0,127598.87,0,7,591-15-9936
+909,Giulio,Fowkes,true,North Carolina,Navajo,0,46061.7,4,5,193-78-4571
+910,Glenden,Villaret,false,Florida,Tohono O'Odham,4,71635.63,10,0,221-92-7886
+911,Gerianne,Ebbage,true,New York,Polynesian,0,16174.4,10,4,151-05-3863
+912,Esme,Perillo,true,Washington,Chamorro,1,136375.2,4,10,337-79-7800
+913,Craggy,Bediss,true,Florida,Cree,3,145134.01,1,9,773-49-6400
+914,Starr,Grebner,false,Florida,Eskimo,5,26708.14,8,3,562-83-5540
+915,Karim,Jencken,false,Florida,Ecuadorian,2,84937.91,4,7,667-70-8126
+916,Dianna,Agate,false,Illinois,Sioux,1,25536.37,0,0,835-24-3365
+917,Terry,Deguara,false,Arizona,Colville,3,60182.65,0,1,659-09-5308
+918,Belle,Jowsey,true,Texas,Cheyenne,5,12671.39,8,8,198-70-0176
+919,Kenna,Gorger,true,Texas,Aleut,0,82781.78,3,10,167-21-3901
+920,Napoleon,Swinn,false,Kansas,Shoshone,5,162092.41,6,6,740-49-2969
+921,Zia,Justham,true,Virginia,Pakistani,1,33438.04,9,10,319-97-6109
+922,Miran,Standeven,true,Minnesota,Eskimo,2,141850.0,9,7,690-81-0287
+923,Norrie,Sutter,true,Wisconsin,Ute,2,59170.3,10,5,336-65-5536
+924,Allix,Uttley,true,District of Columbia,Malaysian,2,64022.43,6,9,754-61-1256
+925,Barnaby,Bellsham,false,Virginia,Hmong,3,121994.32,10,10,679-27-4739
+926,Madelaine,Eccleshare,true,Connecticut,Puget Sound Salish,5,74651.64,3,0,189-07-0410
+927,Jule,De Filippi,true,Georgia,Central American,1,68852.05,10,2,840-90-7814
+928,Jedidiah,Jaspar,false,Texas,Houma,1,150184.16,5,5,793-39-8000
+929,Dav,Heifer,false,District of Columbia,Native Hawaiian and Other Pacific Islander (NHPI),0,67795.56,7,4,685-18-8643
+930,Isacco,Trippack,true,Oklahoma,Cree,1,55420.17,9,1,253-66-2508
+931,Fairfax,Warbeys,false,Florida,Kiowa,1,12118.82,5,4,891-94-3465
+932,Marion,Phorsby,true,Alabama,Kiowa,2,165437.07,3,3,654-37-5021
+933,Kimbra,Fullick,true,Florida,Korean,2,129062.83,4,6,737-60-5429
+934,Matthaeus,Prujean,false,Ohio,Alaska Native,3,84125.66,2,4,490-13-9957
+935,Audrey,Pring,true,Texas,Comanche,4,45702.14,1,10,344-52-9094
+936,Jackie,Louthe,false,California,Native Hawaiian and Other Pacific Islander (NHPI),1,20814.62,9,10,470-38-3686
+937,Reynold,Hynam,true,Connecticut,Colombian,0,133001.91,4,3,771-27-2571
+938,Dorey,Cowie,true,Colorado,Houma,1,45257.72,2,7,644-37-3110
+939,Deny,Kynnd,false,Pennsylvania,Indonesian,0,16354.8,8,1,688-36-9577
+940,Erasmus,Ravel,true,Ohio,Costa Rican,1,38002.04,9,9,120-57-0103
+941,Nickola,Tingly,false,Connecticut,Chickasaw,3,93325.78,9,8,843-94-5046
+942,Don,Chaffyn,false,Arizona,Fijian,5,135665.08,7,2,265-28-9210
+943,Ara,Probat,true,Wisconsin,Korean,5,44826.97,9,8,880-32-9935
+944,Eberhard,McTeggart,false,Washington,Fijian,0,145925.06,2,2,337-40-2909
+945,August,Dainton,false,South Carolina,Filipino,5,40369.54,7,0,828-23-4649
+946,Brew,Kryszka,false,Texas,Dominican (Dominican Republic),0,15183.64,7,1,708-41-9816
+947,Mikaela,Columbine,false,Wisconsin,Alaska Native,0,25834.03,10,6,230-59-5432
+948,Kathi,Ofen,true,Louisiana,Yuman,5,176971.48,1,8,433-64-4940
+949,Randi,Crookall,true,District of Columbia,Navajo,1,12601.05,2,0,800-12-3502
+950,Adoree,Colhoun,true,Massachusetts,Mexican,1,41855.15,10,6,326-78-6764
+951,Gualterio,Lenox,true,Virginia,Puerto Rican,4,56785.32,9,10,750-29-8432
+952,Jilly,Abbes,true,North Carolina,Japanese,4,86601.64,1,9,645-13-8013
+953,Northrop,Fussell,true,Texas,Samoan,5,34085.35,3,5,645-64-2403
+954,Art,Giuron,true,Maryland,Chilean,2,162534.72,6,3,389-20-3266
+955,Dorella,Erat,false,Florida,Mexican,3,99535.97,0,2,766-88-5985
+956,Ashlie,Enden,false,Texas,Chilean,3,11397.34,3,2,591-96-0180
+957,Kellsie,Metts,true,Nevada,Bolivian,3,136996.06,9,9,429-66-0149
+958,Red,Kleinfeld,false,Florida,Yaqui,1,174953.18,1,6,793-28-4245
+959,Anstice,Brushneen,true,Pennsylvania,Polynesian,4,81914.36,4,8,530-77-4589
+960,Stan,Haly,true,Virginia,Pima,3,34931.2,4,4,884-58-2940
+961,Celestine,Strathearn,false,Texas,Mexican,5,126995.88,2,4,490-55-3993
+962,Bellanca,Inkpen,false,Texas,Salvadoran,3,31264.01,5,6,393-38-8077
+963,Devon,Butt,,,,3,36864.05,6,6,478-86-7389
+964,Jeni,Dufaur,true,Tennessee,Cuban,0,56780.29,6,2,781-23-3003
+965,Deena,Pigney,true,Alabama,Dominican (Dominican Republic),0,110397.52,2,4,203-49-2639
+966,Angeline,Mayzes,true,Massachusetts,Sri Lankan,3,15638.45,7,5,610-18-3742
+967,Yvon,Camin,true,Florida,Lumbee,5,128968.52,9,3,550-80-3498
+968,Rodi,Frantzen,true,Florida,Chilean,5,71942.48,0,4,620-70-4965
+969,Daffie,Curnucke,false,Maryland,Paiute,0,115078.4,6,3,785-98-7950
+970,Jorie,Grieg,false,Indiana,American Indian,1,54143.35,5,7,135-10-0901
+971,Maureene,MacDavitt,true,North Carolina,Chinese,1,60218.76,7,4,556-31-9496
+972,Bruis,Joust,false,Massachusetts,Iroquois,2,68797.22,8,9,887-61-5579
+973,Elyssa,Evelyn,true,District of Columbia,Dominican (Dominican Republic),3,107996.92,0,6,200-45-7935
+974,Dode,Mathieu,true,Tennessee,Paiute,5,108951.55,7,2,532-12-5556
+975,Quent,Pashen,false,Illinois,Nicaraguan,3,112123.92,2,0,684-09-6069
+976,Dilan,Showl,false,Michigan,Iroquois,0,174442.41,1,2,251-90-8306
+977,Aimee,Byrnes,false,California,Sioux,1,28223.06,8,2,701-58-1415
+978,Drucie,Ledington,false,Missouri,Cherokee,1,165328.04,7,5,255-22-0455
+979,Roddy,Vasyukov,true,Colorado,Vietnamese,1,93122.44,1,7,189-20-6662
+980,Murray,Stanbrooke,true,Florida,Potawatomi,2,127634.23,7,10,561-15-5506
+981,Sherill,Twitchett,true,Tennessee,Paiute,0,49857.31,6,5,647-78-8100
+982,Reese,Elam,false,Virginia,Alaska Native,5,54013.98,0,0,780-44-1246
+983,Trip,MacKonochie,true,Colorado,Panamanian,3,125365.79,1,10,865-04-1871
+984,Renard,Jack,false,Tennessee,Korean,5,85727.78,5,3,769-66-3310
+985,Mic,Leate,true,Louisiana,Puget Sound Salish,4,140363.58,3,3,431-38-8344
+986,Raynell,Mumbray,true,Illinois,Lumbee,3,79803.52,9,8,294-39-8824
+987,Bettye,Ricker,true,Minnesota,Laotian,2,81108.0,1,3,485-34-7594
+988,Alikee,Judkins,false,California,Navajo,0,67224.68,8,9,577-01-0598
+989,Hali,Raigatt,false,California,Crow,0,11343.24,3,1,157-66-6821
+990,Audy,Tuerena,,,,4,172368.93,3,8,872-59-1949
+991,Alfy,Slopier,true,North Carolina,Lumbee,2,42204.63,9,9,828-64-3731
+992,Toiboid,Ramas,true,Oklahoma,Bangladeshi,0,63606.96,5,9,583-80-3664
+993,Aline,Anthoin,false,Georgia,Korean,0,127811.48,7,10,319-54-8572
+994,Wake,Springell,false,Tennessee,Yaqui,0,71711.97,5,1,135-69-7126
+995,Justinian,Spellesy,false,Florida,Honduran,5,63580.41,0,0,675-52-4663
+996,Hertha,Stranio,true,Ohio,American Indian,3,76246.17,2,0,449-53-4876
+997,Rahel,Rintoul,false,District of Columbia,Panamanian,4,57160.36,3,10,574-83-5242
+998,Henderson,Coneybeer,false,California,Tohono O'Odham,1,101145.09,8,9,295-82-4854
+999,Scarface,Holyard,false,Texas,Cree,3,125743.73,1,10,330-22-5561
+1000,Fan,Vargas,true,District of Columbia,Korean,5,52625.26,7,5,495-19-6395

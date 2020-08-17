@@ -35,14 +35,16 @@ def create_model(optimizer='adagrad',
     return nn_model
 
 
-# load input data sources
-patients = pd.read_csv(os.path.join(str(get_project_root()), "test", "data", "adult_train.csv"), na_values='?')
-histories = pd.read_csv(os.path.join(str(get_project_root()), "test", "data", "adult_train.csv"), na_values='?')
+# load input data sources (data generated with https://www.mockaroo.com as a single file and then split into two)
+patients = pd.read_csv(os.path.join(str(get_project_root()), "test", "data", "healthcare_patients.csv"), na_values='?')
+histories = pd.read_csv(os.path.join(str(get_project_root()), "test", "data", "healthcare_histories.csv"),
+                        na_values='?')
 
 # combine input data into a single table
 data = patients.merge(histories, on=['ssn'])
 
 # compute mean complications per age group, append as column
+print(data.columns)
 complications = data.groupby('age_group')['complications'].mean().rename({'complications': 'mean_complications'})
 data = data.merge(complications, on=['age_group'])
 
@@ -50,7 +52,7 @@ data = data.merge(complications, on=['age_group'])
 data['label'] = data['complications'] > 2 * data['mean_complications']
 
 # project data to a subset of attributes
-data = data[['smoker', 'family_name', 'county', 'num_children', 'race', 'income', 'label']]
+data = data[['smoker', 'last_name', 'county', 'num_children', 'race', 'income', 'label']]
 
 # filter data
 data = data[data['county'].isin(COUNTIES_OF_INTEREST)]
@@ -63,7 +65,7 @@ impute_and_one_hot_encode = Pipeline(steps=[
 
 featurisation = ColumnTransformer(transformers=[
     ("impute_and_one_hot_encode", impute_and_one_hot_encode, ['smoker', 'county', 'race']),
-    ('word2vec', W2VTransformer(size=10), ['family_name']),
+    ('word2vec', W2VTransformer(size=10), ['last_name']),
     ('numeric', StandardScaler(), ['num_children', 'income'])
 ])
 
