@@ -2,14 +2,14 @@
 A simple analyzer for testing annotation propagation
 """
 import random
-from typing import Iterable, Union
+from typing import Iterable
 
-from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputDataSource, \
-    AnalyzerInputUnaryOperator
 from mlinspect.instrumentation.analyzers.analyzer import Analyzer
+from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputUnaryOperator, \
+    AnalyzerInputNAryOperator, AnalyzerInputSinkOperator
 
 
-class AnnotationTestingAnalyzer(Analyzer):
+class RandomAnnotationTestingAnalyzer(Analyzer):
     """
     A simple analyzer for testing annotation propagation
     """
@@ -21,10 +21,9 @@ class AnnotationTestingAnalyzer(Analyzer):
         self._operator_output = None
         self.rows_to_random_numbers_operator_0 = {}
 
-    def visit_operator(self, operator_context: OperatorContext,
-                       row_iterator: Union[Iterable[AnalyzerInputDataSource], Iterable[AnalyzerInputUnaryOperator]])\
-            -> Iterable[any]:
+    def visit_operator(self, operator_context: OperatorContext, row_iterator) -> Iterable[any]:
         """Visit an operator, generate random number annotations and check whether they get propagated correctly"""
+        # pylint: disable=too-many-branches
         operator_output = []
         current_count = - 1
 
@@ -56,7 +55,14 @@ class AnnotationTestingAnalyzer(Analyzer):
                     operator_output.append(row.output)
                 yield annotation
         else:
-            yield None
+            for row in row_iterator:
+                assert isinstance(row, (AnalyzerInputUnaryOperator, AnalyzerInputNAryOperator,
+                                        AnalyzerInputSinkOperator))
+                if isinstance(row, AnalyzerInputUnaryOperator):
+                    annotation = row.annotation.get_value_by_column_index(0)
+                else:
+                    annotation = row.annotation[0].get_value_by_column_index(0)
+                yield annotation
         self.operator_count += 1
         self._operator_output = operator_output
 

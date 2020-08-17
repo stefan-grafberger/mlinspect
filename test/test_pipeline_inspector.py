@@ -4,6 +4,7 @@ Tests whether the fluent API works
 import os
 
 import networkx
+from testfixtures import compare
 
 from mlinspect.instrumentation.analyzers.materialize_first_rows_analyzer import MaterializeFirstRowsAnalyzer
 from mlinspect.utils import get_project_root
@@ -24,7 +25,7 @@ def test_inspector_py_pipeline():
         .execute()
     extracted_dag = inspection_result.dag
     expected_dag = get_expected_dag_adult_easy_py()
-    assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
+    compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
 
 
 def test_inspector_ipynb_pipeline():

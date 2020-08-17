@@ -107,11 +107,11 @@ class SklearnWirPreprocessor:
 
         new_fit_module = (node.module[0], node.module[1], "Pipeline")
         new_pipeline_fit_node = WirNode(node.node_id, node.name, node.operation,
-                                        node.code_reference, new_fit_module)
+                                        actual_pipeline_node.code_reference, new_fit_module)
 
         new_train_data_module = (node.module[0], node.module[1], "Train Data")
         new_pipeline_train_data_node = WirNode(node.node_id, "Train Data", node.operation,
-                                               node.code_reference, new_train_data_module)
+                                               actual_pipeline_node.code_reference, new_train_data_module)
         graph.add_edge(data_node, new_pipeline_train_data_node)
         for start_node in pipeline_start:
             graph.add_edge(new_pipeline_train_data_node, start_node)
@@ -121,7 +121,7 @@ class SklearnWirPreprocessor:
         if target_node_or_none:
             new_train_data_module = (node.module[0], node.module[1], "Train Labels")
             new_pipeline_train_labels_node = WirNode(node.node_id, "Train Labels", node.operation,
-                                                     node.code_reference, new_train_data_module)
+                                                     actual_pipeline_node.code_reference, new_train_data_module)
             graph.add_edge(target_node_or_none, new_pipeline_train_labels_node)
             graph.add_edge(new_pipeline_train_labels_node, new_pipeline_fit_node)
 
@@ -218,11 +218,11 @@ class SklearnWirPreprocessor:
             projection_module = (node.module[0], node.module[1], "Projection")
             projection_description = "to {}".format([column_node.name])
             projection_wir = WirNode(column_node.node_id, column_node.name, node.operation,
-                                     column_node.code_reference, projection_module, projection_description)
+                                     node.code_reference, projection_module, projection_description)
             projection_wirs.append(projection_wir)
 
             start_transformers, end_transformer = self.preprocess_column_transformer_copy_transformer_per_column(
-                graph, call_node, column_node.node_id)
+                graph, call_node, column_node.node_id, column_node.name)
 
             parents = list(graph.predecessors(node))
             for parent in parents:
@@ -232,7 +232,8 @@ class SklearnWirPreprocessor:
             graph.add_edge(end_transformer, concatenation_wir)
         self.wir_node_to_sub_pipeline_start[node].extend(projection_wirs)
 
-    def preprocess_column_transformer_copy_transformer_per_column(self, graph, transformer_node, new_node_id):
+    def preprocess_column_transformer_copy_transformer_per_column(self, graph, transformer_node, new_node_id,
+                                                                  description):
         """
         Preprocessing for ColumnTransformers: Each transformer in a ColumnTransformer needs to be copied for
         each column
@@ -247,8 +248,9 @@ class SklearnWirPreprocessor:
 
         def copy_node(current_node, _):
             new_module = (current_node.module[0], current_node.module[1], "Pipeline")
+            new_description = "{}, Column: '{}'".format(current_node.dag_operator_description, description)
             copied_wir = WirNode(new_node_id, current_node.name, current_node.operation,
-                                 current_node.code_reference, new_module, current_node.dag_operator_description)
+                                 current_node.code_reference, new_module, new_description)
 
             if current_node in start_copy:
                 start_transformers.append(copied_wir)

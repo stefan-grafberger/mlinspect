@@ -225,7 +225,7 @@ class WirExtractor:
         After executing the pipeline, annotate call nodes with the captured module info
         """
         for node in self.graph.nodes:
-            if node.operation == "Call" or node.operation == "Subscript":
+            if (node.operation == "Call" or node.operation == "Subscript") and node.code_reference in code_reference_to_module:
                 node.module = code_reference_to_module[node.code_reference]
                 if node.code_reference in code_reference_to_description:
                     node.dag_operator_description = code_reference_to_description[node.code_reference]

@@ -13,7 +13,7 @@ class Backend(metaclass=abc.ABCMeta):
 
     def __init__(self):
         self.code_reference_to_description = {}
-        self.code_reference_analyzer_output_map = {}
+        self.dag_node_identifier_to_analyzer_output = {}
         self.analyzers = []
 
     @property
@@ -34,10 +34,14 @@ class Backend(metaclass=abc.ABCMeta):
         """The list of used data type replacements"""
         raise NotImplementedError
 
-    @staticmethod
     @abc.abstractmethod
-    def preprocess_wir(wir: networkx.DiGraph) -> networkx.DiGraph:
+    def preprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
         """Preprocess the wir if necessary"""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def postprocess_dag(self, dag: networkx.DiGraph) -> networkx.DiGraph:
+        """Postprocess the wir if necessary"""
         raise NotImplementedError
 
     @abc.abstractmethod

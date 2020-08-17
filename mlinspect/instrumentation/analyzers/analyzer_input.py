@@ -2,7 +2,9 @@
 Data classes used as input for the analyzers
 """
 import dataclasses
-from typing import Tuple
+from typing import Tuple, List
+
+import numpy
 
 from mlinspect.instrumentation.dag_node import OperatorType
 
@@ -29,6 +31,11 @@ class AnalyzerInputRow:
         """
         return self.values[index]
 
+    def __eq__(self, other):
+        return (isinstance(other, AnalyzerInputRow) and
+                numpy.array_equal(self.values, other.values) and
+                self.fields == other.fields)
+
 
 @dataclasses.dataclass(frozen=True)
 class AnalyzerInputDataSource:
@@ -46,6 +53,25 @@ class AnalyzerInputUnaryOperator:
     input: AnalyzerInputRow
     annotation: AnalyzerInputRow
     output: AnalyzerInputRow
+
+
+@dataclasses.dataclass(frozen=True)
+class AnalyzerInputNAryOperator:
+    """
+    Wrapper class for the operators with multiple parents like Concatenations
+    """
+    input: List[AnalyzerInputRow]
+    annotation: List[AnalyzerInputRow]
+    output: AnalyzerInputRow
+
+
+@dataclasses.dataclass(frozen=True)
+class AnalyzerInputSinkOperator:
+    """
+    Wrapper class for operators like Estimators that only get fitted
+    """
+    input: List[AnalyzerInputRow]
+    annotation: List[AnalyzerInputRow]
 
 
 @dataclasses.dataclass(frozen=True)

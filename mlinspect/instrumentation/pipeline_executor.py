@@ -11,7 +11,7 @@ from nbconvert import PythonExporter
 from .analyzers.analyzer import Analyzer
 from .backends.all_backends import get_all_backends
 from .call_capture_transformer import CallCaptureTransformer
-from .dag_node import CodeReference
+from .dag_node import CodeReference, DagNodeIdentifier
 from .inspection_result import InspectionResult
 from .wir_extractor import WirExtractor
 from .wir_to_dag_transformer import WirToDagTransformer
@@ -53,6 +53,10 @@ class PipelineExecutor:
         wir = wir_extractor.add_runtime_info(self.code_reference_to_module, code_reference_to_description)
 
         dag = WirToDagTransformer.extract_dag(wir)
+
+        for backend in self.backend_map.values():
+            dag = backend.postprocess_dag(dag)
+
         analyzer_to_call_to_annotation = self.build_analyzer_result_map(dag)
 
         return InspectionResult(dag, analyzer_to_call_to_annotation)
@@ -71,22 +75,23 @@ class PipelineExecutor:
         """
         Get the analyzer DAG annotations from the backend and build a map with it for convenient usage
         """
-        code_reference_to_dag_node = {}
+        dag_node_identifiers_to_dag_nodes = {}
         for node in dag.nodes:
-            code_reference_to_dag_node[node.code_reference] = node
+            dag_node_identifier = DagNodeIdentifier(node.operator_type, node.code_reference, node.description)
+            dag_node_identifiers_to_dag_nodes[dag_node_identifier] = node
 
-        code_reference_to_annotation = {}
+        dag_node_identifier_to_analyzer_output = {}
         for backend in self.backend_map.values():
-            code_reference_to_annotation = {**code_reference_to_annotation,
-                                            **backend.code_reference_analyzer_output_map}
-        analyzer_to_code_reference_to_annotation = {}
-        for call_id, analyzer_output_map in code_reference_to_annotation.items():
+            dag_node_identifier_to_analyzer_output = {**dag_node_identifier_to_analyzer_output,
+                                                      **backend.dag_node_identifier_to_analyzer_output}
+        analyzer_to_dag_node_to_annotation = {}
+        for dag_node_identifier, analyzer_output_map in dag_node_identifier_to_analyzer_output.items():
             for analyzer, annotation in analyzer_output_map.items():
-                dag_node_to_annotation = analyzer_to_code_reference_to_annotation.get(analyzer, {})
-                dag_node = code_reference_to_dag_node[call_id]
+                dag_node_to_annotation = analyzer_to_dag_node_to_annotation.get(analyzer, {})
+                dag_node = dag_node_identifiers_to_dag_nodes[dag_node_identifier]
                 dag_node_to_annotation[dag_node] = annotation
-                analyzer_to_code_reference_to_annotation[analyzer] = dag_node_to_annotation
-        return analyzer_to_code_reference_to_annotation
+                analyzer_to_dag_node_to_annotation[analyzer] = dag_node_to_annotation
+        return analyzer_to_dag_node_to_annotation
 
     @staticmethod
     def instrument_pipeline(parsed_ast):
@@ -133,7 +138,7 @@ class PipelineExecutor:
         This is the method we want to insert into the DAG
         """
         # pylint: disable=too-many-arguments
-        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript)
+        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript, value_value)
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
             backend.before_call_used_value(function_info, subscript, call_code, value_code,
@@ -172,7 +177,7 @@ class PipelineExecutor:
         This is the method we want to insert into the DAG
         """
         # pylint: disable=too-many-arguments
-        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript)
+        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript, return_value)
 
         self.code_reference_to_module[code_reference] = function_info
 
@@ -183,7 +188,7 @@ class PipelineExecutor:
         return return_value
 
     @staticmethod
-    def get_function_info_and_prefix(call_code, subscript):
+    def get_function_info_and_prefix(call_code, subscript, value=None):
         """
         Get the function info and find out which backend to call
         """
@@ -201,6 +206,12 @@ class PipelineExecutor:
         if function_info[0] in PipelineExecutor.REPLACEMENT_TYPE_MAP:
             new_type = PipelineExecutor.REPLACEMENT_TYPE_MAP[function_info[0]]
             function_info = (new_type, function_info[1])
+
+        # FIXME: move this into sklearn backend
+        if value is not None and \
+                function_info[0] == 'mlinspect.instrumentation.backends.sklearn_backend_transformer_wrapper':
+            function_info = (value.module_name, str(function.split(".")[-1]))
+
         function_prefix = function_info[0].split(".", 1)[0]
 
         return function_info, function_prefix
