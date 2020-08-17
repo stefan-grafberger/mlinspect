@@ -1,11 +1,23 @@
 """
 Some utility functions the different instrumentation backends
 """
+import itertools
 from functools import partial
 
 import numpy
+from pandas import DataFrame
 
 from mlinspect.instrumentation.analyzers.analyzer_input import AnalyzerInputRow
+
+
+def build_annotation_df_from_iters(analyzers, annotation_iterators):
+    """
+    Build the annotations dataframe
+    """
+    annotation_iterators = itertools.zip_longest(*annotation_iterators)
+    analyzer_names = [str(analyzer) for analyzer in analyzers]
+    annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
+    return annotations_df
 
 
 def get_df_row_iterator(dataframe):

@@ -3,7 +3,6 @@ A wrapper for sklearn transformers to capture method calls we do not see otherwi
 definition style
 """
 import inspect
-import itertools
 import uuid
 
 import numpy
@@ -13,7 +12,7 @@ from sklearn.base import BaseEstimator
 from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputUnaryOperator, \
     AnalyzerInputNAryOperator, AnalyzerInputSinkOperator
 from mlinspect.instrumentation.backends.backend_utils import get_numpy_array_row_iterator, get_df_row_iterator, \
-    get_csr_row_iterator
+    get_csr_row_iterator, build_annotation_df_from_iters
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
 from mlinspect.instrumentation.backends.sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
 from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
@@ -515,9 +514,7 @@ def store_analyzer_outputs_df(annotation_iterators, code_reference, return_value
     analyzer annotations for the DAG operators in a map
     """
     # pylint: disable=too-many-arguments, too-many-locals
-    annotation_iterators = itertools.zip_longest(*annotation_iterators)
-    analyzer_names = [str(analyzer) for analyzer in analyzers]
-    annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
+    annotations_df = build_annotation_df_from_iters(analyzers, annotation_iterators)
     analyzer_outputs = {}
     for analyzer in analyzers:
         analyzer_output = analyzer.get_operator_annotation_after_visit()
@@ -553,13 +550,10 @@ def store_analyzer_outputs_array(annotation_iterators, code_reference, return_va
     analyzer annotations for the DAG operators in a map
     """
     # pylint: disable=too-many-arguments
-    annotation_iterators = itertools.zip_longest(*annotation_iterators)
-    analyzer_names = [str(analyzer) for analyzer in analyzers]
-    annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
+    annotations_df = build_annotation_df_from_iters(analyzers, annotation_iterators)
     analyzer_outputs = {}
     for analyzer in analyzers:
-        analyzer_output = analyzer.get_operator_annotation_after_visit()
-        analyzer_outputs[analyzer] = analyzer_output
+        analyzer_outputs[analyzer] = analyzer.get_operator_annotation_after_visit()
 
     stored_analyzer_results = code_reference_analyzer_output_map.get(code_reference, {})
     stored_analyzer_results[func_name] = analyzer_outputs
@@ -577,9 +571,7 @@ def store_analyzer_outputs_csr(annotation_iterators, code_reference, return_valu
     analyzer annotations for the DAG operators in a map
     """
     # pylint: disable=too-many-arguments
-    annotation_iterators = itertools.zip_longest(*annotation_iterators)
-    analyzer_names = [str(analyzer) for analyzer in analyzers]
-    annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
+    annotations_df = build_annotation_df_from_iters(analyzers, annotation_iterators)
     analyzer_outputs = {}
     for analyzer in analyzers:
         analyzer_output = analyzer.get_operator_annotation_after_visit()
@@ -601,9 +593,7 @@ def store_analyzer_outputs_estimator(annotation_iterators, code_reference, analy
     analyzer annotations for the DAG operators in a map
     """
     # pylint: disable=too-many-arguments
-    annotation_iterators = itertools.zip_longest(*annotation_iterators)
-    analyzer_names = [str(analyzer) for analyzer in analyzers]
-    DataFrame(annotation_iterators, columns=analyzer_names)
+    build_annotation_df_from_iters(analyzers, annotation_iterators)
 
     analyzer_outputs = {}
     for analyzer in analyzers:

@@ -1,17 +1,15 @@
 """
 The pandas backend
 """
-import itertools
 import os
 
 import networkx
 import pandas
-from pandas import DataFrame
 
 from mlinspect.instrumentation.analyzers.analyzer_input import AnalyzerInputUnaryOperator, AnalyzerInputDataSource, \
     OperatorContext
 from mlinspect.instrumentation.backends.backend import Backend
-from mlinspect.instrumentation.backends.backend_utils import get_df_row_iterator
+from mlinspect.instrumentation.backends.backend_utils import get_df_row_iterator, build_annotation_df_from_iters
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
 from mlinspect.instrumentation.dag_node import OperatorType, DagNodeIdentifier
 
@@ -127,9 +125,7 @@ class PandasBackend(Backend):
         """
         dag_node_identifier = DagNodeIdentifier(self.operator_map[function_info], code_reference,
                                                 self.code_reference_to_description.get(code_reference))
-        annotation_iterators = itertools.zip_longest(*annotation_iterators)
-        analyzer_names = [str(analyzer) for analyzer in self.analyzers]
-        annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
+        annotations_df = build_annotation_df_from_iters(self.analyzers, annotation_iterators)
         annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
         analyzer_outputs = {}
         for analyzer in self.analyzers:
@@ -144,22 +140,23 @@ class PandasBackend(Backend):
         assert isinstance(return_value, MlinspectDataFrame)
         return return_value
 
-    def execute_analyzer_visits_unary_operator(self, operator_context, code_reference, return_value, function_info):
+    def execute_analyzer_visits_unary_operator(self, operator_context, code_reference, return_value_df, function_info):
         """Execute analyzers when the current operator has one parent in the DAG"""
-        assert "mlinspect_index" in return_value.columns
+        assert "mlinspect_index" in return_value_df.columns
         assert isinstance(self.input_data, MlinspectDataFrame)
         annotation_iterators = []
         for analyzer in self.analyzers:
             analyzer_count = len(self.analyzers)
             analyzer_index = self.analyzers.index(analyzer)
-            iterator_for_analyzer = iter_input_annotation_output(analyzer_count,
-                                                                 analyzer_index,
-                                                                 self.input_data,
-                                                                 self.input_data.annotations,
-                                                                 return_value)
+            iterator_for_analyzer = iter_input_annotation_output_df_df(analyzer_count,
+                                                                       analyzer_index,
+                                                                       self.input_data,
+                                                                       self.input_data.annotations,
+                                                                       return_value_df)
             annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
             annotation_iterators.append(annotations_iterator)
-        return_value = self.store_analyzer_outputs_df(annotation_iterators, code_reference, return_value, function_info)
+        return_value = self.store_analyzer_outputs_df(annotation_iterators, code_reference, return_value_df,
+                                                      function_info)
         return return_value
 
 
@@ -171,7 +168,7 @@ def iter_input_data_source(output):
     return map(AnalyzerInputDataSource, output)
 
 
-def iter_input_annotation_output(analyzer_count, analyzer_index, input_data, input_annotations, output):
+def iter_input_annotation_output_df_df(analyzer_count, analyzer_index, input_data, input_annotations, output):
     """
     Create an efficient iterator for the analyzer input for operators with one parent.
     """
