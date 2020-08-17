@@ -3,38 +3,18 @@ An example pipeline
 """
 import os
 
+from test.pipelines.healthcare_utils import MyW2VTransformer, create_model
 import pandas as pd
-from gensim.models import Word2Vec
-from gensim.sklearn_api import W2VTransformer
-from gensim.test.utils import common_texts
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler, label_binarize
-from sklearn.tree import DecisionTreeClassifier
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
-from tensorflow.python.keras.optimizer_v2.gradient_descent import SGD
-
-from zeugma.embeddings import EmbeddingTransformer
 
 from mlinspect.utils import get_project_root
 
 COUNTIES_OF_INTEREST = ['Iowa', 'Florida', 'Ohio', 'California', 'Nevada', 'Texas', 'New York', 'Missouri', 'Virginia']
-
-
-# create a function that returns a model, taking as parameters things you
-# want to verify using cross-valdiation and model selection
-def create_model(input_dim):
-    """Create a simple neural network"""
-    clf = Sequential()
-    clf.add(Dense(9, activation='relu', input_dim=input_dim))
-    clf.add(Dense(9, activation='relu'))
-    clf.add(Dense(2, activation='softmax'))
-    clf.compile(loss='categorical_crossentropy', optimizer=SGD(), metrics=["accuracy"])
-    return clf
 
 
 # load input data sources (data generated with https://www.mockaroo.com as a single file and then split into two)
@@ -65,25 +45,14 @@ impute_and_one_hot_encode = Pipeline(steps=[
         ('encode', OneHotEncoder(sparse=False, handle_unknown='ignore'))
     ])
 
-w2v_transformer = W2VTransformer(min_count=0, seed=1)
-
-#last_name_list = data['last_name'].tolist()
-#last_name_list.append('last_name')
-#last_name_list = [[name] for name in last_name_list]
-#w2v_transformer = w2v_transformer.fit(last_name_list)
-#w2v = Word2Vec(last_name_list)
-#w2v.train(last_name_list)
-
-# glove = EmbeddingTransformer('glove-wiki-gigaword-50')
-
 featurisation = ColumnTransformer(transformers=[
     ("impute_and_one_hot_encode", impute_and_one_hot_encode, ['smoker', 'county', 'race']),
-    ('word2vec', OneHotEncoder(sparse=False, handle_unknown='ignore'), ['last_name']),
+    ('word2vec', MyW2VTransformer(min_count=1), ['last_name']),
     ('numeric', StandardScaler(), ['num_children', 'income'])
 ])
 
 # define the training pipeline for the model
-neural_net = KerasClassifier(build_fn=create_model, epochs=10, batch_size=1, verbose=0, input_dim=445)
+neural_net = KerasClassifier(build_fn=create_model, epochs=10, batch_size=1, verbose=0, input_dim=201)
 pipeline = Pipeline([
     ('features', featurisation),
     ('learner', neural_net)])
