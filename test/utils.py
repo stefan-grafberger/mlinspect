@@ -5,11 +5,17 @@ import os
 import ast
 from inspect import cleandoc
 
+from test.instrumentation.backends.random_annotation_testing_analyzer import RandomAnnotationTestingAnalyzer
+from test.instrumentation.backends.row_index_annotation_testing_analyzer import RowIndexAnnotationTestingAnalyzer
+
 import networkx
 
+from mlinspect.instrumentation.analyzers.materialize_first_rows_analyzer import MaterializeFirstRowsAnalyzer
 from mlinspect.instrumentation.dag_node import DagNode, OperatorType, CodeReference
 from mlinspect.instrumentation.wir_extractor import WirExtractor
+from mlinspect.pipeline_inspector import PipelineInspector
 from mlinspect.utils import get_project_root
+
 
 FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 FILE_NB = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.ipynb")
@@ -280,3 +286,46 @@ def get_pandas_read_csv_and_dropna_code():
             data = raw_data.dropna()
             """)
     return code
+
+
+def run_random_annotation_testing_analyzer(code):
+    """
+    An utility function to test backends
+    """
+    inspection_result = PipelineInspector \
+        .on_pipeline_from_string(code) \
+        .add_analyzer(RandomAnnotationTestingAnalyzer(10)) \
+        .execute()
+    analyzer_results = inspection_result.analyzer_to_annotations
+    assert RandomAnnotationTestingAnalyzer(10) in analyzer_results
+    random_annotation_analyzer_result = analyzer_results[RandomAnnotationTestingAnalyzer(10)]
+    return random_annotation_analyzer_result
+
+
+def run_row_index_annotation_testing_analyzer(code):
+    """
+    An utility function to test backends
+    """
+    inspection_result = PipelineInspector \
+        .on_pipeline_from_string(code) \
+        .add_analyzer(RowIndexAnnotationTestingAnalyzer(10)) \
+        .execute()
+    analyzer_results = inspection_result.analyzer_to_annotations
+    assert RowIndexAnnotationTestingAnalyzer(10) in analyzer_results
+    result = analyzer_results[RowIndexAnnotationTestingAnalyzer(10)]
+    return result
+
+
+def run_multiple_test_analyzers(code):
+    """
+   An utility function to test backends.
+   Also useful to debug annotation propagation.
+   """
+    analyzers = [RandomAnnotationTestingAnalyzer(2), MaterializeFirstRowsAnalyzer(5),
+                 RowIndexAnnotationTestingAnalyzer(2)]
+    inspection_result = PipelineInspector \
+        .on_pipeline_from_string(code) \
+        .add_analyzers(analyzers) \
+        .execute()
+    analyzer_results = inspection_result.analyzer_to_annotations
+    return analyzer_results, analyzers

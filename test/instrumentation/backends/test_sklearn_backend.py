@@ -3,71 +3,43 @@ Tests whether the PipelineExecutor works
 """
 import os
 
-from test.instrumentation.backends.random_annotation_testing_analyzer import RandomAnnotationTestingAnalyzer
-from test.instrumentation.backends.row_index_annotation_testing_analyzer import RowIndexAnnotationTestingAnalyzer
+from test.utils import run_random_annotation_testing_analyzer, run_row_index_annotation_testing_analyzer, \
+    run_multiple_test_analyzers
 from mlinspect.utils import get_project_root
-from mlinspect.instrumentation.analyzers.materialize_first_rows_analyzer import MaterializeFirstRowsAnalyzer
-from mlinspect.pipeline_inspector import PipelineInspector
 
 FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 
 
 def test_sklearn_backend_random_annotation_propagation():
     """
-    Tests whether the capturing of module information works
+    Tests whether the sklearn backend works
     """
     with open(FILE_PY) as file:
         code = file.read()
 
-        inspection_result = PipelineInspector \
-            .on_pipeline_from_string(code) \
-            .add_analyzer(RandomAnnotationTestingAnalyzer(10)) \
-            .execute()
-
-        analyzer_results = inspection_result.analyzer_to_annotations
-        assert RandomAnnotationTestingAnalyzer(10) in analyzer_results
-        result = analyzer_results[RandomAnnotationTestingAnalyzer(10)]
-
-        assert len(result) == 16
+        random_annotation_analyzer_result = run_random_annotation_testing_analyzer(code)
+        assert len(random_annotation_analyzer_result) == 16
 
 
 def test_sklearn_backend_row_index_annotation_propagation():
     """
-    Tests whether the capturing of module information works
+    Tests whether the sklearn backend works
     """
     with open(FILE_PY) as file:
         code = file.read()
-
-        inspection_result = PipelineInspector \
-            .on_pipeline_from_string(code) \
-            .add_analyzer(RowIndexAnnotationTestingAnalyzer(10)) \
-            .execute()
-
-        analyzer_results = inspection_result.analyzer_to_annotations
-        assert RowIndexAnnotationTestingAnalyzer(10) in analyzer_results
-        result = analyzer_results[RowIndexAnnotationTestingAnalyzer(10)]
-
-        assert len(result) == 16  # To debug annotation propagation, just look at this result
+        row_index_annotation_analyzer_result = run_row_index_annotation_testing_analyzer(code)
+        assert len(row_index_annotation_analyzer_result) == 16
 
 
 def test_sklearn_backend_annotation_propagation_multiple_analyzers():
     """
-    Tests whether the capturing of module information works
+    Tests whether the sklearn backend works
     """
     with open(FILE_PY) as file:
         code = file.read()
 
-        analyzers = [RandomAnnotationTestingAnalyzer(2), MaterializeFirstRowsAnalyzer(5),
-                     RowIndexAnnotationTestingAnalyzer(2)]
-
-        inspection_result = PipelineInspector \
-            .on_pipeline_from_string(code) \
-            .add_analyzers(analyzers) \
-            .execute()
-        analyzer_results = inspection_result.analyzer_to_annotations
+        analyzer_results, analyzers = run_multiple_test_analyzers(code)
 
         for analyzer in analyzers:
-            assert analyzer in analyzer_results
             result = analyzer_results[analyzer]
-
             assert len(result) == 16
