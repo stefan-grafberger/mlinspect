@@ -55,7 +55,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
     def __hash__(self):
         return hash(self.transformer_uuid)
 
-    def fit(self, X: list, y=None) -> 'MlinspectEstimatorTransformer':
+    def fit(self, X, y=None) -> 'MlinspectEstimatorTransformer':
         """
         Override fit
         """
@@ -78,68 +78,85 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         result = self.transformer.transform(X)
         return result
 
-    def fit_transform(self, X: list, y=None) -> list:  # TODO: There can be some additional kwargs sometimes
+    def fit_transform(self, X, y=None) -> list:  # TODO: There can be some additional kwargs sometimes
         """
         Override fit_transform
         """
-        # pylint: disable=invalid-name, too-many-locals, too-many-statements
+        # pylint: disable=invalid-name
         if self.call_function_info == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
             result = self.column_transformer_visits(X, y)
         elif self.call_function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
-            assert isinstance(X.annotations, dict) and self in X.annotations
-            result = self.transformer.fit_transform(X, y)
-            self.output_dimensions = [len(one_hot_categories) for one_hot_categories in
-                                      self.transformer.categories_]
-            output_dimension_index = [0]
-            for dimension in self.output_dimensions:
-                output_dimension_index.append(output_dimension_index[-1] + dimension)
-            for column_index, column in enumerate(X.columns):
-                function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
-                operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
-                description = "Categorical Encoder (OneHotEncoder), Column: '{}'".format(column)
-
-                index_start = output_dimension_index[column_index]
-                index_end = output_dimension_index[column_index + 1]
-
-                X_new = execute_analyzer_visits_df_csr_column_transformer(operator_context,
-                                                                          self.code_reference,
-                                                                          X[[column]],
-                                                                          X.annotations[self],
-                                                                          result[:, index_start:index_end],
-                                                                          self.analyzers,
-                                                                          self.code_reference_analyzer_output_map,
-                                                                          description)
-                annotations_for_columns = self.annotation_result_concat_workaround or []
-                annotations_for_columns.append(X_new.annotations)
-                self.annotation_result_concat_workaround = annotations_for_columns
+            result = self.one_hot_encoder_visits(X, y)
         elif self.call_function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
-            assert isinstance(X.annotations, dict) and self in X.annotations
-            result = self.transformer.fit_transform(X, y)
-            self.output_dimensions = [1 for _ in range(result.shape[1])]
-            for column_index, column in enumerate(X.columns):
-                function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
-                operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
-                description = "Numerical Encoder (StandardScaler), Column: '{}'".format(column)
-                X_new = execute_analyzer_visits_df_array_column_transformer(operator_context,
-                                                                            self.code_reference,
-                                                                            X[[column]],
-                                                                            X.annotations[self],
-                                                                            result[:, column_index],
-                                                                            self.analyzers,
-                                                                            self.code_reference_analyzer_output_map,
-                                                                            description)
-                annotations_for_columns = self.annotation_result_concat_workaround or []
-                annotations_for_columns.append(X_new.annotations)
-                self.annotation_result_concat_workaround = annotations_for_columns
+            result = self.standard_scaler_visits(X, y)
         else:
             result = self.transformer.fit_transform(X, y)
 
+        return result
+
+    def standard_scaler_visits(self, X, y):
+        """
+        Analyzer visits for the StandardScaler Transformer
+        """
+        # pylint: disable=invalid-name
+        assert isinstance(X.annotations, dict) and self in X.annotations
+        result = self.transformer.fit_transform(X, y)
+        self.output_dimensions = [1 for _ in range(result.shape[1])]
+        for column_index, column in enumerate(X.columns):
+            function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
+            operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
+            description = "Numerical Encoder (StandardScaler), Column: '{}'".format(column)
+            column_result = execute_analyzer_visits_df_array_column_transformer(operator_context,
+                                                                                self.code_reference,
+                                                                                X[[column]],
+                                                                                X.annotations[self],
+                                                                                result[:, column_index],
+                                                                                self.analyzers,
+                                                                                self.code_reference_analyzer_output_map,
+                                                                                description)
+            annotations_for_columns = self.annotation_result_concat_workaround or []
+            annotations_for_columns.append(column_result.annotations)
+            self.annotation_result_concat_workaround = annotations_for_columns
+        return result
+
+    def one_hot_encoder_visits(self, X, y):
+        """
+        Analyzer visits for the OneHotEncoder Transformer
+        """
+        # pylint: disable=invalid-name
+        assert isinstance(X.annotations, dict) and self in X.annotations
+        result = self.transformer.fit_transform(X, y)
+        self.output_dimensions = [len(one_hot_categories) for one_hot_categories in
+                                  self.transformer.categories_]
+        output_dimension_index = [0]
+        for dimension in self.output_dimensions:
+            output_dimension_index.append(output_dimension_index[-1] + dimension)
+        for column_index, column in enumerate(X.columns):
+            function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
+            operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
+            description = "Categorical Encoder (OneHotEncoder), Column: '{}'".format(column)
+
+            index_start = output_dimension_index[column_index]
+            index_end = output_dimension_index[column_index + 1]
+
+            column_result = execute_analyzer_visits_df_csr_column_transformer(operator_context,
+                                                                              self.code_reference,
+                                                                              X[[column]],
+                                                                              X.annotations[self],
+                                                                              result[:, index_start:index_end],
+                                                                              self.analyzers,
+                                                                              self.code_reference_analyzer_output_map,
+                                                                              description)
+            annotations_for_columns = self.annotation_result_concat_workaround or []
+            annotations_for_columns.append(column_result.annotations)
+            self.annotation_result_concat_workaround = annotations_for_columns
         return result
 
     def column_transformer_visits(self, X, y):
         """
         The projections and the final concat.
         """
+        # pylint: disable=invalid-name
         X_new = self.column_transformer_visits_projections(X)
         result = self.transformer.fit_transform(X_new, y)
         self.column_transformer_visits_save_child_results()
@@ -150,6 +167,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         """
         Analyzer visits for the concat DAG node
         """
+        # pylint: disable=too-many-locals
         result_indices = [0]
         annotations = []
         transformers_tuples = self.transformer.transformers_[:-1]
@@ -188,6 +206,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         """
         Analyzer visits for the different projections
         """
+        # pylint: disable=invalid-name
         transformers_tuples = self.transformer.transformers
         columns_with_transformer = [(column, transformer_tuple[1]) for transformer_tuple in transformers_tuples
                                     for column in transformer_tuple[2]]
@@ -205,6 +224,10 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         return X_new[0]
 
     def estimator_visits(self, X, y):
+        """
+        Analyzer visits for the estimator DAG node
+        """
+        # pylint: disable=invalid-name
         function_info = (self.module_name, "fit")  # TODO: nested pipelines
         assert y is not None
         operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
@@ -221,6 +244,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         Pipeline.fit returns nothing (trained models get no edge in our DAG).
         Only need to do two scans for train data and train labels
         """
+        # pylint: disable=invalid-name
         function_info = (self.module_name, "fit")  # TODO: nested pipelines
         operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
         X_new = execute_analyzer_visits_df_df(operator_context, self.code_reference, X, X, self.analyzers,
