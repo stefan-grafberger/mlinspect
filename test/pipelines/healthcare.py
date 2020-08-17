@@ -24,6 +24,7 @@ COUNTIES_OF_INTEREST = ['county1', 'county2', 'county3']
 def create_model(optimizer='adagrad',
                  kernel_initializer='glorot_uniform',
                  dropout=0.2):
+    """Create a simple neural network"""
     nn_model = Sequential()
     nn_model.add(Dense(64, activation='relu', kernel_initializer=kernel_initializer))
     nn_model.add(Dropout(dropout))
