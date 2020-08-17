@@ -301,8 +301,8 @@ def iter_input_annotation_output_df_csr(analyzer_index, input_data, annotations,
 
 def iter_input_annotation_output_csr_list_csr(analyzer_index, transformer_data_with_annotations, output_data):
     """
-        Create an efficient iterator for the analyzer input
-        """
+    Create an efficient iterator for the analyzer input
+    """
     # pylint: disable=too-many-locals
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
@@ -326,8 +326,8 @@ def iter_input_annotation_output_csr_list_csr(analyzer_index, transformer_data_w
 
 def iter_input_annotation_output_estimator_nothing(analyzer_index, data, target):
     """
-        Create an efficient iterator for the analyzer input
-        """
+    Create an efficient iterator for the analyzer input
+    """
     # pylint: disable=too-many-locals
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
@@ -397,7 +397,7 @@ def iter_input_annotation_output_array_array(analyzer_index, input_df, annotatio
 def execute_analyzer_visits_csr_list_csr(operator_context, code_reference, transformer_data_with_annotations,
                                          output_data, analyzers,
                                          code_reference_analyzer_output_map, func_name):
-    """Execute analyzers when the current operator has multiple parents in the DAG"""
+    """Execute analyzers"""
     # pylint: disable=too-many-arguments
     annotation_iterators = []
     for analyzer in analyzers:
@@ -415,7 +415,7 @@ def execute_analyzer_visits_csr_list_csr(operator_context, code_reference, trans
 
 def execute_analyzer_visits_estimator_input_nothing(operator_context, code_reference, data, target,
                                                     analyzers, code_reference_analyzer_output_map, func_name):
-    """Execute analyzers when the current operator has multiple parents in the DAG"""
+    """Execute analyzers"""
     # pylint: disable=too-many-arguments
     assert isinstance(data, MlinspectCsrMatrix)
     assert isinstance(target, MlinspectNdarray)
@@ -432,7 +432,7 @@ def execute_analyzer_visits_estimator_input_nothing(operator_context, code_refer
 def execute_analyzer_visits_df_df(operator_context, code_reference, input_data, output_data, analyzers,
                                   code_reference_analyzer_output_map, func_name, transformer=None,
                                   full_return_value=None):
-    """Execute analyzers when the current operator has one parent in the DAG"""
+    """Execute analyzers"""
     # pylint: disable=too-many-arguments
     assert isinstance(input_data, MlinspectDataFrame)
     annotation_iterators = []
@@ -455,7 +455,7 @@ def execute_analyzer_visits_df_array_column_transformer(operator_context, code_r
                                                         input_data, annotations, output_data, analyzers,
                                                         code_reference_analyzer_output_map,
                                                         func_name):
-    """Execute analyzers when the current operator has one parent in the DAG"""
+    """Execute analyzers"""
     # pylint: disable=too-many-arguments
     assert isinstance(input_data, MlinspectDataFrame)
     annotation_iterators = []
@@ -477,7 +477,7 @@ def execute_analyzer_visits_df_csr_column_transformer(operator_context, code_ref
                                                       input_data, annotations, output_data, analyzers,
                                                       code_reference_analyzer_output_map,
                                                       func_name):
-    """Execute analyzers when the current operator has one parent in the DAG"""
+    """Execute analyzers"""
     # pylint: disable=too-many-arguments
     assert isinstance(input_data, MlinspectDataFrame)
     annotation_iterators = []
@@ -497,7 +497,7 @@ def execute_analyzer_visits_df_csr_column_transformer(operator_context, code_ref
 
 def execute_analyzer_visits_array_array(operator_context, code_reference, input_data, output_data,
                                         analyzers, code_reference_analyzer_output_map, func_name):
-    """Execute analyzers when the current operator has one parent in the DAG"""
+    """Execute analyzers"""
     # pylint: disable=too-many-arguments
     assert isinstance(input_data, MlinspectNdarray)
     annotation_iterators = []
