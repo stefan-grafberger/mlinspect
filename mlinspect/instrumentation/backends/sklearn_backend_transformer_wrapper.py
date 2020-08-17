@@ -259,9 +259,13 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         return X_new, y_new
 
 
+# -------------------------------------------------------
+# Functions to create the iterators for the analyzers
+# -------------------------------------------------------
+
 def iter_input_annotation_output_df_array(analyzer_index, input_data, annotations, output_data):
     """
-    Create an efficient iterator for the analyzer input for operators with one parent.
+    Create an efficient iterator for the analyzer input
     """
     # pylint: disable=too-many-locals
     # Performance tips:
@@ -279,7 +283,7 @@ def iter_input_annotation_output_df_array(analyzer_index, input_data, annotation
 
 def iter_input_annotation_output_df_csr(analyzer_index, input_data, annotations, output_data):
     """
-    Create an efficient iterator for the analyzer input for operators with one parent.
+    Create an efficient iterator for the analyzer input
     """
     # pylint: disable=too-many-locals
     # Performance tips:
@@ -297,7 +301,7 @@ def iter_input_annotation_output_df_csr(analyzer_index, input_data, annotations,
 
 def iter_input_annotation_output_csr_list_csr(analyzer_index, transformer_data_with_annotations, output_data):
     """
-        Create an efficient iterator for the analyzer input for operators with one parent.
+        Create an efficient iterator for the analyzer input
         """
     # pylint: disable=too-many-locals
     # Performance tips:
@@ -322,7 +326,7 @@ def iter_input_annotation_output_csr_list_csr(analyzer_index, transformer_data_w
 
 def iter_input_annotation_output_estimator_nothing(analyzer_index, data, target):
     """
-        Create an efficient iterator for the analyzer input for operators with one parent.
+        Create an efficient iterator for the analyzer input
         """
     # pylint: disable=too-many-locals
     # Performance tips:
@@ -344,6 +348,50 @@ def iter_input_annotation_output_estimator_nothing(analyzer_index, data, target)
 
     return map(lambda input_tuple: AnalyzerInputSinkOperator(*input_tuple),
                zip(input_rows, annotation_rows))
+
+
+def iter_input_annotation_output_df_df(analyzer_index, input_df, annotation_df, output_df):
+    """
+    Create an efficient iterator for the analyzer input
+    """
+    # pylint: disable=too-many-locals
+    # Performance tips:
+    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+    assert isinstance(input_df, DataFrame)
+    assert isinstance(output_df, DataFrame)
+
+    annotation_df_view = annotation_df.iloc[:, analyzer_index:analyzer_index + 1]
+
+    input_rows = get_df_row_iterator(input_df)
+    annotation_rows = get_df_row_iterator(annotation_df_view)
+    output_rows = get_df_row_iterator(output_df)
+
+    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
+               zip(input_rows, annotation_rows, output_rows))
+
+
+def iter_input_annotation_output_array_array(analyzer_index, input_df, annotation_df, output_df):
+    """
+    Create an efficient iterator for the analyzer input
+    """
+    # pylint: disable=too-many-locals
+    # Performance tips:
+    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+    assert isinstance(input_df, numpy.ndarray)
+    assert isinstance(output_df, numpy.ndarray)
+
+    annotation_df_view = annotation_df.iloc[:, analyzer_index:analyzer_index + 1]
+
+    input_rows = get_numpy_array_row_iterator(input_df)
+    annotation_rows = get_df_row_iterator(annotation_df_view)
+    output_rows = get_numpy_array_row_iterator(output_df)
+
+    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
+               zip(input_rows, annotation_rows, output_rows))
+
+# -------------------------------------------------------
+# Execute analyzers functions
+# -------------------------------------------------------
 
 
 def execute_analyzer_visits_csr_list_csr(operator_context, code_reference, transformer_data_with_annotations,
@@ -466,45 +514,9 @@ def execute_analyzer_visits_array_array(operator_context, code_reference, input_
     assert isinstance(return_value, MlinspectNdarray)
     return return_value
 
-
-def iter_input_annotation_output_df_df(analyzer_index, input_df, annotation_df, output_df):
-    """
-    Create an efficient iterator for the analyzer input for operators with one parent.
-    """
-    # pylint: disable=too-many-locals
-    # Performance tips:
-    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-    assert isinstance(input_df, DataFrame)
-    assert isinstance(output_df, DataFrame)
-
-    annotation_df_view = annotation_df.iloc[:, analyzer_index:analyzer_index + 1]
-
-    input_rows = get_df_row_iterator(input_df)
-    annotation_rows = get_df_row_iterator(annotation_df_view)
-    output_rows = get_df_row_iterator(output_df)
-
-    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
-               zip(input_rows, annotation_rows, output_rows))
-
-
-def iter_input_annotation_output_array_array(analyzer_index, input_df, annotation_df, output_df):
-    """
-    Create an efficient iterator for the analyzer input for operators with one parent.
-    """
-    # pylint: disable=too-many-locals
-    # Performance tips:
-    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-    assert isinstance(input_df, numpy.ndarray)
-    assert isinstance(output_df, numpy.ndarray)
-
-    annotation_df_view = annotation_df.iloc[:, analyzer_index:analyzer_index + 1]
-
-    input_rows = get_numpy_array_row_iterator(input_df)
-    annotation_rows = get_df_row_iterator(annotation_df_view)
-    output_rows = get_numpy_array_row_iterator(output_df)
-
-    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
-               zip(input_rows, annotation_rows, output_rows))
+# -------------------------------------------------------
+# Store analyzer results functions
+# -------------------------------------------------------
 
 
 def store_analyzer_outputs_df(annotation_iterators, code_reference, return_value, analyzers,
@@ -524,8 +536,8 @@ def store_analyzer_outputs_df(annotation_iterators, code_reference, return_value
     stored_analyzer_results[func_name] = analyzer_outputs
     code_reference_analyzer_output_map[code_reference] = stored_analyzer_results
 
-    # if the transformer is a column transformer, we have multiple annotations we need to pass to different transformers
-    # if we do not want to override internal column transformer functions, we have to work around these black
+    # If the transformer is a column transformer, we have multiple annotations we need to pass to different transformers
+    # If we do not want to override internal column transformer functions, we have to work around these black
     # box functions and pass the annotations using a different mechanism
     if transformer is None:
         assert full_return_value is None
