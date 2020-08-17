@@ -27,12 +27,12 @@ COUNTIES_OF_INTEREST = ['Iowa', 'Florida', 'Ohio', 'California', 'Nevada', 'Texa
 
 # create a function that returns a model, taking as parameters things you
 # want to verify using cross-valdiation and model selection
-def create_model():
+def create_model(input_dim):
     """Create a simple neural network"""
     clf = Sequential()
-    clf.add(Dense(9, activation='relu', input_dim=2))
+    clf.add(Dense(9, activation='relu', input_dim=input_dim))
     clf.add(Dense(9, activation='relu'))
-    clf.add(Dense(3, activation='softmax'))
+    clf.add(Dense(2, activation='softmax'))
     clf.compile(loss='categorical_crossentropy', optimizer=SGD(), metrics=["accuracy"])
     return clf
 
@@ -61,11 +61,11 @@ data = data[data['county'].isin(COUNTIES_OF_INTEREST)]
 
 # define the feature encoding of the data
 impute_and_one_hot_encode = Pipeline(steps=[
-        #('impute', SimpleImputer(strategy='most_frequent')),
-        ('encode', OneHotEncoder())
+        ('impute', SimpleImputer(strategy='most_frequent')),
+        ('encode', OneHotEncoder(sparse=False, handle_unknown='ignore'))
     ])
 
-#w2v_transformer = W2VTransformer(min_count=0, seed=1)
+w2v_transformer = W2VTransformer(min_count=0, seed=1)
 
 #last_name_list = data['last_name'].tolist()
 #last_name_list.append('last_name')
@@ -77,19 +77,19 @@ impute_and_one_hot_encode = Pipeline(steps=[
 # glove = EmbeddingTransformer('glove-wiki-gigaword-50')
 
 featurisation = ColumnTransformer(transformers=[
-    #("impute_and_one_hot_encode", impute_and_one_hot_encode, ['smoker', 'county', 'race']),
-    #('word2vec', OneHotEncoder(), ['last_name']),
+    ("impute_and_one_hot_encode", impute_and_one_hot_encode, ['smoker', 'county', 'race']),
+    ('word2vec', OneHotEncoder(sparse=False, handle_unknown='ignore'), ['last_name']),
     ('numeric', StandardScaler(), ['num_children', 'income'])
 ])
 
 # define the training pipeline for the model
-neural_net = KerasClassifier(build_fn=create_model, epochs=10, batch_size=10, verbose=0)
+neural_net = KerasClassifier(build_fn=create_model, epochs=10, batch_size=1, verbose=0, input_dim=445)
 pipeline = Pipeline([
     ('features', featurisation),
-    ('learner', DecisionTreeClassifier())])
+    ('learner', neural_net)])
 
 # train-test split
-train_data, test_data = train_test_split(data)
+train_data, test_data = train_test_split(data, random_state=0)
 # model training
 model = pipeline.fit(train_data, train_data['label'])
 # model evaluation
