@@ -61,30 +61,9 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         """
         # pylint: disable=invalid-name
         if self.call_function_info == ('sklearn.pipeline', 'Pipeline'):
-            # Pipeline.fit returns nothing (trained models get no edge in our DAG)
-            # Only need to do two scans for train data and train labels
-            function_info = (self.module_name, "fit")  # TODO: nested pipelines
-            operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
-            X_new = execute_analyzer_visits_df_df(operator_context, self.code_reference, X, X, self.analyzers,
-                                                  self.code_reference_analyzer_output_map, "fit X")
-            assert y is not None
-            assert isinstance(y, MlinspectNdarray)
-            operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
-            y_new = execute_analyzer_visits_array_array(operator_context, self.code_reference, y, y,
-                                                        self.analyzers,
-                                                        self.code_reference_analyzer_output_map, "fit y")
-            assert isinstance(y_new, MlinspectNdarray)
+            X_new, y_new = self.train_data_and_labels_visits(X, y)
         elif self.call_function_info == ('sklearn.tree._classes', 'DecisionTreeClassifier'):
-            function_info = (self.module_name, "fit")  # TODO: nested pipelines
-            assert y is not None
-            operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
-            description = "fit"
-
-            execute_analyzer_visits_estimator_input_nothing(operator_context, self.code_reference,
-                                                            X, y, self.analyzers,
-                                                            self.code_reference_analyzer_output_map, description)
-            X_new = X
-            y_new = y
+            X_new, y_new = self.estimator_visits(X, y)
         else:
             X_new = X
             y_new = y
@@ -105,55 +84,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         """
         # pylint: disable=invalid-name, too-many-locals, too-many-statements
         if self.call_function_info == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
-            # Analyzers for the different projections
-            transformers_tuples = self.transformer.transformers
-            columns_with_transformer = [(column, transformer_tuple[1]) for transformer_tuple in transformers_tuples
-                                        for column in transformer_tuple[2]]
-            X_old = X.copy()
-            X_new = [X]
-            y_new = [y]
-            for column, transformer in columns_with_transformer:
-                projected_df = X_old[[column]]
-                function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
-                operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
-                description = "to ['{}']".format(column)
-                X_new[0] = execute_analyzer_visits_df_df(operator_context, self.code_reference, X_old,
-                                                         projected_df, self.analyzers,
-                                                         self.code_reference_analyzer_output_map, description,
-                                                         transformer, X_new[0])
-            # ---
-            result = self.transformer.fit_transform(X_new[0], y_new[0])
-            # Because Column transformer creates deep copies, we need to extract results here
-            transformers_tuples = self.transformer.transformers_[:-1]
-            transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
-            for transformer in transformers:
-                self.code_reference_analyzer_output_map.update(transformer.code_reference_analyzer_output_map)
-
-            # --- concat
-            result_indices = [0]
-            annotations = []
-            transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
-            for transformer in transformers:
-                result_dims = transformer.output_dimensions
-                annotations.extend(transformer.annotation_result_concat_workaround)
-                for dim in result_dims:
-                    result_indices.append(result_indices[-1] + dim)
-
-            transformer_data_with_annotations = []
-            transformers_tuples = self.transformer.transformers_[:-1]
-            columns_with_transformer = [(column, transformer_tuple[1]) for transformer_tuple in transformers_tuples
-                                        for column in transformer_tuple[2]]
-            for index, _ in enumerate(columns_with_transformer):
-                data = result[:, result_indices[index]:result_indices[index + 1]]
-                annotation = annotations[index]
-                transformer_data_with_annotations.append((data, annotation))
-
-            function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
-            operator_context = OperatorContext(OperatorType.CONCATENATION, function_info)
-            description = "concat"
-            result = execute_analyzer_visits_csr_list_csr(operator_context, self.code_reference,
-                                                          transformer_data_with_annotations, result, self.analyzers,
-                                                          self.code_reference_analyzer_output_map, description)
+            result = self.column_transformer_visits(X, y)
         elif self.call_function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
             assert isinstance(X.annotations, dict) and self in X.annotations
             result = self.transformer.fit_transform(X, y)
@@ -204,6 +135,104 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             result = self.transformer.fit_transform(X, y)
 
         return result
+
+    def column_transformer_visits(self, X, y):
+        """
+        The projections and the final concat.
+        """
+        X_new = self.column_transformer_visits_projections(X)
+        result = self.transformer.fit_transform(X_new, y)
+        self.column_transformer_visits_save_child_results()
+        result = self.column_transformer_visits_concat(result)
+        return result
+
+    def column_transformer_visits_concat(self, result):
+        """
+        Analyzer visits for the concat DAG node
+        """
+        result_indices = [0]
+        annotations = []
+        transformers_tuples = self.transformer.transformers_[:-1]
+        transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
+        for transformer in transformers:
+            result_dims = transformer.output_dimensions
+            annotations.extend(transformer.annotation_result_concat_workaround)
+            for dim in result_dims:
+                result_indices.append(result_indices[-1] + dim)
+        transformer_data_with_annotations = []
+        transformers_tuples = self.transformer.transformers_[:-1]
+        columns_with_transformer = [(column, transformer_tuple[1]) for transformer_tuple in transformers_tuples
+                                    for column in transformer_tuple[2]]
+        for index, _ in enumerate(columns_with_transformer):
+            data = result[:, result_indices[index]:result_indices[index + 1]]
+            annotation = annotations[index]
+            transformer_data_with_annotations.append((data, annotation))
+        function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
+        operator_context = OperatorContext(OperatorType.CONCATENATION, function_info)
+        description = "concat"
+        result = execute_analyzer_visits_csr_list_csr(operator_context, self.code_reference,
+                                                      transformer_data_with_annotations, result, self.analyzers,
+                                                      self.code_reference_analyzer_output_map, description)
+        return result
+
+    def column_transformer_visits_save_child_results(self):
+        """
+        Because Column transformer creates deep copies, we need to extract results here
+        """
+        transformers_tuples = self.transformer.transformers_[:-1]
+        transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
+        for transformer in transformers:
+            self.code_reference_analyzer_output_map.update(transformer.code_reference_analyzer_output_map)
+
+    def column_transformer_visits_projections(self, X):
+        """
+        Analyzer visits for the different projections
+        """
+        transformers_tuples = self.transformer.transformers
+        columns_with_transformer = [(column, transformer_tuple[1]) for transformer_tuple in transformers_tuples
+                                    for column in transformer_tuple[2]]
+        X_old = X.copy()
+        X_new = [X]
+        for column, transformer in columns_with_transformer:
+            projected_df = X_old[[column]]
+            function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
+            operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
+            description = "to ['{}']".format(column)
+            X_new[0] = execute_analyzer_visits_df_df(operator_context, self.code_reference, X_old,
+                                                     projected_df, self.analyzers,
+                                                     self.code_reference_analyzer_output_map, description,
+                                                     transformer, X_new[0])
+        return X_new[0]
+
+    def estimator_visits(self, X, y):
+        function_info = (self.module_name, "fit")  # TODO: nested pipelines
+        assert y is not None
+        operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
+        description = "fit"
+        execute_analyzer_visits_estimator_input_nothing(operator_context, self.code_reference,
+                                                        X, y, self.analyzers,
+                                                        self.code_reference_analyzer_output_map, description)
+        X_new = X
+        y_new = y
+        return X_new, y_new
+
+    def train_data_and_labels_visits(self, X, y):
+        """
+        Pipeline.fit returns nothing (trained models get no edge in our DAG).
+        Only need to do two scans for train data and train labels
+        """
+        function_info = (self.module_name, "fit")  # TODO: nested pipelines
+        operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
+        X_new = execute_analyzer_visits_df_df(operator_context, self.code_reference, X, X, self.analyzers,
+                                              self.code_reference_analyzer_output_map, "fit X")
+        assert y is not None
+        assert isinstance(y, MlinspectNdarray)
+        operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
+        y_new = execute_analyzer_visits_array_array(operator_context, self.code_reference, y, y,
+                                                    self.analyzers,
+                                                    self.code_reference_analyzer_output_map, "fit y")
+        assert isinstance(y_new, MlinspectNdarray)
+        return X_new, y_new
 
 
 def iter_input_annotation_output_df_array(analyzer_index, input_data, annotations, output_data):
