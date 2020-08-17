@@ -2,14 +2,11 @@
 The scikit-learn backend
 """
 import itertools
-from functools import partial
 
 import networkx
-import numpy
 from pandas import DataFrame
 
-from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputRow, \
-    AnalyzerInputUnaryOperator
+from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputUnaryOperator
 from mlinspect.instrumentation.backends.backend import Backend
 from mlinspect.instrumentation.backends.backend_utils import get_numpy_array_row_iterator
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
@@ -120,18 +117,6 @@ class SklearnBackend(Backend):
                                ('sklearn.pipeline', 'Pipeline')}:
             return_value = MlinspectEstimatorTransformer(return_value, code_reference, self.analyzers,
                                                          self.wir_post_processing_map)
-            # TODO: The wrapped transformers now have the code reference and can save in a (ordered!)
-            #  list the output of the different analyzers. (or map from column to transformer etc)
-            #  We need a custom sklearn WIR postprocessing step
-            #  that can be called by the pipeline executor to add this information to the nodes.
-            #  We also to introduce new custom code in the pipeline executor because now multiple dag nodes can be
-            #  associated with one code reference. (Because of the column transformer). The major difficulty will
-            #  be the column-transformer when propagating annotations: it just calls each child column transformers once
-            #  with one df with multiple columns. We need to save multiple columns in the annotation_df then or have
-            #  multiple annotation dfs. Then, the child column transformers need to retrieve the correct annotations.
-            #  for the concat step, we also need to be careful to maintain proper annotation mapping.
-            # TODO: The annotation df could have a boolean attribute whether the parent is a column transformer. Then
-            #  we can easily introduce special handling of these cases.
 
         self.input_data = None
 
@@ -150,24 +135,24 @@ class SklearnBackend(Backend):
                                                                  return_value)
             annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
             annotation_iterators.append(annotations_iterator)
-        return_value = self.store_analyzer_outputs(annotation_iterators, code_reference, return_value, function_info)
+        return_value = self.store_analyzer_outputs_array(annotation_iterators, code_reference, return_value,
+                                                         function_info)
         assert isinstance(return_value, MlinspectNdarray)
         return return_value
 
-    def store_analyzer_outputs(self, annotation_iterators, code_reference, return_value, function_info):
+    def store_analyzer_outputs_array(self, annotation_iterators, code_reference, return_value, function_info):
         """
         Stores the analyzer annotations for the rows in the dataframe and the
         analyzer annotations for the DAG operators in a map
         """
+        dag_node_identifier = DagNodeIdentifier(self.operator_map[function_info], code_reference,
+                                                self.code_reference_to_description.get(code_reference))
         annotation_iterators = itertools.zip_longest(*annotation_iterators)
         analyzer_names = [str(analyzer) for analyzer in self.analyzers]
         annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
         analyzer_outputs = {}
         for analyzer in self.analyzers:
-            analyzer_output = analyzer.get_operator_annotation_after_visit()
-            analyzer_outputs[analyzer] = analyzer_output
-        dag_node_identifier = DagNodeIdentifier(self.operator_map[function_info], code_reference,
-                                                self.code_reference_to_description.get(code_reference))
+            analyzer_outputs[analyzer] = analyzer.get_operator_annotation_after_visit()
         self.dag_node_identifier_to_analyzer_output[dag_node_identifier] = analyzer_outputs
         return_value = MlinspectNdarray(return_value)
         return_value.annotations = annotations_df
@@ -192,4 +177,3 @@ def iter_input_annotation_output(analyzer_index, input_df, annotation_df, output
 
     return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
-

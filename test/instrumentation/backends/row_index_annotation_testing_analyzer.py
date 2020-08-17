@@ -24,7 +24,7 @@ class RowIndexAnnotationTestingAnalyzer(Analyzer):
     def visit_operator(self, operator_context: OperatorContext,
                        row_iterator: Union[Iterable[AnalyzerInputDataSource], Iterable[AnalyzerInputUnaryOperator]])\
             -> Iterable[any]:
-        """Visit an operator, generate random number annotations and check whether they get propagated correctly"""
+        """Visit an operator, generate row index number annotations and check whether they get propagated correctly"""
         # pylint: disable=too-many-branches
         operator_output = []
         current_count = - 1
@@ -56,11 +56,10 @@ class RowIndexAnnotationTestingAnalyzer(Analyzer):
         self._operator_output = operator_output
 
     def get_operator_annotation_after_visit(self) -> any:
-        assert self._operator_type
-        assert self._operator_output  # May only be called after the operator visit is finished
-        result = self._operator_output
-        self._operator_output = None
+        assert self._operator_type and self._operator_output  # May only be called after the operator visit is finished
         self._operator_type = None
+        self._operator_output = None
+        result = self._operator_output
         return result
 
     @property

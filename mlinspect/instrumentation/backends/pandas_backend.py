@@ -1,16 +1,15 @@
 """
 The pandas backend
 """
-import os
-from functools import partial
 import itertools
+import os
 
 import networkx
 import pandas
 from pandas import DataFrame
 
-from mlinspect.instrumentation.analyzers.analyzer_input import AnalyzerInputUnaryOperator, AnalyzerInputRow, \
-    AnalyzerInputDataSource, OperatorContext
+from mlinspect.instrumentation.analyzers.analyzer_input import AnalyzerInputUnaryOperator, AnalyzerInputDataSource, \
+    OperatorContext
 from mlinspect.instrumentation.backends.backend import Backend
 from mlinspect.instrumentation.backends.backend_utils import get_df_row_iterator
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
@@ -115,28 +114,26 @@ class PandasBackend(Backend):
         operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
         annotation_iterators = []
         for analyzer in self.analyzers:
-            iterator_for_analyzer = iter_input_data_source(return_value)
+            iterator_for_analyzer = iter_input_data_source(return_value)  # TODO: Create arrays only once
             annotation_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
             annotation_iterators.append(annotation_iterator)
-        return_value = self.store_analyzer_outputs(annotation_iterators, code_reference, return_value, function_info)
+        return_value = self.store_analyzer_outputs_df(annotation_iterators, code_reference, return_value, function_info)
         return return_value
 
-    def store_analyzer_outputs(self, annotation_iterators, code_reference, return_value, function_info):
+    def store_analyzer_outputs_df(self, annotation_iterators, code_reference, return_value, function_info):
         """
         Stores the analyzer annotations for the rows in the dataframe and the
         analyzer annotations for the DAG operators in a map
         """
+        dag_node_identifier = DagNodeIdentifier(self.operator_map[function_info], code_reference,
+                                                self.code_reference_to_description.get(code_reference))
         annotation_iterators = itertools.zip_longest(*annotation_iterators)
         analyzer_names = [str(analyzer) for analyzer in self.analyzers]
         annotations_df = DataFrame(annotation_iterators, columns=analyzer_names)
         annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
         analyzer_outputs = {}
         for analyzer in self.analyzers:
-            # TODO: Create arrays only once, return iterators over those same arrays repeatedly
-            analyzer_output = analyzer.get_operator_annotation_after_visit()
-            analyzer_outputs[analyzer] = analyzer_output
-        dag_node_identifier = DagNodeIdentifier(self.operator_map[function_info], code_reference,
-                                                self.code_reference_to_description.get(code_reference))
+            analyzer_outputs[analyzer] = analyzer.get_operator_annotation_after_visit()
         self.dag_node_identifier_to_analyzer_output[dag_node_identifier] = analyzer_outputs
         return_value = MlinspectDataFrame(return_value)
         return_value.annotations = annotations_df
@@ -162,7 +159,7 @@ class PandasBackend(Backend):
                                                                  return_value)
             annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
             annotation_iterators.append(annotations_iterator)
-        return_value = self.store_analyzer_outputs(annotation_iterators, code_reference, return_value, function_info)
+        return_value = self.store_analyzer_outputs_df(annotation_iterators, code_reference, return_value, function_info)
         return return_value
 
 
