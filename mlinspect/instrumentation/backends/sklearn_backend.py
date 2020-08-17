@@ -11,9 +11,11 @@ from pandas import DataFrame
 from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputRow, \
     AnalyzerInputUnaryOperator
 from mlinspect.instrumentation.backends.backend import Backend
+from mlinspect.instrumentation.backends.backend_utils import get_numpy_array_row_iterator
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
 from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
-from mlinspect.instrumentation.backends.sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer
+from mlinspect.instrumentation.backends.sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer, \
+    get_df_row_iterator
 from mlinspect.instrumentation.backends.sklearn_dag_postprocessor import SklearnDagPostprocessor
 from mlinspect.instrumentation.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
 from mlinspect.instrumentation.dag_node import OperatorType, DagNodeIdentifier
@@ -191,29 +193,3 @@ def iter_input_annotation_output(analyzer_index, input_df, annotation_df, output
     return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
 
-
-def get_df_row_iterator(dataframe):
-    """
-    Create an efficient iterator for the data frame rows.
-    The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
-    """
-    arrays = []
-    fields = list(dataframe.columns)
-    arrays.extend(dataframe.iloc[:, k] for k in range(0, len(dataframe.columns)))
-
-    partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
-    test = map(partial_func_create_row, map(list, zip(*arrays)))
-    return test
-
-
-def get_numpy_array_row_iterator(nparray):
-    """
-    Create an efficient iterator for the data frame rows.
-    The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
-    """
-    fields = list(["array"])
-    numpy_iterator = numpy.nditer(nparray, ["refs_ok"])
-    partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
-
-    test = map(partial_func_create_row, map(list, zip(numpy_iterator)))
-    return test

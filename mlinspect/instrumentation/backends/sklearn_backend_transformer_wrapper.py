@@ -5,14 +5,15 @@ definition style
 import inspect
 import itertools
 import uuid
-from functools import partial
 
 import numpy
 from pandas import DataFrame
 from sklearn.base import BaseEstimator
 
-from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputRow, \
-    AnalyzerInputUnaryOperator, AnalyzerInputNAryOperator, AnalyzerInputSinkOperator
+from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputUnaryOperator, \
+    AnalyzerInputNAryOperator, AnalyzerInputSinkOperator
+from mlinspect.instrumentation.backends.backend_utils import get_numpy_array_row_iterator, get_df_row_iterator, \
+    get_csr_row_iterator
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
 from mlinspect.instrumentation.backends.sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
 from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
@@ -505,49 +506,6 @@ def iter_input_annotation_output_array_array(analyzer_index, input_df, annotatio
 
     return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
-
-
-def get_df_row_iterator(dataframe):
-    """
-    Create an efficient iterator for the data frame rows.
-    The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
-    """
-    arrays = []
-    fields = list(dataframe.columns)
-    arrays.extend(dataframe.iloc[:, k] for k in range(0, len(dataframe.columns)))
-
-    partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
-    test = map(partial_func_create_row, map(list, zip(*arrays)))
-    return test
-
-
-def get_numpy_array_row_iterator(nparray):
-    """
-    Create an efficient iterator for the data frame rows.
-    The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
-    """
-    fields = list(["array"])
-    numpy_iterator = numpy.nditer(nparray, ["refs_ok"])
-    partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
-
-    test = map(partial_func_create_row, map(list, zip(numpy_iterator)))
-    return test
-
-
-def get_csr_row_iterator(csr):
-    """
-    Create an efficient iterator for csr rows.
-    The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
-    """
-    # TODO: Maybe there is a way to use sparse rows that is faster
-    #  However, this is the fastest way I discovered so far
-    np_array = csr.toarray()
-    fields = list(["array"])
-    numpy_iterator = np_array.__iter__()
-    partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
-
-    test = map(partial_func_create_row, map(list, zip(numpy_iterator)))
-    return test
 
 
 def store_analyzer_outputs_df(annotation_iterators, code_reference, return_value, analyzers,

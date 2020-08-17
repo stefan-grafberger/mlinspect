@@ -12,6 +12,7 @@ from pandas import DataFrame
 from mlinspect.instrumentation.analyzers.analyzer_input import AnalyzerInputUnaryOperator, AnalyzerInputRow, \
     AnalyzerInputDataSource, OperatorContext
 from mlinspect.instrumentation.backends.backend import Backend
+from mlinspect.instrumentation.backends.backend_utils import get_df_row_iterator
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
 from mlinspect.instrumentation.dag_node import OperatorType, DagNodeIdentifier
 
@@ -169,7 +170,7 @@ def iter_input_data_source(output):
     """
     Create an efficient iterator for the analyzer input for operators with no parent: Data Source
     """
-    output = get_row_iterator(output)
+    output = get_df_row_iterator(output)
     return map(AnalyzerInputDataSource, output)
 
 
@@ -197,23 +198,9 @@ def iter_input_annotation_output(analyzer_count, analyzer_index, input_data, inp
     output_df_view = joined_df.iloc[:, column_index_annotation_end:]
     output_df_view.columns = output.columns[0:-1]
 
-    input_rows = get_row_iterator(input_df_view)
-    annotation_rows = get_row_iterator(annotation_df_view)
-    output_rows = get_row_iterator(output_df_view)
+    input_rows = get_df_row_iterator(input_df_view)
+    annotation_rows = get_df_row_iterator(annotation_df_view)
+    output_rows = get_df_row_iterator(output_df_view)
 
     return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
-
-
-def get_row_iterator(dataframe):
-    """
-    Create an efficient iterator for the data frame rows.
-    The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
-    """
-    arrays = []
-    fields = list(dataframe.columns)
-    arrays.extend(dataframe.iloc[:, k] for k in range(0, len(dataframe.columns)))
-
-    partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
-    test = map(partial_func_create_row, map(list, zip(*arrays)))
-    return test
