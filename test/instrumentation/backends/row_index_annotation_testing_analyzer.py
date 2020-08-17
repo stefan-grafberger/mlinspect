@@ -1,11 +1,11 @@
 """
 A simple analyzer for testing annotation propagation
 """
-from typing import Iterable, Union
+from typing import Iterable
 
-from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputDataSource, \
-    AnalyzerInputUnaryOperator, AnalyzerInputNAryOperator, AnalyzerInputSinkOperator
 from mlinspect.instrumentation.analyzers.analyzer import Analyzer
+from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputUnaryOperator, \
+    AnalyzerInputNAryOperator, AnalyzerInputSinkOperator
 
 
 class RowIndexAnnotationTestingAnalyzer(Analyzer):
@@ -21,14 +21,12 @@ class RowIndexAnnotationTestingAnalyzer(Analyzer):
         self._operator_output = None
         self._operator_type = None
 
-    def visit_operator(self, operator_context: OperatorContext,
-                       row_iterator: Union[Iterable[AnalyzerInputDataSource], Iterable[AnalyzerInputUnaryOperator]])\
-            -> Iterable[any]:
+    def visit_operator(self, operator_context: OperatorContext, row_iterator) -> Iterable[any]:
         """Visit an operator, generate row index number annotations and check whether they get propagated correctly"""
         # pylint: disable=too-many-branches
-        operator_output = []
-        current_count = - 1
         self._operator_type = operator_context.operator
+        operator_output = []
+        current_count = -1
 
         if self._operator_count == 0:
             for row in row_iterator:

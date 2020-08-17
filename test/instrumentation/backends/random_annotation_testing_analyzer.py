@@ -2,11 +2,11 @@
 A simple analyzer for testing annotation propagation
 """
 import random
-from typing import Iterable, Union
+from typing import Iterable
 
-from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputDataSource, \
-    AnalyzerInputUnaryOperator, AnalyzerInputNAryOperator, AnalyzerInputSinkOperator
 from mlinspect.instrumentation.analyzers.analyzer import Analyzer
+from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputUnaryOperator, \
+    AnalyzerInputNAryOperator, AnalyzerInputSinkOperator
 
 
 class RandomAnnotationTestingAnalyzer(Analyzer):
@@ -21,9 +21,7 @@ class RandomAnnotationTestingAnalyzer(Analyzer):
         self._operator_output = None
         self.rows_to_random_numbers_operator_0 = {}
 
-    def visit_operator(self, operator_context: OperatorContext,
-                       row_iterator: Union[Iterable[AnalyzerInputDataSource], Iterable[AnalyzerInputUnaryOperator]])\
-            -> Iterable[any]:
+    def visit_operator(self, operator_context: OperatorContext, row_iterator) -> Iterable[any]:
         """Visit an operator, generate random number annotations and check whether they get propagated correctly"""
         # pylint: disable=too-many-branches
         operator_output = []
