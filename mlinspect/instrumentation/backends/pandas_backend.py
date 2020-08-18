@@ -62,6 +62,9 @@ class PandasBackend(Backend):
             assert isinstance(value_value, MlinspectDataFrame)
             value_value['mlinspect_index'] = range(1, len(value_value) + 1)
             self.input_data = value_value
+        elif function_info == ('pandas.core.groupby.generic', 'agg'):
+            description = value_value.name
+            self.code_reference_to_description[code_reference] = description
 
     def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, args_values):
         """The arguments a function may be called with"""
@@ -80,6 +83,9 @@ class PandasBackend(Backend):
             # TODO: Can this also be a select?
             key_arg = args_values[0].split(os.path.sep)[-1]
             description = "to {}".format([key_arg])
+        elif function_info == ('pandas.core.frame', 'groupby'):
+            description = "Group by {}, ".format(args_values)
+            self.code_reference_to_description[code_reference] = description
         if description:
             self.code_reference_to_description[code_reference] = description
 
@@ -90,6 +96,10 @@ class PandasBackend(Backend):
         if function_info == ('pandas.core.frame', 'merge'):
             on = kwargs_values['on']
             description = "on {}".format(on)
+        elif function_info == ('pandas.core.groupby.generic', 'agg'):
+            old_description = self.code_reference_to_description[code_reference]
+            new_description = old_description + " Aggregate: {}".format(list(kwargs_values)[0])
+            self.code_reference_to_description[code_reference] = new_description
         if description:
             self.code_reference_to_description[code_reference] = description
 
@@ -109,6 +119,9 @@ class PandasBackend(Backend):
             return_value['mlinspect_index'] = range(1, len(return_value) + 1)
             return_value = self.execute_analyzer_visits_unary_operator(operator_context, code_reference, return_value,
                                                                        function_info)
+        elif function_info == ('pandas.core.frame', 'groupby'):
+            description = self.code_reference_to_description[code_reference]
+            return_value.name = description  # TODO: Do not use name here but something else to transport the value
 
         self.input_data = None
 
