@@ -52,3 +52,6 @@ class MlinspectDataFrame(DataFrame):
         #if self.backend and key != 'mlinspect_index':
         #    self.backend.after_call_index_assign(self, key, value)
         # TODO: Add backend methods and a DAG postprocessor that adds this module info.
+        #  We need a pricipled way to define this. one option would be to discover the location by the
+        #  non-index subscript usage right before and after. Is very doable, but then we need checks
+        #  at the end of the pipeline to see if there are left-over operators etc. Complicated but doable.
