@@ -31,13 +31,15 @@ class CallCaptureTransformer(ast.NodeTransformer):
         """
         # pylint: disable=invalid-name
         ast.NodeTransformer.generic_visit(self, node)
-        code = astunparse.unparse(node)
+        if isinstance(node.ctx, ast.Load):
+            code = astunparse.unparse(node)
 
-        self.add_before_call_used_value_capturing_subscript(code, node)
-        self.add_before_call_used_args_capturing_subscript(code, node)
-        instrumented_call_node = self.add_after_call_used_capturing(code, node, True)
+            self.add_before_call_used_value_capturing_subscript(code, node)
+            self.add_before_call_used_args_capturing_subscript(code, node)
+            instrumented_call_node = self.add_after_call_used_capturing(code, node, True)
 
-        return instrumented_call_node
+            return instrumented_call_node
+        return node
 
     @staticmethod
     def add_before_call_used_value_capturing_call(code, node):
