@@ -325,9 +325,10 @@ def test_index_assign():
     expected_graph.add_node(expected_constant_two)
 
     expected_constant_three = WirNode(5, "test", "Constant", CodeReference(4, 16, 4, 22))
+    expected_graph.add_node(expected_constant_three)
+
     expected_subscript_assign = WirNode(6, 'data.label', 'Subscript-Assign', CodeReference(4, 0, 4, 22))
     expected_graph.add_edge(expected_assign, expected_subscript_assign, type="caller", arg_index=-1)
-    expected_graph.add_edge(expected_constant_three, expected_subscript_assign, type="input", arg_index=0)
 
     compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 

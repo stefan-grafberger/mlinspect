@@ -49,6 +49,7 @@ class PandasBackend(Backend):
     def __init__(self):
         super().__init__()
         self.input_data = None
+        self.select = False
 
     def before_call_used_value(self, function_info, subscript, call_code, value_code, value_value,
                                code_reference):
@@ -70,9 +71,11 @@ class PandasBackend(Backend):
     def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, args_values):
         """The arguments a function may be called with"""
         # pylint: disable=too-many-arguments
-        self.before_call_used_args_add_description(args_values, code_reference, function_info)
+        if isinstance(args_values, MlinspectSeries):
+            self.select = True
+        self.before_call_used_args_add_description(args_values, code_reference, function_info, args_code)
 
-    def before_call_used_args_add_description(self, args_values, code_reference, function_info):
+    def before_call_used_args_add_description(self, args_values, code_reference, function_info, args_code):
         """Add special descriptions to certain pandas operators"""
         description = None
         if function_info == ('pandas.io.parsers', 'read_csv'):
@@ -82,7 +85,11 @@ class PandasBackend(Backend):
             description = "dropna"
         elif function_info == ('pandas.core.frame', '__getitem__'):
             # TODO: Can this also be a select?
-            if isinstance(args_values, str):
+            if isinstance(args_values, MlinspectSeries):
+                description = "Select ({})".format(code_reference)  # TODO: prettier representation
+                # TODO: need to postprocess DAG. Maybe even the wir or we identfiy
+                #  the parent here by value code_reference
+            elif isinstance(args_values, str):
                 key_arg = args_values
                 description = "to {}".format([key_arg])
             elif isinstance(args_values, list):
@@ -120,7 +127,9 @@ class PandasBackend(Backend):
                                                                           function_info)
         elif function_info == ('pandas.core.frame', '__getitem__'):
             # TODO: Can this also be a select
-            if isinstance(return_value, MlinspectDataFrame):
+            if self.select:
+                self.select = False
+            elif isinstance(return_value, MlinspectDataFrame):
                 operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
                 return_value['mlinspect_index'] = range(1, len(return_value) + 1)
                 return_value = self.execute_analyzer_visits_unary_operator_df(operator_context, code_reference,
