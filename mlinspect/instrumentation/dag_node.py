@@ -20,6 +20,7 @@ class OperatorType(Enum):
     FIT = "Fit Transformers and Estimators"
     TRAIN_DATA = "Train Data"
     TRAIN_LABELS = "Train Labels"
+    JOIN = "Join"
 
 
 @dataclasses.dataclass(frozen=True)

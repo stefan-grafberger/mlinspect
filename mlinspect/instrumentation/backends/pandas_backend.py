@@ -25,6 +25,7 @@ class PandasBackend(Backend):
         ('pandas.io.parsers', 'read_csv'): OperatorType.DATA_SOURCE,
         ('pandas.core.frame', 'dropna'): OperatorType.SELECTION,
         ('pandas.core.frame', '__getitem__'): OperatorType.PROJECTION,
+        ('pandas.core.frame', 'merge'): OperatorType.JOIN,
     }
 
     replacement_type_map = {
@@ -84,7 +85,12 @@ class PandasBackend(Backend):
     def before_call_used_kwargs(self, function_info, subscript, call_code, kwargs_code, code_reference, kwargs_values):
         """The keyword arguments a function may be called with"""
         # pylint: disable=too-many-arguments, unused-argument, no-self-use, unnecessary-pass
-        pass
+        description = None
+        if function_info == ('pandas.core.frame', 'merge'):
+            on = kwargs_values['on']
+            description = "on {}".format(on)
+        if description:
+            self.code_reference_to_description[code_reference] = description
 
     def after_call_used(self, function_info, subscript, call_code, return_value, code_reference):
         """The return value of some function"""
