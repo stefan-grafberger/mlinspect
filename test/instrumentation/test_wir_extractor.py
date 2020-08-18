@@ -45,15 +45,15 @@ def test_print_var_usage():
     extracted_wir = extractor.extract_wir()
     expected_graph = networkx.DiGraph()
 
-    expected_constant = WirNode(0, "test", "Constant", CodeReference(1, 11))
-    expected_assign = WirNode(1, "test_var", "Assign", CodeReference(1, 0))
+    expected_constant = WirNode(0, "test", "Constant", CodeReference(1, 11, 1, 17))
+    expected_assign = WirNode(1, "test_var", "Assign", CodeReference(1, 0, 1, 17))
     expected_graph.add_edge(expected_constant, expected_assign, type="input", arg_index=0)
 
-    expected_call = WirNode(2, "print", "Call", CodeReference(2, 0))
+    expected_call = WirNode(2, "print", "Call", CodeReference(2, 0, 2, 15))
     expected_graph.add_node(expected_call)
     expected_graph.add_edge(expected_assign, expected_call, type="input", arg_index=0)
 
-    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
+    compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
 def test_string_call_attribute():
@@ -74,7 +74,7 @@ def test_string_call_attribute():
     expected_graph.add_edge(expected_constant_one, expected_attribute_call, type="caller", arg_index=-1)
     expected_graph.add_edge(expected_constant_two, expected_attribute_call, type="input", arg_index=0)
 
-    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
+    compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
 def test_call_after_call():
@@ -117,7 +117,7 @@ def test_print_expressions():
     expected_call_two = WirNode(2, "print", "Call", CodeReference(1, 0))
     expected_graph.add_edge(expected_call_one, expected_call_two, type="input", arg_index=0)
 
-    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
+    compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
 def test_keyword():
@@ -145,7 +145,7 @@ def test_keyword():
     expected_graph.add_edge(expected_constant_three, expected_call, type="input", arg_index=2)
     expected_graph.add_edge(expected_keyword, expected_call, type="input", arg_index=3)
 
-    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
+    compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
 def test_import():
@@ -168,7 +168,7 @@ def test_import():
     expected_graph.add_edge(expected_import, expected_constant_call, type="caller", arg_index=-1)
     expected_graph.add_edge(expected_constant, expected_constant_call, type="input", arg_index=0)
 
-    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
+    compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
 def test_import_as():
@@ -191,7 +191,7 @@ def test_import_as():
     expected_graph.add_edge(expected_import, expected_constant_call, type="caller", arg_index=-1)
     expected_graph.add_edge(expected_constant, expected_constant_call, type="input", arg_index=0)
 
-    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
+    compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
 def test_import_from():
@@ -214,7 +214,7 @@ def test_import_from():
     expected_graph.add_edge(expected_import, expected_constant_call, type="caller", arg_index=-1)
     expected_graph.add_edge(expected_constant, expected_constant_call, type="input", arg_index=0)
 
-    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
+    compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
 def test_nested_import_from():
@@ -238,7 +238,7 @@ def test_nested_import_from():
     expected_call_two = WirNode(2, "print", "Call", CodeReference(3, 0))
     expected_graph.add_edge(expected_call_one, expected_call_two, type="input", arg_index=0)
 
-    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
+    compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
 def test_list_creation():
@@ -262,7 +262,7 @@ def test_list_creation():
     expected_call = WirNode(3, "print", "Call", CodeReference(1, 0))
     expected_graph.add_edge(expected_list, expected_call, type="input", arg_index=0)
 
-    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
+    compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
 def test_index_subscript():
@@ -294,7 +294,7 @@ def test_index_subscript():
     expected_graph.add_edge(expected_assign, expected_index_subscript, type="caller", arg_index=-1)
     expected_graph.add_edge(expected_constant_two, expected_index_subscript, type="input", arg_index=0)
 
-    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
+    compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
 def test_tuples():
@@ -332,7 +332,7 @@ def test_tuples():
     expected_graph.add_edge(expected_call, expected_tuple, type="input", arg_index=1)
     expected_graph.add_edge(expected_list, expected_tuple, type="input", arg_index=2)
 
-    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
+    compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
 def test_adult_easy_pipeline():
@@ -384,7 +384,7 @@ def test_index_subscript_with_module_information():
     expected_graph.add_edge(expected_assign, expected_index_subscript, type="caller", arg_index=-1)
     expected_graph.add_edge(expected_constant_two, expected_index_subscript, type="input", arg_index=0)
 
-    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
+    compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
 def test_fails_for_unknown_ast_node_types():
