@@ -3,6 +3,7 @@ Instrument and executes the pipeline
 """
 import ast
 import copy
+import re
 from typing import List
 
 import nbformat
@@ -194,10 +195,10 @@ class PipelineExecutor:
         Get the function info and find out which backend to call
         """
         if not subscript:
-            function = str(call_code.split("(", 1)[0])
-            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
-
-            function_info = (module_info.__name__, str(function.split(".")[-1]))
+            function_string = PipelineExecutor.split_on_bracket(call_code)
+            module_info = eval("inspect.getmodule(" + function_string + ")", PipelineExecutor.script_scope)
+            function_name = PipelineExecutor.split_on_dot(function_string)
+            function_info = (module_info.__name__, function_name)
         else:
             function = str(call_code.split("[", 1)[0])
             module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
@@ -211,12 +212,42 @@ class PipelineExecutor:
         # FIXME: move this into sklearn backend
         if value is not None and \
                 function_info[0] == 'mlinspect.instrumentation.backends.sklearn_backend_transformer_wrapper':
-            function_info = (value.module_name, str(function.split(".")[-1]))
+            function_info = (value.module_name, str(function_string.split(".")[-1]))
 
         function_prefix = function_info[0].split(".", 1)[0]
 
         return function_info, function_prefix
 
+    @staticmethod
+    def split_on_bracket(call_code):
+        counter = 0
+        found_index = None
+
+        for index, char in enumerate(call_code):
+            if counter == 0 and char == "(":
+                found_index = index
+                counter += 1
+            elif counter != 0 and char == "(":
+                counter += 1
+            elif counter != 0 and char == ")":
+                counter -= 1
+
+        return call_code[:found_index]
+
+    @staticmethod
+    def split_on_dot(call_code):
+        counter = 0
+        dot_found = False
+        last_dot_index = 0
+        for index, char in enumerate(call_code):
+            if index != 0 and char == "(" and not dot_found:
+                counter += 1
+            elif char == ")" and not dot_found:
+                counter -= 1
+            elif char == "." and counter == 0:
+                last_dot_index = index + 1
+
+        return call_code[last_dot_index:]
 
 # How we instrument the calls
 

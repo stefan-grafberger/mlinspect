@@ -6,6 +6,7 @@ import os
 from inspect import cleandoc
 import networkx
 import pytest
+from testfixtures import compare
 
 from mlinspect.instrumentation.dag_node import CodeReference
 from mlinspect.utils import get_project_root
@@ -74,6 +75,27 @@ def test_string_call_attribute():
     expected_graph.add_edge(expected_constant_two, expected_attribute_call, type="input", arg_index=0)
 
     assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
+
+
+def test_call_after_call():
+    """
+    Tests whether the WIR Extraction works for a very simple attribute call
+    """
+    test_code = cleandoc("""
+        "hello ".capitalize().count()
+        """)
+    test_ast = ast.parse(test_code)
+    extractor = WirExtractor(test_ast)
+    extracted_wir = extractor.extract_wir()
+    expected_graph = networkx.DiGraph()
+
+    expected_constant_one = WirNode(0, "hello ", "Constant", CodeReference(1, 0))
+    expected_call_one = WirNode(1, "capitalize", "Call", CodeReference(1, 0))
+    expected_call_two = WirNode(2, "count", "Call", CodeReference(1, 0))
+    expected_graph.add_edge(expected_constant_one, expected_call_one, type="caller", arg_index=-1)
+    expected_graph.add_edge(expected_call_one, expected_call_two, type="caller", arg_index=-1)
+
+    compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
 def test_print_expressions():
