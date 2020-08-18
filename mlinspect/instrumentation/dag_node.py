@@ -21,6 +21,7 @@ class OperatorType(Enum):
     TRAIN_DATA = "Train Data"
     TRAIN_LABELS = "Train Labels"
     JOIN = "Join"
+    GROUP_BY_AGG = "Groupby and Aggregate"
 
 
 @dataclasses.dataclass(frozen=True)

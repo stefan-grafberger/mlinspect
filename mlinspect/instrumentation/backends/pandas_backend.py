@@ -26,6 +26,7 @@ class PandasBackend(Backend):
         ('pandas.core.frame', 'dropna'): OperatorType.SELECTION,
         ('pandas.core.frame', '__getitem__'): OperatorType.PROJECTION,
         ('pandas.core.frame', 'merge'): OperatorType.JOIN,
+        ('pandas.core.groupby.generic', 'agg'): OperatorType.GROUP_BY_AGG
     }
 
     replacement_type_map = {

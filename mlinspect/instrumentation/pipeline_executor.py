@@ -180,8 +180,9 @@ class PipelineExecutor:
         # pylint: disable=too-many-arguments
         function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript, return_value)
 
-        if function_info != ('mlinspect.instrumentation.pipeline_executor', 'after_call_used'):
-            self.code_reference_to_module[code_reference] = function_info
+        # FIXME: To properly handle all edge cases with chained method calls, we need to add end_col_offset
+        #  and end_line_no to code_reference
+        self.code_reference_to_module[code_reference] = function_info
 
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
@@ -248,6 +249,7 @@ class PipelineExecutor:
                 last_dot_index = index + 1
 
         return call_code[last_dot_index:]
+
 
 # How we instrument the calls
 
