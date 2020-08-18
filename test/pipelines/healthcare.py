@@ -49,7 +49,7 @@ impute_and_one_hot_encode = Pipeline([
 
 featurisation = ColumnTransformer(transformers=[
     ("impute_and_one_hot_encode", impute_and_one_hot_encode, ['smoker', 'county', 'race']),
-    #('word2vec', MyW2VTransformer(min_count=1), ['last_name']), # FIXME
+    ('word2vec', MyW2VTransformer(min_count=1), ['last_name']), # FIXME
     ('numeric', StandardScaler(), ['num_children', 'income'])
 ])
 

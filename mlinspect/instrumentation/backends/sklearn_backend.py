@@ -35,10 +35,13 @@ class SklearnBackend(Backend):
         ('sklearn.pipeline', 'fit', 'Pipeline'): OperatorType.FIT,
         ('sklearn.pipeline', 'fit', 'Train Data'): OperatorType.TRAIN_DATA,
         ('sklearn.pipeline', 'fit', 'Train Labels'): OperatorType.TRAIN_LABELS,
-        ('sklearn.model_selection._split', 'train_test_split'): OperatorType.TRAIN_TEST_SPLIT
+        ('sklearn.model_selection._split', 'train_test_split'): OperatorType.TRAIN_TEST_SPLIT,
+        ('sklearn.mlinspect.utils', 'MyW2VTransformer', 'Pipeline'): OperatorType.TRANSFORMER
     }
 
-    replacement_type_map = {}
+    replacement_type_map = {
+        'mlinspect.utils': 'sklearn.mlinspect.utils'
+    }
 
     def preprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
         """
@@ -91,6 +94,8 @@ class SklearnBackend(Backend):
             description = "Imputer (SimpleImputer)"
         elif function_info == ('sklearn.tree._classes', 'DecisionTreeClassifier'):
             description = "Decision Tree"
+        elif function_info == ('sklearn.mlinspect.utils', 'MyW2VTransformer'):
+            description = "Word2Vec"
 
         if description:
             self.code_reference_to_description[code_reference] = description
