@@ -29,6 +29,7 @@ class SklearnBackend(Backend):
         ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'): OperatorType.PROJECTION,
         ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'): OperatorType.TRANSFORMER,
         ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'): OperatorType.TRANSFORMER,
+        ('sklearn.impute._base', 'SimpleImputer', 'Pipeline'): OperatorType.TRANSFORMER,
         ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Concatenation'): OperatorType.CONCATENATION,
         ('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'): OperatorType.ESTIMATOR,
         ('sklearn.pipeline', 'fit', 'Pipeline'): OperatorType.FIT,
@@ -86,6 +87,8 @@ class SklearnBackend(Backend):
             description = "Categorical Encoder (OneHotEncoder)"
         elif function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
             description = "Numerical Encoder (StandardScaler)"
+        elif function_info == ('sklearn.impute._base', 'SimpleImputer'):
+            description = "Imputer (SimpleImputer)"
         elif function_info == ('sklearn.tree._classes', 'DecisionTreeClassifier'):
             description = "Decision Tree"
 

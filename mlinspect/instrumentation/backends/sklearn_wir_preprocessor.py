@@ -16,7 +16,8 @@ class SklearnWirPreprocessor:
     KNOWN_SINGLE_STEPS = {
         ('sklearn.preprocessing._encoders', 'OneHotEncoder'),
         ('sklearn.preprocessing._data', 'StandardScaler'),
-        ('sklearn.tree._classes', 'DecisionTreeClassifier')
+        ('sklearn.tree._classes', 'DecisionTreeClassifier'),
+        ('sklearn.impute._base', 'SimpleImputer')
     }
 
     KNOWN_MULTI_STEPS = {

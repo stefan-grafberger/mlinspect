@@ -19,6 +19,8 @@ class SklearnDagPostprocessor:
 
         def process_node(node, _):
             dag_node_identifier = DagNodeIdentifier(node.operator_type, node.code_reference, node.description)
+            if node.code_reference not in wir_post_processing_map:
+                return
             if node.module == ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'):
                 annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
                 annotation = annotations_for_all_associated_dag_nodes[node.description]

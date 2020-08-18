@@ -43,7 +43,7 @@ data = data[data['county'].isin(COUNTIES_OF_INTEREST)]
 
 # define the feature encoding of the data
 impute_and_one_hot_encode = Pipeline([
-        # ('impute', SimpleImputer(strategy='most_frequent')), # FIXME
+        ('impute', SimpleImputer(strategy='most_frequent')), # FIXME
         ('encode', OneHotEncoder(sparse=False, handle_unknown='ignore'))
     ])
 
