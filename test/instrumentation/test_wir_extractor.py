@@ -26,11 +26,11 @@ def test_print_stmt():
     extracted_wir = extractor.extract_wir()
     expected_graph = networkx.DiGraph()
 
-    expected_constant = WirNode(0, "test", "Constant", CodeReference(1, 6))
-    expected_call = WirNode(1, "print", "Call", CodeReference(1, 0))
+    expected_constant = WirNode(0, "test", "Constant", CodeReference(1, 6, 1, 12))
+    expected_call = WirNode(1, "print", "Call", CodeReference(1, 0, 1, 13))
     expected_graph.add_edge(expected_constant, expected_call, type="input", arg_index=0)
 
-    assert networkx.to_dict_of_dicts(extracted_wir) == networkx.to_dict_of_dicts(expected_graph)
+    compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
 def test_print_var_usage():
