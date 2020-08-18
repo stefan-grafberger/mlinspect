@@ -68,13 +68,20 @@ def test_tuple_assign():
     extracted_wir = extractor.extract_wir()
     expected_graph = networkx.DiGraph()
 
-    expected_constant = WirNode(0, "test", "Constant", CodeReference(1, 11, 1, 17))
-    expected_assign = WirNode(1, "test_var", "Assign", CodeReference(1, 0, 1, 17))
-    expected_graph.add_edge(expected_constant, expected_assign, type="input", arg_index=0)
+    expected_constant_one = WirNode(1, '1', 'Constant', CodeReference(1, 8, 1, 9))
+    expected_constant_two = WirNode(2, '2', 'Constant', CodeReference(1, 11, 1, 12))
 
-    expected_call = WirNode(2, "print", "Call", CodeReference(2, 0, 2, 15))
-    expected_graph.add_node(expected_call)
-    expected_graph.add_edge(expected_assign, expected_call, type="input", arg_index=0)
+    expetected_constant_tuple = WirNode(3, 'as_tuple', 'Tuple', CodeReference(1, 7, 1, 13))
+    expected_graph.add_edge(expected_constant_one, expetected_constant_tuple, type="input", arg_index=0)
+    expected_graph.add_edge(expected_constant_two, expetected_constant_tuple, type="input", arg_index=1)
+
+    expected_var_x = WirNode(4, 'x', 'Assign', CodeReference(1, 0, 1, 1))
+    expected_var_y = WirNode(5, 'y', 'Assign', CodeReference(1, 3, 1, 4))
+    expected_graph.add_edge(expetected_constant_tuple, expected_var_x, type="input", arg_index=0)
+    expected_graph.add_edge(expetected_constant_tuple, expected_var_y, type="input", arg_index=0)
+
+    expected_call = WirNode(6, 'print', 'Call', CodeReference(2, 0, 2, 8))
+    expected_graph.add_edge(expected_var_x, expected_call, type="input", arg_index=0)
 
     compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 

@@ -75,14 +75,18 @@ class WirExtractor:
         Creates a tuple vertex.
         """
         parent_in_wir_ast_nodes = ast_node.children[:-1]
+        # Only look at loads, stores get handled by assign
+        parent_in_wir_ast_nodes = [node for node in parent_in_wir_ast_nodes if
+                                   (not isinstance(node, ast.Name) or isinstance(node.ctx, ast.Load))]
         wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
         new_wir_node = WirNode(self.get_next_wir_id(), "as_tuple", "Tuple",
                                CodeReference(ast_node.lineno, ast_node.col_offset,
                                              ast_node.end_lineno, ast_node.end_col_offset))
-        self.graph.add_node(new_wir_node)
-        for parent_index, parent in enumerate(wir_parents):
-            self.graph.add_edge(parent, new_wir_node, type="input", arg_index=parent_index)
-        self.store_ast_node_wir_mapping(ast_node, new_wir_node)
+        if len(parent_in_wir_ast_nodes) > 0:
+            self.graph.add_node(new_wir_node)
+            for parent_index, parent in enumerate(wir_parents):
+                self.graph.add_edge(parent, new_wir_node, type="input", arg_index=parent_index)
+            self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
     def extract_wir_subscript(self, ast_node):
         """
@@ -194,8 +198,17 @@ class WirExtractor:
             self.graph.add_node(new_wir_node)
             self.graph.add_edge(data_wir, new_wir_node, type="caller", arg_index=-1)
         elif isinstance(assign_left_ast, ast.Tuple):
-            pass
-            #FIXME
+            tuple_children = assign_left_ast.children[:-1]
+            for child_index, child in enumerate(tuple_children):
+                assert isinstance(child, ast.Name) and isinstance(child.ctx, ast.Store)  # TODO: load
+                new_wir_node = WirNode(self.get_next_wir_id(), child.id, "Assign",
+                                       CodeReference(child.lineno, child.col_offset,
+                                                     child.end_lineno, child.end_col_offset))
+                self.graph.add_node(new_wir_node)
+                self.graph.add_edge(assign_right_wir, new_wir_node, type="input", arg_index=0)
+                self.store_variable_wir_mapping(child.id, new_wir_node)
+        else:
+            assert False
 
     def extract_wir_constant(self, ast_node):
         """

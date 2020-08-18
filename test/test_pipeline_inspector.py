@@ -46,6 +46,10 @@ def test_inspector_healthcare_py_pipeline():
     # expected_dag = get_expected_dag_adult_easy_py()
     # compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
 
+    #analyzer_results = inspection_result.analyzer_to_annotations
+    #result = analyzer_results[MaterializeFirstrowsAnalyzer(5)]
+    # assert len(result) == 2
+
 
 def test_inspector_adult_easy_ipynb_pipeline():
     """
