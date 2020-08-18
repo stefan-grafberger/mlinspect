@@ -3,8 +3,6 @@ An example pipeline
 """
 import os
 
-from sklearn.tree import DecisionTreeClassifier
-
 from mlinspect.utils import MyW2VTransformer, create_model
 import pandas as pd
 from sklearn.compose import ColumnTransformer
@@ -43,21 +41,21 @@ data = data[data['county'].isin(COUNTIES_OF_INTEREST)]
 
 # define the feature encoding of the data
 impute_and_one_hot_encode = Pipeline([
-        ('impute', SimpleImputer(strategy='most_frequent')), # FIXME
+        ('impute', SimpleImputer(strategy='most_frequent')),
         ('encode', OneHotEncoder(sparse=False, handle_unknown='ignore'))
     ])
 
 featurisation = ColumnTransformer(transformers=[
     ("impute_and_one_hot_encode", impute_and_one_hot_encode, ['smoker', 'county', 'race']),
-    ('word2vec', MyW2VTransformer(min_count=1), ['last_name']), # FIXME
+    ('word2vec', MyW2VTransformer(min_count=1), ['last_name']),
     ('numeric', StandardScaler(), ['num_children', 'income'])
 ])
 
 # define the training pipeline for the model
-# neural_net = KerasClassifier(build_fn=create_model, epochs=10, batch_size=1, verbose=0, input_dim=201)
-# pipeline = Pipeline([
-    # ('features', featurisation),
-    # ('learner', DecisionTreeClassifier())]) # ('learner', neural_net)])
+neural_net = KerasClassifier(build_fn=create_model, epochs=10, batch_size=1, verbose=0, input_dim=201)
+pipeline = Pipeline([
+     ('features', featurisation),
+     ('learner', neural_net)])
 
 # train-test split
 train_data, test_data = train_test_split(data, random_state=0)

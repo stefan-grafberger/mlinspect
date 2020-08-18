@@ -36,11 +36,13 @@ class SklearnBackend(Backend):
         ('sklearn.pipeline', 'fit', 'Train Data'): OperatorType.TRAIN_DATA,
         ('sklearn.pipeline', 'fit', 'Train Labels'): OperatorType.TRAIN_LABELS,
         ('sklearn.model_selection._split', 'train_test_split'): OperatorType.TRAIN_TEST_SPLIT,
-        ('sklearn.mlinspect.utils', 'MyW2VTransformer', 'Pipeline'): OperatorType.TRANSFORMER
+        ('sklearn.mlinspect.utils', 'MyW2VTransformer', 'Pipeline'): OperatorType.TRANSFORMER,
+        ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier', 'Pipeline'): OperatorType.ESTIMATOR
     }
 
     replacement_type_map = {
-        'mlinspect.utils': 'sklearn.mlinspect.utils'
+        'mlinspect.utils': 'sklearn.mlinspect.utils',
+        'tensorflow.python.keras.wrappers.scikit_learn': 'sklearn.tensorflow.python.keras.wrappers.scikit_learn'
     }
 
     def preprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
@@ -96,6 +98,8 @@ class SklearnBackend(Backend):
             description = "Decision Tree"
         elif function_info == ('sklearn.mlinspect.utils', 'MyW2VTransformer'):
             description = "Word2Vec"
+        elif function_info == ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'):
+            description = "Neural Network"
 
         if description:
             self.code_reference_to_description[code_reference] = description
