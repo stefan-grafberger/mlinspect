@@ -3,6 +3,8 @@ An example pipeline
 """
 import os
 
+from sklearn.tree import DecisionTreeClassifier
+
 from test.pipelines.healthcare_utils import MyW2VTransformer, create_model
 import pandas as pd
 from sklearn.compose import ColumnTransformer
@@ -31,35 +33,35 @@ complications = data.groupby('age_group').agg(mean_complications=('complications
 data = data.merge(complications, on=['age_group'])
 
 # target variable: people with a high number of complications
-data['label'] = data['complications'] > 1.2 * data['mean_complications']
+# data['label'] = data['complications'] > 1.2 * data['mean_complications'] # FIXME
 
 # project data to a subset of attributes
-data = data[['smoker', 'last_name', 'county', 'num_children', 'race', 'income', 'label']]
+# data = data[['smoker', 'last_name', 'county', 'num_children', 'race', 'income', 'label']]
 
 # filter data
-data = data[data['county'].isin(COUNTIES_OF_INTEREST)]
+# data = data[data['county'].isin(COUNTIES_OF_INTEREST)] # FIXME
 
 # define the feature encoding of the data
-impute_and_one_hot_encode = Pipeline(steps=[
-        ('impute', SimpleImputer(strategy='most_frequent')),
+impute_and_one_hot_encode = Pipeline([
+        # ('impute', SimpleImputer(strategy='most_frequent')), # FIXME
         ('encode', OneHotEncoder(sparse=False, handle_unknown='ignore'))
     ])
 
-featurisation = ColumnTransformer(transformers=[
-    ("impute_and_one_hot_encode", impute_and_one_hot_encode, ['smoker', 'county', 'race']),
-    ('word2vec', MyW2VTransformer(min_count=1), ['last_name']),
-    ('numeric', StandardScaler(), ['num_children', 'income'])
-])
+#featurisation = ColumnTransformer(transformers=[
+    # ("impute_and_one_hot_encode", impute_and_one_hot_encode, ['smoker', 'county', 'race']), # FIXME
+    #('word2vec', MyW2VTransformer(min_count=1), ['last_name']), # FIXME
+#    ('numeric', StandardScaler(), ['num_children', 'income'])
+#])
 
 # define the training pipeline for the model
-neural_net = KerasClassifier(build_fn=create_model, epochs=10, batch_size=1, verbose=0, input_dim=201)
-pipeline = Pipeline([
-    ('features', featurisation),
-    ('learner', neural_net)])
+# neural_net = KerasClassifier(build_fn=create_model, epochs=10, batch_size=1, verbose=0, input_dim=201)
+# pipeline = Pipeline([
+    # ('features', featurisation),
+    # ('learner', DecisionTreeClassifier())]) # ('learner', neural_net)])
 
 # train-test split
-train_data, test_data = train_test_split(data, random_state=0)
+# train_data, test_data = train_test_split(data, random_state=0) # FIXME
 # model training
-model = pipeline.fit(train_data, train_data['label'])
+# model = pipeline.fit(train_data, train_data['label']) # FIXME
 # model evaluation
-print(model.score(test_data, test_data['label']))
+# print(model.score(test_data, test_data['label'])) # FIXME
