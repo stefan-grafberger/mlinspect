@@ -12,7 +12,7 @@ class MlinspectSeries(Series):
     """
     # pylint: disable=too-many-ancestors
 
-    _metadata = ['annotations']
+    _metadata = ['annotations', 'backend']
 
     @property
     def _constructor(self):
@@ -29,7 +29,7 @@ class MlinspectDataFrame(DataFrame):
     See the pandas documentation: https://pandas.pydata.org/pandas-docs/stable/development/extending.html
     """
 
-    _metadata = ['annotations']
+    _metadata = ['annotations', 'backend']
 
     @property
     def _constructor(self):
@@ -46,4 +46,9 @@ class MlinspectDataFrame(DataFrame):
     def __setitem__(self, key, value):
         if key != 'mlinspect_index':
             print("hello world")
+        #if self.backend and key != 'mlinspect_index':
+        #    self.backend.before_call_index_assign(self, key, value)
         super()._set_item(key, value)
+        #if self.backend and key != 'mlinspect_index':
+        #    self.backend.after_call_index_assign(self, key, value)
+        # TODO: Add backend methods and a DAG postprocessor that adds this module info.

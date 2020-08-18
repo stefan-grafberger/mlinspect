@@ -165,6 +165,7 @@ class PandasBackend(Backend):
         self.dag_node_identifier_to_analyzer_output[dag_node_identifier] = analyzer_outputs
         return_value = MlinspectDataFrame(return_value)
         return_value.annotations = annotations_df
+        return_value.backend = self
         self.input_data = None
         if "mlinspect_index" in return_value.columns:
             return_value = return_value.drop("mlinspect_index", axis=1)
@@ -228,6 +229,12 @@ class PandasBackend(Backend):
         return_value = self.store_analyzer_outputs_series(annotation_iterators, code_reference, return_value_series,
                                                           function_info)
         return return_value
+
+    def before_call_index_assign(self, dataframe, key, value):
+        print("before hello world")
+
+    def after_call_index_assign(self, dataframe, key, value):
+        print("after hello world")
 
 
 def iter_input_data_source(output):
