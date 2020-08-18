@@ -104,7 +104,6 @@ class CallCaptureTransformer(ast.NodeTransformer):
         """
         When the __getitem__ method of some object is called, capture the arguments of the method before executing it
         """
-        old_args_nodes_ast = ast.List([node.slice.value], ctx=ast.Load())
         old_args_code = ast.List([ast.Constant(n=astunparse.unparse(node.slice.value).split("\n", 1)[0], kind=None)],
                                  ctx=ast.Load())
         new_args_node = ast.Call(func=ast.Name(id='before_call_used_args', ctx=ast.Load()),
@@ -115,7 +114,7 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                        ast.Constant(n=node.col_offset, kind=None),
                                        ast.Constant(n=node.end_lineno, kind=None),
                                        ast.Constant(n=node.end_col_offset, kind=None),
-                                       old_args_nodes_ast],
+                                       node.slice.value],
                                  keywords=[])
         node.slice.value = new_args_node
 

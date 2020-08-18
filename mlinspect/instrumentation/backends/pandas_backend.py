@@ -81,8 +81,12 @@ class PandasBackend(Backend):
             description = "dropna"
         elif function_info == ('pandas.core.frame', '__getitem__'):
             # TODO: Can this also be a select?
-            key_arg = args_values[0].split(os.path.sep)[-1]
-            description = "to {}".format([key_arg])
+            if isinstance(args_values[0], str):
+                key_arg = args_values[0].split(os.path.sep)[-1]
+                description = "to {}".format([key_arg])
+            elif isinstance(args_values[0], list):
+                key_arg = args_values[0]
+                description = "to {}".format(str(key_arg))
         elif function_info == ('pandas.core.frame', 'groupby'):
             description = "Group by {}, ".format(args_values)
             self.code_reference_to_description[code_reference] = description

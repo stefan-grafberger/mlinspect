@@ -5,7 +5,7 @@ import os
 
 from sklearn.tree import DecisionTreeClassifier
 
-from test.pipelines.healthcare_utils import MyW2VTransformer, create_model
+from mlinspect.utils import MyW2VTransformer, create_model
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
@@ -36,7 +36,8 @@ data = data.merge(complications, on=['age_group'])
 # data['label'] = data['complications'] > 1.2 * data['mean_complications'] # FIXME
 
 # project data to a subset of attributes
-# data = data[['smoker', 'last_name', 'county', 'num_children', 'race', 'income', 'label']]
+print(data.columns.values)
+data = data[['smoker', 'last_name', 'county', 'num_children', 'race', 'income']]#, 'label']]
 
 # filter data
 # data = data[data['county'].isin(COUNTIES_OF_INTEREST)] # FIXME

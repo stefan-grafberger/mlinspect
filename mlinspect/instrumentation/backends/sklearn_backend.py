@@ -8,7 +8,7 @@ from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, 
 from mlinspect.instrumentation.backends.backend import Backend
 from mlinspect.instrumentation.backends.backend_utils import get_numpy_array_row_iterator, \
     build_annotation_df_from_iters
-from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame
+from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
 from mlinspect.instrumentation.backends.sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer, \
     get_df_row_iterator
@@ -74,7 +74,7 @@ class SklearnBackend(Backend):
         self.before_call_used_args_add_description(code_reference, function_info)
 
         if function_info == ('sklearn.preprocessing._label', 'label_binarize'):
-            assert isinstance(args_values[0], MlinspectDataFrame)
+            assert isinstance(args_values[0], MlinspectSeries)
             self.input_data = args_values[0]
 
     def before_call_used_args_add_description(self, code_reference, function_info):
