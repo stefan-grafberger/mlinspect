@@ -77,7 +77,8 @@ class WirExtractor:
         parent_in_wir_ast_nodes = ast_node.children[:-1]
         wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
         new_wir_node = WirNode(self.get_next_wir_id(), "as_tuple", "Tuple",
-                               CodeReference(ast_node.lineno, ast_node.col_offset))
+                               CodeReference(ast_node.lineno, ast_node.col_offset,
+                                             ast_node.end_lineno, ast_node.end_col_offset))
         self.graph.add_node(new_wir_node)
         for parent_index, parent in enumerate(wir_parents):
             self.graph.add_edge(parent, new_wir_node, type="input", arg_index=parent_index)
@@ -103,7 +104,8 @@ class WirExtractor:
         assert isinstance(index_constant_ast, ast.Constant)
         constant_wir = self.get_wir_node_for_ast(index_constant_ast)
         new_wir_node = WirNode(self.get_next_wir_id(), "Index-Subscript", "Subscript",
-                               CodeReference(ast_node.lineno, ast_node.col_offset))
+                               CodeReference(ast_node.lineno, ast_node.col_offset,
+                                             ast_node.end_lineno, ast_node.end_col_offset))
         self.graph.add_node(new_wir_node)
         self.graph.add_edge(name_wir, new_wir_node, type="caller", arg_index=-1)
         self.graph.add_edge(constant_wir, new_wir_node, type="input", arg_index=0)
@@ -116,7 +118,8 @@ class WirExtractor:
         parent_in_wir_ast_nodes = ast_node.children[:-1]
         wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
         new_wir_node = WirNode(self.get_next_wir_id(), "as_list", "List",
-                               CodeReference(ast_node.lineno, ast_node.col_offset))
+                               CodeReference(ast_node.lineno, ast_node.col_offset,
+                                             ast_node.end_lineno, ast_node.end_col_offset))
         self.graph.add_node(new_wir_node)
         for parent_index, parent in enumerate(wir_parents):
             self.graph.add_edge(parent, new_wir_node, type="input", arg_index=parent_index)
@@ -128,7 +131,8 @@ class WirExtractor:
         """
         module_name = ast_node.module
         new_wir_node = WirNode(self.get_next_wir_id(), module_name, "Import",
-                               CodeReference(ast_node.lineno, ast_node.col_offset))
+                               CodeReference(ast_node.lineno, ast_node.col_offset,
+                                             ast_node.end_lineno, ast_node.end_col_offset))
         self.graph.add_node(new_wir_node)
         for imported_entity_ast in ast_node.children:
             assert isinstance(imported_entity_ast, ast.alias)
@@ -147,7 +151,8 @@ class WirExtractor:
         else:
             alias_name = module_name
         new_wir_node = WirNode(self.get_next_wir_id(), module_name, "Import",
-                               CodeReference(ast_node.lineno, ast_node.col_offset))
+                               CodeReference(ast_node.lineno, ast_node.col_offset,
+                                             ast_node.end_lineno, ast_node.end_col_offset))
         self.graph.add_node(new_wir_node)
         self.store_variable_wir_mapping(alias_name, new_wir_node)
 
@@ -171,7 +176,8 @@ class WirExtractor:
         assign_right_wir = self.get_wir_node_for_ast(assign_right_ast)
         var_name = assign_left_ast.id
         new_wir_node = WirNode(self.get_next_wir_id(), var_name, "Assign",
-                               CodeReference(ast_node.lineno, ast_node.col_offset))
+                               CodeReference(ast_node.lineno, ast_node.col_offset,
+                                             ast_node.end_lineno, ast_node.end_col_offset))
         self.graph.add_node(new_wir_node)
         self.graph.add_edge(assign_right_wir, new_wir_node, type="input", arg_index=0)
         self.store_variable_wir_mapping(var_name, new_wir_node)
@@ -181,7 +187,8 @@ class WirExtractor:
         Creates a vertex for a constant in the code like a String or number
         """
         new_wir_node = WirNode(self.get_next_wir_id(), str(ast_node.n), "Constant",
-                               CodeReference(ast_node.lineno, ast_node.col_offset))
+                               CodeReference(ast_node.lineno, ast_node.col_offset,
+                                             ast_node.end_lineno, ast_node.end_col_offset))
         self.graph.add_node(new_wir_node)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
@@ -212,7 +219,8 @@ class WirExtractor:
             assert False
 
         new_wir_node = WirNode(self.get_next_wir_id(), name, "Call",
-                               CodeReference(ast_node.lineno, ast_node.col_offset))
+                               CodeReference(ast_node.lineno, ast_node.col_offset,
+                                             ast_node.end_lineno, ast_node.end_col_offset))
         self.graph.add_node(new_wir_node)
         if caller_parent:
             self.graph.add_edge(caller_parent, new_wir_node, type="caller", arg_index=-1)
@@ -225,7 +233,8 @@ class WirExtractor:
         After executing the pipeline, annotate call nodes with the captured module info
         """
         for node in self.graph.nodes:
-            if (node.operation == "Call" or node.operation == "Subscript") and node.code_reference in code_reference_to_module:
+            if (node.operation == "Call" or node.operation == "Subscript") and \
+                    node.code_reference in code_reference_to_module:
                 node.module = code_reference_to_module[node.code_reference]
                 if node.code_reference in code_reference_to_description:
                     node.dag_operator_description = code_reference_to_description[node.code_reference]

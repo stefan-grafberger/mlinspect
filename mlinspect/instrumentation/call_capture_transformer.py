@@ -53,7 +53,9 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                             ast.Constant(n=value_code, kind=None),
                                             old_value_node,
                                             ast.Constant(n=node.lineno, kind=None),
-                                            ast.Constant(n=node.col_offset, kind=None)],
+                                            ast.Constant(n=node.col_offset, kind=None),
+                                            ast.Constant(n=node.end_lineno, kind=None),
+                                            ast.Constant(n=node.end_col_offset, kind=None)],
                                       keywords=[])
             node.func.value = new_value_node
 
@@ -71,7 +73,9 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                         ast.Constant(n=value_code, kind=None),
                                         old_value_node,
                                         ast.Constant(n=node.lineno, kind=None),
-                                        ast.Constant(n=node.col_offset, kind=None)],
+                                        ast.Constant(n=node.col_offset, kind=None),
+                                        ast.Constant(n=node.end_lineno, kind=None),
+                                        ast.Constant(n=node.end_col_offset, kind=None)],
                                   keywords=[])
         node.value = new_value_node
 
@@ -89,6 +93,8 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                                          old_args_code,
                                                          ast.Constant(n=node.lineno, kind=None),
                                                          ast.Constant(n=node.col_offset, kind=None),
+                                                         ast.Constant(n=node.end_lineno, kind=None),
+                                                         ast.Constant(n=node.end_col_offset, kind=None),
                                                          old_args_nodes_ast],
                                                    keywords=[]), ctx=ast.Load())
         node.args = [new_args_node]
@@ -107,6 +113,8 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                        old_args_code,
                                        ast.Constant(n=node.lineno, kind=None),
                                        ast.Constant(n=node.col_offset, kind=None),
+                                       ast.Constant(n=node.end_lineno, kind=None),
+                                       ast.Constant(n=node.end_col_offset, kind=None),
                                        old_args_nodes_ast],
                                  keywords=[])
         node.slice.value = new_args_node
@@ -124,7 +132,9 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                                            ast.Constant(n=code, kind=None),
                                                            old_kwargs_code,
                                                            ast.Constant(n=node.lineno, kind=None),
-                                                           ast.Constant(n=node.col_offset, kind=None), ],
+                                                           ast.Constant(n=node.col_offset, kind=None),
+                                                           ast.Constant(n=node.end_lineno, kind=None),
+                                                           ast.Constant(n=node.end_col_offset, kind=None)],
                                                      keywords=old_kwargs_nodes_ast), arg=None)
         node.keywords = [new_kwargs_node]
 
@@ -138,7 +148,9 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                                 ast.Constant(n=code, kind=None),
                                                 node,
                                                 ast.Constant(n=node.lineno, kind=None),
-                                                ast.Constant(n=node.col_offset, kind=None)],
+                                                ast.Constant(n=node.col_offset, kind=None),
+                                                ast.Constant(n=node.end_lineno, kind=None),
+                                                ast.Constant(n=node.end_col_offset, kind=None)],
                                           keywords=[])
         instrumented_call_node = ast.copy_location(instrumented_call_node, node)
         return instrumented_call_node

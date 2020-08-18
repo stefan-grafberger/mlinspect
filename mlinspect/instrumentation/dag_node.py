@@ -31,6 +31,8 @@ class CodeReference:
     """
     lineno: int
     col_offset: int
+    end_lineno: int
+    end_col_offset: int
 
 
 @dataclasses.dataclass

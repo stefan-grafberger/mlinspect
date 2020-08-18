@@ -258,36 +258,45 @@ class PipelineExecutor:
 singleton = PipelineExecutor()
 
 
-def before_call_used_value(subscript, call_code, value_code, value_value, ast_lineno, ast_col_offset):
+def before_call_used_value(subscript, call_code, value_code, value_value, ast_lineno, ast_col_offset,
+                           ast_end_lineno, ast_end_col_offset):
     """
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
     return singleton.before_call_used_value(subscript, call_code, value_code, value_value,
-                                            CodeReference(ast_lineno, ast_col_offset))
+                                            CodeReference(ast_lineno, ast_col_offset, ast_end_lineno,
+                                                          ast_end_col_offset))
 
 
-def before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_offset, args_values):
+def before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_offset,
+                          ast_end_lineno, ast_end_col_offset, args_values):
     """
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
-    return singleton.before_call_used_args(subscript, call_code, args_code, CodeReference(ast_lineno, ast_col_offset),
+    return singleton.before_call_used_args(subscript, call_code, args_code,
+                                           CodeReference(ast_lineno, ast_col_offset,  ast_end_lineno,
+                                                         ast_end_col_offset),
                                            args_values)
 
 
-def before_call_used_kwargs(subscript, call_code, kwargs_code, ast_lineno, ast_col_offset, **kwarg_values):
+def before_call_used_kwargs(subscript, call_code, kwargs_code, ast_lineno, ast_col_offset,
+                            ast_end_lineno, ast_end_col_offset, **kwarg_values):
     """
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
     return singleton.before_call_used_kwargs(subscript, call_code, kwargs_code,
-                                             CodeReference(ast_lineno, ast_col_offset), kwarg_values)
+                                             CodeReference(ast_lineno, ast_col_offset, ast_end_lineno,
+                                                           ast_end_col_offset),
+                                             kwarg_values)
 
 
-def after_call_used(subscript, call_code, return_value, ast_lineno, ast_col_offset):
+def after_call_used(subscript, call_code, return_value, ast_lineno, ast_col_offset, ast_end_lineno, ast_end_col_offset):
     """
     Method that gets injected into the pipeline code
     """
     # pylint: disable=too-many-arguments
-    return singleton.after_call_used(subscript, call_code, return_value, CodeReference(ast_lineno, ast_col_offset))
+    return singleton.after_call_used(subscript, call_code, return_value,
+                                     CodeReference(ast_lineno, ast_col_offset, ast_end_lineno, ast_end_col_offset))
