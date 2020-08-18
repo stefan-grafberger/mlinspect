@@ -57,7 +57,7 @@ def test_inspector_adult_easy_ipynb_pipeline():
         .execute()
     extracted_dag = inspection_result.dag
     expected_dag = get_expected_dag_adult_easy_ipynb()
-    assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
+    compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
 
 
 def test_inspector_adult_easy_str_pipeline():

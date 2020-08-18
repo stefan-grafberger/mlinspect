@@ -2,6 +2,7 @@
 Tests whether the DAG extraction works
 """
 import networkx
+from testfixtures import compare
 
 from mlinspect.instrumentation.dag_node import CodeReference
 from mlinspect.instrumentation.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
@@ -26,7 +27,7 @@ def test_remove_all_nodes_but_calls_and_subscripts():
 
     expected_graph = get_expected_cleaned_wir_adult_easy()
 
-    assert networkx.to_dict_of_dicts(cleaned_wir) == networkx.to_dict_of_dicts(expected_graph)
+    compare(networkx.to_dict_of_dicts(cleaned_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
 def test_remove_all_non_operators_and_update_names():
