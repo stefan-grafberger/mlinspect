@@ -179,7 +179,8 @@ class PipelineExecutor:
         # pylint: disable=too-many-arguments
         function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript, return_value)
 
-        self.code_reference_to_module[code_reference] = function_info
+        if function_info != ('mlinspect.instrumentation.pipeline_executor', 'after_call_used'):
+            self.code_reference_to_module[code_reference] = function_info
 
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
