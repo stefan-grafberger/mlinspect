@@ -297,6 +297,38 @@ def test_index_subscript():
     compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
+def test_index_assign():
+    """
+    Tests whether the WIR Extraction works for lists
+    """
+    test_code = cleandoc("""
+            import pandas as pd
+
+            data = pd.read_csv('test_path')
+            data['label'] = "test"
+            """)
+    test_ast = ast.parse(test_code)
+    extractor = WirExtractor(test_ast)
+    extracted_wir = extractor.extract_wir()
+    expected_graph = networkx.DiGraph()
+
+    expected_import = WirNode(0, "pandas", "Import", CodeReference(1, 0, 1, 19))
+    expected_constant_one = WirNode(1, "test_path", "Constant", CodeReference(3, 19, 3, 30))
+    expected_call = WirNode(2, "read_csv", "Call", CodeReference(3, 7, 3, 31))
+    expected_graph.add_edge(expected_import, expected_call, type="caller", arg_index=-1)
+    expected_graph.add_edge(expected_constant_one, expected_call, type="input", arg_index=0)
+
+    expected_assign = WirNode(3, "data", "Assign", CodeReference(3, 0, 3, 31))
+    expected_graph.add_edge(expected_call, expected_assign, type="input", arg_index=0)
+
+    expected_constant_two = WirNode(4, "income-per-year", "Constant", CodeReference(4, 5, 4, 22))
+    expected_index_subscript = WirNode(5, "Index-Subscript", "Subscript", CodeReference(4, 0, 4, 23))
+    expected_graph.add_edge(expected_assign, expected_index_subscript, type="caller", arg_index=-1)
+    expected_graph.add_edge(expected_constant_two, expected_index_subscript, type="input", arg_index=0)
+
+    compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
+
+
 def test_tuples():
     """
     Tests whether the WIR Extraction works for tuples

@@ -42,3 +42,7 @@ class MlinspectDataFrame(DataFrame):
     @property
     def _constructor_expanddim(self):
         return MlinspectDataFrame
+
+    def __setitem__(self, key, value):
+        print("hello world")
+        super()._set_item(key, value)
