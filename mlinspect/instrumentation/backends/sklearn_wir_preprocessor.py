@@ -231,7 +231,7 @@ class SklearnWirPreprocessor:
         projection_wirs = []
         for column_node in column_constant_nodes:
             projection_module = (node.module[0], node.module[1], "Projection")
-            projection_description = "to {}".format([column_node.name])
+            projection_description = "to {} (ColumnTransformer)".format([column_node.name])
             projection_wir = WirNode(column_node.node_id, column_node.name, node.operation,
                                      node.code_reference, projection_module, projection_description)
             projection_wirs.append(projection_wir)
@@ -246,6 +246,7 @@ class SklearnWirPreprocessor:
                 graph.add_edge(projection_wir, start_transformer)
             graph.add_edge(end_transformer, concatenation_wir)
         self.wir_node_to_sub_pipeline_start[node].extend(projection_wirs)
+        self.preprocess_column_transformer_delete_original_transformer(graph, call_node)
 
     def preprocess_column_transformer_copy_transformer_per_column(self, graph, transformer_node, new_node_id,
                                                                   description):
@@ -287,6 +288,25 @@ class SklearnWirPreprocessor:
         assert end_transformer
 
         return start_transformers, end_transformer[0]
+
+    def preprocess_column_transformer_delete_original_transformer(self, graph, transformer_node):
+        """
+        Preprocessing for ColumnTransformers: Each transformer in a ColumnTransformer needs to be copied for
+        each column. Afterwards, the original nodes need to be deleted
+        """
+        transformer_node = self.get_sklearn_call_wir_node(graph, transformer_node)
+        start_copy = list(self.wir_node_to_sub_pipeline_start[transformer_node])
+        end_copy = self.wir_node_to_sub_pipeline_end[transformer_node]
+        assert start_copy
+        assert end_copy
+
+        def child_filter(child):
+            return child.module and len(child.module) == 3
+
+        def copy_node(current_node, _):
+            graph.remove_node(current_node)
+
+        traverse_graph_and_process_nodes(graph, copy_node, list(start_copy), end_copy, child_filter)
 
     def get_sklearn_call_wir_node(self, graph, transformer):
         """

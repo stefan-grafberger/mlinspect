@@ -97,21 +97,21 @@ def get_expected_result():
                     AnalyzerInputRow(values=[array(1)], fields=['array'])],
         DagNode(node_id=40, operator_type=OperatorType.PROJECTION, code_reference=CodeReference(18, 25, 21, 2),
                 module=('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'),
-                description="to ['age']"): [
+                description="to ['age'] (ColumnTransformer)"): [
                     AnalyzerInputRow(values=[46], fields=['age']), AnalyzerInputRow(values=[29], fields=['age'])],
         DagNode(node_id=34, operator_type=OperatorType.PROJECTION, code_reference=CodeReference(18, 25, 21, 2),
                 module=('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'),
-                description="to ['education']"): [
+                description="to ['education'] (ColumnTransformer)"): [
                     AnalyzerInputRow(values=['Some-college'], fields=['education']),
                     AnalyzerInputRow(values=['Some-college'], fields=['education'])],
         DagNode(node_id=41, operator_type=OperatorType.PROJECTION, code_reference=CodeReference(18, 25, 21, 2),
                 module=('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'),
-                description="to ['hours-per-week']"): [
+                description="to ['hours-per-week'] (ColumnTransformer)"): [
                     AnalyzerInputRow(values=[40], fields=['hours-per-week']),
                     AnalyzerInputRow(values=[50], fields=['hours-per-week'])],
         DagNode(node_id=35, operator_type=OperatorType.PROJECTION, code_reference=CodeReference(18, 25, 21, 2),
                 module=('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'),
-                description="to ['workclass']"): [
+                description="to ['workclass'] (ColumnTransformer)"): [
                     AnalyzerInputRow(values=['Private'], fields=['workclass']),
                     AnalyzerInputRow(values=['Local-gov'], fields=['workclass'])],
         DagNode(node_id=40, operator_type=OperatorType.TRANSFORMER, code_reference=CodeReference(20, 16, 20, 46),

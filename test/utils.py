@@ -43,22 +43,22 @@ def get_expected_dag_adult_easy_py():
     expected_pipeline_project_one = DagNode(34, OperatorType.PROJECTION, CodeReference(18, 25, 21, 2),
                                             ('sklearn.compose._column_transformer', 'ColumnTransformer',
                                              'Projection'),
-                                            "to ['education']")
+                                            "to ['education'] (ColumnTransformer)")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_one)
     expected_pipeline_project_two = DagNode(35, OperatorType.PROJECTION, CodeReference(18, 25, 21, 2),
                                             ('sklearn.compose._column_transformer', 'ColumnTransformer',
                                              'Projection'),
-                                            "to ['workclass']")
+                                            "to ['workclass'] (ColumnTransformer)")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_two)
     expected_pipeline_project_three = DagNode(40, OperatorType.PROJECTION, CodeReference(18, 25, 21, 2),
                                               ('sklearn.compose._column_transformer', 'ColumnTransformer',
                                                'Projection'),
-                                              "to ['age']")
+                                              "to ['age'] (ColumnTransformer)")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_three)
     expected_pipeline_project_four = DagNode(41, OperatorType.PROJECTION, CodeReference(18, 25, 21, 2),
                                              ('sklearn.compose._column_transformer', 'ColumnTransformer',
                                               'Projection'),
-                                             "to ['hours-per-week']")
+                                             "to ['hours-per-week'] (ColumnTransformer)")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_four)
 
     expected_pipeline_transformer_one = DagNode(34, OperatorType.TRANSFORMER, CodeReference(19, 20, 19, 72),
@@ -135,22 +135,22 @@ def get_expected_dag_adult_easy_ipynb():
     expected_pipeline_project_one = DagNode(34, OperatorType.PROJECTION, CodeReference(24, 25, 27, 2),
                                             ('sklearn.compose._column_transformer',
                                              'ColumnTransformer', 'Projection'),
-                                            "to ['education']")
+                                            "to ['education'] (ColumnTransformer)")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_one)
     expected_pipeline_project_two = DagNode(35, OperatorType.PROJECTION, CodeReference(24, 25, 27, 2),
                                             ('sklearn.compose._column_transformer',
                                              'ColumnTransformer', 'Projection'),
-                                            "to ['workclass']")
+                                            "to ['workclass'] (ColumnTransformer)")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_two)
     expected_pipeline_project_three = DagNode(40, OperatorType.PROJECTION, CodeReference(24, 25, 27, 2),
                                               ('sklearn.compose._column_transformer',
                                                'ColumnTransformer', 'Projection'),
-                                              "to ['age']")
+                                              "to ['age'] (ColumnTransformer)")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_three)
     expected_pipeline_project_four = DagNode(41, OperatorType.PROJECTION, CodeReference(24, 25, 27, 2),
                                              ('sklearn.compose._column_transformer',
                                               'ColumnTransformer', 'Projection'),
-                                             "to ['hours-per-week']")
+                                             "to ['hours-per-week'] (ColumnTransformer)")
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_four)
 
     expected_pipeline_transformer_one = DagNode(34, OperatorType.TRANSFORMER, CodeReference(25, 20, 25, 72),
