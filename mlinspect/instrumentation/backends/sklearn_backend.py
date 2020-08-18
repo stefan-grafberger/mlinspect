@@ -33,7 +33,8 @@ class SklearnBackend(Backend):
         ('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'): OperatorType.ESTIMATOR,
         ('sklearn.pipeline', 'fit', 'Pipeline'): OperatorType.FIT,
         ('sklearn.pipeline', 'fit', 'Train Data'): OperatorType.TRAIN_DATA,
-        ('sklearn.pipeline', 'fit', 'Train Labels'): OperatorType.TRAIN_LABELS
+        ('sklearn.pipeline', 'fit', 'Train Labels'): OperatorType.TRAIN_LABELS,
+        ('sklearn.model_selection._split', 'train_test_split'): OperatorType.TRAIN_TEST_SPLIT
     }
 
     replacement_type_map = {}

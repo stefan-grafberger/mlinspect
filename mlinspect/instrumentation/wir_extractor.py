@@ -176,7 +176,7 @@ class WirExtractor:
         assign_left_ast = ast_node.children[0]
         assign_right_ast = ast_node.children[1]
         assign_right_wir = self.get_wir_node_for_ast(assign_right_ast)
-        if not isinstance(assign_left_ast, ast.Subscript):
+        if isinstance(assign_left_ast, ast.Name):
             var_name = assign_left_ast.id
             new_wir_node = WirNode(self.get_next_wir_id(), var_name, "Assign",
                                    CodeReference(ast_node.lineno, ast_node.col_offset,
@@ -184,7 +184,7 @@ class WirExtractor:
             self.graph.add_node(new_wir_node)
             self.graph.add_edge(assign_right_wir, new_wir_node, type="input", arg_index=0)
             self.store_variable_wir_mapping(var_name, new_wir_node)
-        else:  # TODO: Cover more edge cases
+        elif isinstance(assign_left_ast, ast.Subscript):  # TODO: Cover more edge cases
             data_name = assign_left_ast.children[0].id
             data_wir = self.get_wir_node_for_variable(data_name)
             index_value = assign_left_ast.children[1].value.n
@@ -193,6 +193,9 @@ class WirExtractor:
                                                  ast_node.end_lineno, ast_node.end_col_offset))
             self.graph.add_node(new_wir_node)
             self.graph.add_edge(data_wir, new_wir_node, type="caller", arg_index=-1)
+        elif isinstance(assign_left_ast, ast.Tuple):
+            pass
+            #FIXME
 
     def extract_wir_constant(self, ast_node):
         """

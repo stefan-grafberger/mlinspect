@@ -56,6 +56,29 @@ def test_print_var_usage():
     compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
 
 
+def test_tuple_assign():
+    """
+    Tests whether the WIR Extraction works for a very simple var usage
+    """
+    test_code = cleandoc("""
+        x, y = (1, 2)
+        print(x)""")
+    test_ast = ast.parse(test_code)
+    extractor = WirExtractor(test_ast)
+    extracted_wir = extractor.extract_wir()
+    expected_graph = networkx.DiGraph()
+
+    expected_constant = WirNode(0, "test", "Constant", CodeReference(1, 11, 1, 17))
+    expected_assign = WirNode(1, "test_var", "Assign", CodeReference(1, 0, 1, 17))
+    expected_graph.add_edge(expected_constant, expected_assign, type="input", arg_index=0)
+
+    expected_call = WirNode(2, "print", "Call", CodeReference(2, 0, 2, 15))
+    expected_graph.add_node(expected_call)
+    expected_graph.add_edge(expected_assign, expected_call, type="input", arg_index=0)
+
+    compare(networkx.to_dict_of_dicts(extracted_wir), networkx.to_dict_of_dicts(expected_graph))
+
+
 def test_string_call_attribute():
     """
     Tests whether the WIR Extraction works for a very simple attribute call
