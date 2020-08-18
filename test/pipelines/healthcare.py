@@ -47,11 +47,11 @@ impute_and_one_hot_encode = Pipeline([
         ('encode', OneHotEncoder(sparse=False, handle_unknown='ignore'))
     ])
 
-#featurisation = ColumnTransformer(transformers=[
-    # ("impute_and_one_hot_encode", impute_and_one_hot_encode, ['smoker', 'county', 'race']), # FIXME
+featurisation = ColumnTransformer(transformers=[
+    ("impute_and_one_hot_encode", impute_and_one_hot_encode, ['smoker', 'county', 'race']),
     #('word2vec', MyW2VTransformer(min_count=1), ['last_name']), # FIXME
-#    ('numeric', StandardScaler(), ['num_children', 'income'])
-#])
+    ('numeric', StandardScaler(), ['num_children', 'income'])
+])
 
 # define the training pipeline for the model
 # neural_net = KerasClassifier(build_fn=create_model, epochs=10, batch_size=1, verbose=0, input_dim=201)
