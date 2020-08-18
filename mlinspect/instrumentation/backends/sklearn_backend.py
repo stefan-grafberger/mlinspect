@@ -7,7 +7,7 @@ import networkx
 from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputUnaryOperator
 from mlinspect.instrumentation.backends.backend import Backend
 from mlinspect.instrumentation.backends.backend_utils import get_numpy_array_row_iterator, \
-    build_annotation_df_from_iters
+    build_annotation_df_from_iters, get_series_row_iterator
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
 from mlinspect.instrumentation.backends.sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer, \
@@ -124,15 +124,15 @@ class SklearnBackend(Backend):
     def execute_analyzer_visits_df_input_np_output(self, operator_context, code_reference, return_value_array,
                                                    function_info):
         """Execute analyzers when the current operator has one parent in the DAG"""
-        assert isinstance(self.input_data, MlinspectDataFrame)
+        assert isinstance(self.input_data, MlinspectSeries)
         annotation_iterators = []
         for analyzer in self.analyzers:
             analyzer_index = self.analyzers.index(analyzer)
             # TODO: Create arrays only once, return iterators over those same arrays repeatedly
-            iterator_for_analyzer = iter_input_annotation_output_df_array(analyzer_index,
-                                                                          self.input_data,
-                                                                          self.input_data.annotations,
-                                                                          return_value_array)
+            iterator_for_analyzer = iter_input_annotation_output_series_array(analyzer_index,
+                                                                              self.input_data,
+                                                                              self.input_data.annotations,
+                                                                              return_value_array)
             annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
             annotation_iterators.append(annotations_iterator)
         return_value = self.store_analyzer_outputs_array(annotation_iterators, code_reference, return_value_array,
@@ -159,7 +159,7 @@ class SklearnBackend(Backend):
         return return_value
 
 
-def iter_input_annotation_output_df_array(analyzer_index, input_df, annotation_df, output_array):
+def iter_input_annotation_output_series_array(analyzer_index, input_df, annotation_df, output_array):
     """
     Create an efficient iterator for the analyzer input for operators with one parent.
     """
@@ -169,7 +169,7 @@ def iter_input_annotation_output_df_array(analyzer_index, input_df, annotation_d
 
     annotation_df_view = annotation_df.iloc[:, analyzer_index:analyzer_index + 1]
 
-    input_rows = get_df_row_iterator(input_df)
+    input_rows = get_series_row_iterator(input_df)
     annotation_rows = get_df_row_iterator(annotation_df_view)
     output_rows = get_numpy_array_row_iterator(output_array)
 
