@@ -3,7 +3,6 @@ A wrapper for pandas dataframes and series to store our additional annotations
 """
 
 from pandas import DataFrame, Series
-from pandas.core.groupby import DataFrameGroupBy
 
 
 class MlinspectSeries(Series):

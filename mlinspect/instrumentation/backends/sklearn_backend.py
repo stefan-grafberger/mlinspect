@@ -8,7 +8,7 @@ from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, 
 from mlinspect.instrumentation.backends.backend import Backend
 from mlinspect.instrumentation.backends.backend_utils import get_numpy_array_row_iterator, \
     build_annotation_df_from_iters, get_series_row_iterator
-from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
+from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectSeries
 from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
 from mlinspect.instrumentation.backends.sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer, \
     get_df_row_iterator

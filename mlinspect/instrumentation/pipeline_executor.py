@@ -3,7 +3,6 @@ Instrument and executes the pipeline
 """
 import ast
 import copy
-import re
 from typing import List
 
 import nbformat
@@ -201,8 +200,8 @@ class PipelineExecutor:
             function_name = PipelineExecutor.split_on_dot(function_string)
             function_info = (module_info.__name__, function_name)
         else:
-            function = str(call_code.split("[", 1)[0])
-            module_info = eval("inspect.getmodule(" + function + ")", PipelineExecutor.script_scope)
+            function_string = str(call_code.split("[", 1)[0])
+            module_info = eval("inspect.getmodule(" + function_string + ")", PipelineExecutor.script_scope)
 
             function_info = (module_info.__name__, "__getitem__")
 
@@ -221,6 +220,9 @@ class PipelineExecutor:
 
     @staticmethod
     def split_on_bracket(call_code):
+        """
+        Extract the code to get the function call path from a string like "(some_value(())).some_function(xy())"
+        """
         counter = 0
         found_index = None
 
@@ -237,6 +239,9 @@ class PipelineExecutor:
 
     @staticmethod
     def split_on_dot(call_code):
+        """
+        Extract the function name from a string like "(some_value(())).some_function(xy())"
+        """
         counter = 0
         dot_found = False
         last_dot_index = 0
@@ -276,7 +281,7 @@ def before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_o
     """
     # pylint: disable=too-many-arguments
     return singleton.before_call_used_args(subscript, call_code, args_code,
-                                           CodeReference(ast_lineno, ast_col_offset,  ast_end_lineno,
+                                           CodeReference(ast_lineno, ast_col_offset, ast_end_lineno,
                                                          ast_end_col_offset),
                                            args_values)
 

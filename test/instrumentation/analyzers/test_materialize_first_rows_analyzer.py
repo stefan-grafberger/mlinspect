@@ -69,8 +69,8 @@ def get_expected_result():
                                 'native-country', 'income-per-year'])],
         DagNode(node_id=23, operator_type=OperatorType.PROJECTION, module=('pandas.core.frame', '__getitem__'),
                 code_reference=CodeReference(16, 38, 16, 61), description="to ['income-per-year']"): [
-                    AnalyzerInputRow(values=['<=50K'], fields=['income-per-year']),
-                    AnalyzerInputRow(values=['<=50K'], fields=['income-per-year'])],
+                    AnalyzerInputRow(values=['<=50K'], fields=['array']),
+                    AnalyzerInputRow(values=['<=50K'], fields=['array'])],
         DagNode(node_id=28, operator_type=OperatorType.PROJECTION_MODIFY,
                 module=('sklearn.preprocessing._label', 'label_binarize'),
                 code_reference=CodeReference(16, 9, 16, 89),

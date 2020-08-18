@@ -38,7 +38,6 @@ def get_series_row_iterator(series):
     Create an efficient iterator for the data frame rows.
     The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
     """
-    arrays = []
     fields = list(["array"])
     numpy_iterator = series.__iter__()
     partial_func_create_row = partial(AnalyzerInputRow, fields=fields)

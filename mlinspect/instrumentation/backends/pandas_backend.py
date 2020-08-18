@@ -98,8 +98,8 @@ class PandasBackend(Backend):
         # pylint: disable=too-many-arguments, unused-argument, no-self-use, unnecessary-pass
         description = None
         if function_info == ('pandas.core.frame', 'merge'):
-            on = kwargs_values['on']
-            description = "on {}".format(on)
+            on_column = kwargs_values['on']
+            description = "on {}".format(on_column)
         elif function_info == ('pandas.core.groupby.generic', 'agg'):
             old_description = self.code_reference_to_description[code_reference]
             new_description = old_description + " Aggregate: {}".format(list(kwargs_values)[0])
@@ -218,10 +218,8 @@ class PandasBackend(Backend):
         assert isinstance(return_value_series, MlinspectSeries)
         annotation_iterators = []
         for analyzer in self.analyzers:
-            analyzer_count = len(self.analyzers)
             analyzer_index = self.analyzers.index(analyzer)
-            iterator_for_analyzer = iter_input_annotation_output_df_series(analyzer_count,
-                                                                           analyzer_index,
+            iterator_for_analyzer = iter_input_annotation_output_df_series(analyzer_index,
                                                                            self.input_data,
                                                                            self.input_data.annotations,
                                                                            return_value_series)
@@ -272,7 +270,7 @@ def iter_input_annotation_output_df_df(analyzer_count, analyzer_index, input_dat
                zip(input_rows, annotation_rows, output_rows))
 
 
-def iter_input_annotation_output_df_series(analyzer_count, analyzer_index, input_data, input_annotations, output):
+def iter_input_annotation_output_df_series(analyzer_index, input_data, input_annotations, output):
     """
     Create an efficient iterator for the analyzer input for operators with one parent.
     """

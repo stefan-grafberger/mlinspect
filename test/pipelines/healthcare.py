@@ -37,7 +37,7 @@ data = data.merge(complications, on=['age_group'])
 
 # project data to a subset of attributes
 print(data.columns.values)
-# data = data[['smoker', 'last_name', 'county', 'num_children', 'race', 'income']]#, 'label']]
+data = data[['smoker', 'last_name', 'county', 'num_children', 'race', 'income']]#, 'label']]
 
 # filter data
 # data = data[data['county'].isin(COUNTIES_OF_INTEREST)] # FIXME

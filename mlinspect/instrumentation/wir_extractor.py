@@ -100,15 +100,15 @@ class WirExtractor:
         name_wir = self.get_wir_node_for_variable(name_name_ast)
         index_ast = ast_node.children[1]
         assert isinstance(index_ast, ast.Index)
-        index_constant_ast = index_ast.children[0]
-        assert isinstance(index_constant_ast, ast.Constant)
-        constant_wir = self.get_wir_node_for_ast(index_constant_ast)
+
+        index_value_ast = index_ast.children[0]
+        index_value_wir = self.get_wir_node_for_ast(index_value_ast)
         new_wir_node = WirNode(self.get_next_wir_id(), "Index-Subscript", "Subscript",
                                CodeReference(ast_node.lineno, ast_node.col_offset,
                                              ast_node.end_lineno, ast_node.end_col_offset))
         self.graph.add_node(new_wir_node)
         self.graph.add_edge(name_wir, new_wir_node, type="caller", arg_index=-1)
-        self.graph.add_edge(constant_wir, new_wir_node, type="input", arg_index=0)
+        self.graph.add_edge(index_value_wir, new_wir_node, type="input", arg_index=0)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
     def extract_wir_list(self, ast_node):

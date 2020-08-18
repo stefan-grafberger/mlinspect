@@ -5,6 +5,7 @@ import networkx
 
 from mlinspect.instrumentation.backends.all_backends import get_all_backends
 from mlinspect.instrumentation.dag_node import DagNode
+from mlinspect.instrumentation.wir_extractor import WirExtractor
 from mlinspect.utils import traverse_graph_and_process_nodes
 
 
@@ -43,6 +44,8 @@ class WirToDagTransformer:
                         graph.add_edge(parent_node, child_node)
                 graph.remove_node(node)
             elif node.operation in {"Call", "Subscript"}:
+                pass
+            elif node == WirExtractor.NOT_FOUND_WIR:
                 pass
             else:
                 print("Unknown WIR Node Type: {}".format(node))

@@ -323,7 +323,7 @@ def test_tuples():
 
     expected_constant_three = WirNode(5, "education", "Constant", CodeReference(3, 71, 3, 82))
     expected_constant_four = WirNode(6, "workclass", "Constant", CodeReference(3, 84, 3, 95))
-    expected_list = WirNode(7, "as_list", "List", CodeReference(3, 70, 3,96))
+    expected_list = WirNode(7, "as_list", "List", CodeReference(3, 70, 3, 96))
     expected_graph.add_edge(expected_constant_three, expected_list, type="input", arg_index=0)
     expected_graph.add_edge(expected_constant_four, expected_list, type="input", arg_index=1)
 
