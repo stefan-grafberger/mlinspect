@@ -64,7 +64,7 @@ class WirExtractor:
         elif isinstance(ast_node, ast.Tuple):
             self.extract_wir_tuple(ast_node)
         elif isinstance(ast_node, (ast.Attribute, ast.Expr, ast.Index, ast.Load, ast.Module, ast.Name, ast.Store,
-                                   ast.alias)):
+                                   ast.alias, ast.Gt, ast.Mult, ast.BinOp, ast.Compare)):
             pass  # TODO: Test if we really covered all necessary edge cases
         else:
             print("AST Node Type not supported yet: {}!".format(str(ast_node)))
@@ -193,7 +193,6 @@ class WirExtractor:
                                                  ast_node.end_lineno, ast_node.end_col_offset))
             self.graph.add_node(new_wir_node)
             self.graph.add_edge(data_wir, new_wir_node, type="caller", arg_index=-1)
-            self.graph.add_edge(assign_right_wir, new_wir_node, type="input", arg_index=0)
 
     def extract_wir_constant(self, ast_node):
         """

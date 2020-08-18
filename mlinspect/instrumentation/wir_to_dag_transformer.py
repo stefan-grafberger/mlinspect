@@ -43,7 +43,7 @@ class WirToDagTransformer:
                     for child_node in children:
                         graph.add_edge(parent_node, child_node)
                 graph.remove_node(node)
-            elif node.operation in {"Call", "Subscript"}:
+            elif node.operation in {"Call", "Subscript", "Subscript-Assign"}:
                 pass
             elif node == WirExtractor.NOT_FOUND_WIR:
                 pass

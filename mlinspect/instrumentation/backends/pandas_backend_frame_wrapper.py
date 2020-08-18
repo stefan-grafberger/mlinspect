@@ -44,5 +44,6 @@ class MlinspectDataFrame(DataFrame):
         return MlinspectDataFrame
 
     def __setitem__(self, key, value):
-        print("hello world")
+        if key != 'mlinspect_index':
+            print("hello world")
         super()._set_item(key, value)
