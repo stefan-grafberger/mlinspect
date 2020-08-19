@@ -36,7 +36,7 @@ def test_inspector_healthcare_py_pipeline():
     """
     inspection_result = PipelineInspector\
         .on_pipeline_from_py_file(HEALTHCARE_FILE_PY)\
-        .execute()
+        .execute()  # .add_analyzer(MaterializeFirstRowsAnalyzer(5))\
     extracted_dag = inspection_result.dag
 
     filename = os.path.join(str(get_project_root()), "test", "pipelines", "healthcare.png")

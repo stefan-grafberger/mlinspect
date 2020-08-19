@@ -3,7 +3,7 @@ An example pipeline
 """
 import os
 
-from mlinspect.utils import MyW2VTransformer, create_model
+from mlinspect.demo_utils import MyW2VTransformer, create_model
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer

@@ -41,7 +41,7 @@ class SklearnBackend(Backend):
     }
 
     replacement_type_map = {
-        'mlinspect.utils': 'sklearn.mlinspect.utils',
+        'mlinspect.demo_utils': 'sklearn.mlinspect.demo_utils',
         'tensorflow.python.keras.wrappers.scikit_learn': 'sklearn.tensorflow.python.keras.wrappers.scikit_learn'
     }
 
@@ -96,7 +96,7 @@ class SklearnBackend(Backend):
             description = "Imputer (SimpleImputer)"
         elif function_info == ('sklearn.tree._classes', 'DecisionTreeClassifier'):
             description = "Decision Tree"
-        elif function_info == ('sklearn.mlinspect.utils', 'MyW2VTransformer'):
+        elif function_info == ('sklearn.mlinspect.demo_utils', 'MyW2VTransformer'):
             description = "Word2Vec"
         elif function_info == ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'):
             description = "Neural Network"
