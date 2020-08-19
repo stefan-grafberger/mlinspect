@@ -21,8 +21,6 @@ class WirToDagTransformer:
         """
         Extract the final DAG
         """
-        for backend in get_all_backends():
-            wir = backend.preprocess_wir(wir)
         cleaned_wir = WirToDagTransformer.remove_all_nodes_but_calls_and_subscripts(wir)
         dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
 

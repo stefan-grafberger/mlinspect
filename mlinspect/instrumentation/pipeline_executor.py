@@ -52,6 +52,9 @@ class PipelineExecutor:
             code_reference_to_description = {**code_reference_to_description, **backend.code_reference_to_description}
         wir = wir_extractor.add_runtime_info(self.code_reference_to_module, code_reference_to_description)
 
+        for backend in self.backend_map.values():
+            wir = backend.preprocess_wir(wir)
+
         dag = WirToDagTransformer.extract_dag(wir)
 
         for backend in self.backend_map.values():

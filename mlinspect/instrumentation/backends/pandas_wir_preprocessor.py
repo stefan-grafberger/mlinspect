@@ -2,7 +2,7 @@
 Preprocess pandas WIR nodes to enable DAG extraction
 """
 
-from mlinspect.instrumentation.dag_node import DagNodeIdentifier
+from mlinspect.instrumentation.wir_node import WirNode
 from mlinspect.utils import traverse_graph_and_process_nodes, get_sorted_node_parents
 
 
@@ -20,7 +20,8 @@ class PandasWirPreprocessor:
                 operator_type = wir_post_processing_map[node.code_reference]
                 new_module = (node.module[0], operator_type)
 
-                new_node = (node.node_id, node.name, node.operation, node.code_reference, new_module)
+                new_node = WirNode(node.node_id, node.name, node.operation, node.code_reference, new_module,
+                                   node.dag_operator_description)
 
                 parents = get_sorted_node_parents(graph, node)
                 graph.add_edge(parents[0], new_node)
