@@ -26,6 +26,7 @@ class PandasBackend(Backend):
         ('pandas.io.parsers', 'read_csv'): OperatorType.DATA_SOURCE,
         ('pandas.core.frame', 'dropna'): OperatorType.SELECTION,
         ('pandas.core.frame', '__getitem__'): OperatorType.PROJECTION,
+        ('pandas.core.frame', '__setitem__'): OperatorType.PROJECTION,
         ('pandas.core.frame', 'merge'): OperatorType.JOIN,
         ('pandas.core.groupby.generic', 'agg'): OperatorType.GROUP_BY_AGG
     }
@@ -68,7 +69,7 @@ class PandasBackend(Backend):
             description = value_value.name
             self.code_reference_to_description[code_reference] = description
 
-    def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, args_values):
+    def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, store, args_values):
         """The arguments a function may be called with"""
         # pylint: disable=too-many-arguments
         if isinstance(args_values, MlinspectSeries):
@@ -94,6 +95,9 @@ class PandasBackend(Backend):
                 description = "to {}".format([key_arg])
             elif isinstance(args_values, list):
                 description = "to {}".format(args_values)
+        elif function_info == ('pandas.core.frame', '__setitem__'):
+            key_arg = args_values
+            description = "Sets columns {}".format([key_arg])
         elif function_info == ('pandas.core.frame', 'groupby'):
             description = "Group by {}, ".format(args_values)
             self.code_reference_to_description[code_reference] = description

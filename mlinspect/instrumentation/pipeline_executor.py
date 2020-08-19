@@ -146,15 +146,20 @@ class PipelineExecutor:
 
         return value_value
 
-    def before_call_used_args(self, subscript, call_code, args_code, code_reference, args_values):
+    def before_call_used_args(self, subscript, call_code, args_code, code_reference, store, args_values):
         """
         This is the method we want to insert into the DAG
         """
         # pylint: disable=too-many-arguments
-        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript)
+        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript, store=store)
+
+        if store:
+            self.code_reference_to_module[code_reference] = function_info
+
         if function_prefix in self.backend_map:
             backend = self.backend_map[function_prefix]
-            backend.before_call_used_args(function_info, subscript, call_code, args_code, code_reference, args_values)
+            backend.before_call_used_args(function_info, subscript, call_code, args_code, code_reference, store,
+                                          args_values)
 
         return args_values
 
@@ -190,7 +195,7 @@ class PipelineExecutor:
         return return_value
 
     @staticmethod
-    def get_function_info_and_prefix(call_code, subscript, value=None):
+    def get_function_info_and_prefix(call_code, subscript, value=None, store=False):
         """
         Get the function info and find out which backend to call
         """
@@ -203,7 +208,10 @@ class PipelineExecutor:
             function_string = str(call_code.split("[", 1)[0])
             module_info = eval("inspect.getmodule(" + function_string + ")", PipelineExecutor.script_scope)
 
-            function_info = (module_info.__name__, "__getitem__")
+            if not store:
+                function_info = (module_info.__name__, "__getitem__")
+            else:
+                function_info = (module_info.__name__, "__setitem__")
 
         if function_info[0] in PipelineExecutor.REPLACEMENT_TYPE_MAP:
             new_type = PipelineExecutor.REPLACEMENT_TYPE_MAP[function_info[0]]
@@ -275,7 +283,7 @@ def before_call_used_value(subscript, call_code, value_code, value_value, ast_li
 
 
 def before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_offset,
-                          ast_end_lineno, ast_end_col_offset, args_values):
+                          ast_end_lineno, ast_end_col_offset, store, args_values):
     """
     Method that gets injected into the pipeline code
     """
@@ -283,6 +291,7 @@ def before_call_used_args(subscript, call_code, args_code, ast_lineno, ast_col_o
     return singleton.before_call_used_args(subscript, call_code, args_code,
                                            CodeReference(ast_lineno, ast_col_offset, ast_end_lineno,
                                                          ast_end_col_offset),
+                                           store,
                                            args_values)
 
 

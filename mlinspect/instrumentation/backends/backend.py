@@ -52,7 +52,8 @@ class Backend(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, args_values):
+    def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, store,
+                              args_values):
         """The arguments a function may be called with"""
         # pylint: disable=too-many-arguments, unused-argument
         raise NotImplementedError

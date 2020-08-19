@@ -193,10 +193,12 @@ class WirExtractor:
             data_wir = self.get_wir_node_for_variable(data_name)
             index_value = assign_left_ast.children[1].value.n
             new_wir_node = WirNode(self.get_next_wir_id(), "{}.{}".format(data_name, index_value), "Subscript-Assign",
-                                   CodeReference(ast_node.lineno, ast_node.col_offset,
-                                                 ast_node.end_lineno, ast_node.end_col_offset))
+                                   CodeReference(assign_left_ast.lineno, assign_left_ast.col_offset,
+                                                 assign_left_ast.end_lineno, assign_left_ast.end_col_offset))
             self.graph.add_node(new_wir_node)
             self.graph.add_edge(data_wir, new_wir_node, type="caller", arg_index=-1)
+            var_name = assign_left_ast.children[0].id
+            self.store_variable_wir_mapping(var_name, new_wir_node)
         elif isinstance(assign_left_ast, ast.Tuple):
             tuple_children = assign_left_ast.children[:-1]
             for child_index, child in enumerate(tuple_children):
@@ -261,7 +263,8 @@ class WirExtractor:
         After executing the pipeline, annotate call nodes with the captured module info
         """
         for node in self.graph.nodes:
-            if (node.operation == "Call" or node.operation == "Subscript") and \
+            if (node.operation == "Call" or node.operation == "Subscript"
+                or node.operation == "Subscript-Assign") and \
                     node.code_reference in code_reference_to_module:
                 node.module = code_reference_to_module[node.code_reference]
                 if node.code_reference in code_reference_to_description:

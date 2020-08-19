@@ -35,10 +35,16 @@ class CallCaptureTransformer(ast.NodeTransformer):
             code = astunparse.unparse(node)
 
             self.add_before_call_used_value_capturing_subscript(code, node)
-            self.add_before_call_used_args_capturing_subscript(code, node)
+            self.add_before_call_used_args_capturing_subscript(code, node, False)
             instrumented_call_node = self.add_after_call_used_capturing(code, node, True)
 
             return instrumented_call_node
+        elif isinstance(node.ctx, ast.Store):
+            code = astunparse.unparse(node)
+
+            self.add_before_call_used_args_capturing_subscript(code, node, True)
+        else:
+            assert False
         return node
 
     @staticmethod
@@ -97,12 +103,13 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                                          ast.Constant(n=node.col_offset, kind=None),
                                                          ast.Constant(n=node.end_lineno, kind=None),
                                                          ast.Constant(n=node.end_col_offset, kind=None),
+                                                         ast.Constant(n=False, kind=None),
                                                          old_args_nodes_ast],
                                                    keywords=[]), ctx=ast.Load())
         node.args = [new_args_node]
 
     @staticmethod
-    def add_before_call_used_args_capturing_subscript(code, node):
+    def add_before_call_used_args_capturing_subscript(code, node, store):
         """
         When the __getitem__ method of some object is called, capture the arguments of the method before executing it
         """
@@ -116,6 +123,7 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                        ast.Constant(n=node.col_offset, kind=None),
                                        ast.Constant(n=node.end_lineno, kind=None),
                                        ast.Constant(n=node.end_col_offset, kind=None),
+                                       ast.Constant(n=store, kind=None),
                                        node.slice.value],
                                  keywords=[])
         node.slice.value = new_args_node
