@@ -12,6 +12,7 @@ from mlinspect.instrumentation.backends.backend import Backend
 from mlinspect.instrumentation.backends.backend_utils import get_df_row_iterator, build_annotation_df_from_iters, \
     get_series_row_iterator
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
+from mlinspect.instrumentation.backends.pandas_wir_preprocessor import PandasWirPreprocessor
 from mlinspect.instrumentation.dag_node import OperatorType, DagNodeIdentifier
 
 
@@ -25,7 +26,9 @@ class PandasBackend(Backend):
     operator_map = {
         ('pandas.io.parsers', 'read_csv'): OperatorType.DATA_SOURCE,
         ('pandas.core.frame', 'dropna'): OperatorType.SELECTION,
-        ('pandas.core.frame', '__getitem__'): OperatorType.PROJECTION,
+        ('pandas.core.frame', '__getitem__'): OperatorType.PROJECTION,  # FIXME: Remove later
+        ('pandas.core.frame', 'Projection'): OperatorType.PROJECTION,
+        ('pandas.core.frame', 'Selection'): OperatorType.SELECTION,
         ('pandas.core.frame', '__setitem__'): OperatorType.PROJECTION,
         ('pandas.core.frame', 'merge'): OperatorType.JOIN,
         ('pandas.core.groupby.generic', 'agg'): OperatorType.GROUP_BY_AGG
@@ -34,12 +37,6 @@ class PandasBackend(Backend):
     replacement_type_map = {
         'mlinspect.instrumentation.backends.pandas_backend_frame_wrapper': 'pandas.core.frame'
     }
-
-    def preprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
-        """
-        Nothing to do here
-        """
-        return wir
 
     def postprocess_dag(self, dag: networkx.DiGraph) -> networkx.DiGraph:
         """
@@ -51,6 +48,14 @@ class PandasBackend(Backend):
         super().__init__()
         self.input_data = None
         self.select = False
+        self.code_reference_to_set_item_op = {}
+
+    def preprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
+        """
+        Special handling to differentiate projections and selections
+        """
+        PandasWirPreprocessor().preprocess_wir(wir, self.code_reference_to_set_item_op)
+        return wir
 
     def before_call_used_value(self, function_info, subscript, call_code, value_code, value_value,
                                code_reference):
@@ -87,13 +92,16 @@ class PandasBackend(Backend):
         elif function_info == ('pandas.core.frame', '__getitem__'):
             # TODO: Can this also be a select?
             if isinstance(args_values, MlinspectSeries):
-                description = "Select ({})".format(code_reference)  # TODO: prettier representation
+                self.code_reference_to_set_item_op[code_reference] = 'Selection'
+                description = "Select by series".format(code_reference)  # TODO: prettier representation
                 # TODO: need to postprocess DAG. Maybe even the wir or we identfiy
                 #  the parent here by value code_reference
             elif isinstance(args_values, str):
+                self.code_reference_to_set_item_op[code_reference] = 'Projection'
                 key_arg = args_values
                 description = "to {}".format([key_arg])
             elif isinstance(args_values, list):
+                self.code_reference_to_set_item_op[code_reference] = 'Projection'
                 description = "to {}".format(args_values)
         elif function_info == ('pandas.core.frame', '__setitem__'):
             key_arg = args_values

@@ -41,7 +41,7 @@ class Backend(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def postprocess_dag(self, dag: networkx.DiGraph) -> networkx.DiGraph:
-        """Postprocess the wir if necessary"""
+        """Postprocess the dag if necessary"""
         raise NotImplementedError
 
     @abc.abstractmethod
