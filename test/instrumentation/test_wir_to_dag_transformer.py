@@ -72,7 +72,7 @@ def get_expected_cleaned_wir_adult_easy():
 
     expected_fit = WirNode(56, "fit", "Call", CodeReference(28, 0, 28, 33), ('sklearn.pipeline', 'fit'))
     expected_index_subscript = WirNode(23, "Index-Subscript", "Subscript", CodeReference(16, 38, 16, 61),
-                                       ('pandas.core.frame', '__getitem__'))
+                                       ('pandas.core.frame', '__getitem__', 'Projection'))
     expected_graph.add_edge(expected_dropna, expected_fit)
     expected_graph.add_edge(expected_dropna, expected_index_subscript)
 

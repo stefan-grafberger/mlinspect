@@ -96,7 +96,7 @@ def get_expected_dag_adult_easy_py():
     expected_graph.add_edge(expected_estimator, expected_pipeline_fit)
 
     expected_project = DagNode(23, OperatorType.PROJECTION, CodeReference(16, 38, 16, 61),
-                               ('pandas.core.frame', '__getitem__'), "to ['income-per-year']")
+                               ('pandas.core.frame', '__getitem__', 'Projection'), "to ['income-per-year']")
     expected_graph.add_edge(expected_select, expected_project)
 
     expected_project_modify = DagNode(28, OperatorType.PROJECTION_MODIFY, CodeReference(16, 9, 16, 89),
@@ -193,7 +193,7 @@ def get_expected_dag_adult_easy_ipynb():
     expected_graph.add_edge(expected_estimator, expected_pipeline_fit)
 
     expected_project = DagNode(23, OperatorType.PROJECTION, CodeReference(22, 38, 22, 61),
-                               ('pandas.core.frame', '__getitem__'),
+                               ('pandas.core.frame', '__getitem__', 'Projection'),
                                "to ['income-per-year']")
     expected_graph.add_edge(expected_select, expected_project)
 
@@ -227,7 +227,7 @@ def get_module_info():
                    CodeReference(lineno=14, col_offset=7, end_lineno=14, end_col_offset=24):
                    ('pandas.core.frame', 'dropna'),
                    CodeReference(lineno=16, col_offset=38, end_lineno=16, end_col_offset=61):
-                   ('pandas.core.frame', '__getitem__'),
+                   ('pandas.core.frame', '__getitem__', 'Projection'),
                    CodeReference(lineno=16, col_offset=9, end_lineno=16, end_col_offset=89):
                    ('sklearn.preprocessing._label', 'label_binarize'),
                    CodeReference(lineno=19, col_offset=20, end_lineno=19, end_col_offset=72):

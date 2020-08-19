@@ -18,7 +18,7 @@ class PandasWirPreprocessor:
         def process_node(node, _):
             if node.module == ('pandas.core.frame', '__getitem__'):
                 operator_type = wir_post_processing_map[node.code_reference]
-                new_module = (node.module[0], operator_type)
+                new_module = (node.module[0], node.module[1], operator_type)
 
                 new_node = WirNode(node.node_id, node.name, node.operation, node.code_reference, new_module,
                                    node.dag_operator_description)

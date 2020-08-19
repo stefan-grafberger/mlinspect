@@ -67,7 +67,8 @@ def get_expected_result():
                                 'marital-status', 'occupation', 'relationship', 'race', 'sex',
                                 'capital-gain', 'capital-loss', 'hours-per-week',
                                 'native-country', 'income-per-year'])],
-        DagNode(node_id=23, operator_type=OperatorType.PROJECTION, module=('pandas.core.frame', '__getitem__'),
+        DagNode(node_id=23, operator_type=OperatorType.PROJECTION, module=('pandas.core.frame', '__getitem__',
+                                                                           'Projection'),
                 code_reference=CodeReference(16, 38, 16, 61), description="to ['income-per-year']"): [
                     AnalyzerInputRow(values=['<=50K'], fields=['array']),
                     AnalyzerInputRow(values=['<=50K'], fields=['array'])],

@@ -27,8 +27,8 @@ class PandasBackend(Backend):
         ('pandas.io.parsers', 'read_csv'): OperatorType.DATA_SOURCE,
         ('pandas.core.frame', 'dropna'): OperatorType.SELECTION,
         ('pandas.core.frame', '__getitem__'): OperatorType.PROJECTION,  # FIXME: Remove later
-        ('pandas.core.frame', 'Projection'): OperatorType.PROJECTION,
-        ('pandas.core.frame', 'Selection'): OperatorType.SELECTION,
+        ('pandas.core.frame', '__getitem__', 'Projection'): OperatorType.PROJECTION,
+        ('pandas.core.frame', '__getitem__', 'Selection'): OperatorType.SELECTION,
         ('pandas.core.frame', '__setitem__'): OperatorType.PROJECTION,
         ('pandas.core.frame', 'merge'): OperatorType.JOIN,
         ('pandas.core.groupby.generic', 'agg'): OperatorType.GROUP_BY_AGG
