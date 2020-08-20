@@ -42,5 +42,5 @@ class Analyzer(metaclass=abc.ABCMeta):
         return hash((self.__class__.__name__, self.analyzer_id))
 
     def __repr__(self):
-        """Analyzers must be hashable"""
+        """Analyzers must have a str representation"""
         return "{}({})".format(self.__class__.__name__, self.analyzer_id)

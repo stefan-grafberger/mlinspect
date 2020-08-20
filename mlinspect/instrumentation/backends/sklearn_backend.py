@@ -36,11 +36,13 @@ class SklearnBackend(Backend):
         ('sklearn.pipeline', 'fit', 'Train Data'): OperatorType.TRAIN_DATA,
         ('sklearn.pipeline', 'fit', 'Train Labels'): OperatorType.TRAIN_LABELS,
         ('sklearn.model_selection._split', 'train_test_split'): OperatorType.TRAIN_TEST_SPLIT,
+        # TODO: We  can remove this later by checking if subclass of transformer/estimator
         ('sklearn.mlinspect.utils', 'MyW2VTransformer', 'Pipeline'): OperatorType.TRANSFORMER,
         ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier', 'Pipeline'): OperatorType.ESTIMATOR
     }
 
     replacement_type_map = {
+        # TODO: We  can remove this later by checking if subclass of transformer/estimator
         'mlinspect.demo_utils': 'sklearn.mlinspect.demo_utils',
         'tensorflow.python.keras.wrappers.scikit_learn': 'sklearn.tensorflow.python.keras.wrappers.scikit_learn'
     }
