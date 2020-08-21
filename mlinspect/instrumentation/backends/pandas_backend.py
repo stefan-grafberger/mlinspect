@@ -189,7 +189,7 @@ class PandasBackend(Backend):
         value_before['mlinspect_index'] = range(1, len(value_after) + 1)
         self.input_data = value_before
         self.execute_analyzer_visits_unary_operator_df(operator_context, code_reference,
-                                                       value_after, function_info)
+                                                       value_after, function_info, True)
 
     def execute_analyzer_visits_no_parents(self, operator_context, code_reference, return_value, function_info):
         """Execute analyzers when the current operator is a data source and does not have parents in the DAG"""
@@ -246,7 +246,7 @@ class PandasBackend(Backend):
         return return_value
 
     def execute_analyzer_visits_unary_operator_df(self, operator_context, code_reference, return_value_df,
-                                                  function_info):
+                                                  function_info, appends_col=False):
         """Execute analyzers when the current operator has one parent in the DAG"""
         assert "mlinspect_index" in return_value_df.columns
         assert isinstance(self.input_data, MlinspectDataFrame)
@@ -259,7 +259,7 @@ class PandasBackend(Backend):
                                                                        self.input_data,
                                                                        self.input_data.annotations,
                                                                        return_value_df,
-                                                                       True)
+                                                                       appends_col)
             annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
             annotation_iterators.append(annotations_iterator)
         return_value = self.store_analyzer_outputs_df(annotation_iterators, code_reference, return_value_df,
