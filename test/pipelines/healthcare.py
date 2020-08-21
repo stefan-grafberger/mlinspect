@@ -37,7 +37,7 @@ data['label'] = data['complications'] > 1.2 * data['mean_complications']
 data = data[['smoker', 'last_name', 'county', 'num_children', 'race', 'income', 'label']]
 
 # filter data
-#data = data[data['county'].isin(COUNTIES_OF_INTEREST)]
+data = data[data['county'].isin(COUNTIES_OF_INTEREST)]
 
 # define the feature encoding of the data
 impute_and_one_hot_encode = Pipeline([
