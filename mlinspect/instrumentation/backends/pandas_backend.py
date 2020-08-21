@@ -139,8 +139,13 @@ class PandasBackend(Backend):
         """The return value of some function"""
         # pylint: disable=too-many-arguments
         if function_info == ('pandas.io.parsers', 'read_csv'):
-            return_value = self.execute_analyzer_visits_data_source(code_reference,
-                                                                    return_value, function_info)
+            operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
+            return_value = self.execute_analyzer_visits_no_parents(operator_context, code_reference,
+                                                                   return_value, function_info)
+        if function_info == ('pandas.core.groupby.generic', 'agg'):
+            operator_context = OperatorContext(OperatorType.GROUP_BY_AGG, function_info)
+            return_value = self.execute_analyzer_visits_no_parents(operator_context, code_reference,
+                                                                   return_value.reset_index(), function_info)
         elif function_info == ('pandas.core.frame', 'dropna'):
             operator_context = OperatorContext(OperatorType.SELECTION, function_info)
             return_value = self.execute_analyzer_visits_unary_operator_df(operator_context, code_reference,
@@ -174,9 +179,8 @@ class PandasBackend(Backend):
 
         return return_value
 
-    def execute_analyzer_visits_data_source(self, code_reference, return_value, function_info):
+    def execute_analyzer_visits_no_parents(self, operator_context, code_reference, return_value, function_info):
         """Execute analyzers when the current operator is a data source and does not have parents in the DAG"""
-        operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
         annotation_iterators = []
         for analyzer in self.analyzers:
             iterator_for_analyzer = iter_input_data_source(return_value)  # TODO: Create arrays only once
