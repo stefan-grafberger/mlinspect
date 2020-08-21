@@ -58,7 +58,7 @@ pipeline = Pipeline([
      ('learner', neural_net)])
 
 # train-test split
-#train_data, test_data = train_test_split(data, random_state=0)
+train_data, test_data = train_test_split(data, random_state=0)
 # model training
 # model = pipeline.fit(train_data, train_data['label']) # FIXME
 # model evaluation
