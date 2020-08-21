@@ -7,7 +7,7 @@ import networkx
 import pandas
 
 from mlinspect.instrumentation.analyzers.analyzer_input import AnalyzerInputUnaryOperator, AnalyzerInputDataSource, \
-    OperatorContext
+    OperatorContext, AnalyzerInputNAryOperator
 from mlinspect.instrumentation.backends.backend import Backend
 from mlinspect.instrumentation.backends.backend_utils import get_df_row_iterator, build_annotation_df_from_iters, \
     get_series_row_iterator
@@ -344,28 +344,48 @@ def iter_input_annotation_output_df_pair_df(analyzer_count, analyzer_index, x_da
     # pylint: disable=too-many-locals
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-    data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
-                                                right_on="mlinspect_index")
-    joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
-                             right_on="mlinspect_index")
+    x_before_with_annotations = pandas.merge(x_data, x_annotations, left_on="mlinspect_index_x",
+                                             right_on="mlinspect_index")
+    y_before_with_annotations = pandas.merge(y_data, y_annotations, left_on="mlinspect_index_y",
+                                             right_on="mlinspect_index")
+    df_joined_with_x = pandas.merge(x_before_with_annotations, output, left_on="mlinspect_index_x",
+                                    right_on="mlinspect_index_x")
+    df_joined = pandas.merge(y_before_with_annotations, df_joined_with_x, left_on="mlinspect_index_y",
+                             right_on="mlinspect_index_y")
 
-    column_index_input_end = len(input_data.columns)
-    column_annotation_current_analyzer = column_index_input_end + analyzer_index
-    column_index_annotation_end = column_index_input_end + analyzer_count
+    column_index_x_end = len(x_data.columns)
+    column_annotation_x_current_analyzer = column_index_x_end + analyzer_index
+    column_index_y_start = column_index_x_end + analyzer_count
+    column_index_y_end = column_index_y_start + len(y_data.columns)
+    column_annotation_y_current_analyzer = column_index_y_end + analyzer_index
+    column_index_result_start = column_index_y_end + analyzer_count
 
-    input_df_view = joined_df.iloc[:, 0:column_index_input_end - 1]
-    input_df_view.columns = input_data.columns[0:-1]
+    input_x_view = df_joined.iloc[:, 0:column_index_x_end - 1]
+    input_x_view.columns = x_data.columns[0:-1]
+    annotation_x_view = df_joined.iloc[:, column_annotation_x_current_analyzer:column_annotation_x_current_analyzer + 1]
 
-    annotation_df_view = joined_df.iloc[:, column_annotation_current_analyzer:column_annotation_current_analyzer + 1]
+    input_y_view = df_joined.iloc[:, column_index_y_start:column_index_y_end - 1]
+    input_y_view.columns = y_data.columns[0:-1]
+    annotation_y_view = df_joined.iloc[:, column_annotation_y_current_analyzer:column_annotation_y_current_analyzer + 1]
 
-    output_df_view = joined_df.iloc[:, column_index_annotation_end:]
+    output_df_view = df_joined.iloc[:, column_index_result_start:]
     output_df_view.columns = output.columns[0:-1]
 
-    input_rows = get_df_row_iterator(input_df_view)
-    annotation_rows = get_df_row_iterator(annotation_df_view)
+    input_iterators = []
+    annotation_iterators = []
+
+    input_iterators.append(get_df_row_iterator(input_x_view))
+    annotation_iterators.append(get_df_row_iterator(annotation_x_view))
+
+    input_iterators.append(get_df_row_iterator(input_y_view))
+    annotation_iterators.append(get_df_row_iterator(annotation_y_view))
+
+    input_rows = map(list, zip(*input_iterators))
+    annotation_rows = map(list, zip(*annotation_iterators))
+
     output_rows = get_df_row_iterator(output_df_view)
 
-    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
+    return map(lambda input_tuple: AnalyzerInputNAryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
 
 
