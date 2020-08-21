@@ -86,7 +86,7 @@ class PandasBackend(Backend):
         description = None
         if function_info == ('pandas.io.parsers', 'read_csv'):
             filename = args_values[0].split(os.path.sep)[-1]
-            description = "{}".format(filename)
+            description = "{}".format(filename)  # TODO: Add loaded columns as well
         elif function_info == ('pandas.core.frame', 'dropna'):
             description = "dropna"
         elif function_info == ('pandas.core.frame', '__getitem__'):

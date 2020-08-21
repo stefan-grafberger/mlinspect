@@ -68,11 +68,13 @@ class WirToDagTransformer:
             if node.module in WirToDagTransformer.OPERATOR_MAP:
                 new_dag_vertex = DagNode(node.node_id, WirToDagTransformer.OPERATOR_MAP[node.module],
                                          node.code_reference, node.module, node.dag_operator_description)
+                graph.remove_node(node)
+                graph.add_node(new_dag_vertex)
                 for parent in parents:
                     graph.add_edge(parent, new_dag_vertex)
                 for child in children:
                     graph.add_edge(new_dag_vertex, child)
-                graph.remove_node(node)
+
                 processed_nodes.add(new_dag_vertex)
             else:
                 for parent in parents:

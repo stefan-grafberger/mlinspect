@@ -23,21 +23,21 @@ histories = pd.read_csv(os.path.join(str(get_project_root()), "test", "data", "h
                         na_values='?')
 
 # combine input data into a single table
-data = patients.merge(histories, on=['ssn'])
+#data = patients.merge(histories, on=['ssn'])
 
 # compute mean complications per age group, append as column
-complications = data.groupby('age_group').agg(mean_complications=('complications', 'mean'))
+#complications = data.groupby('age_group').agg(mean_complications=('complications', 'mean'))
 
-data = data.merge(complications, on=['age_group'])
+#data = data.merge(complications, on=['age_group'])
 
 # target variable: people with a high number of complications
-data['label'] = data['complications'] > 1.2 * data['mean_complications']
+#data['label'] = data['complications'] > 1.2 * data['mean_complications']
 
 # project data to a subset of attributes
-data = data[['smoker', 'last_name', 'county', 'num_children', 'race', 'income', 'label']]
+#data = data[['smoker', 'last_name', 'county', 'num_children', 'race', 'income', 'label']]
 
 # filter data
-data = data[data['county'].isin(COUNTIES_OF_INTEREST)]
+#data = data[data['county'].isin(COUNTIES_OF_INTEREST)]
 
 # define the feature encoding of the data
 impute_and_one_hot_encode = Pipeline([
@@ -58,7 +58,7 @@ pipeline = Pipeline([
      ('learner', neural_net)])
 
 # train-test split
-train_data, test_data = train_test_split(data, random_state=0)
+#train_data, test_data = train_test_split(data, random_state=0)
 # model training
 # model = pipeline.fit(train_data, train_data['label']) # FIXME
 # model evaluation
