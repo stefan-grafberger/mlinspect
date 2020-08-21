@@ -44,14 +44,11 @@ class MlinspectDataFrame(DataFrame):
         return MlinspectDataFrame
 
     def __setitem__(self, key, value):
-        if key != 'mlinspect_index':
-            print("hello world")
-        #if self.backend and key != 'mlinspect_index':
-        #    self.backend.before_call_index_assign(self, key, value)
-        super()._set_item(key, value)
-        #if self.backend and key != 'mlinspect_index':
-        #    self.backend.after_call_index_assign(self, key, value)
-        # TODO: Add backend methods and a DAG postprocessor that adds this module info.
-        #  We need a pricipled way to define this. one option would be to discover the location by the
-        #  non-index subscript usage right before and after. Is very doable, but then we need checks
-        #  at the end of the pipeline to see if there are left-over operators etc. Complicated but doable.
+        if key not in {'mlinspect_index', 'mlinspect_index_x', 'mlinspect_index_y'}:
+            assert self.backend
+
+            previous_df = self.copy()
+            super()._set_item(key, value)
+            self.backend.after_call_used_setkey(key, previous_df, self)
+        else:
+            super()._set_item(key, value)

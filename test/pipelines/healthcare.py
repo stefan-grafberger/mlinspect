@@ -31,7 +31,7 @@ complications = data.groupby('age_group').agg(mean_complications=('complications
 data = data.merge(complications, on=['age_group'])
 
 # target variable: people with a high number of complications
-#data['label'] = data['complications'] > 1.2 * data['mean_complications']
+data['label'] = data['complications'] > 1.2 * data['mean_complications']
 
 # project data to a subset of attributes
 #data = data[['smoker', 'last_name', 'county', 'num_children', 'race', 'income', 'label']]

@@ -179,6 +179,9 @@ class PandasBackend(Backend):
 
         return return_value
 
+    def after_call_used_setkey(self, key, value_before, value_after):
+        print("hello world!")
+
     def execute_analyzer_visits_no_parents(self, operator_context, code_reference, return_value, function_info):
         """Execute analyzers when the current operator is a data source and does not have parents in the DAG"""
         annotation_iterators = []
