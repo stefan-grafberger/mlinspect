@@ -60,6 +60,6 @@ pipeline = Pipeline([
 # train-test split
 train_data, test_data = train_test_split(data, random_state=0)
 # model training
-# model = pipeline.fit(train_data, train_data['label']) # FIXME
+model = pipeline.fit(train_data, train_data['label'])  # FIXME
 # model evaluation
 # print(model.score(test_data, test_data['label'])) # FIXME
