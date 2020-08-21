@@ -47,6 +47,7 @@ class PandasBackend(Backend):
     def __init__(self):
         super().__init__()
         self.input_data = None
+        self.df_arg = None
         self.select = False
         self.code_reference_to_set_item_op = {}
 
@@ -73,11 +74,19 @@ class PandasBackend(Backend):
         elif function_info == ('pandas.core.groupby.generic', 'agg'):
             description = value_value.name
             self.code_reference_to_description[code_reference] = description
+        elif function_info == ('pandas.core.frame', 'merge'):
+            assert isinstance(value_value, MlinspectDataFrame)
+            value_value['mlinspect_index_x'] = range(1, len(value_value) + 1)
+            self.input_data = value_value
 
     def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, store, args_values):
         """The arguments a function may be called with"""
         # pylint: disable=too-many-arguments
-        if isinstance(args_values, MlinspectSeries):
+        if function_info == function_info == ('pandas.core.frame', 'merge'):
+            assert isinstance(args_values[0], MlinspectDataFrame)
+            args_values[0]['mlinspect_index_y'] = range(1, len(args_values[0]) + 1)
+            self.df_arg = args_values[0]
+        elif function_info == ('pandas.core.frame', '__getitem__') and isinstance(args_values, MlinspectSeries):
             self.select = True
         self.before_call_used_args_add_description(args_values, code_reference, function_info, args_code)
 
@@ -155,6 +164,11 @@ class PandasBackend(Backend):
         elif function_info == ('pandas.core.frame', 'groupby'):
             description = self.code_reference_to_description[code_reference]
             return_value.name = description  # TODO: Do not use name here but something else to transport the value
+        if function_info == function_info == ('pandas.core.frame', 'merge'):
+            operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
+            return_value = self.execute_analyzer_visits_join_operator_df(operator_context, code_reference,
+                                                                         return_value,
+                                                                         function_info)
 
         self.input_data = None
 
@@ -251,6 +265,30 @@ class PandasBackend(Backend):
                                                           function_info)
         return return_value
 
+    def execute_analyzer_visits_join_operator_df(self, operator_context, code_reference, return_value_df,
+                                                 function_info):
+        """Execute analyzers when the current operator has one parent in the DAG"""
+        assert "mlinspect_index_x" in return_value_df.columns
+        assert "mlinspect_index_y" in return_value_df.columns
+        assert isinstance(self.input_data, MlinspectDataFrame)
+        assert isinstance(self.df_arg, MlinspectDataFrame)
+        annotation_iterators = []
+        for analyzer in self.analyzers:
+            analyzer_count = len(self.analyzers)
+            analyzer_index = self.analyzers.index(analyzer)
+            iterator_for_analyzer = iter_input_annotation_output_df_pair_df(analyzer_count,
+                                                                            analyzer_index,
+                                                                            self.input_data,
+                                                                            self.input_data.annotations,
+                                                                            self.df_arg,
+                                                                            self.df_arg.annotations,
+                                                                            return_value_df)
+            annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
+            annotation_iterators.append(annotations_iterator)
+        return_value = self.store_analyzer_outputs_df(annotation_iterators, code_reference, return_value_df,
+                                                      function_info)
+        return return_value
+
     def before_call_index_assign(self, dataframe, key, value):
         print("before hello world")
 
@@ -267,6 +305,39 @@ def iter_input_data_source(output):
 
 
 def iter_input_annotation_output_df_df(analyzer_count, analyzer_index, input_data, input_annotations, output):
+    """
+    Create an efficient iterator for the analyzer input for operators with one parent.
+    """
+    # pylint: disable=too-many-locals
+    # Performance tips:
+    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+    data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
+                                                right_on="mlinspect_index")
+    joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
+                             right_on="mlinspect_index")
+
+    column_index_input_end = len(input_data.columns)
+    column_annotation_current_analyzer = column_index_input_end + analyzer_index
+    column_index_annotation_end = column_index_input_end + analyzer_count
+
+    input_df_view = joined_df.iloc[:, 0:column_index_input_end - 1]
+    input_df_view.columns = input_data.columns[0:-1]
+
+    annotation_df_view = joined_df.iloc[:, column_annotation_current_analyzer:column_annotation_current_analyzer + 1]
+
+    output_df_view = joined_df.iloc[:, column_index_annotation_end:]
+    output_df_view.columns = output.columns[0:-1]
+
+    input_rows = get_df_row_iterator(input_df_view)
+    annotation_rows = get_df_row_iterator(annotation_df_view)
+    output_rows = get_df_row_iterator(output_df_view)
+
+    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
+               zip(input_rows, annotation_rows, output_rows))
+
+
+def iter_input_annotation_output_df_pair_df(analyzer_count, analyzer_index, x_data, x_annotations, y_data,
+                                            y_annotations, output):
     """
     Create an efficient iterator for the analyzer input for operators with one parent.
     """

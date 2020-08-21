@@ -23,7 +23,7 @@ histories = pd.read_csv(os.path.join(str(get_project_root()), "test", "data", "h
                         na_values='?')
 
 # combine input data into a single table
-#data = patients.merge(histories, on=['ssn'])
+data = patients.merge(histories, on=['ssn'])
 
 # compute mean complications per age group, append as column
 #complications = data.groupby('age_group').agg(mean_complications=('complications', 'mean'))
