@@ -208,6 +208,8 @@ class PandasBackend(Backend):
         self.input_data = None
         if "mlinspect_index" in return_value.columns:
             return_value = return_value.drop("mlinspect_index", axis=1)
+        elif "mlinspect_index_x" in return_value.columns:
+            return_value = return_value.drop(["mlinspect_index_x", "mlinspect_index_y"], axis=1)
         assert "mlinspect_index" not in return_value.columns
         assert isinstance(return_value, MlinspectDataFrame)
         return return_value

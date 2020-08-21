@@ -28,7 +28,7 @@ data = patients.merge(histories, on=['ssn'])
 # compute mean complications per age group, append as column
 complications = data.groupby('age_group').agg(mean_complications=('complications', 'mean'))
 
-#data = data.merge(complications, on=['age_group'])
+data = data.merge(complications, on=['age_group'])
 
 # target variable: people with a high number of complications
 #data['label'] = data['complications'] > 1.2 * data['mean_complications']
