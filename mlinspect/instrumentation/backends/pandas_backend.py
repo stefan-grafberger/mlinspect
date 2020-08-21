@@ -165,7 +165,7 @@ class PandasBackend(Backend):
             description = self.code_reference_to_description[code_reference]
             return_value.name = description  # TODO: Do not use name here but something else to transport the value
         if function_info == function_info == ('pandas.core.frame', 'merge'):
-            operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
+            operator_context = OperatorContext(OperatorType.JOIN, function_info)
             return_value = self.execute_analyzer_visits_join_operator_df(operator_context, code_reference,
                                                                          return_value,
                                                                          function_info)
@@ -345,31 +345,37 @@ def iter_input_annotation_output_df_pair_df(analyzer_count, analyzer_index, x_da
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
     x_before_with_annotations = pandas.merge(x_data, x_annotations, left_on="mlinspect_index_x",
-                                             right_on="mlinspect_index")
+                                             right_on="mlinspect_index", suffixes=["_x_data", "_x_annot"])
     y_before_with_annotations = pandas.merge(y_data, y_annotations, left_on="mlinspect_index_y",
-                                             right_on="mlinspect_index")
-    df_joined_with_x = pandas.merge(x_before_with_annotations, output, left_on="mlinspect_index_x",
-                                    right_on="mlinspect_index_x")
-    df_joined = pandas.merge(y_before_with_annotations, df_joined_with_x, left_on="mlinspect_index_y",
-                             right_on="mlinspect_index_y")
+                                             right_on="mlinspect_index", suffixes=["_y_data", "_y_annot"])
+    df_x_output = pandas.merge(x_before_with_annotations, output, left_on="mlinspect_index_x",
+                                    right_on="mlinspect_index_x", suffixes=["_x", "_output"])
+    df_x_output_y = pandas.merge(df_x_output, y_before_with_annotations, left_on="mlinspect_index_y",
+                                 right_on="mlinspect_index_y", suffixes=["_x_output", "_y_output"])
 
     column_index_x_end = len(x_data.columns)
     column_annotation_x_current_analyzer = column_index_x_end + analyzer_index
-    column_index_y_start = column_index_x_end + analyzer_count
-    column_index_y_end = column_index_y_start + len(y_data.columns)
+    column_index_output_start = column_index_x_end + analyzer_count
+    column_index_y_start = column_index_output_start + len(output.columns) - 2
+    column_index_y_end = column_index_y_start + len(y_data.columns) - 1
     column_annotation_y_current_analyzer = column_index_y_end + analyzer_index
-    column_index_result_start = column_index_y_end + analyzer_count
 
-    input_x_view = df_joined.iloc[:, 0:column_index_x_end - 1]
+    df_x_output_y = df_x_output_y.drop(['mlinspect_index_x_output', 'mlinspect_index_y'], axis=1)
+
+    input_x_view = df_x_output_y.iloc[:, 0:column_index_x_end-1]
     input_x_view.columns = x_data.columns[0:-1]
-    annotation_x_view = df_joined.iloc[:, column_annotation_x_current_analyzer:column_annotation_x_current_analyzer + 1]
+    annotation_x_view = df_x_output_y.iloc[:, column_annotation_x_current_analyzer:column_annotation_x_current_analyzer + 1]
+    annotation_x_view.columns = [annotation_x_view.columns[0].replace("_x_output", "")]
 
-    input_y_view = df_joined.iloc[:, column_index_y_start:column_index_y_end - 1]
+    output_df_view = df_x_output_y.iloc[:, column_index_output_start:column_index_y_start]
+    output_df_view.columns = [column for column in output.columns if
+                              (column != "mlinspect_index_x" and column != "mlinspect_index_y")]
+
+    input_y_view = df_x_output_y.iloc[:, column_index_y_start:column_index_y_end]
     input_y_view.columns = y_data.columns[0:-1]
-    annotation_y_view = df_joined.iloc[:, column_annotation_y_current_analyzer:column_annotation_y_current_analyzer + 1]
-
-    output_df_view = df_joined.iloc[:, column_index_result_start:]
-    output_df_view.columns = output.columns[0:-1]
+    annotation_y_view = df_x_output_y.iloc[:,
+                                           column_annotation_y_current_analyzer:column_annotation_y_current_analyzer+1]
+    annotation_y_view.columns = [annotation_y_view.columns[0].replace("_y_output", "")]
 
     input_iterators = []
     annotation_iterators = []
