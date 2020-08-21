@@ -2,6 +2,7 @@
 The pandas backend
 """
 import os
+from collections import namedtuple
 
 import networkx
 import pandas
@@ -29,7 +30,7 @@ class PandasBackend(Backend):
         ('pandas.core.frame', '__getitem__'): OperatorType.PROJECTION,  # FIXME: Remove later
         ('pandas.core.frame', '__getitem__', 'Projection'): OperatorType.PROJECTION,
         ('pandas.core.frame', '__getitem__', 'Selection'): OperatorType.SELECTION,
-        ('pandas.core.frame', '__setitem__'): OperatorType.PROJECTION,
+        ('pandas.core.frame', '__setitem__'): OperatorType.PROJECTION_MODIFY,
         ('pandas.core.frame', 'merge'): OperatorType.JOIN,
         ('pandas.core.groupby.generic', 'agg'): OperatorType.GROUP_BY_AGG
     }
@@ -48,6 +49,7 @@ class PandasBackend(Backend):
         super().__init__()
         self.input_data = None
         self.df_arg = None
+        self.set_key_info = None
         self.select = False
         self.code_reference_to_set_item_op = {}
 
@@ -115,6 +117,8 @@ class PandasBackend(Backend):
         elif function_info == ('pandas.core.frame', '__setitem__'):
             key_arg = args_values
             description = "Sets columns {}".format([key_arg])
+            SetKeyInfo = namedtuple("SetKeyInfo", ["code_reference", "function_info", "args_code"])
+            self.set_key_info = SetKeyInfo(code_reference, function_info, args_code)
         elif function_info == ('pandas.core.frame', 'groupby'):
             description = "Group by {}, ".format(args_values)
             self.code_reference_to_description[code_reference] = description
@@ -179,8 +183,13 @@ class PandasBackend(Backend):
 
         return return_value
 
-    def after_call_used_setkey(self, key, value_before, value_after):
-        print("hello world!")
+    def after_call_used_setkey(self, _, value_before, value_after):
+        code_reference, function_info, args_code = self.set_key_info
+        operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
+        value_before['mlinspect_index'] = range(1, len(value_after) + 1)
+        self.input_data = value_before
+        self.execute_analyzer_visits_unary_operator_df(operator_context, code_reference,
+                                                       value_after, function_info)
 
     def execute_analyzer_visits_no_parents(self, operator_context, code_reference, return_value, function_info):
         """Execute analyzers when the current operator is a data source and does not have parents in the DAG"""
@@ -249,7 +258,8 @@ class PandasBackend(Backend):
                                                                        analyzer_index,
                                                                        self.input_data,
                                                                        self.input_data.annotations,
-                                                                       return_value_df)
+                                                                       return_value_df,
+                                                                       True)
             annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
             annotation_iterators.append(annotations_iterator)
         return_value = self.store_analyzer_outputs_df(annotation_iterators, code_reference, return_value_df,
@@ -313,7 +323,8 @@ def iter_input_data_source(output):
     return map(AnalyzerInputDataSource, output)
 
 
-def iter_input_annotation_output_df_df(analyzer_count, analyzer_index, input_data, input_annotations, output):
+def iter_input_annotation_output_df_df(analyzer_count, analyzer_index, input_data, input_annotations, output,
+                                       appends_col=False):
     """
     Create an efficient iterator for the analyzer input for operators with one parent.
     """
@@ -335,7 +346,10 @@ def iter_input_annotation_output_df_df(analyzer_count, analyzer_index, input_dat
     annotation_df_view = joined_df.iloc[:, column_annotation_current_analyzer:column_annotation_current_analyzer + 1]
 
     output_df_view = joined_df.iloc[:, column_index_annotation_end:]
-    output_df_view.columns = output.columns[0:-1]
+    if not appends_col:
+        output_df_view.columns = output.columns[0:-1]
+    else:  # e.g., __setkey__  can add columns, but they are then behind mlinspect_index
+        output_df_view.columns = list(output.columns[0:-2]) + list(output.columns[-1:])
 
     input_rows = get_df_row_iterator(input_df_view)
     annotation_rows = get_df_row_iterator(annotation_df_view)
