@@ -91,6 +91,8 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             result = self.one_hot_encoder_visits(X, y)
         elif self.call_function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
             result = self.standard_scaler_visits(X, y)
+        elif self.call_function_info == ('mlinspect.demo_utils', 'MyW2VTransformer'):
+            result = self.w2v_visits(X, y)
         else:
             result = self.transformer.fit_transform(X, y)
 
@@ -113,6 +115,31 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                                                                 X[[column]],
                                                                                 X.annotations[self],
                                                                                 result[:, column_index],
+                                                                                self.analyzers,
+                                                                                self.code_reference_analyzer_output_map,
+                                                                                description)
+            annotations_for_columns = self.annotation_result_concat_workaround or []
+            annotations_for_columns.append(column_result.annotations)
+            self.annotation_result_concat_workaround = annotations_for_columns
+        return result
+
+    def w2v_visits(self, X, y):
+        """
+        Analyzer visits for the StandardScaler Transformer
+        """
+        # pylint: disable=invalid-name
+        assert isinstance(X.annotations, dict) and self in X.annotations
+        result = self.transformer.fit_transform(X, y)
+        self.output_dimensions = [result.shape[1]]
+        for column_index, column in enumerate(X.columns):
+            function_info = (self.module_name, "fit_transform")  # TODO: could also be used for multiple columns at once
+            operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
+            description = "Word2Vec, Column: '{}'".format(column)
+            column_result = execute_analyzer_visits_df_array_column_transformer(operator_context,
+                                                                                self.code_reference,
+                                                                                X[[column]],
+                                                                                X.annotations[self],
+                                                                                result[:, :],
                                                                                 self.analyzers,
                                                                                 self.code_reference_analyzer_output_map,
                                                                                 description)
@@ -293,7 +320,7 @@ def iter_input_annotation_output_df_array(analyzer_index, input_data, annotation
 
     input_rows = get_df_row_iterator(input_data)
     annotation_rows = get_df_row_iterator(annotation_df_view)
-    output_rows = get_numpy_array_row_iterator(output_data)
+    output_rows = get_numpy_array_row_iterator(output_data, False)
 
     return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))

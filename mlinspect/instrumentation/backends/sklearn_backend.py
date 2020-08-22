@@ -38,7 +38,7 @@ class SklearnBackend(Backend):
         ('sklearn.pipeline', 'fit', 'Train Labels'): OperatorType.TRAIN_LABELS,
         ('sklearn.model_selection._split', 'train_test_split'): OperatorType.TRAIN_TEST_SPLIT,
         # TODO: We  can remove this later by checking if subclass of transformer/estimator
-        ('sklearn.mlinspect.utils', 'MyW2VTransformer', 'Pipeline'): OperatorType.TRANSFORMER,
+        ('sklearn.mlinspect.demo_utils', 'MyW2VTransformer', 'Pipeline'): OperatorType.TRANSFORMER,
         ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier', 'Pipeline'): OperatorType.ESTIMATOR
     }
 
@@ -142,6 +142,7 @@ class SklearnBackend(Backend):
                                ('sklearn.preprocessing._data', 'StandardScaler'),
                                ('sklearn.tree._classes', 'DecisionTreeClassifier'),
                                ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
+                               ('sklearn.mlinspect.demo_utils', 'MyW2VTransformer'),
                                ('sklearn.compose._column_transformer', 'ColumnTransformer'),
                                ('sklearn.pipeline', 'Pipeline')}:
             return_value = MlinspectEstimatorTransformer(return_value, code_reference, self.analyzers,

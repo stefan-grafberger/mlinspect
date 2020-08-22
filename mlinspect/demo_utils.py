@@ -14,11 +14,11 @@ class MyW2VTransformer(W2VTransformer):
 
     def partial_fit(self, X):
         # pylint: disable=useless-super-delegation
-        super().partial_fit(X)
+        super().partial_fit([X])
 
     def fit(self, X, y=None):
         X = X.iloc[:, 0].tolist()
-        return super().fit(X, y)
+        return super().fit([X], y)
 
     def transform(self, words):
         words = words.iloc[:, 0].tolist()

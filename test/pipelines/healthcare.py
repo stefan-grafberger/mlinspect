@@ -47,12 +47,12 @@ data = data[data['county'].isin(COUNTIES_OF_INTEREST)]
 
 featurisation = ColumnTransformer(transformers=[
     # ("impute_and_one_hot_encode", impute_and_one_hot_encode, ['smoker', 'county', 'race']), # impute_and_one_hot_encode
-    # ('word2vec', MyW2VTransformer(min_count=1), ['last_name']),
+    ('word2vec', MyW2VTransformer(min_count=1), ['last_name']),
     ('numeric', StandardScaler(), ['num_children', 'income'])
 ])
 
 # define the training pipeline for the model
-neural_net = KerasClassifier(build_fn=create_model, epochs=10, batch_size=1, verbose=0, input_dim=2)  # input_dim=201
+neural_net = KerasClassifier(build_fn=create_model, epochs=10, batch_size=1, verbose=0, input_dim=102)  # input_dim=201
 pipeline = Pipeline([
      ('features', featurisation),
      ('learner', neural_net)])

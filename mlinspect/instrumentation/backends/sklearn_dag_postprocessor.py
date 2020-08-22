@@ -21,18 +21,14 @@ class SklearnDagPostprocessor:
             dag_node_identifier = DagNodeIdentifier(node.operator_type, node.code_reference, node.description)
             if node.code_reference not in wir_post_processing_map:
                 return
-            if node.module == ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'):
+            if node.module in {('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'),
+                               ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'),
+                               ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'),
+                               ('sklearn.mlinspect.demo_utils', 'MyW2VTransformer', 'Pipeline')
+                               }:
                 annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
                 annotation = annotations_for_all_associated_dag_nodes[node.description]
                 new_code_references[dag_node_identifier] = annotation
-            elif node.module == ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'):
-                annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
-                annotations_x = annotations_for_all_associated_dag_nodes[node.description]
-                new_code_references[dag_node_identifier] = annotations_x
-            elif node.module == ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'):
-                annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
-                annotations_x = annotations_for_all_associated_dag_nodes[node.description]
-                new_code_references[dag_node_identifier] = annotations_x
             elif node.module == ('sklearn.pipeline', 'fit', 'Train Data'):
                 annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
                 annotations_x = annotations_for_all_associated_dag_nodes['fit X']
