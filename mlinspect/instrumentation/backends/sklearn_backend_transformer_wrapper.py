@@ -45,6 +45,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         self.code_reference_analyzer_output_map = code_reference_analyzer_output_map
         self.output_dimensions = output_dimensions
         self.annotation_result_concat_workaround = None
+        self.parent_transformer = None  # needed for nested pipelines
         if transformer_uuid is None:
             self.transformer_uuid = uuid.uuid4()
         else:
@@ -63,13 +64,14 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         # pylint: disable=invalid-name
         if self.call_function_info == ('sklearn.pipeline', 'Pipeline'):
             X_new, y_new = self.train_data_and_labels_visits(X, y)
+            self.transformer = self.transformer.fit(X_new, y_new)
         elif self.call_function_info in {('sklearn.tree._classes', 'DecisionTreeClassifier'),
                                          ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')}:
             X_new, y_new = self.estimator_visits(X, y)
+            self.transformer.fit(X_new, y_new)
         else:
-            X_new = X
-            y_new = y
-        self.transformer = self.transformer.fit(X_new, y_new)
+            assert False
+
         return self
 
     def transform(self, X: list) -> list:
@@ -93,6 +95,19 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             result = self.standard_scaler_visits(X, y)
         elif self.call_function_info == ('mlinspect.demo_utils', 'MyW2VTransformer'):
             result = self.w2v_visits(X, y)
+        elif self.call_function_info == ('sklearn.impute._base', 'SimpleImputer'):
+            result = self.simple_imputer_visits(X, y)
+        elif self.call_function_info == ('sklearn.pipeline', 'Pipeline'):
+            self.transformer.steps[0][1].parent_transformer = self
+            result = self.transformer.fit_transform(X, y)
+            last_step_transformer = self.transformer.steps[-1][1]
+            self.annotation_result_concat_workaround = last_step_transformer.annotation_result_concat_workaround
+            self.output_dimensions = last_step_transformer.output_dimensions
+
+            transformers_tuples = self.transformer.steps
+            transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
+            for transformer in transformers:
+                self.code_reference_analyzer_output_map.update(transformer.code_reference_analyzer_output_map)
         else:
             result = self.transformer.fit_transform(X, y)
 
@@ -121,6 +136,33 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             annotations_for_columns = self.annotation_result_concat_workaround or []
             annotations_for_columns.append(column_result.annotations)
             self.annotation_result_concat_workaround = annotations_for_columns
+        return result
+
+    def simple_imputer_visits(self, X, y):
+        """
+        Analyzer visits for the StandardScaler Transformer
+        """
+        # pylint: disable=invalid-name
+        assert isinstance(X.annotations, dict) and self.parent_transformer in X.annotations
+        result = self.transformer.fit_transform(X, y)
+        self.output_dimensions = [1 for _ in range(result.shape[1])]
+        for column_index, column in enumerate(X.columns):
+            function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
+            operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
+            description = "Imputer (SimpleImputer), Column: '{}'".format(column)
+            column_result = execute_analyzer_visits_df_array_column_transformer(operator_context,
+                                                                                self.code_reference,
+                                                                                X[[column]],
+                                                                                X.annotations[self.parent_transformer],
+                                                                                result[:, column_index],
+                                                                                self.analyzers,
+                                                                                self.code_reference_analyzer_output_map,
+                                                                                description)
+            annotations_for_columns = self.annotation_result_concat_workaround or []
+            annotations_for_columns.append((column, column_result.annotations))
+            self.annotation_result_concat_workaround = annotations_for_columns
+        result = MlinspectNdarray(result)
+        result.annotations = self.annotation_result_concat_workaround
         return result
 
     def w2v_visits(self, X, y):
@@ -153,32 +195,64 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         Analyzer visits for the OneHotEncoder Transformer
         """
         # pylint: disable=invalid-name
-        assert isinstance(X.annotations, dict) and self in X.annotations
-        result = self.transformer.fit_transform(X, y)
-        self.output_dimensions = [len(one_hot_categories) for one_hot_categories in
-                                  self.transformer.categories_]
-        output_dimension_index = [0]
-        for dimension in self.output_dimensions:
-            output_dimension_index.append(output_dimension_index[-1] + dimension)
-        for column_index, column in enumerate(X.columns):
-            function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
-            operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
-            description = "Categorical Encoder (OneHotEncoder), Column: '{}'".format(column)
+        if isinstance(X.annotations, dict):
+            assert isinstance(X, MlinspectDataFrame)
+            assert self in X.annotations
+            result = self.transformer.fit_transform(X, y)
+            self.output_dimensions = [len(one_hot_categories) for one_hot_categories in
+                                      self.transformer.categories_]
+            output_dimension_index = [0]
+            for dimension in self.output_dimensions:
+                output_dimension_index.append(output_dimension_index[-1] + dimension)
+            for column_index, column in enumerate(X.columns):
+                function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
+                operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
+                description = "Categorical Encoder (OneHotEncoder), Column: '{}'".format(column)
 
-            index_start = output_dimension_index[column_index]
-            index_end = output_dimension_index[column_index + 1]
+                index_start = output_dimension_index[column_index]
+                index_end = output_dimension_index[column_index + 1]
 
-            column_result = execute_analyzer_visits_df_csr_column_transformer(operator_context,
-                                                                              self.code_reference,
-                                                                              X[[column]],
-                                                                              X.annotations[self],
-                                                                              result[:, index_start:index_end],
-                                                                              self.analyzers,
-                                                                              self.code_reference_analyzer_output_map,
-                                                                              description)
-            annotations_for_columns = self.annotation_result_concat_workaround or []
-            annotations_for_columns.append(column_result.annotations)
-            self.annotation_result_concat_workaround = annotations_for_columns
+                column_result = execute_analyzer_visits_df_csr_column_transformer(operator_context,
+                                                                                  self.code_reference,
+                                                                                  X[[column]],
+                                                                                  X.annotations[self],
+                                                                                  result[:, index_start:index_end],
+                                                                                  self.analyzers,
+                                                                                  self.code_reference_analyzer_output_map,
+                                                                                  description)
+                annotations_for_columns = self.annotation_result_concat_workaround or []
+                annotations_for_columns.append(column_result.annotations)
+                self.annotation_result_concat_workaround = annotations_for_columns
+        elif isinstance(X.annotations, list):
+            result = self.transformer.fit_transform(X, y)
+            self.output_dimensions = [len(one_hot_categories) for one_hot_categories in
+                                      self.transformer.categories_]
+            output_dimension_index = [0]
+            for dimension in self.output_dimensions:
+                output_dimension_index.append(output_dimension_index[-1] + dimension)
+            assert isinstance(X, MlinspectNdarray)
+            for column_index in range(X.shape[1]):
+                function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
+                operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
+                column_name, annotations = X.annotations[column_index]
+                description = "Categorical Encoder (OneHotEncoder), Column: '{}'".format(column_name)
+
+                index_start = output_dimension_index[column_index]
+                index_end = output_dimension_index[column_index + 1]
+
+                column_result = execute_analyzer_visits_array_array(operator_context,
+                                                                    self.code_reference,
+                                                                    X[:, column_index],
+                                                                    annotations,
+                                                                    result[:, index_start:index_end],
+                                                                    self.analyzers,
+                                                                    self.code_reference_analyzer_output_map,
+                                                                    description)
+                annotations_for_columns = self.annotation_result_concat_workaround or []
+                annotations_for_columns.append(column_result.annotations)
+                self.annotation_result_concat_workaround = annotations_for_columns
+        else:
+            assert False
         return result
 
     def column_transformer_visits(self, X, y):
@@ -288,7 +362,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         assert y is not None
         if isinstance(y, MlinspectNdarray):
             operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
-            y_new = execute_analyzer_visits_array_array(operator_context, self.code_reference, y, y,
+            y_new = execute_analyzer_visits_array_array(operator_context, self.code_reference, y, y.annotations, y,
                                                         self.analyzers,
                                                         self.code_reference_analyzer_output_map, "fit y")
             assert isinstance(y_new, MlinspectNdarray)
@@ -302,6 +376,10 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             return X_new, y_new
         else:
             assert False
+
+    def score(self, X, y):
+        # TODO: Probably split the transformer_estimator wrapper into two for transforemrs and estimators
+        self.transformer.score(X, y)
 
 
 # -------------------------------------------------------
@@ -464,7 +542,7 @@ def iter_input_annotation_output_array_array(analyzer_index, input_df, annotatio
 
     input_rows = get_numpy_array_row_iterator(input_df)
     annotation_rows = get_df_row_iterator(annotation_df_view)
-    output_rows = get_numpy_array_row_iterator(output_df)
+    output_rows = get_numpy_array_row_iterator(output_df, False)
 
     return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
@@ -614,7 +692,7 @@ def execute_analyzer_visits_df_csr_column_transformer(operator_context, code_ref
     return return_value
 
 
-def execute_analyzer_visits_array_array(operator_context, code_reference, input_data, output_data,
+def execute_analyzer_visits_array_array(operator_context, code_reference, input_data, annotations, output_data,
                                         analyzers, code_reference_analyzer_output_map, func_name):
     """Execute analyzers"""
     # pylint: disable=too-many-arguments
@@ -624,7 +702,7 @@ def execute_analyzer_visits_array_array(operator_context, code_reference, input_
         analyzer_index = analyzers.index(analyzer)
         iterator_for_analyzer = iter_input_annotation_output_array_array(analyzer_index,
                                                                          input_data,
-                                                                         input_data.annotations,
+                                                                         annotations,
                                                                          output_data)
         annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
         annotation_iterators.append(annotations_iterator)

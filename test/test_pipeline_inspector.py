@@ -49,7 +49,7 @@ def test_inspector_healthcare_py_pipeline():
 
     analyzer_results = inspection_result.analyzer_to_annotations
     result = analyzer_results[MaterializeFirstRowsAnalyzer(5)]
-    assert len(result) == 23
+    assert len(result) == 33
 
 
 def test_inspector_adult_easy_ipynb_pipeline():

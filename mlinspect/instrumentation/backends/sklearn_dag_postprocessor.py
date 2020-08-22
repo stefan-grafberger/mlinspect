@@ -24,7 +24,8 @@ class SklearnDagPostprocessor:
             if node.module in {('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'),
                                ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'),
                                ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'),
-                               ('sklearn.mlinspect.demo_utils', 'MyW2VTransformer', 'Pipeline')
+                               ('sklearn.mlinspect.demo_utils', 'MyW2VTransformer', 'Pipeline'),
+                               ('sklearn.impute._base', 'SimpleImputer', 'Pipeline')
                                }:
                 annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
                 annotation = annotations_for_all_associated_dag_nodes[node.description]

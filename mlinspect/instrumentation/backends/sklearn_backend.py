@@ -143,6 +143,7 @@ class SklearnBackend(Backend):
                                ('sklearn.tree._classes', 'DecisionTreeClassifier'),
                                ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
                                ('sklearn.mlinspect.demo_utils', 'MyW2VTransformer'),
+                               ('sklearn.impute._base', 'SimpleImputer'),
                                ('sklearn.compose._column_transformer', 'ColumnTransformer'),
                                ('sklearn.pipeline', 'Pipeline')}:
             return_value = MlinspectEstimatorTransformer(return_value, code_reference, self.analyzers,

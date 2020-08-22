@@ -41,7 +41,7 @@ class MaterializeFirstRowsAnalyzer(Analyzer):
                     operator_output.append(row.output)
                 yield None
         else:
-            for row in row_iterator:
+            for _ in row_iterator:
                 yield None
 
         self._operator_output = operator_output
