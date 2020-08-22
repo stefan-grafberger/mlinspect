@@ -7,6 +7,7 @@ import uuid
 
 import numpy
 from pandas import DataFrame
+from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator
 
 from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputUnaryOperator, \
@@ -62,7 +63,8 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         # pylint: disable=invalid-name
         if self.call_function_info == ('sklearn.pipeline', 'Pipeline'):
             X_new, y_new = self.train_data_and_labels_visits(X, y)
-        elif self.call_function_info == ('sklearn.tree._classes', 'DecisionTreeClassifier'):
+        elif self.call_function_info in {('sklearn.tree._classes', 'DecisionTreeClassifier'),
+                                         ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')}:
             X_new, y_new = self.estimator_visits(X, y)
         else:
             X_new = X
@@ -188,9 +190,16 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
         operator_context = OperatorContext(OperatorType.CONCATENATION, function_info)
         description = "concat"
-        result = execute_analyzer_visits_csr_list_csr(operator_context, self.code_reference,
-                                                      transformer_data_with_annotations, result, self.analyzers,
-                                                      self.code_reference_analyzer_output_map, description)
+        if isinstance(result, csr_matrix):
+            result = execute_analyzer_visits_csr_list_csr(operator_context, self.code_reference,
+                                                          transformer_data_with_annotations, result, self.analyzers,
+                                                          self.code_reference_analyzer_output_map, description)
+        elif isinstance(result, numpy.ndarray):
+            result = execute_analyzer_visits_array_list_array(operator_context, self.code_reference,
+                                                              transformer_data_with_annotations, result, self.analyzers,
+                                                              self.code_reference_analyzer_output_map, description)
+        else:
+            assert False
         return result
 
     def column_transformer_visits_save_child_results(self):
@@ -333,6 +342,31 @@ def iter_input_annotation_output_csr_list_csr(analyzer_index, transformer_data_w
                zip(input_rows, annotation_rows, output_rows))
 
 
+def iter_input_annotation_output_array_list_array(analyzer_index, transformer_data_with_annotations, output_data):
+    """
+    Create an efficient iterator for the analyzer input
+    """
+    # pylint: disable=too-many-locals
+    # Performance tips:
+    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+
+    input_iterators = []
+    annotation_iterators = []
+    for input_data, annotations in transformer_data_with_annotations:
+        annotation_df_view = annotations.iloc[:, analyzer_index:analyzer_index + 1]
+
+        input_iterators.append(get_numpy_array_row_iterator(input_data))
+        annotation_iterators.append(get_df_row_iterator(annotation_df_view))
+
+    input_rows = map(list, zip(*input_iterators))
+    annotation_rows = map(list, zip(*annotation_iterators))
+
+    output_rows = get_numpy_array_row_iterator(output_data, False)
+
+    return map(lambda input_tuple: AnalyzerInputNAryOperator(*input_tuple),
+               zip(input_rows, annotation_rows, output_rows))
+
+
 def iter_input_annotation_output_estimator_nothing(analyzer_index, data, target):
     """
     Create an efficient iterator for the analyzer input
@@ -345,11 +379,21 @@ def iter_input_annotation_output_estimator_nothing(analyzer_index, data, target)
     annotation_iterators = []
 
     data_annotation_df_view = data.annotations.iloc[:, analyzer_index:analyzer_index + 1]
-    input_iterators.append(get_csr_row_iterator(data))
+    if isinstance(data, MlinspectCsrMatrix):
+        input_iterators.append(get_csr_row_iterator(data))
+    elif isinstance(data, MlinspectNdarray):
+        input_iterators.append(get_numpy_array_row_iterator(data, False))
+    else:
+        assert False
     annotation_iterators.append(get_df_row_iterator(data_annotation_df_view))
 
     target_annotation_df_view = target.annotations.iloc[:, analyzer_index:analyzer_index + 1]
-    input_iterators.append(get_numpy_array_row_iterator(target))
+    if isinstance(target, MlinspectNdarray):
+        input_iterators.append(get_numpy_array_row_iterator(target))
+    elif isinstance(target, MlinspectSeries):
+        input_iterators.append(get_series_row_iterator(target))
+    else:
+        assert False
     annotation_iterators.append(get_df_row_iterator(target_annotation_df_view))
 
     input_rows = map(list, zip(*input_iterators))
@@ -442,12 +486,31 @@ def execute_analyzer_visits_csr_list_csr(operator_context, code_reference, trans
     return return_value
 
 
+def execute_analyzer_visits_array_list_array(operator_context, code_reference, transformer_data_with_annotations,
+                                             output_data, analyzers,
+                                             code_reference_analyzer_output_map, func_name):
+    """Execute analyzers"""
+    # pylint: disable=too-many-arguments
+    annotation_iterators = []
+    for analyzer in analyzers:
+        analyzer_index = analyzers.index(analyzer)
+        iterator_for_analyzer = iter_input_annotation_output_array_list_array(analyzer_index,
+                                                                              transformer_data_with_annotations,
+                                                                              output_data)
+        annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
+        annotation_iterators.append(annotations_iterator)
+    return_value = store_analyzer_outputs_array(annotation_iterators, code_reference, output_data, analyzers,
+                                                code_reference_analyzer_output_map, func_name)
+    assert isinstance(return_value, MlinspectNdarray)
+    return return_value
+
+
 def execute_analyzer_visits_estimator_input_nothing(operator_context, code_reference, data, target,
                                                     analyzers, code_reference_analyzer_output_map, func_name):
     """Execute analyzers"""
     # pylint: disable=too-many-arguments
-    assert isinstance(data, MlinspectCsrMatrix)
-    assert isinstance(target, MlinspectNdarray)
+    assert isinstance(data, MlinspectCsrMatrix) or isinstance(data, MlinspectNdarray)
+    assert isinstance(target, MlinspectNdarray) or isinstance(target, MlinspectSeries)
     annotation_iterators = []
     for analyzer in analyzers:
         analyzer_index = analyzers.index(analyzer)

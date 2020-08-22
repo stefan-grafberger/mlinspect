@@ -28,7 +28,8 @@ class PandasWirPreprocessor:
 
                 children = list(graph.successors(node))
                 for child in children:
-                    graph.add_edge(new_node, child)
+                    child_edge_data = graph.get_edge_data(node, child)
+                    graph.add_edge(new_node, child, **child_edge_data)
 
                 graph.remove_node(node)
 

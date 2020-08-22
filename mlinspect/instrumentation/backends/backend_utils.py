@@ -45,13 +45,16 @@ def get_series_row_iterator(series):
     return map(partial_func_create_row, map(list, zip(numpy_iterator)))
 
 
-def get_numpy_array_row_iterator(nparray):
+def get_numpy_array_row_iterator(nparray, nditer=True):
     """
     Create an efficient iterator for the data frame rows.
     The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
     """
     fields = list(["array"])
-    numpy_iterator = numpy.nditer(nparray, ["refs_ok"])
+    if nditer is True:
+        numpy_iterator = numpy.nditer(nparray, ["refs_ok"])
+    else:
+        numpy_iterator = nparray.__iter__()
     partial_func_create_row = partial(AnalyzerInputRow, fields=fields)
 
     return map(partial_func_create_row, map(list, zip(numpy_iterator)))

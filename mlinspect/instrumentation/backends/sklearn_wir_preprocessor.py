@@ -194,10 +194,7 @@ class SklearnWirPreprocessor:
         """
         Get the 'pipeline' value of Pipeline.fit
         """
-        parents = list(graph.predecessors(node))
-        parents_with_arg_index = [(parent, graph.get_edge_data(parent, node)) for parent in parents]
-        direct_pipeline_parent_node = [parent for parent in parents_with_arg_index if
-                                       parent[1]['arg_index'] == -1][0][0]
+        direct_pipeline_parent_node = get_sorted_node_parents(graph, node)[0]
         actual_pipeline_node = self.get_sklearn_call_wir_node(graph, direct_pipeline_parent_node)
 
         assert actual_pipeline_node.operation == "Call"

@@ -118,6 +118,8 @@ class SklearnBackend(Backend):
         if function_info == ('sklearn.preprocessing._label', 'label_binarize'):
             classes = kwargs_values['classes']
             description = "label_binarize, classes: {}".format(classes)
+        elif function_info == ('sklearn.model_selection._split', 'train_test_split'):
+            description = "(Train Data)"
 
         if description:
             self.code_reference_to_description[code_reference] = description
@@ -139,6 +141,7 @@ class SklearnBackend(Backend):
         elif function_info in {('sklearn.preprocessing._encoders', 'OneHotEncoder'),
                                ('sklearn.preprocessing._data', 'StandardScaler'),
                                ('sklearn.tree._classes', 'DecisionTreeClassifier'),
+                               ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
                                ('sklearn.compose._column_transformer', 'ColumnTransformer'),
                                ('sklearn.pipeline', 'Pipeline')}:
             return_value = MlinspectEstimatorTransformer(return_value, code_reference, self.analyzers,
