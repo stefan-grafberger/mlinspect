@@ -18,8 +18,8 @@ COUNTIES_OF_INTEREST = ['Iowa', 'Florida', 'Ohio', 'California', 'Nevada', 'Texa
 
 
 # load input data sources (data generated with https://www.mockaroo.com as a single file and then split into two)
-patients = pd.read_csv(os.path.join(str(get_project_root()), "test", "data", "healthcare_patients.csv"), na_values='?')
-histories = pd.read_csv(os.path.join(str(get_project_root()), "test", "data", "healthcare_histories.csv"),
+patients = pd.read_csv(os.path.join(str(get_project_root()), "demo", "healthcare", "healthcare_patients.csv"), na_values='?')
+histories = pd.read_csv(os.path.join(str(get_project_root()), "demo", "healthcare", "healthcare_histories.csv"),
                         na_values='?')
 
 # combine input data into a single table
