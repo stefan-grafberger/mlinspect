@@ -148,24 +148,27 @@ class PandasBackend(Backend):
                                                                    return_value.reset_index(), function_info)
         elif function_info == ('pandas.core.frame', 'dropna'):
             operator_context = OperatorContext(OperatorType.SELECTION, function_info)
-            return_value = self.execute_analyzer_visits_unary_operator_df(operator_context, code_reference,
-                                                                          return_value,
-                                                                          function_info)
+            return_value = execute_analyzer_visits_unary_operator_df(self, operator_context, code_reference,
+                                                                     self.input_data[-1],
+                                                                     self.input_data[-1].annotations,
+                                                                     return_value)
         elif function_info == ('pandas.core.frame', '__getitem__'):
             # TODO: Can this also be a select
             if self.select:
                 self.select = False
                 # Gets converted to Selection later?
                 operator_context = OperatorContext(OperatorType.SELECTION, function_info)
-                return_value = self.execute_analyzer_visits_unary_operator_df(operator_context, code_reference,
-                                                                              return_value,
-                                                                              function_info)
+                return_value = execute_analyzer_visits_unary_operator_df(self, operator_context, code_reference,
+                                                                         self.input_data[-1],
+                                                                         self.input_data[-1].annotations,
+                                                                         return_value)
             elif isinstance(return_value, MlinspectDataFrame):
                 operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
                 return_value['mlinspect_index'] = range(1, len(return_value) + 1)
-                return_value = self.execute_analyzer_visits_unary_operator_df(operator_context, code_reference,
-                                                                              return_value,
-                                                                              function_info)
+                return_value = execute_analyzer_visits_unary_operator_df(self, operator_context, code_reference,
+                                                                         self.input_data[-1],
+                                                                         self.input_data[-1].annotations,
+                                                                         return_value)
             elif isinstance(return_value, MlinspectSeries):
                 operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
                 return_value = self.execute_analyzer_visits_unary_operator_series(operator_context, code_reference,
@@ -190,10 +193,9 @@ class PandasBackend(Backend):
         code_reference, function_info, args_code = self.set_key_info
         operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
         value_before['mlinspect_index'] = range(1, len(value_after) + 1)
-        self.input_data.append(value_before)
-        self.execute_analyzer_visits_unary_operator_df(operator_context, code_reference,
-                                                       value_after, function_info, True)
-        self.input_data.pop()
+        execute_analyzer_visits_unary_operator_df(self, operator_context, code_reference,
+                                                  value_before, value_before.annotations,
+                                                  value_after, True)
 
     def execute_analyzer_visits_no_parents(self, operator_context, code_reference, return_value, function_info):
         """Execute analyzers when the current operator is a data source and does not have parents in the DAG"""
@@ -203,32 +205,8 @@ class PandasBackend(Backend):
             iterator_for_analyzer = iter_input_data_source(return_value)  # TODO: Create arrays only once
             annotation_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
             annotation_iterators.append(annotation_iterator)
-        return_value = self.store_analyzer_outputs_df(annotation_iterators, code_reference, return_value,
-                                                      operator_context)
-        return return_value
-
-    def store_analyzer_outputs_df(self, annotation_iterators, code_reference, return_value, operator_context):
-        """
-        Stores the analyzer annotations for the rows in the dataframe and the
-        analyzer annotations for the DAG operators in a map
-        """
-        dag_node_identifier = DagNodeIdentifier(operator_context.operator, code_reference,
-                                                self.code_reference_to_description.get(code_reference))
-        annotations_df = build_annotation_df_from_iters(self.analyzers, annotation_iterators)
-        annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
-        analyzer_outputs = {}
-        for analyzer in self.analyzers:
-            analyzer_outputs[analyzer] = analyzer.get_operator_annotation_after_visit()
-        self.dag_node_identifier_to_analyzer_output[dag_node_identifier] = analyzer_outputs
-        return_value = MlinspectDataFrame(return_value)
-        return_value.annotations = annotations_df
-        return_value.backend = self
-        if "mlinspect_index" in return_value.columns:
-            return_value = return_value.drop("mlinspect_index", axis=1)
-        elif "mlinspect_index_x" in return_value.columns:
-            return_value = return_value.drop(["mlinspect_index_x", "mlinspect_index_y"], axis=1)
-        assert "mlinspect_index" not in return_value.columns
-        assert isinstance(return_value, MlinspectDataFrame)
+        return_value = store_analyzer_outputs_df(self, annotation_iterators, code_reference, return_value,
+                                                 operator_context)
         return return_value
 
     def store_analyzer_outputs_series(self, annotation_iterators, code_reference, return_value, function_info):
@@ -247,28 +225,6 @@ class PandasBackend(Backend):
         return_value = MlinspectSeries(return_value)
         return_value.annotations = annotations_df
         assert isinstance(return_value, MlinspectSeries)
-        return return_value
-
-    def execute_analyzer_visits_unary_operator_df(self, operator_context, code_reference, return_value_df,
-                                                  function_info, appends_col=False):
-        """Execute analyzers when the current operator has one parent in the DAG"""
-        # pylint: disable=too-many-arguments, unused-argument
-        assert "mlinspect_index" in return_value_df.columns
-        assert isinstance(self.input_data[-1], MlinspectDataFrame)
-        annotation_iterators = []
-        for analyzer in self.analyzers:
-            analyzer_count = len(self.analyzers)
-            analyzer_index = self.analyzers.index(analyzer)
-            iterator_for_analyzer = iter_input_annotation_output_df_df(analyzer_count,
-                                                                       analyzer_index,
-                                                                       self.input_data[-1],
-                                                                       self.input_data[-1].annotations,
-                                                                       return_value_df,
-                                                                       appends_col)
-            annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
-            annotation_iterators.append(annotations_iterator)
-        return_value = self.store_analyzer_outputs_df(annotation_iterators, code_reference, return_value_df,
-                                                      operator_context)
         return return_value
 
     def execute_analyzer_visits_unary_operator_series(self, operator_context, code_reference, return_value_series,
@@ -310,9 +266,32 @@ class PandasBackend(Backend):
                                                                             return_value_df)
             annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
             annotation_iterators.append(annotations_iterator)
-        return_value = self.store_analyzer_outputs_df(annotation_iterators, code_reference, return_value_df,
-                                                      operator_context)
+        return_value = store_analyzer_outputs_df(self, annotation_iterators, code_reference, return_value_df,
+                                                 operator_context)
         return return_value
+
+
+def execute_analyzer_visits_unary_operator_df(backend, operator_context, code_reference, input_data,
+                                              input_annotations, return_value_df, appends_col=False):
+    """Execute analyzers when the current operator has one parent in the DAG"""
+    # pylint: disable=too-many-arguments, unused-argument
+    assert "mlinspect_index" in return_value_df.columns
+    assert isinstance(input_data, MlinspectDataFrame)
+    annotation_iterators = []
+    for analyzer in backend.analyzers:
+        analyzer_count = len(backend.analyzers)
+        analyzer_index = backend.analyzers.index(analyzer)
+        iterator_for_analyzer = iter_input_annotation_output_df_df(analyzer_count,
+                                                                   analyzer_index,
+                                                                   input_data,
+                                                                   input_annotations,
+                                                                   return_value_df,
+                                                                   appends_col)
+        annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
+        annotation_iterators.append(annotations_iterator)
+    return_value = store_analyzer_outputs_df(backend, annotation_iterators, code_reference, return_value_df,
+                                             operator_context)
+    return return_value
 
 
 def iter_input_data_source(output):
@@ -321,6 +300,31 @@ def iter_input_data_source(output):
     """
     output = get_df_row_iterator(output)
     return map(AnalyzerInputDataSource, output)
+
+
+def store_analyzer_outputs_df(backend, annotation_iterators, code_reference, return_value, operator_context):
+    """
+    Stores the analyzer annotations for the rows in the dataframe and the
+    analyzer annotations for the DAG operators in a map
+    """
+    dag_node_identifier = DagNodeIdentifier(operator_context.operator, code_reference,
+                                            backend.code_reference_to_description.get(code_reference))
+    annotations_df = build_annotation_df_from_iters(backend.analyzers, annotation_iterators)
+    annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
+    analyzer_outputs = {}
+    for analyzer in backend.analyzers:
+        analyzer_outputs[analyzer] = analyzer.get_operator_annotation_after_visit()
+    backend.dag_node_identifier_to_analyzer_output[dag_node_identifier] = analyzer_outputs
+    return_value = MlinspectDataFrame(return_value)
+    return_value.annotations = annotations_df
+    return_value.backend = backend
+    if "mlinspect_index" in return_value.columns:
+        return_value = return_value.drop("mlinspect_index", axis=1)
+    elif "mlinspect_index_x" in return_value.columns:
+        return_value = return_value.drop(["mlinspect_index_x", "mlinspect_index_y"], axis=1)
+    assert "mlinspect_index" not in return_value.columns
+    assert isinstance(return_value, MlinspectDataFrame)
+    return return_value
 
 
 def iter_input_annotation_output_df_df(analyzer_count, analyzer_index, input_data, input_annotations, output,

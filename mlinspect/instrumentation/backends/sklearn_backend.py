@@ -8,7 +8,7 @@ from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, 
 from mlinspect.instrumentation.backends.backend import Backend
 from mlinspect.instrumentation.backends.backend_utils import get_numpy_array_row_iterator, \
     build_annotation_df_from_iters, get_series_row_iterator
-from mlinspect.instrumentation.backends.pandas_backend import iter_input_annotation_output_df_df
+from mlinspect.instrumentation.backends.pandas_backend import execute_analyzer_visits_unary_operator_df
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectSeries, MlinspectDataFrame
 from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
 from mlinspect.instrumentation.backends.sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer, \
@@ -134,9 +134,10 @@ class SklearnBackend(Backend):
         elif function_info == ('sklearn.model_selection._split', 'train_test_split'):
             operator_context = OperatorContext(OperatorType.TRAIN_TEST_SPLIT, function_info)
             train_data, test_data = return_value
-            train_data = self.execute_analyzer_visits_unary_operator_df(operator_context, code_reference,
-                                                                        train_data,
-                                                                        function_info)
+            train_data = execute_analyzer_visits_unary_operator_df(self, operator_context, code_reference,
+                                                                   self.input_data,
+                                                                   self.input_data.annotations,
+                                                                   train_data)
             return_value = train_data, test_data
         elif function_info in {('sklearn.preprocessing._encoders', 'OneHotEncoder'),
                                ('sklearn.preprocessing._data', 'StandardScaler'),
@@ -188,52 +189,6 @@ class SklearnBackend(Backend):
         return_value.annotations = annotations_df
         self.input_data = None
         assert isinstance(return_value, MlinspectNdarray)
-        return return_value
-
-    def execute_analyzer_visits_unary_operator_df(self, operator_context, code_reference, return_value_df,
-                                                  function_info, appends_col=False):
-        """Execute analyzers when the current operator has one parent in the DAG"""
-        # pylint: disable=too-many-arguments, unused-argument
-        assert "mlinspect_index" in return_value_df.columns
-        assert isinstance(self.input_data, MlinspectDataFrame)
-        annotation_iterators = []
-        for analyzer in self.analyzers:
-            analyzer_count = len(self.analyzers)
-            analyzer_index = self.analyzers.index(analyzer)
-            iterator_for_analyzer = iter_input_annotation_output_df_df(analyzer_count,
-                                                                       analyzer_index,
-                                                                       self.input_data,
-                                                                       self.input_data.annotations,
-                                                                       return_value_df,
-                                                                       appends_col)
-            annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
-            annotation_iterators.append(annotations_iterator)
-        return_value = self.store_analyzer_outputs_df(annotation_iterators, code_reference, return_value_df,
-                                                      operator_context)
-        return return_value
-
-    def store_analyzer_outputs_df(self, annotation_iterators, code_reference, return_value, operator_context):
-        """
-        Stores the analyzer annotations for the rows in the dataframe and the
-        analyzer annotations for the DAG operators in a map
-        """
-        dag_node_identifier = DagNodeIdentifier(operator_context.operator, code_reference,
-                                                self.code_reference_to_description.get(code_reference))
-        annotations_df = build_annotation_df_from_iters(self.analyzers, annotation_iterators)
-        annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
-        analyzer_outputs = {}
-        for analyzer in self.analyzers:
-            analyzer_outputs[analyzer] = analyzer.get_operator_annotation_after_visit()
-        self.dag_node_identifier_to_analyzer_output[dag_node_identifier] = analyzer_outputs
-        return_value = MlinspectDataFrame(return_value)
-        return_value.annotations = annotations_df
-        return_value.backend = self
-        if "mlinspect_index" in return_value.columns:
-            return_value = return_value.drop("mlinspect_index", axis=1)
-        elif "mlinspect_index_x" in return_value.columns:
-            return_value = return_value.drop(["mlinspect_index_x", "mlinspect_index_y"], axis=1)
-        assert "mlinspect_index" not in return_value.columns
-        assert isinstance(return_value, MlinspectDataFrame)
         return return_value
 
 
