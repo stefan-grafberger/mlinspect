@@ -309,12 +309,6 @@ class PandasBackend(Backend):
                                                       operator_context)
         return return_value
 
-    def before_call_index_assign(self, dataframe, key, value):
-        print("before hello world")
-
-    def after_call_index_assign(self, dataframe, key, value):
-        print("after hello world")
-
 
 def iter_input_data_source(output):
     """

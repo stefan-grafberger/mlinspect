@@ -379,7 +379,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
     def score(self, X, y):
         # TODO: Probably split the transformer_estimator wrapper into two for transforemrs and estimators
-        self.transformer.score(X, y)
+        return self.transformer.score(X, y)
 
 
 # -------------------------------------------------------

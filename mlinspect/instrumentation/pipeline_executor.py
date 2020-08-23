@@ -222,7 +222,8 @@ class PipelineExecutor:
 
         # FIXME: move this into sklearn backend
         if value is not None and \
-                function_info[0] == 'mlinspect.instrumentation.backends.sklearn_backend_transformer_wrapper':
+                function_info[0] == 'mlinspect.instrumentation.backends.sklearn_backend_transformer_wrapper' and \
+                function_info[1] != "score":
             function_info = (value.module_name, str(function_string.split(".")[-1]))
 
         function_prefix = function_info[0].split(".", 1)[0]
