@@ -201,7 +201,7 @@ class WirExtractor:
             self.store_variable_wir_mapping(var_name, new_wir_node)
         elif isinstance(assign_left_ast, ast.Tuple):
             tuple_children = assign_left_ast.children[:-1]
-            for child_index, child in enumerate(tuple_children):
+            for child in tuple_children:
                 assert isinstance(child, ast.Name) and isinstance(child.ctx, ast.Store)  # TODO: load
                 new_wir_node = WirNode(self.get_next_wir_id(), child.id, "Assign",
                                        CodeReference(child.lineno, child.col_offset,
@@ -264,7 +264,7 @@ class WirExtractor:
         """
         for node in self.graph.nodes:
             if (node.operation == "Call" or node.operation == "Subscript"
-                or node.operation == "Subscript-Assign") and \
+                    or node.operation == "Subscript-Assign") and \
                     node.code_reference in code_reference_to_module:
                 node.module = code_reference_to_module[node.code_reference]
                 if node.code_reference in code_reference_to_description:

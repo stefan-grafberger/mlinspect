@@ -93,7 +93,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             result = self.one_hot_encoder_visits(X, y)
         elif self.call_function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
             result = self.standard_scaler_visits(X, y)
-        elif self.call_function_info == ('mlinspect.demo_utils', 'MyW2VTransformer'):
+        elif self.call_function_info == ('demo.healthcare.demo_utils', 'MyW2VTransformer'):
             result = self.w2v_visits(X, y)
         elif self.call_function_info == ('sklearn.impute._base', 'SimpleImputer'):
             result = self.simple_imputer_visits(X, y)
@@ -173,7 +173,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         assert isinstance(X.annotations, dict) and self in X.annotations
         result = self.transformer.fit_transform(X, y)
         self.output_dimensions = [result.shape[1]]
-        for column_index, column in enumerate(X.columns):
+        for column in X.columns:
             function_info = (self.module_name, "fit_transform")  # TODO: could also be used for multiple columns at once
             operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
             description = "Word2Vec, Column: '{}'".format(column)
@@ -194,7 +194,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         """
         Analyzer visits for the OneHotEncoder Transformer
         """
-        # pylint: disable=invalid-name
+        # pylint: disable=invalid-name, too-many-locals
         if isinstance(X.annotations, dict):
             assert isinstance(X, MlinspectDataFrame)
             assert self in X.annotations
@@ -212,16 +212,16 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 index_start = output_dimension_index[column_index]
                 index_end = output_dimension_index[column_index + 1]
 
-                column_result = execute_analyzer_visits_df_csr_column_transformer(operator_context,
-                                                                                  self.code_reference,
-                                                                                  X[[column]],
-                                                                                  X.annotations[self],
-                                                                                  result[:, index_start:index_end],
-                                                                                  self.analyzers,
-                                                                                  self.code_reference_analyzer_output_map,
-                                                                                  description)
+                col_result = execute_analyzer_visits_df_csr_column_transformer(operator_context,
+                                                                               self.code_reference,
+                                                                               X[[column]],
+                                                                               X.annotations[self],
+                                                                               result[:, index_start:index_end],
+                                                                               self.analyzers,
+                                                                               self.code_reference_analyzer_output_map,
+                                                                               description)
                 annotations_for_columns = self.annotation_result_concat_workaround or []
-                annotations_for_columns.append(column_result.annotations)
+                annotations_for_columns.append(col_result.annotations)
                 self.annotation_result_concat_workaround = annotations_for_columns
         elif isinstance(X.annotations, list):
             result = self.transformer.fit_transform(X, y)
@@ -367,17 +367,20 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                                         self.code_reference_analyzer_output_map, "fit y")
             assert isinstance(y_new, MlinspectNdarray)
             return X_new, y_new
-        elif isinstance(y, MlinspectSeries):
+        if isinstance(y, MlinspectSeries):
             operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
             y_new = execute_analyzer_visits_series_series(operator_context, self.code_reference, y, y,
                                                           self.analyzers,
                                                           self.code_reference_analyzer_output_map, "fit y")
             assert isinstance(y_new, MlinspectSeries)
             return X_new, y_new
-        else:
-            assert False
+        assert False
 
     def score(self, X, y):
+        """
+        Forward some score call of an estimator
+        """
+        # pylint: disable=invalid-name
         # TODO: Probably split the transformer_estimator wrapper into two for transforemrs and estimators
         return self.transformer.score(X, y)
 
@@ -614,8 +617,8 @@ def execute_analyzer_visits_estimator_input_nothing(operator_context, code_refer
                                                     analyzers, code_reference_analyzer_output_map, func_name):
     """Execute analyzers"""
     # pylint: disable=too-many-arguments
-    assert isinstance(data, MlinspectCsrMatrix) or isinstance(data, MlinspectNdarray)
-    assert isinstance(target, MlinspectNdarray) or isinstance(target, MlinspectSeries)
+    assert isinstance(data, (MlinspectCsrMatrix, MlinspectNdarray))
+    assert isinstance(target, (MlinspectNdarray, MlinspectSeries))
     annotation_iterators = []
     for analyzer in analyzers:
         analyzer_index = analyzers.index(analyzer)

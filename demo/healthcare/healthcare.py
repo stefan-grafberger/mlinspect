@@ -3,7 +3,6 @@ An example pipeline
 """
 import os
 
-from mlinspect.demo_utils import MyW2VTransformer, create_model
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
@@ -11,7 +10,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
-
+from demo.healthcare.demo_utils import MyW2VTransformer, create_model
 from mlinspect.utils import get_project_root
 
 COUNTIES_OF_INTEREST = ['Iowa', 'Florida', 'Ohio', 'California', 'Nevada', 'Texas', 'New York', 'Missouri', 'Virginia']
@@ -54,8 +53,8 @@ featurisation = ColumnTransformer(transformers=[
 # define the training pipeline for the model
 neural_net = KerasClassifier(build_fn=create_model, epochs=10, batch_size=1, verbose=0, input_dim=201)
 pipeline = Pipeline([
-     ('features', featurisation),
-     ('learner', neural_net)])
+    ('features', featurisation),
+    ('learner', neural_net)])
 
 # train-test split
 train_data, test_data = train_test_split(data, random_state=0)

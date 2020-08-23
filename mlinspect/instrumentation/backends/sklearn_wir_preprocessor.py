@@ -18,7 +18,7 @@ class SklearnWirPreprocessor:
         ('sklearn.preprocessing._data', 'StandardScaler'),
         ('sklearn.tree._classes', 'DecisionTreeClassifier'),
         ('sklearn.impute._base', 'SimpleImputer'),
-        ('sklearn.mlinspect.demo_utils', 'MyW2VTransformer'),
+        ('sklearn.demo.healthcare.demo_utils', 'MyW2VTransformer'),
         ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')
     }
 
@@ -150,6 +150,7 @@ class SklearnWirPreprocessor:
         """
         Get the sub-pipelines specified in the 'steps' argument of Pipelines
         """
+        # pylint: disable=too-many-locals
         parents = list(graph.predecessors(node))
         parents_with_arg_index = [(parent, graph.get_edge_data(parent, node)) for parent in parents]
         steps_list = [parent for parent in parents_with_arg_index if parent[1]['arg_index'] == 0][0][0]

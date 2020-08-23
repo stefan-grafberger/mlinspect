@@ -26,7 +26,7 @@ def test_py_pipeline_runs():
         exec(compile(parsed_ast, filename="<ast>", mode="exec"))
 
 
-def test_inspector_adult_easy_py_pipeline():
+def test_demo_nb():
     """
     Tests whether the .py version of the inspector works
     """

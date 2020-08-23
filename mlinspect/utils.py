@@ -3,12 +3,6 @@ Some useful utils for the project
 """
 import ast
 from pathlib import Path
-import numpy
-from gensim.sklearn_api import W2VTransformer
-from sklearn.exceptions import NotFittedError
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.models import Sequential
-from tensorflow.python.keras.optimizer_v2.gradient_descent import SGD
 
 import networkx
 

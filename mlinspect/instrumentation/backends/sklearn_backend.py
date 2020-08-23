@@ -38,13 +38,13 @@ class SklearnBackend(Backend):
         ('sklearn.pipeline', 'fit', 'Train Labels'): OperatorType.TRAIN_LABELS,
         ('sklearn.model_selection._split', 'train_test_split'): OperatorType.TRAIN_TEST_SPLIT,
         # TODO: We  can remove this later by checking if subclass of transformer/estimator
-        ('sklearn.mlinspect.demo_utils', 'MyW2VTransformer', 'Pipeline'): OperatorType.TRANSFORMER,
+        ('sklearn.demo.healthcare.demo_utils', 'MyW2VTransformer', 'Pipeline'): OperatorType.TRANSFORMER,
         ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier', 'Pipeline'): OperatorType.ESTIMATOR
     }
 
     replacement_type_map = {
         # TODO: We  can remove this later by checking if subclass of transformer/estimator
-        'mlinspect.demo_utils': 'sklearn.mlinspect.demo_utils',
+        'demo.healthcare.demo_utils': 'sklearn.demo.healthcare.demo_utils',
         'tensorflow.python.keras.wrappers.scikit_learn': 'sklearn.tensorflow.python.keras.wrappers.scikit_learn'
     }
 
@@ -75,7 +75,7 @@ class SklearnBackend(Backend):
     def before_call_used_value(self, function_info, subscript, call_code, value_code, value_value,
                                code_reference):
         """The value or module a function may be called on"""
-        # pylint: disable=too-many-arguments, unused-argument, no-self-use
+        # pylint: disable=too-many-arguments, unused-argument, no-self-use, unnecessary-pass
         pass
 
     def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, store, args_values):
@@ -103,7 +103,7 @@ class SklearnBackend(Backend):
             description = "Imputer (SimpleImputer)"
         elif function_info == ('sklearn.tree._classes', 'DecisionTreeClassifier'):
             description = "Decision Tree"
-        elif function_info == ('sklearn.mlinspect.demo_utils', 'MyW2VTransformer'):
+        elif function_info == ('sklearn.demo.healthcare.demo_utils', 'MyW2VTransformer'):
             description = "Word2Vec"
         elif function_info == ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'):
             description = "Neural Network"
@@ -142,7 +142,7 @@ class SklearnBackend(Backend):
                                ('sklearn.preprocessing._data', 'StandardScaler'),
                                ('sklearn.tree._classes', 'DecisionTreeClassifier'),
                                ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
-                               ('sklearn.mlinspect.demo_utils', 'MyW2VTransformer'),
+                               ('sklearn.demo.healthcare.demo_utils', 'MyW2VTransformer'),
                                ('sklearn.impute._base', 'SimpleImputer'),
                                ('sklearn.compose._column_transformer', 'ColumnTransformer'),
                                ('sklearn.pipeline', 'Pipeline')}:
@@ -193,6 +193,7 @@ class SklearnBackend(Backend):
     def execute_analyzer_visits_unary_operator_df(self, operator_context, code_reference, return_value_df,
                                                   function_info, appends_col=False):
         """Execute analyzers when the current operator has one parent in the DAG"""
+        # pylint: disable=too-many-arguments, unused-argument
         assert "mlinspect_index" in return_value_df.columns
         assert isinstance(self.input_data, MlinspectDataFrame)
         annotation_iterators = []

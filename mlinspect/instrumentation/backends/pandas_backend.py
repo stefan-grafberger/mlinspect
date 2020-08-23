@@ -82,7 +82,7 @@ class PandasBackend(Backend):
     def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, store, args_values):
         """The arguments a function may be called with"""
         # pylint: disable=too-many-arguments
-        if function_info == function_info == ('pandas.core.frame', 'merge'):
+        if function_info == ('pandas.core.frame', 'merge'):
             assert isinstance(args_values[0], MlinspectDataFrame)
             args_values[0]['mlinspect_index_y'] = range(1, len(args_values[0]) + 1)
             self.df_arg = args_values[0]
@@ -102,7 +102,7 @@ class PandasBackend(Backend):
             # TODO: Can this also be a select?
             if isinstance(args_values, MlinspectSeries):
                 self.code_reference_to_set_item_op[code_reference] = 'Selection'
-                description = "Select by series".format(code_reference)  # TODO: prettier representation
+                description = "Select by series"  # TODO: prettier representation
             elif isinstance(args_values, str):
                 self.code_reference_to_set_item_op[code_reference] = 'Projection'
                 key_arg = args_values
@@ -174,7 +174,7 @@ class PandasBackend(Backend):
         elif function_info == ('pandas.core.frame', 'groupby'):
             description = self.code_reference_to_description[code_reference]
             return_value.name = description  # TODO: Do not use name here but something else to transport the value
-        if function_info == function_info == ('pandas.core.frame', 'merge'):
+        if function_info == ('pandas.core.frame', 'merge'):
             operator_context = OperatorContext(OperatorType.JOIN, function_info)
             return_value = self.execute_analyzer_visits_join_operator_df(operator_context, code_reference,
                                                                          return_value,
@@ -184,7 +184,9 @@ class PandasBackend(Backend):
 
         return return_value
 
-    def after_call_used_setkey(self, _, value_before, value_after):
+    def after_call_used_setkey(self, args_code, value_before, value_after):
+        """The value before and after some __setkey__ call"""
+        # pylint: disable=unused-argument
         code_reference, function_info, args_code = self.set_key_info
         operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
         value_before['mlinspect_index'] = range(1, len(value_after) + 1)
@@ -195,6 +197,7 @@ class PandasBackend(Backend):
 
     def execute_analyzer_visits_no_parents(self, operator_context, code_reference, return_value, function_info):
         """Execute analyzers when the current operator is a data source and does not have parents in the DAG"""
+        # pylint: disable=unused-argument
         annotation_iterators = []
         for analyzer in self.analyzers:
             iterator_for_analyzer = iter_input_data_source(return_value)  # TODO: Create arrays only once
@@ -249,6 +252,7 @@ class PandasBackend(Backend):
     def execute_analyzer_visits_unary_operator_df(self, operator_context, code_reference, return_value_df,
                                                   function_info, appends_col=False):
         """Execute analyzers when the current operator has one parent in the DAG"""
+        # pylint: disable=too-many-arguments, unused-argument
         assert "mlinspect_index" in return_value_df.columns
         assert isinstance(self.input_data[-1], MlinspectDataFrame)
         annotation_iterators = []
@@ -288,6 +292,7 @@ class PandasBackend(Backend):
     def execute_analyzer_visits_join_operator_df(self, operator_context, code_reference, return_value_df,
                                                  function_info):
         """Execute analyzers when the current operator has one parent in the DAG"""
+        # pylint: disable=unused-argument
         assert "mlinspect_index_x" in return_value_df.columns
         assert "mlinspect_index_y" in return_value_df.columns
         assert isinstance(self.input_data[-1], MlinspectDataFrame)
@@ -323,7 +328,7 @@ def iter_input_annotation_output_df_df(analyzer_count, analyzer_index, input_dat
     """
     Create an efficient iterator for the analyzer input for operators with one parent.
     """
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals, too-many-arguments
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
     data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
@@ -359,7 +364,7 @@ def iter_input_annotation_output_df_pair_df(analyzer_count, analyzer_index, x_da
     """
     Create an efficient iterator for the analyzer input for operators with one parent.
     """
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals, too-many-arguments
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
     x_before_with_annotations = pandas.merge(x_data, x_annotations, left_on="mlinspect_index_x",
@@ -367,7 +372,7 @@ def iter_input_annotation_output_df_pair_df(analyzer_count, analyzer_index, x_da
     y_before_with_annotations = pandas.merge(y_data, y_annotations, left_on="mlinspect_index_y",
                                              right_on="mlinspect_index", suffixes=["_y_data", "_y_annot"])
     df_x_output = pandas.merge(x_before_with_annotations, output, left_on="mlinspect_index_x",
-                                    right_on="mlinspect_index_x", suffixes=["_x", "_output"])
+                               right_on="mlinspect_index_x", suffixes=["_x", "_output"])
     df_x_output_y = pandas.merge(df_x_output, y_before_with_annotations, left_on="mlinspect_index_y",
                                  right_on="mlinspect_index_y", suffixes=["_x_output", "_y_output"])
 
@@ -387,7 +392,7 @@ def iter_input_annotation_output_df_pair_df(analyzer_count, analyzer_index, x_da
 
     output_df_view = df_x_output_y.iloc[:, column_index_output_start:column_index_y_start]
     output_df_view.columns = [column for column in output.columns if
-                              (column != "mlinspect_index_x" and column != "mlinspect_index_y")]
+                              (column not in ("mlinspect_index_x", "mlinspect_index_y"))]
 
     input_y_view = df_x_output_y.iloc[:, column_index_y_start:column_index_y_end]
     input_y_view.columns = y_data.columns[0:-1]
