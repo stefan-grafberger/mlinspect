@@ -366,15 +366,17 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                                         self.analyzers,
                                                         self.code_reference_analyzer_output_map, "fit y")
             assert isinstance(y_new, MlinspectNdarray)
-            return X_new, y_new
-        if isinstance(y, MlinspectSeries):
+            result = X_new, y_new
+        elif isinstance(y, MlinspectSeries):
             operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
             y_new = execute_analyzer_visits_series_series(operator_context, self.code_reference, y, y,
                                                           self.analyzers,
                                                           self.code_reference_analyzer_output_map, "fit y")
             assert isinstance(y_new, MlinspectSeries)
-            return X_new, y_new
-        assert False
+            result = X_new, y_new
+        else:
+            assert False
+        return result
 
     def score(self, X, y):
         """

@@ -38,13 +38,15 @@ class CallCaptureTransformer(ast.NodeTransformer):
             self.add_before_call_used_args_capturing_subscript(code, node, False)
             instrumented_call_node = self.add_after_call_used_capturing(code, node, True)
 
-            return instrumented_call_node
-        if isinstance(node.ctx, ast.Store):
+            result = instrumented_call_node
+        elif isinstance(node.ctx, ast.Store):
             code = astunparse.unparse(node)
 
             self.add_before_call_used_args_capturing_subscript(code, node, True)
-            return node
-        assert False
+            result = node
+        else:
+            assert False
+        return result
 
 
     @staticmethod
