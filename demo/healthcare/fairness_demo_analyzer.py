@@ -43,23 +43,14 @@ class FairnessDemoAnalyzer(Analyzer):
         Visit an operator
         """
         current_count = - 1
-        age_groups = []
-        races = []
+
+        age_group_map = {}
+        race_count_map = {}
+        histogram_map = {}
+
         self._operator_type = operator_context.operator
 
-        if self._operator_type in {OperatorType.DATA_SOURCE, OperatorType.GROUP_BY_AGG}:
-            for row in row_iterator:
-                current_count += 1
-                if "age_group" in row.output.fields:
-                    age_group_index = row.output.fields.index("age_group")
-                    age_group = row.output.values[age_group_index]
-                    self.update_operator_output(age_group, current_count, age_groups)
-                if "race" in row.output.fields:
-                    race_index = row.output.fields.index("race")
-                    race = row.output.values[race_index]
-                    self.update_operator_output(race, current_count, races)
-                yield None
-        elif self._operator_type is OperatorType.PROJECTION:
+        if self._operator_type is OperatorType.PROJECTION:
             for row in row_iterator:
                 current_count += 1
                 if "age_group" in row.input.fields and "age_group" not in row.output.fields:
@@ -67,16 +58,26 @@ class FairnessDemoAnalyzer(Analyzer):
                     age_group = row.input.values[age_group_index]
                 else:
                     age_group = get_current_annotation(row)[0]
-                self.update_operator_output(age_group, current_count, age_groups)
                 if "race" in row.input.fields and "race" not in row.output.fields:
                     race_index = row.input.fields.index("race")
                     race = row.input.values[race_index]
                 else:
                     race = get_current_annotation(row)[1]
-                self.update_operator_output(race, current_count, races)
+
+                group_count = age_group_map.get(age_group, 0)
+                group_count += 1
+                age_group_map[age_group] = group_count
+
+                group_count = race_count_map.get(race, 0)
+                group_count += 1
+                race_count_map[race] = group_count
+
                 annotation = (age_group, race)
+                group_count = histogram_map.get(annotation, 0)
+                group_count += 1
+                histogram_map[annotation] = group_count
                 yield annotation
-        elif self._operator_type is not OperatorType.ESTIMATOR:
+        elif self._operator_type not in {OperatorType.ESTIMATOR, OperatorType.DATA_SOURCE, OperatorType.GROUP_BY_AGG}:
             for row in row_iterator:
                 current_count += 1
                 if "age_group" in row.output.fields:
@@ -84,31 +85,32 @@ class FairnessDemoAnalyzer(Analyzer):
                     age_group = row.output.values[age_group_index]
                 else:
                     age_group = get_current_annotation(row)[0]
-                self.update_operator_output(age_group, current_count, age_groups)
                 if "race" in row.output.fields:
                     race_index = row.output.fields.index("race")
                     race = row.output.values[race_index]
                 else:
                     race = get_current_annotation(row)[1]
-                self.update_operator_output(race, current_count, races)
-                self.update_operator_output(age_group, current_count, age_groups)
-                self.update_operator_output(race, current_count, races)
+
+                group_count = age_group_map.get(age_group, 0)
+                group_count += 1
+                age_group_map[age_group] = group_count
+
+                group_count = race_count_map.get(race, 0)
+                group_count += 1
+                race_count_map[race] = group_count
+
                 annotation = (age_group, race)
+                group_count = histogram_map.get(annotation, 0)
+                group_count += 1
+                histogram_map[annotation] = group_count
+
                 yield annotation
         else:
             for _ in row_iterator:
-                age_groups.append(None)
-                races.append(None)
                 yield None
 
-        self._operator_output = {"age_groups": age_groups, "races": races}
-
-    def update_operator_output(self, annotation, current_count, operator_output):
-        """
-        Append the first annotations to the operator output to showcase that it works
-        """
-        if current_count < self.row_count:
-            operator_output.append(annotation)
+        self._operator_output = {"age_group_counts": age_group_map, "race_counts": race_count_map,
+                                 "age_groups_race_counts": histogram_map}
 
     def get_operator_annotation_after_visit(self) -> any:
         assert self._operator_type
