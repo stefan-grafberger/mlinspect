@@ -42,6 +42,7 @@ class FairnessDemoAnalyzer(Analyzer):
         """
         Visit an operator
         """
+        # pylint: disable=too-many-branches, too-many-statements
         current_count = - 1
 
         age_group_map = {}
