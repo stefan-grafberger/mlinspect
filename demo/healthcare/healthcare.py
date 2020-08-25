@@ -2,6 +2,7 @@
 An example pipeline
 """
 import os
+import time
 
 import pandas as pd
 from sklearn.compose import ColumnTransformer
@@ -15,6 +16,7 @@ from mlinspect.utils import get_project_root
 
 COUNTIES_OF_INTEREST = ['Iowa', 'Florida', 'Ohio', 'California', 'Nevada', 'Texas', 'New York', 'Missouri', 'Virginia']
 
+start = time.time()
 
 # load input data sources (data generated with https://www.mockaroo.com as a single file and then split into two)
 patients = pd.read_csv(os.path.join(str(get_project_root()), "demo", "healthcare", "healthcare_patients.csv"), na_values='?')
@@ -62,3 +64,8 @@ train_data, test_data = train_test_split(data, random_state=0)
 model = pipeline.fit(train_data, train_data['label'])
 # model evaluation
 print(model.score(test_data, test_data['label']))
+
+end = time.time()
+execution_time = end - start
+print("Pipeline finished in:")
+print(execution_time)
