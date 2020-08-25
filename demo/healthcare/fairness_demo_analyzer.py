@@ -43,36 +43,65 @@ class FairnessDemoAnalyzer(Analyzer):
         Visit an operator
         """
         current_count = - 1
-        operator_output = []
+        age_groups = []
+        races = []
         self._operator_type = operator_context.operator
 
         if self._operator_type in {OperatorType.DATA_SOURCE, OperatorType.GROUP_BY_AGG}:
-            for _ in row_iterator:
+            for row in row_iterator:
                 current_count += 1
-                self.update_operator_output(None, current_count, operator_output)
+                if "age_group" in row.output.fields:
+                    age_group_index = row.output.fields.index("age_group")
+                    age_group = row.output.values[age_group_index]
+                    self.update_operator_output(age_group, current_count, age_groups)
+                if "race" in row.output.fields:
+                    race_index = row.output.fields.index("race")
+                    race = row.output.values[race_index]
+                    self.update_operator_output(race, current_count, races)
                 yield None
         elif self._operator_type is OperatorType.PROJECTION:
             for row in row_iterator:
                 current_count += 1
                 if "age_group" in row.input.fields and "age_group" not in row.output.fields:
                     age_group_index = row.input.fields.index("age_group")
-                    annotation = row.input.values[age_group_index]
+                    age_group = row.input.values[age_group_index]
                 else:
-                    annotation = get_current_annotation(row)
-                self.update_operator_output(annotation, current_count, operator_output)
+                    age_group = get_current_annotation(row)[0]
+                self.update_operator_output(age_group, current_count, age_groups)
+                if "race" in row.input.fields and "race" not in row.output.fields:
+                    race_index = row.input.fields.index("race")
+                    race = row.input.values[race_index]
+                else:
+                    race = get_current_annotation(row)[1]
+                self.update_operator_output(race, current_count, races)
+                annotation = (age_group, race)
                 yield annotation
         elif self._operator_type is not OperatorType.ESTIMATOR:
             for row in row_iterator:
                 current_count += 1
-                annotation = get_current_annotation(row)
-                self.update_operator_output(annotation, current_count, operator_output)
+                if "age_group" in row.output.fields:
+                    age_group_index = row.output.fields.index("age_group")
+                    age_group = row.output.values[age_group_index]
+                else:
+                    age_group = get_current_annotation(row)[0]
+                self.update_operator_output(age_group, current_count, age_groups)
+                if "race" in row.output.fields:
+                    race_index = row.output.fields.index("race")
+                    race = row.output.values[race_index]
+                else:
+                    race = get_current_annotation(row)[1]
+                self.update_operator_output(race, current_count, races)
+                self.update_operator_output(age_group, current_count, age_groups)
+                self.update_operator_output(race, current_count, races)
+                annotation = (age_group, race)
                 yield annotation
         else:
             for _ in row_iterator:
-                operator_output.append(None)
+                age_groups.append(None)
+                races.append(None)
                 yield None
 
-        self._operator_output = operator_output
+        self._operator_output = {"age_groups": age_groups, "races": races}
 
     def update_operator_output(self, annotation, current_count, operator_output):
         """
