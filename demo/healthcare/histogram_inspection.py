@@ -21,20 +21,18 @@ def get_current_annotation(row):
     return annotation
 
 
-class FairnessDemoAnalyzer(Analyzer):
+class HistogramInspection(Analyzer):
     """
     A simple example analyzer
     """
 
-    def __init__(self, row_count: int):
-        self.row_count = row_count
-        self._analyzer_id = self.row_count
+    def __init__(self):
         self._operator_output = None
         self._operator_type = None
 
     @property
     def analyzer_id(self):
-        return self._analyzer_id
+        return None
 
     def visit_operator(self, operator_context: OperatorContext,
                        row_iterator: Union[Iterable[AnalyzerInputDataSource], Iterable[AnalyzerInputUnaryOperator]])\
@@ -100,6 +98,7 @@ class FairnessDemoAnalyzer(Analyzer):
                 yield annotation
         elif self._operator_type is not OperatorType.ESTIMATOR:
             for row in row_iterator:
+
                 current_count += 1
                 if "age_group" in row.output.fields:
                     age_group_index = row.output.fields.index("age_group")
