@@ -36,7 +36,7 @@ Prerequisite: python >=  3.8
 Make it easy to analyze your pipeline and automatically check for common issues.
 ```python
 from mlinspect.pipeline_inspector import PipelineInspector
-from mlinspect.instrumentation.analyzers.materialize_first_rows_inspection import MaterializeFirstRowsInspection
+from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
 
 IPYNB_PATH = ...
 

@@ -7,8 +7,8 @@ import os
 from testfixtures import compare, RangeComparison
 from numpy.ma import array
 
-from mlinspect.instrumentation.inspections.inspection_input import InspectionInputRow
-from mlinspect.instrumentation.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
+from mlinspect.inspections.inspection_input import InspectionInputRow
+from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
 from mlinspect.instrumentation.dag_node import DagNode, OperatorType, CodeReference
 from mlinspect.pipeline_inspector import PipelineInspector
 from mlinspect.utils import get_project_root

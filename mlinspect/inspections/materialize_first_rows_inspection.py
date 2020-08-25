@@ -3,10 +3,10 @@ A simple example analyzer
 """
 from typing import Union, Iterable
 
-from mlinspect.instrumentation.inspections.inspection_input import OperatorContext, InspectionInputDataSource, \
+from .inspection_input import OperatorContext, InspectionInputDataSource, \
     InspectionInputUnaryOperator
-from mlinspect.instrumentation.inspections.inspection import Inspection
-from mlinspect.instrumentation.dag_node import OperatorType
+from .inspection import Inspection
+from ..instrumentation.dag_node import OperatorType
 
 
 class MaterializeFirstRowsInspection(Inspection):

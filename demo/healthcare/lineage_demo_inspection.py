@@ -4,8 +4,8 @@ A simple inspection for testing annotation propagation
 import dataclasses
 from typing import Iterable, List
 
-from mlinspect.instrumentation.inspections.inspection import Inspection
-from mlinspect.instrumentation.inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator, \
+from mlinspect.inspections.inspection import Inspection
+from mlinspect.inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator, \
     InspectionInputSinkOperator
 from mlinspect.instrumentation.dag_node import OperatorType
 

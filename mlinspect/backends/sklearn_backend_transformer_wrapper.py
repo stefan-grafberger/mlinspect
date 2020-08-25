@@ -10,14 +10,14 @@ from pandas import DataFrame
 from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator
 
-from mlinspect.instrumentation.inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator, \
+from ..inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator, \
     InspectionInputNAryOperator, InspectionInputSinkOperator
-from mlinspect.instrumentation.backends.backend_utils import get_numpy_array_row_iterator, get_df_row_iterator, \
+from .backend_utils import get_numpy_array_row_iterator, get_df_row_iterator, \
     get_csr_row_iterator, build_annotation_df_from_iters, get_series_row_iterator
-from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
-from mlinspect.instrumentation.backends.sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
-from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
-from mlinspect.instrumentation.dag_node import CodeReference, OperatorType
+from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
+from .sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
+from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
+from ..instrumentation.dag_node import CodeReference, OperatorType
 
 
 class MlinspectEstimatorTransformer(BaseEstimator):

@@ -4,18 +4,18 @@ The scikit-learn backend
 
 import networkx
 
-from mlinspect.instrumentation.inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator
-from mlinspect.instrumentation.backends.backend import Backend
-from mlinspect.instrumentation.backends.backend_utils import get_numpy_array_row_iterator, \
+from ..inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator
+from .backend import Backend
+from .backend_utils import get_numpy_array_row_iterator, \
     build_annotation_df_from_iters, get_series_row_iterator
-from mlinspect.instrumentation.backends.pandas_backend import execute_inspection_visits_unary_operator_df
-from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectSeries, MlinspectDataFrame
-from mlinspect.instrumentation.backends.sklearn_backend_ndarray_wrapper import MlinspectNdarray
-from mlinspect.instrumentation.backends.sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer, \
+from .pandas_backend import execute_inspection_visits_unary_operator_df
+from .pandas_backend_frame_wrapper import MlinspectSeries, MlinspectDataFrame
+from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
+from .sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer, \
     get_df_row_iterator
-from mlinspect.instrumentation.backends.sklearn_dag_postprocessor import SklearnDagPostprocessor
-from mlinspect.instrumentation.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
-from mlinspect.instrumentation.dag_node import OperatorType, DagNodeIdentifier
+from .sklearn_dag_postprocessor import SklearnDagPostprocessor
+from .sklearn_wir_preprocessor import SklearnWirPreprocessor
+from ..instrumentation.dag_node import OperatorType, DagNodeIdentifier
 
 
 class SklearnBackend(Backend):

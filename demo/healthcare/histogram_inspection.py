@@ -3,9 +3,9 @@ A simple example inspection
 """
 from typing import Union, Iterable
 
-from mlinspect.instrumentation.inspections.inspection_input import OperatorContext, InspectionInputDataSource, \
+from mlinspect.inspections.inspection_input import OperatorContext, InspectionInputDataSource, \
     InspectionInputUnaryOperator
-from mlinspect.instrumentation.inspections.inspection import Inspection
+from mlinspect.inspections.inspection import Inspection
 from mlinspect.instrumentation.dag_node import OperatorType
 
 

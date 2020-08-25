@@ -5,12 +5,12 @@ import os
 import ast
 from inspect import cleandoc
 
-from test.instrumentation.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
-from test.instrumentation.backends.row_index_annotation_testing_inspection import RowIndexAnnotationTestingInspection
+from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
+from test.backends.row_index_annotation_testing_inspection import RowIndexAnnotationTestingInspection
 
 import networkx
 
-from mlinspect.instrumentation.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
+from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
 from mlinspect.instrumentation.dag_node import DagNode, OperatorType, CodeReference
 from mlinspect.instrumentation.wir_extractor import WirExtractor
 from mlinspect.pipeline_inspector import PipelineInspector

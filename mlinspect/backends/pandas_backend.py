@@ -7,14 +7,14 @@ from collections import namedtuple
 import networkx
 import pandas
 
-from mlinspect.instrumentation.inspections.inspection_input import InspectionInputUnaryOperator, \
+from ..inspections.inspection_input import InspectionInputUnaryOperator, \
     InspectionInputDataSource, OperatorContext, InspectionInputNAryOperator
-from mlinspect.instrumentation.backends.backend import Backend
-from mlinspect.instrumentation.backends.backend_utils import get_df_row_iterator, build_annotation_df_from_iters, \
+from .backend import Backend
+from .backend_utils import get_df_row_iterator, build_annotation_df_from_iters, \
     get_series_row_iterator
-from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
-from mlinspect.instrumentation.backends.pandas_wir_preprocessor import PandasWirPreprocessor
-from mlinspect.instrumentation.dag_node import OperatorType, DagNodeIdentifier
+from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
+from .pandas_wir_preprocessor import PandasWirPreprocessor
+from ..instrumentation.dag_node import OperatorType, DagNodeIdentifier
 
 
 class PandasBackend(Backend):
@@ -36,7 +36,7 @@ class PandasBackend(Backend):
     }
 
     replacement_type_map = {
-        'mlinspect.instrumentation.backends.pandas_backend_frame_wrapper': 'pandas.core.frame'
+        'mlinspect.backends.pandas_backend_frame_wrapper': 'pandas.core.frame'
     }
 
     def postprocess_dag(self, dag: networkx.DiGraph) -> networkx.DiGraph:

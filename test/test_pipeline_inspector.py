@@ -6,7 +6,7 @@ import os
 import networkx
 from testfixtures import compare
 
-from mlinspect.instrumentation.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
+from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
 from mlinspect.utils import get_project_root
 from mlinspect.pipeline_inspector import PipelineInspector
 from .utils import get_expected_dag_adult_easy_ipynb, get_expected_dag_adult_easy_py

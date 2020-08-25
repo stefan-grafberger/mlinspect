@@ -4,7 +4,7 @@ The Nodes used in the WIR as nodes for the networkx.DiGraph
 import dataclasses
 from typing import Tuple
 
-from mlinspect.instrumentation.dag_node import CodeReference
+from ..instrumentation.dag_node import CodeReference
 
 
 @dataclasses.dataclass

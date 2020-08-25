@@ -3,10 +3,10 @@ Extract a DAG from the WIR (Workflow Intermediate Representation)
 """
 import networkx
 
-from mlinspect.instrumentation.backends.all_backends import get_all_backends
-from mlinspect.instrumentation.dag_node import DagNode
-from mlinspect.instrumentation.wir_extractor import WirExtractor
-from mlinspect.utils import traverse_graph_and_process_nodes
+from ..backends.all_backends import get_all_backends
+from ..instrumentation.dag_node import DagNode
+from ..instrumentation.wir_extractor import WirExtractor
+from ..utils import traverse_graph_and_process_nodes
 
 
 class WirToDagTransformer:

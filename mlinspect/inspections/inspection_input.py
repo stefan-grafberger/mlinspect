@@ -6,7 +6,7 @@ from typing import Tuple, List
 
 import numpy
 
-from mlinspect.instrumentation.dag_node import OperatorType
+from ..instrumentation.dag_node import OperatorType
 
 
 @dataclasses.dataclass(frozen=True)

@@ -5,7 +5,7 @@ import networkx
 from testfixtures import compare
 
 from mlinspect.instrumentation.dag_node import CodeReference
-from mlinspect.instrumentation.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
+from mlinspect.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
 from mlinspect.instrumentation.wir_to_dag_transformer import WirToDagTransformer
 from mlinspect.instrumentation.wir_node import WirNode
 from mlinspect.instrumentation.wir_extractor import WirExtractor

@@ -2,8 +2,8 @@
 Preprocess Sklearn WIR nodes to enable DAG extraction
 """
 
-from mlinspect.instrumentation.dag_node import DagNodeIdentifier
-from mlinspect.utils import traverse_graph_and_process_nodes
+from ..instrumentation.dag_node import DagNodeIdentifier
+from ..utils import traverse_graph_and_process_nodes
 
 
 class SklearnDagPostprocessor:

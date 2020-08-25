@@ -7,7 +7,7 @@ from functools import partial
 import numpy
 from pandas import DataFrame
 
-from mlinspect.instrumentation.inspections.inspection_input import InspectionInputRow
+from ..inspections.inspection_input import InspectionInputRow
 
 
 def build_annotation_df_from_iters(inspections, annotation_iterators):

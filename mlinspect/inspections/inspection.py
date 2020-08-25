@@ -4,7 +4,7 @@ The Interface for the Inspection
 import abc
 from typing import Union, Iterable
 
-from mlinspect.instrumentation.inspections.inspection_input import OperatorContext, InspectionInputDataSource, \
+from mlinspect.inspections.inspection_input import OperatorContext, InspectionInputDataSource, \
     InspectionInputUnaryOperator, InspectionInputNAryOperator, InspectionInputSinkOperator
 
 
