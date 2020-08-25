@@ -14,10 +14,9 @@ class Inspection(metaclass=abc.ABCMeta):
     """
 
     @property
-    @abc.abstractmethod
     def inspection_id(self):
         """The id of the inspection"""
-        raise NotImplementedError
+        return None
 
     @abc.abstractmethod
     def visit_operator(self, operator_context: OperatorContext,

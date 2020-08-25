@@ -4,9 +4,10 @@ Some util functions used in other tests
 import os
 import ast
 from inspect import cleandoc
-import networkx
 
 from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
+import networkx
+
 from demo.healthcare.lineage_demo_inspection import LineageDemoInspection
 
 from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection

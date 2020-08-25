@@ -2,11 +2,10 @@
 A simple example inspection
 """
 from typing import Union, Iterable
-
 from mlinspect.inspections.inspection_input import OperatorContext, InspectionInputDataSource, \
     InspectionInputUnaryOperator
-from mlinspect.inspections.inspection import Inspection
 from mlinspect.instrumentation.dag_node import OperatorType
+from mlinspect.inspections.inspection import Inspection
 
 
 class MissingEmbeddingInspection(Inspection):
@@ -17,10 +16,6 @@ class MissingEmbeddingInspection(Inspection):
     def __init__(self):
         self._is_embedding_operator = False
         self._missing_embedding_count = 0
-
-    @property
-    def inspection_id(self):
-        return None
 
     def visit_operator(self, operator_context: OperatorContext,
                        row_iterator: Union[Iterable[InspectionInputDataSource], Iterable[InspectionInputUnaryOperator]])\

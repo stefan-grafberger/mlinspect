@@ -3,9 +3,9 @@ A simple example analyzer
 """
 from typing import Union, Iterable
 
+from .inspection import Inspection
 from .inspection_input import OperatorContext, InspectionInputDataSource, \
     InspectionInputUnaryOperator
-from .inspection import Inspection
 from ..instrumentation.dag_node import OperatorType
 
 
@@ -17,7 +17,7 @@ class MaterializeFirstRowsInspection(Inspection):
     def __init__(self, row_count: int):
         self.row_count = row_count
         self._analyzer_id = self.row_count
-        self._operator_output = None
+        self._first_rows_op_output = None
         self._operator_type = None
 
     @property
@@ -44,14 +44,14 @@ class MaterializeFirstRowsInspection(Inspection):
             for _ in row_iterator:
                 yield None
 
-        self._operator_output = operator_output
+        self._first_rows_op_output = operator_output
 
     def get_operator_annotation_after_visit(self) -> any:
         assert self._operator_type
         if self._operator_type is not OperatorType.ESTIMATOR:
-            assert self._operator_output  # May only be called after the operator visit is finished
-            result = self._operator_output
-            self._operator_output = None
+            assert self._first_rows_op_output  # May only be called after the operator visit is finished
+            result = self._first_rows_op_output
+            self._first_rows_op_output = None
             self._operator_type = None
             return result
         self._operator_type = None

@@ -27,12 +27,8 @@ class HistogramInspection(Inspection):
     """
 
     def __init__(self):
-        self._operator_output = None
+        self._histogram_op_output = None
         self._operator_type = None
-
-    @property
-    def inspection_id(self):
-        return None
 
     def visit_operator(self, operator_context: OperatorContext,
                        row_iterator: Union[Iterable[InspectionInputDataSource], Iterable[InspectionInputUnaryOperator]])\
@@ -129,15 +125,14 @@ class HistogramInspection(Inspection):
             for _ in row_iterator:
                 yield None
 
-        self._operator_output = {"age_group_counts": age_group_map, "race_counts": race_count_map,
-                                 "age_groups_race_counts": histogram_map}
+        self._histogram_op_output = {"age_group_counts": age_group_map, "race_counts": race_count_map,
+                                     "age_groups_race_counts": histogram_map}
 
     def get_operator_annotation_after_visit(self) -> any:
         assert self._operator_type
         if self._operator_type is not OperatorType.ESTIMATOR:
-            assert self._operator_output  # May only be called after the operator visit is finished
-            result = self._operator_output
-            self._operator_output = None
+            result = self._histogram_op_output
+            self._histogram_op_output = None
             self._operator_type = None
             return result
         self._operator_type = None
