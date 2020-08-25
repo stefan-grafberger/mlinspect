@@ -4,11 +4,10 @@ Some util functions used in other tests
 import os
 import ast
 from inspect import cleandoc
+import networkx
 
 from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
-from test.backends.row_index_annotation_testing_inspection import RowIndexAnnotationTestingInspection
-
-import networkx
+from demo.healthcare.lineage_demo_inspection import LineageDemoInspection
 
 from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
 from mlinspect.instrumentation.dag_node import DagNode, OperatorType, CodeReference
@@ -329,11 +328,11 @@ def run_row_index_annotation_testing_analyzer(code):
     """
     inspection_result = PipelineInspector \
         .on_pipeline_from_string(code) \
-        .add_inspection(RowIndexAnnotationTestingInspection(10)) \
+        .add_inspection(LineageDemoInspection(10)) \
         .execute()
     analyzer_results = inspection_result.analyzer_to_annotations
-    assert RowIndexAnnotationTestingInspection(10) in analyzer_results
-    result = analyzer_results[RowIndexAnnotationTestingInspection(10)]
+    assert LineageDemoInspection(10) in analyzer_results
+    result = analyzer_results[LineageDemoInspection(10)]
     return result
 
 
@@ -343,7 +342,7 @@ def run_multiple_test_analyzers(code):
    Also useful to debug annotation propagation.
    """
     analyzers = [RandomAnnotationTestingInspection(2), MaterializeFirstRowsInspection(5),
-                 RowIndexAnnotationTestingInspection(2)]
+                 LineageDemoInspection(2)]
     inspection_result = PipelineInspector \
         .on_pipeline_from_string(code) \
         .add_inspections(analyzers) \

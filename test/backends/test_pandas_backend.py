@@ -19,8 +19,8 @@ def test_pandas_backend_row_index_annotation_propagation():
     Tests whether the pandas backend works
     """
     code = get_pandas_read_csv_and_dropna_code()
-    row_index_annotation_analyzer_result = run_row_index_annotation_testing_analyzer(code)
-    assert len(row_index_annotation_analyzer_result) == 2
+    lineage_result = run_row_index_annotation_testing_analyzer(code)
+    assert len(lineage_result) == 2
 
 
 def test_pandas_backend_annotation_propagation_multiple_analyzers():

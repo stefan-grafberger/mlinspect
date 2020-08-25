@@ -45,17 +45,15 @@ class LineageDemoInspection(Inspection):
         self._inspection_id = self.row_count
 
         self._operator_count = 0
-        self._operator_output = None
-        self._operator_type = None
+        self._op_output = None
 
     def visit_operator(self, operator_context: OperatorContext, row_iterator) -> Iterable[any]:
         """Visit an operator, generate row index number annotations and check whether they get propagated correctly"""
         # pylint: disable=too-many-branches
-        self._operator_type = operator_context.operator
         operator_output = []
         current_count = -1
 
-        if self._operator_type in {OperatorType.DATA_SOURCE, OperatorType.GROUP_BY_AGG}:
+        if operator_context.operator in {OperatorType.DATA_SOURCE, OperatorType.GROUP_BY_AGG}:
             for row in row_iterator:
                 current_count += 1
                 annotation = LineageId(self._operator_count, current_count)
@@ -63,7 +61,7 @@ class LineageDemoInspection(Inspection):
                     operator_output.append((annotation, row.output))
                 yield annotation
 
-        elif self._operator_type in {OperatorType.JOIN}:
+        elif operator_context.operator in {OperatorType.JOIN}:
             for row in row_iterator:
                 current_count += 1
 
@@ -72,7 +70,7 @@ class LineageDemoInspection(Inspection):
                 if current_count < self.row_count:
                     operator_output.append((annotation, row.output))
                 yield annotation
-        elif self._operator_type in {OperatorType.CONCATENATION}:
+        elif operator_context.operator in {OperatorType.CONCATENATION}:
             for row in row_iterator:
                 current_count += 1
 
@@ -98,13 +96,12 @@ class LineageDemoInspection(Inspection):
                     operator_output.append((annotation, None))
                 yield annotation
         self._operator_count += 1
-        self._operator_output = operator_output
+        self._op_output = operator_output
 
     def get_operator_annotation_after_visit(self) -> any:
-        assert self._operator_type and self._operator_output  # May only be called after the operator visit is finished
-        result = self._operator_output
-        self._operator_type = None
-        self._operator_output = None
+        assert self._op_output  # May only be called after the operator visit is finished
+        result = self._op_output
+        self._op_output = None
         return result
 
     @property

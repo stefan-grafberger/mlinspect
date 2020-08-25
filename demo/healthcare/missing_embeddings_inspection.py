@@ -9,18 +9,6 @@ from mlinspect.inspections.inspection import Inspection
 from mlinspect.instrumentation.dag_node import OperatorType
 
 
-def get_current_annotation(row):
-    """
-    Get the current row annotation value
-    """
-    if isinstance(row, InspectionInputUnaryOperator):
-        annotation = row.annotation.get_value_by_column_index(0)
-    else:
-        assert not isinstance(row, InspectionInputDataSource)
-        annotation = row.annotation[0].get_value_by_column_index(0)
-    return annotation
-
-
 class MissingEmbeddingInspection(Inspection):
     """
     A simple example inspection
