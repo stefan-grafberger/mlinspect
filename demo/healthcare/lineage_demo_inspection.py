@@ -1,12 +1,12 @@
 """
-A simple analyzer for testing annotation propagation
+A simple inspection for testing annotation propagation
 """
 import dataclasses
 from typing import Iterable, List
 
-from mlinspect.instrumentation.analyzers.analyzer import Analyzer
-from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputUnaryOperator, \
-    AnalyzerInputSinkOperator
+from mlinspect.instrumentation.inspections.inspection import Inspection
+from mlinspect.instrumentation.inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator, \
+    InspectionInputSinkOperator
 from mlinspect.instrumentation.dag_node import OperatorType
 
 
@@ -35,14 +35,14 @@ class ConcatLineageId:
     lineage_ids: List
 
 
-class LineageDemoInspection(Analyzer):
+class LineageDemoInspection(Inspection):
     """
-    A simple analyzer for testing annotation propagation
+    A simple inspection for testing annotation propagation
     """
 
     def __init__(self, row_count: int):
         self.row_count = row_count
-        self._analyzer_id = self.row_count
+        self._inspection_id = self.row_count
 
         self._operator_count = 0
         self._operator_output = None
@@ -85,14 +85,14 @@ class LineageDemoInspection(Analyzer):
             for row in row_iterator:
                 current_count += 1
 
-                if isinstance(row, AnalyzerInputUnaryOperator):
+                if isinstance(row, InspectionInputUnaryOperator):
                     annotation = row.annotation.get_value_by_column_index(0)
-                elif isinstance(row, AnalyzerInputSinkOperator):
+                elif isinstance(row, InspectionInputSinkOperator):
                     annotation = row.annotation[0].get_value_by_column_index(0)
                 else:
                     assert False
 
-                if current_count < self.row_count and not isinstance(row, AnalyzerInputSinkOperator):
+                if current_count < self.row_count and not isinstance(row, InspectionInputSinkOperator):
                     operator_output.append((annotation, row.output))
                 elif current_count < self.row_count:
                     operator_output.append((annotation, None))
@@ -108,5 +108,5 @@ class LineageDemoInspection(Analyzer):
         return result
 
     @property
-    def analyzer_id(self):
-        return self._analyzer_id
+    def inspection_id(self):
+        return self._inspection_id

@@ -6,7 +6,7 @@ import os
 import networkx
 from testfixtures import compare
 
-from mlinspect.instrumentation.analyzers.materialize_first_rows_analyzer import MaterializeFirstRowsAnalyzer
+from mlinspect.instrumentation.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
 from mlinspect.utils import get_project_root
 from mlinspect.pipeline_inspector import PipelineInspector
 from .utils import get_expected_dag_adult_easy_ipynb, get_expected_dag_adult_easy_py
@@ -21,7 +21,7 @@ def test_inspector_adult_easy_py_pipeline():
     """
     inspection_result = PipelineInspector\
         .on_pipeline_from_py_file(ADULT_EASY_FILE_PY)\
-        .add_analyzer(MaterializeFirstRowsAnalyzer(5))\
+        .add_inspection(MaterializeFirstRowsInspection(5))\
         .execute()
     extracted_dag = inspection_result.dag
     expected_dag = get_expected_dag_adult_easy_py()
@@ -34,7 +34,7 @@ def test_inspector_adult_easy_ipynb_pipeline():
     """
     inspection_result = PipelineInspector\
         .on_pipeline_from_ipynb_file(FILE_NB)\
-        .add_analyzer(MaterializeFirstRowsAnalyzer(5))\
+        .add_inspection(MaterializeFirstRowsInspection(5))\
         .execute()
     extracted_dag = inspection_result.dag
     expected_dag = get_expected_dag_adult_easy_ipynb()
@@ -50,7 +50,7 @@ def test_inspector_adult_easy_str_pipeline():
 
         inspection_result = PipelineInspector\
             .on_pipeline_from_string(code)\
-            .add_analyzer(MaterializeFirstRowsAnalyzer(5))\
+            .add_inspection(MaterializeFirstRowsInspection(5))\
             .execute()
         extracted_dag = inspection_result.dag
         expected_dag = get_expected_dag_adult_easy_py()

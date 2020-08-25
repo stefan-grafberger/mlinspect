@@ -8,7 +8,7 @@ from typing import List
 import nbformat
 from nbconvert import PythonExporter
 
-from .analyzers.analyzer import Analyzer
+from .inspections.inspection import Inspection
 from .backends.all_backends import get_all_backends
 from .call_capture_transformer import CallCaptureTransformer
 from .dag_node import CodeReference, DagNodeIdentifier
@@ -29,12 +29,12 @@ class PipelineExecutor:
     code_reference_to_module = {}
 
     def run(self, notebook_path: str or None, python_path: str or None, python_code: str or None,
-            analyzers: List[Analyzer]) -> InspectionResult:
+            inspections: List[Inspection]) -> InspectionResult:
         """
         Instrument and execute the pipeline
         """
         # pylint: disable=no-self-use
-        self.initialize_static_variables(analyzers)
+        self.initialize_static_variables(inspections)
 
         source_code = self.load_source_code(notebook_path, python_path, python_code)
         parsed_ast = ast.parse(source_code)
@@ -60,41 +60,41 @@ class PipelineExecutor:
         for backend in self.backend_map.values():
             dag = backend.postprocess_dag(dag)
 
-        analyzer_to_call_to_annotation = self.build_analyzer_result_map(dag)
+        inspection_to_call_to_annotation = self.build_inspection_result_map(dag)
 
-        return InspectionResult(dag, analyzer_to_call_to_annotation)
+        return InspectionResult(dag, inspection_to_call_to_annotation)
 
-    def initialize_static_variables(self, analyzers):
+    def initialize_static_variables(self, inspections):
         """
         Because variables that the user code has to update are static, we need to set them here
         """
         PipelineExecutor.backend_map = dict((backend.prefix, backend) for backend in get_all_backends())
         for backend in self.backend_map.values():
-            backend.analyzers = analyzers
+            backend.inspections = inspections
         PipelineExecutor.script_scope = {}
         PipelineExecutor.code_reference_to_module = {}
 
-    def build_analyzer_result_map(self, dag):
+    def build_inspection_result_map(self, dag):
         """
-        Get the analyzer DAG annotations from the backend and build a map with it for convenient usage
+        Get the inspection DAG annotations from the backend and build a map with it for convenient usage
         """
         dag_node_identifiers_to_dag_nodes = {}
         for node in dag.nodes:
             dag_node_identifier = DagNodeIdentifier(node.operator_type, node.code_reference, node.description)
             dag_node_identifiers_to_dag_nodes[dag_node_identifier] = node
 
-        dag_node_identifier_to_analyzer_output = {}
+        dag_node_identifier_to_inspection_output = {}
         for backend in self.backend_map.values():
-            dag_node_identifier_to_analyzer_output = {**dag_node_identifier_to_analyzer_output,
-                                                      **backend.dag_node_identifier_to_analyzer_output}
-        analyzer_to_dag_node_to_annotation = {}
-        for dag_node_identifier, analyzer_output_map in dag_node_identifier_to_analyzer_output.items():
-            for analyzer, annotation in analyzer_output_map.items():
-                dag_node_to_annotation = analyzer_to_dag_node_to_annotation.get(analyzer, {})
+            dag_node_identifier_to_inspection_output = {**dag_node_identifier_to_inspection_output,
+                                                        **backend.dag_node_identifier_to_inspection_output}
+        inspection_to_dag_node_to_annotation = {}
+        for dag_node_identifier, inspection_output_map in dag_node_identifier_to_inspection_output.items():
+            for inspection, annotation in inspection_output_map.items():
+                dag_node_to_annotation = inspection_to_dag_node_to_annotation.get(inspection, {})
                 dag_node = dag_node_identifiers_to_dag_nodes[dag_node_identifier]
                 dag_node_to_annotation[dag_node] = annotation
-                analyzer_to_dag_node_to_annotation[analyzer] = dag_node_to_annotation
-        return analyzer_to_dag_node_to_annotation
+                inspection_to_dag_node_to_annotation[inspection] = dag_node_to_annotation
+        return inspection_to_dag_node_to_annotation
 
     @staticmethod
     def instrument_pipeline(parsed_ast):

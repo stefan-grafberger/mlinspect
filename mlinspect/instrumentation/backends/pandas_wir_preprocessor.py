@@ -14,7 +14,7 @@ class PandasWirPreprocessor:
 
     @staticmethod
     def preprocess_wir(graph, wir_post_processing_map):
-        """Associate DAG nodes with the correct analyzer output from sklearn pipelines"""
+        """Associate DAG nodes with the correct inspection output from sklearn pipelines"""
         def process_node(node, _):
             if node.module == ('pandas.core.frame', '__getitem__'):
                 operator_type = wir_post_processing_map[node.code_reference]

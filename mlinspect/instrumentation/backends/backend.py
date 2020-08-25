@@ -13,8 +13,8 @@ class Backend(metaclass=abc.ABCMeta):
 
     def __init__(self):
         self.code_reference_to_description = {}
-        self.dag_node_identifier_to_analyzer_output = {}
-        self.analyzers = []
+        self.dag_node_identifier_to_inspection_output = {}
+        self.inspections = []
 
     @property
     @abc.abstractmethod

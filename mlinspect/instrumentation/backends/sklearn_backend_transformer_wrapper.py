@@ -10,8 +10,8 @@ from pandas import DataFrame
 from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator
 
-from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputUnaryOperator, \
-    AnalyzerInputNAryOperator, AnalyzerInputSinkOperator
+from mlinspect.instrumentation.inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator, \
+    InspectionInputNAryOperator, InspectionInputSinkOperator
 from mlinspect.instrumentation.backends.backend_utils import get_numpy_array_row_iterator, get_df_row_iterator, \
     get_csr_row_iterator, build_annotation_df_from_iters, get_series_row_iterator
 from mlinspect.instrumentation.backends.pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
@@ -29,7 +29,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, transformer, code_reference: CodeReference, analyzers, code_reference_analyzer_output_map,
+    def __init__(self, transformer, code_reference: CodeReference, inspections, code_ref_inspection_output_map,
                  output_dimensions=None, transformer_uuid=None):
         # pylint: disable=too-many-arguments
         # None arguments are not passed directly when we create them. Still needed though because the
@@ -41,8 +41,8 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         self.module_name = module.__name__
         self.call_function_info = (module.__name__, transformer.__class__.__name__)
         self.code_reference = code_reference
-        self.analyzers = analyzers
-        self.code_reference_analyzer_output_map = code_reference_analyzer_output_map
+        self.inspections = inspections
+        self.code_ref_inspection_output_map = code_ref_inspection_output_map
         self.output_dimensions = output_dimensions
         self.annotation_result_concat_workaround = None
         self.parent_transformer = None  # needed for nested pipelines
@@ -107,7 +107,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             transformers_tuples = self.transformer.steps
             transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
             for transformer in transformers:
-                self.code_reference_analyzer_output_map.update(transformer.code_reference_analyzer_output_map)
+                self.code_ref_inspection_output_map.update(transformer.code_ref_inspection_output_map)
         else:
             result = self.transformer.fit_transform(X, y)
 
@@ -115,7 +115,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
     def standard_scaler_visits(self, X, y):
         """
-        Analyzer visits for the StandardScaler Transformer
+        Inspection visits for the StandardScaler Transformer
         """
         # pylint: disable=invalid-name
         assert isinstance(X.annotations, dict) and self in X.annotations
@@ -125,14 +125,14 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
             operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
             description = "Numerical Encoder (StandardScaler), Column: '{}'".format(column)
-            column_result = execute_analyzer_visits_df_array_column_transformer(operator_context,
-                                                                                self.code_reference,
-                                                                                X[[column]],
-                                                                                X.annotations[self],
-                                                                                result[:, column_index],
-                                                                                self.analyzers,
-                                                                                self.code_reference_analyzer_output_map,
-                                                                                description)
+            column_result = execute_inspection_visits_df_array_column_transformer(operator_context,
+                                                                                  self.code_reference,
+                                                                                  X[[column]],
+                                                                                  X.annotations[self],
+                                                                                  result[:, column_index],
+                                                                                  self.inspections,
+                                                                                  self.code_ref_inspection_output_map,
+                                                                                  description)
             annotations_for_columns = self.annotation_result_concat_workaround or []
             annotations_for_columns.append(column_result.annotations)
             self.annotation_result_concat_workaround = annotations_for_columns
@@ -140,7 +140,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
     def simple_imputer_visits(self, X, y):
         """
-        Analyzer visits for the StandardScaler Transformer
+        Inspection visits for the StandardScaler Transformer
         """
         # pylint: disable=invalid-name
         assert isinstance(X.annotations, dict) and self.parent_transformer in X.annotations
@@ -150,14 +150,15 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
             operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
             description = "Imputer (SimpleImputer), Column: '{}'".format(column)
-            column_result = execute_analyzer_visits_df_array_column_transformer(operator_context,
-                                                                                self.code_reference,
-                                                                                X[[column]],
-                                                                                X.annotations[self.parent_transformer],
-                                                                                result[:, column_index],
-                                                                                self.analyzers,
-                                                                                self.code_reference_analyzer_output_map,
-                                                                                description)
+            column_result = execute_inspection_visits_df_array_column_transformer(operator_context,
+                                                                                  self.code_reference,
+                                                                                  X[[column]],
+                                                                                  X.annotations[
+                                                                                      self.parent_transformer],
+                                                                                  result[:, column_index],
+                                                                                  self.inspections,
+                                                                                  self.code_ref_inspection_output_map,
+                                                                                  description)
             annotations_for_columns = self.annotation_result_concat_workaround or []
             annotations_for_columns.append((column, column_result.annotations))
             self.annotation_result_concat_workaround = annotations_for_columns
@@ -167,7 +168,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
     def w2v_visits(self, X, y):
         """
-        Analyzer visits for the StandardScaler Transformer
+        Inspection visits for the StandardScaler Transformer
         """
         # pylint: disable=invalid-name
         assert isinstance(X.annotations, dict) and self in X.annotations
@@ -177,14 +178,14 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             function_info = (self.module_name, "fit_transform")  # TODO: could also be used for multiple columns at once
             operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
             description = "Word2Vec, Column: '{}'".format(column)
-            column_result = execute_analyzer_visits_df_array_column_transformer(operator_context,
-                                                                                self.code_reference,
-                                                                                X[[column]],
-                                                                                X.annotations[self],
-                                                                                result[:, :],
-                                                                                self.analyzers,
-                                                                                self.code_reference_analyzer_output_map,
-                                                                                description)
+            column_result = execute_inspection_visits_df_array_column_transformer(operator_context,
+                                                                                  self.code_reference,
+                                                                                  X[[column]],
+                                                                                  X.annotations[self],
+                                                                                  result[:, :],
+                                                                                  self.inspections,
+                                                                                  self.code_ref_inspection_output_map,
+                                                                                  description)
             annotations_for_columns = self.annotation_result_concat_workaround or []
             annotations_for_columns.append(column_result.annotations)
             self.annotation_result_concat_workaround = annotations_for_columns
@@ -192,7 +193,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
     def one_hot_encoder_visits(self, X, y):
         """
-        Analyzer visits for the OneHotEncoder Transformer
+        Inspection visits for the OneHotEncoder Transformer
         """
         # pylint: disable=invalid-name, too-many-locals
         if isinstance(X.annotations, dict):
@@ -212,14 +213,14 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 index_start = output_dimension_index[column_index]
                 index_end = output_dimension_index[column_index + 1]
 
-                col_result = execute_analyzer_visits_df_csr_column_transformer(operator_context,
-                                                                               self.code_reference,
-                                                                               X[[column]],
-                                                                               X.annotations[self],
-                                                                               result[:, index_start:index_end],
-                                                                               self.analyzers,
-                                                                               self.code_reference_analyzer_output_map,
-                                                                               description)
+                col_result = execute_inspection_visits_df_csr_column_transformer(operator_context,
+                                                                                 self.code_reference,
+                                                                                 X[[column]],
+                                                                                 X.annotations[self],
+                                                                                 result[:, index_start:index_end],
+                                                                                 self.inspections,
+                                                                                 self.code_ref_inspection_output_map,
+                                                                                 description)
                 annotations_for_columns = self.annotation_result_concat_workaround or []
                 annotations_for_columns.append(col_result.annotations)
                 self.annotation_result_concat_workaround = annotations_for_columns
@@ -240,14 +241,14 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 index_start = output_dimension_index[column_index]
                 index_end = output_dimension_index[column_index + 1]
 
-                column_result = execute_analyzer_visits_array_array(operator_context,
-                                                                    self.code_reference,
-                                                                    X[:, column_index],
-                                                                    annotations,
-                                                                    result[:, index_start:index_end],
-                                                                    self.analyzers,
-                                                                    self.code_reference_analyzer_output_map,
-                                                                    description)
+                column_result = execute_inspection_visits_array_array(operator_context,
+                                                                      self.code_reference,
+                                                                      X[:, column_index],
+                                                                      annotations,
+                                                                      result[:, index_start:index_end],
+                                                                      self.inspections,
+                                                                      self.code_ref_inspection_output_map,
+                                                                      description)
                 annotations_for_columns = self.annotation_result_concat_workaround or []
                 annotations_for_columns.append(column_result.annotations)
                 self.annotation_result_concat_workaround = annotations_for_columns
@@ -268,7 +269,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
     def column_transformer_visits_concat(self, result):
         """
-        Analyzer visits for the concat DAG node
+        Inspection visits for the concat DAG node
         """
         # pylint: disable=too-many-locals
         result_indices = [0]
@@ -292,13 +293,14 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         operator_context = OperatorContext(OperatorType.CONCATENATION, function_info)
         description = "concat"
         if isinstance(result, csr_matrix):
-            result = execute_analyzer_visits_csr_list_csr(operator_context, self.code_reference,
-                                                          transformer_data_with_annotations, result, self.analyzers,
-                                                          self.code_reference_analyzer_output_map, description)
+            result = execute_inspection_visits_csr_list_csr(operator_context, self.code_reference,
+                                                            transformer_data_with_annotations, result, self.inspections,
+                                                            self.code_ref_inspection_output_map, description)
         elif isinstance(result, numpy.ndarray):
-            result = execute_analyzer_visits_array_list_array(operator_context, self.code_reference,
-                                                              transformer_data_with_annotations, result, self.analyzers,
-                                                              self.code_reference_analyzer_output_map, description)
+            result = execute_inspection_visits_array_list_array(operator_context, self.code_reference,
+                                                                transformer_data_with_annotations, result,
+                                                                self.inspections,
+                                                                self.code_ref_inspection_output_map, description)
         else:
             assert False
         return result
@@ -310,11 +312,11 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         transformers_tuples = self.transformer.transformers_[:-1]
         transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
         for transformer in transformers:
-            self.code_reference_analyzer_output_map.update(transformer.code_reference_analyzer_output_map)
+            self.code_ref_inspection_output_map.update(transformer.code_ref_inspection_output_map)
 
     def column_transformer_visits_projections(self, X):
         """
-        Analyzer visits for the different projections
+        Inspection visits for the different projections
         """
         # pylint: disable=invalid-name
         transformers_tuples = self.transformer.transformers
@@ -327,24 +329,24 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
             operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
             description = "to ['{}'] (ColumnTransformer)".format(column)
-            X_new[0] = execute_analyzer_visits_df_df(operator_context, self.code_reference, X_old,
-                                                     projected_df, self.analyzers,
-                                                     self.code_reference_analyzer_output_map, description,
-                                                     transformer, X_new[0])
+            X_new[0] = execute_inspection_visits_df_df(operator_context, self.code_reference, X_old,
+                                                       projected_df, self.inspections,
+                                                       self.code_ref_inspection_output_map, description,
+                                                       transformer, X_new[0])
         return X_new[0]
 
     def estimator_visits(self, X, y):
         """
-        Analyzer visits for the estimator DAG node
+        Inspection visits for the estimator DAG node
         """
         # pylint: disable=invalid-name
         function_info = (self.module_name, "fit")  # TODO: nested pipelines
         assert y is not None
         operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
         description = "fit"
-        execute_analyzer_visits_estimator_input_nothing(operator_context, self.code_reference,
-                                                        X, y, self.analyzers,
-                                                        self.code_reference_analyzer_output_map, description)
+        execute_inspection_visits_estimator_input_nothing(operator_context, self.code_reference,
+                                                          X, y, self.inspections,
+                                                          self.code_ref_inspection_output_map, description)
         X_new = X
         y_new = y
         return X_new, y_new
@@ -357,21 +359,21 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         # pylint: disable=invalid-name
         function_info = (self.module_name, "fit")  # TODO: nested pipelines
         operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
-        X_new = execute_analyzer_visits_df_df(operator_context, self.code_reference, X, X, self.analyzers,
-                                              self.code_reference_analyzer_output_map, "fit X")
+        X_new = execute_inspection_visits_df_df(operator_context, self.code_reference, X, X, self.inspections,
+                                                self.code_ref_inspection_output_map, "fit X")
         assert y is not None
         if isinstance(y, MlinspectNdarray):
             operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
-            y_new = execute_analyzer_visits_array_array(operator_context, self.code_reference, y, y.annotations, y,
-                                                        self.analyzers,
-                                                        self.code_reference_analyzer_output_map, "fit y")
+            y_new = execute_inspection_visits_array_array(operator_context, self.code_reference, y, y.annotations, y,
+                                                          self.inspections,
+                                                          self.code_ref_inspection_output_map, "fit y")
             assert isinstance(y_new, MlinspectNdarray)
             result = X_new, y_new
         elif isinstance(y, MlinspectSeries):
             operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
-            y_new = execute_analyzer_visits_series_series(operator_context, self.code_reference, y, y,
-                                                          self.analyzers,
-                                                          self.code_reference_analyzer_output_map, "fit y")
+            y_new = execute_inspection_visits_series_series(operator_context, self.code_reference, y, y,
+                                                            self.inspections,
+                                                            self.code_ref_inspection_output_map, "fit y")
             assert isinstance(y_new, MlinspectSeries)
             result = X_new, y_new
         else:
@@ -388,48 +390,48 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
 
 # -------------------------------------------------------
-# Functions to create the iterators for the analyzers
+# Functions to create the iterators for the inspections
 # -------------------------------------------------------
 
-def iter_input_annotation_output_df_array(analyzer_index, input_data, annotations, output_data):
+def iter_input_annotation_output_df_array(inspection_index, input_data, annotations, output_data):
     """
-    Create an efficient iterator for the analyzer input
+    Create an efficient iterator for the inspection input
     """
     # pylint: disable=too-many-locals
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
 
-    annotation_df_view = annotations.iloc[:, analyzer_index:analyzer_index + 1]
+    annotation_df_view = annotations.iloc[:, inspection_index:inspection_index + 1]
 
     input_rows = get_df_row_iterator(input_data)
     annotation_rows = get_df_row_iterator(annotation_df_view)
     output_rows = get_numpy_array_row_iterator(output_data, False)
 
-    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
+    return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
 
 
-def iter_input_annotation_output_df_csr(analyzer_index, input_data, annotations, output_data):
+def iter_input_annotation_output_df_csr(inspection_index, input_data, annotations, output_data):
     """
-    Create an efficient iterator for the analyzer input
+    Create an efficient iterator for the inspection input
     """
     # pylint: disable=too-many-locals
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
 
-    annotation_df_view = annotations.iloc[:, analyzer_index:analyzer_index + 1]
+    annotation_df_view = annotations.iloc[:, inspection_index:inspection_index + 1]
 
     input_rows = get_df_row_iterator(input_data)
     annotation_rows = get_df_row_iterator(annotation_df_view)
     output_rows = get_csr_row_iterator(output_data)
 
-    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
+    return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
 
 
-def iter_input_annotation_output_csr_list_csr(analyzer_index, transformer_data_with_annotations, output_data):
+def iter_input_annotation_output_csr_list_csr(inspection_index, transformer_data_with_annotations, output_data):
     """
-    Create an efficient iterator for the analyzer input
+    Create an efficient iterator for the inspection input
     """
     # pylint: disable=too-many-locals
     # Performance tips:
@@ -438,7 +440,7 @@ def iter_input_annotation_output_csr_list_csr(analyzer_index, transformer_data_w
     input_iterators = []
     annotation_iterators = []
     for input_data, annotations in transformer_data_with_annotations:
-        annotation_df_view = annotations.iloc[:, analyzer_index:analyzer_index + 1]
+        annotation_df_view = annotations.iloc[:, inspection_index:inspection_index + 1]
 
         input_iterators.append(get_csr_row_iterator(input_data))
         annotation_iterators.append(get_df_row_iterator(annotation_df_view))
@@ -448,13 +450,13 @@ def iter_input_annotation_output_csr_list_csr(analyzer_index, transformer_data_w
 
     output_rows = get_csr_row_iterator(output_data)
 
-    return map(lambda input_tuple: AnalyzerInputNAryOperator(*input_tuple),
+    return map(lambda input_tuple: InspectionInputNAryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
 
 
-def iter_input_annotation_output_array_list_array(analyzer_index, transformer_data_with_annotations, output_data):
+def iter_input_annotation_output_array_list_array(inspection_index, transformer_data_with_annotations, output_data):
     """
-    Create an efficient iterator for the analyzer input
+    Create an efficient iterator for the inspection input
     """
     # pylint: disable=too-many-locals
     # Performance tips:
@@ -463,7 +465,7 @@ def iter_input_annotation_output_array_list_array(analyzer_index, transformer_da
     input_iterators = []
     annotation_iterators = []
     for input_data, annotations in transformer_data_with_annotations:
-        annotation_df_view = annotations.iloc[:, analyzer_index:analyzer_index + 1]
+        annotation_df_view = annotations.iloc[:, inspection_index:inspection_index + 1]
 
         input_iterators.append(get_numpy_array_row_iterator(input_data))
         annotation_iterators.append(get_df_row_iterator(annotation_df_view))
@@ -473,13 +475,13 @@ def iter_input_annotation_output_array_list_array(analyzer_index, transformer_da
 
     output_rows = get_numpy_array_row_iterator(output_data, False)
 
-    return map(lambda input_tuple: AnalyzerInputNAryOperator(*input_tuple),
+    return map(lambda input_tuple: InspectionInputNAryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
 
 
-def iter_input_annotation_output_estimator_nothing(analyzer_index, data, target):
+def iter_input_annotation_output_estimator_nothing(inspection_index, data, target):
     """
-    Create an efficient iterator for the analyzer input
+    Create an efficient iterator for the inspection input
     """
     # pylint: disable=too-many-locals
     # Performance tips:
@@ -488,7 +490,7 @@ def iter_input_annotation_output_estimator_nothing(analyzer_index, data, target)
     input_iterators = []
     annotation_iterators = []
 
-    data_annotation_df_view = data.annotations.iloc[:, analyzer_index:analyzer_index + 1]
+    data_annotation_df_view = data.annotations.iloc[:, inspection_index:inspection_index + 1]
     if isinstance(data, MlinspectCsrMatrix):
         input_iterators.append(get_csr_row_iterator(data))
     elif isinstance(data, MlinspectNdarray):
@@ -497,7 +499,7 @@ def iter_input_annotation_output_estimator_nothing(analyzer_index, data, target)
         assert False
     annotation_iterators.append(get_df_row_iterator(data_annotation_df_view))
 
-    target_annotation_df_view = target.annotations.iloc[:, analyzer_index:analyzer_index + 1]
+    target_annotation_df_view = target.annotations.iloc[:, inspection_index:inspection_index + 1]
     if isinstance(target, MlinspectNdarray):
         input_iterators.append(get_numpy_array_row_iterator(target))
     elif isinstance(target, MlinspectSeries):
@@ -509,13 +511,13 @@ def iter_input_annotation_output_estimator_nothing(analyzer_index, data, target)
     input_rows = map(list, zip(*input_iterators))
     annotation_rows = map(list, zip(*annotation_iterators))
 
-    return map(lambda input_tuple: AnalyzerInputSinkOperator(*input_tuple),
+    return map(lambda input_tuple: InspectionInputSinkOperator(*input_tuple),
                zip(input_rows, annotation_rows))
 
 
-def iter_input_annotation_output_df_df(analyzer_index, input_df, annotation_df, output_df):
+def iter_input_annotation_output_df_df(inspection_index, input_df, annotation_df, output_df):
     """
-    Create an efficient iterator for the analyzer input
+    Create an efficient iterator for the inspection input
     """
     # pylint: disable=too-many-locals
     # Performance tips:
@@ -523,19 +525,19 @@ def iter_input_annotation_output_df_df(analyzer_index, input_df, annotation_df, 
     assert isinstance(input_df, DataFrame)
     assert isinstance(output_df, DataFrame)
 
-    annotation_df_view = annotation_df.iloc[:, analyzer_index:analyzer_index + 1]
+    annotation_df_view = annotation_df.iloc[:, inspection_index:inspection_index + 1]
 
     input_rows = get_df_row_iterator(input_df)
     annotation_rows = get_df_row_iterator(annotation_df_view)
     output_rows = get_df_row_iterator(output_df)
 
-    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
+    return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
 
 
-def iter_input_annotation_output_array_array(analyzer_index, input_df, annotation_df, output_df):
+def iter_input_annotation_output_array_array(inspection_index, input_df, annotation_df, output_df):
     """
-    Create an efficient iterator for the analyzer input
+    Create an efficient iterator for the inspection input
     """
     # pylint: disable=too-many-locals
     # Performance tips:
@@ -543,19 +545,19 @@ def iter_input_annotation_output_array_array(analyzer_index, input_df, annotatio
     assert isinstance(input_df, numpy.ndarray)
     assert isinstance(output_df, numpy.ndarray)
 
-    annotation_df_view = annotation_df.iloc[:, analyzer_index:analyzer_index + 1]
+    annotation_df_view = annotation_df.iloc[:, inspection_index:inspection_index + 1]
 
     input_rows = get_numpy_array_row_iterator(input_df)
     annotation_rows = get_df_row_iterator(annotation_df_view)
     output_rows = get_numpy_array_row_iterator(output_df, False)
 
-    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
+    return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
 
 
-def iter_input_annotation_output_series_series(analyzer_index, input_series, annotation_df, output_series):
+def iter_input_annotation_output_series_series(inspection_index, input_series, annotation_df, output_series):
     """
-    Create an efficient iterator for the analyzer input
+    Create an efficient iterator for the inspection input
     """
     # pylint: disable=too-many-locals
     # Performance tips:
@@ -563,200 +565,203 @@ def iter_input_annotation_output_series_series(analyzer_index, input_series, ann
     assert isinstance(input_series, MlinspectSeries)
     assert isinstance(output_series, MlinspectSeries)
 
-    annotation_df_view = annotation_df.iloc[:, analyzer_index:analyzer_index + 1]
+    annotation_df_view = annotation_df.iloc[:, inspection_index:inspection_index + 1]
 
     input_rows = get_series_row_iterator(input_series)
     annotation_rows = get_df_row_iterator(annotation_df_view)
     output_rows = get_series_row_iterator(output_series)
 
-    return map(lambda input_tuple: AnalyzerInputUnaryOperator(*input_tuple),
+    return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
 
+
 # -------------------------------------------------------
-# Execute analyzers functions
+# Execute inspections functions
 # -------------------------------------------------------
 
 
-def execute_analyzer_visits_csr_list_csr(operator_context, code_reference, transformer_data_with_annotations,
-                                         output_data, analyzers,
-                                         code_reference_analyzer_output_map, func_name):
-    """Execute analyzers"""
+def execute_inspection_visits_csr_list_csr(operator_context, code_reference, transformer_data_with_annotations,
+                                           output_data, inspections,
+                                           code_ref_inspection_output_map, func_name):
+    """Execute inspections"""
     # pylint: disable=too-many-arguments
     annotation_iterators = []
-    for analyzer in analyzers:
-        analyzer_index = analyzers.index(analyzer)
-        iterator_for_analyzer = iter_input_annotation_output_csr_list_csr(analyzer_index,
-                                                                          transformer_data_with_annotations,
-                                                                          output_data)
-        annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
+    for inspection in inspections:
+        inspection_index = inspections.index(inspection)
+        iterator_for_inspection = iter_input_annotation_output_csr_list_csr(inspection_index,
+                                                                            transformer_data_with_annotations,
+                                                                            output_data)
+        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_analyzer_outputs_csr(annotation_iterators, code_reference, output_data, analyzers,
-                                              code_reference_analyzer_output_map, func_name)
+    return_value = store_inspection_outputs_csr(annotation_iterators, code_reference, output_data, inspections,
+                                                code_ref_inspection_output_map, func_name)
     assert isinstance(return_value, MlinspectCsrMatrix)
     return return_value
 
 
-def execute_analyzer_visits_array_list_array(operator_context, code_reference, transformer_data_with_annotations,
-                                             output_data, analyzers,
-                                             code_reference_analyzer_output_map, func_name):
-    """Execute analyzers"""
+def execute_inspection_visits_array_list_array(operator_context, code_reference, transformer_data_with_annotations,
+                                               output_data, inspections,
+                                               code_reference_inspection_output_map, func_name):
+    """Execute inspections"""
     # pylint: disable=too-many-arguments
     annotation_iterators = []
-    for analyzer in analyzers:
-        analyzer_index = analyzers.index(analyzer)
-        iterator_for_analyzer = iter_input_annotation_output_array_list_array(analyzer_index,
-                                                                              transformer_data_with_annotations,
-                                                                              output_data)
-        annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
+    for inspection in inspections:
+        inspection_index = inspections.index(inspection)
+        iterator_for_inspection = iter_input_annotation_output_array_list_array(inspection_index,
+                                                                                transformer_data_with_annotations,
+                                                                                output_data)
+        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_analyzer_outputs_array(annotation_iterators, code_reference, output_data, analyzers,
-                                                code_reference_analyzer_output_map, func_name)
+    return_value = store_inspection_outputs_array(annotation_iterators, code_reference, output_data, inspections,
+                                                  code_reference_inspection_output_map, func_name)
     assert isinstance(return_value, MlinspectNdarray)
     return return_value
 
 
-def execute_analyzer_visits_estimator_input_nothing(operator_context, code_reference, data, target,
-                                                    analyzers, code_reference_analyzer_output_map, func_name):
-    """Execute analyzers"""
+def execute_inspection_visits_estimator_input_nothing(operator_context, code_reference, data, target,
+                                                      inspections, code_reference_inspection_output_map, func_name):
+    """Execute inspections"""
     # pylint: disable=too-many-arguments
     assert isinstance(data, (MlinspectCsrMatrix, MlinspectNdarray))
     assert isinstance(target, (MlinspectNdarray, MlinspectSeries))
     annotation_iterators = []
-    for analyzer in analyzers:
-        analyzer_index = analyzers.index(analyzer)
-        iterator_for_analyzer = iter_input_annotation_output_estimator_nothing(analyzer_index, data, target)
-        annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
+    for inspection in inspections:
+        inspection_index = inspections.index(inspection)
+        iterator_for_inspection = iter_input_annotation_output_estimator_nothing(inspection_index, data, target)
+        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    store_analyzer_outputs_estimator(annotation_iterators, code_reference, analyzers,
-                                     code_reference_analyzer_output_map, func_name)
+    store_inspection_outputs_estimator(annotation_iterators, code_reference, inspections,
+                                       code_reference_inspection_output_map, func_name)
 
 
-def execute_analyzer_visits_df_df(operator_context, code_reference, input_data, output_data, analyzers,
-                                  code_reference_analyzer_output_map, func_name, transformer=None,
-                                  full_return_value=None):
-    """Execute analyzers"""
+def execute_inspection_visits_df_df(operator_context, code_reference, input_data, output_data, inspections,
+                                    code_reference_inspection_output_map, func_name, transformer=None,
+                                    full_return_value=None):
+    """Execute inspections"""
     # pylint: disable=too-many-arguments
     assert isinstance(input_data, MlinspectDataFrame)
     annotation_iterators = []
-    for analyzer in analyzers:
-        analyzer_index = analyzers.index(analyzer)
-        iterator_for_analyzer = iter_input_annotation_output_df_df(analyzer_index,
-                                                                   input_data,
-                                                                   input_data.annotations,
-                                                                   output_data)
-        annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
+    for inspection in inspections:
+        inspection_index = inspections.index(inspection)
+        iterator_for_inspection = iter_input_annotation_output_df_df(inspection_index,
+                                                                     input_data,
+                                                                     input_data.annotations,
+                                                                     output_data)
+        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_analyzer_outputs_df(annotation_iterators, code_reference, output_data, analyzers,
-                                             code_reference_analyzer_output_map, func_name, transformer,
-                                             full_return_value)
+    return_value = store_inspection_outputs_df(annotation_iterators, code_reference, output_data, inspections,
+                                               code_reference_inspection_output_map, func_name, transformer,
+                                               full_return_value)
     assert isinstance(return_value, MlinspectDataFrame)
     return return_value
 
 
-def execute_analyzer_visits_df_array_column_transformer(operator_context, code_reference,
-                                                        input_data, annotations, output_data, analyzers,
-                                                        code_reference_analyzer_output_map,
-                                                        func_name):
-    """Execute analyzers"""
+def execute_inspection_visits_df_array_column_transformer(operator_context, code_reference,
+                                                          input_data, annotations, output_data, inspections,
+                                                          code_reference_inspection_output_map,
+                                                          func_name):
+    """Execute inspections"""
     # pylint: disable=too-many-arguments
     assert isinstance(input_data, MlinspectDataFrame)
     annotation_iterators = []
-    for analyzer in analyzers:
-        analyzer_index = analyzers.index(analyzer)
-        iterator_for_analyzer = iter_input_annotation_output_df_array(analyzer_index,
-                                                                      input_data,
-                                                                      annotations,
-                                                                      output_data)
-        annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
+    for inspection in inspections:
+        inspection_index = inspections.index(inspection)
+        iterator_for_inspection = iter_input_annotation_output_df_array(inspection_index,
+                                                                        input_data,
+                                                                        annotations,
+                                                                        output_data)
+        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_analyzer_outputs_array(annotation_iterators, code_reference, output_data, analyzers,
-                                                code_reference_analyzer_output_map, func_name)
+    return_value = store_inspection_outputs_array(annotation_iterators, code_reference, output_data, inspections,
+                                                  code_reference_inspection_output_map, func_name)
     assert isinstance(return_value, MlinspectNdarray)
     return return_value
 
 
-def execute_analyzer_visits_df_csr_column_transformer(operator_context, code_reference,
-                                                      input_data, annotations, output_data, analyzers,
-                                                      code_reference_analyzer_output_map,
-                                                      func_name):
-    """Execute analyzers"""
+def execute_inspection_visits_df_csr_column_transformer(operator_context, code_reference,
+                                                        input_data, annotations, output_data, inspections,
+                                                        code_reference_inspection_output_map,
+                                                        func_name):
+    """Execute inspections"""
     # pylint: disable=too-many-arguments
     assert isinstance(input_data, MlinspectDataFrame)
     annotation_iterators = []
-    for analyzer in analyzers:
-        analyzer_index = analyzers.index(analyzer)
-        iterator_for_analyzer = iter_input_annotation_output_df_csr(analyzer_index,
-                                                                    input_data,
-                                                                    annotations,
-                                                                    output_data)
-        annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
+    for inspection in inspections:
+        inspection_index = inspections.index(inspection)
+        iterator_for_inspection = iter_input_annotation_output_df_csr(inspection_index,
+                                                                      input_data,
+                                                                      annotations,
+                                                                      output_data)
+        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_analyzer_outputs_csr(annotation_iterators, code_reference, output_data, analyzers,
-                                              code_reference_analyzer_output_map, func_name)
+    return_value = store_inspection_outputs_csr(annotation_iterators, code_reference, output_data, inspections,
+                                                code_reference_inspection_output_map, func_name)
     assert isinstance(return_value, MlinspectCsrMatrix)
     return return_value
 
 
-def execute_analyzer_visits_array_array(operator_context, code_reference, input_data, annotations, output_data,
-                                        analyzers, code_reference_analyzer_output_map, func_name):
-    """Execute analyzers"""
+def execute_inspection_visits_array_array(operator_context, code_reference, input_data, annotations, output_data,
+                                          inspections, code_reference_inspection_output_map, func_name):
+    """Execute inspections"""
     # pylint: disable=too-many-arguments
     assert isinstance(input_data, MlinspectNdarray)
     annotation_iterators = []
-    for analyzer in analyzers:
-        analyzer_index = analyzers.index(analyzer)
-        iterator_for_analyzer = iter_input_annotation_output_array_array(analyzer_index,
-                                                                         input_data,
-                                                                         annotations,
-                                                                         output_data)
-        annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
+    for inspection in inspections:
+        inspection_index = inspections.index(inspection)
+        iterator_for_inspection = iter_input_annotation_output_array_array(inspection_index,
+                                                                           input_data,
+                                                                           annotations,
+                                                                           output_data)
+        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_analyzer_outputs_array(annotation_iterators, code_reference, output_data, analyzers,
-                                                code_reference_analyzer_output_map, func_name)
+    return_value = store_inspection_outputs_array(annotation_iterators, code_reference, output_data, inspections,
+                                                  code_reference_inspection_output_map, func_name)
     assert isinstance(return_value, MlinspectNdarray)
     return return_value
 
 
-def execute_analyzer_visits_series_series(operator_context, code_reference, input_data, output_data,
-                                          analyzers, code_reference_analyzer_output_map, func_name):
-    """Execute analyzers"""
+def execute_inspection_visits_series_series(operator_context, code_reference, input_data, output_data,
+                                            inspections, code_reference_inspection_output_map, func_name):
+    """Execute inspections"""
     # pylint: disable=too-many-arguments
     assert isinstance(input_data, MlinspectSeries)
     annotation_iterators = []
-    for analyzer in analyzers:
-        analyzer_index = analyzers.index(analyzer)
-        iterator_for_analyzer = iter_input_annotation_output_series_series(analyzer_index,
-                                                                           input_data,
-                                                                           input_data.annotations,
-                                                                           output_data)
-        annotations_iterator = analyzer.visit_operator(operator_context, iterator_for_analyzer)
+    for inspection in inspections:
+        inspection_index = inspections.index(inspection)
+        iterator_for_inspection = iter_input_annotation_output_series_series(inspection_index,
+                                                                             input_data,
+                                                                             input_data.annotations,
+                                                                             output_data)
+        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_analyzer_outputs_series(annotation_iterators, code_reference, output_data, analyzers,
-                                                 code_reference_analyzer_output_map, func_name)
+    return_value = store_inspection_outputs_series(annotation_iterators, code_reference, output_data, inspections,
+                                                   code_reference_inspection_output_map, func_name)
     assert isinstance(return_value, MlinspectSeries)
     return return_value
 
+
 # -------------------------------------------------------
-# Store analyzer results functions
+# Store inspection results functions
 # -------------------------------------------------------
 
 
-def store_analyzer_outputs_df(annotation_iterators, code_reference, return_value, analyzers,
-                              code_reference_analyzer_output_map, func_name, transformer=None, full_return_value=None):
+def store_inspection_outputs_df(annotation_iterators, code_reference, return_value, inspections,
+                                code_reference_inspection_output_map, func_name, transformer=None,
+                                full_return_value=None):
     """
-    Stores the analyzer annotations for the rows in the dataframe and the
-    analyzer annotations for the DAG operators in a map
+    Stores the inspection annotations for the rows in the dataframe and the
+    inspection annotations for the DAG operators in a map
     """
     # pylint: disable=too-many-arguments, too-many-locals
-    annotations_df = build_annotation_df_from_iters(analyzers, annotation_iterators)
-    analyzer_outputs = {}
-    for analyzer in analyzers:
-        analyzer_output = analyzer.get_operator_annotation_after_visit()
-        analyzer_outputs[analyzer] = analyzer_output
+    annotations_df = build_annotation_df_from_iters(inspections, annotation_iterators)
+    inspection_outputs = {}
+    for inspection in inspections:
+        inspection_output = inspection.get_operator_annotation_after_visit()
+        inspection_outputs[inspection] = inspection_output
 
-    stored_analyzer_results = code_reference_analyzer_output_map.get(code_reference, {})
-    stored_analyzer_results[func_name] = analyzer_outputs
-    code_reference_analyzer_output_map[code_reference] = stored_analyzer_results
+    stored_inspection_results = code_reference_inspection_output_map.get(code_reference, {})
+    stored_inspection_results[func_name] = inspection_outputs
+    code_reference_inspection_output_map[code_reference] = stored_inspection_results
 
     # If the transformer is a column transformer, we have multiple annotations we need to pass to different transformers
     # If we do not want to override internal column transformer functions, we have to work around these black
@@ -777,84 +782,84 @@ def store_analyzer_outputs_df(annotation_iterators, code_reference, return_value
     return new_return_value
 
 
-def store_analyzer_outputs_array(annotation_iterators, code_reference, return_value, analyzers,
-                                 code_reference_analyzer_output_map, func_name):
+def store_inspection_outputs_array(annotation_iterators, code_reference, return_value, inspections,
+                                   code_reference_inspection_output_map, func_name):
     """
-    Stores the analyzer annotations for the rows in the dataframe and the
-    analyzer annotations for the DAG operators in a map
+    Stores the inspection annotations for the rows in the dataframe and the
+    inspection annotations for the DAG operators in a map
     """
     # pylint: disable=too-many-arguments
-    annotations_df = build_annotation_df_from_iters(analyzers, annotation_iterators)
-    analyzer_outputs = {}
-    for analyzer in analyzers:
-        analyzer_outputs[analyzer] = analyzer.get_operator_annotation_after_visit()
+    annotations_df = build_annotation_df_from_iters(inspections, annotation_iterators)
+    inspection_outputs = {}
+    for inspection in inspections:
+        inspection_outputs[inspection] = inspection.get_operator_annotation_after_visit()
 
-    stored_analyzer_results = code_reference_analyzer_output_map.get(code_reference, {})
-    stored_analyzer_results[func_name] = analyzer_outputs
-    code_reference_analyzer_output_map[code_reference] = stored_analyzer_results
+    stored_inspection_results = code_reference_inspection_output_map.get(code_reference, {})
+    stored_inspection_results[func_name] = inspection_outputs
+    code_reference_inspection_output_map[code_reference] = stored_inspection_results
     return_value = MlinspectNdarray(return_value)
     return_value.annotations = annotations_df
     assert isinstance(return_value, MlinspectNdarray)
     return return_value
 
 
-def store_analyzer_outputs_series(annotation_iterators, code_reference, return_value, analyzers,
-                                  code_reference_analyzer_output_map, func_name):
+def store_inspection_outputs_series(annotation_iterators, code_reference, return_value, inspections,
+                                    code_reference_inspection_output_map, func_name):
     """
-    Stores the analyzer annotations for the rows in the dataframe and the
-    analyzer annotations for the DAG operators in a map
+    Stores the inspection annotations for the rows in the dataframe and the
+    inspection annotations for the DAG operators in a map
     """
     # pylint: disable=too-many-arguments
-    annotations_df = build_annotation_df_from_iters(analyzers, annotation_iterators)
-    analyzer_outputs = {}
-    for analyzer in analyzers:
-        analyzer_outputs[analyzer] = analyzer.get_operator_annotation_after_visit()
+    annotations_df = build_annotation_df_from_iters(inspections, annotation_iterators)
+    inspection_outputs = {}
+    for inspection in inspections:
+        inspection_outputs[inspection] = inspection.get_operator_annotation_after_visit()
 
-    stored_analyzer_results = code_reference_analyzer_output_map.get(code_reference, {})
-    stored_analyzer_results[func_name] = analyzer_outputs
-    code_reference_analyzer_output_map[code_reference] = stored_analyzer_results
+    stored_inspection_results = code_reference_inspection_output_map.get(code_reference, {})
+    stored_inspection_results[func_name] = inspection_outputs
+    code_reference_inspection_output_map[code_reference] = stored_inspection_results
     return_value = MlinspectSeries(return_value)
     return_value.annotations = annotations_df
     assert isinstance(return_value, MlinspectSeries)
     return return_value
 
 
-def store_analyzer_outputs_csr(annotation_iterators, code_reference, return_value, analyzers,
-                               code_reference_analyzer_output_map, func_name):
+def store_inspection_outputs_csr(annotation_iterators, code_reference, return_value, inspections,
+                                 code_reference_inspection_output_map, func_name):
     """
-    Stores the analyzer annotations for the rows in the dataframe and the
-    analyzer annotations for the DAG operators in a map
+    Stores the inspection annotations for the rows in the dataframe and the
+    inspection annotations for the DAG operators in a map
     """
     # pylint: disable=too-many-arguments
-    annotations_df = build_annotation_df_from_iters(analyzers, annotation_iterators)
-    analyzer_outputs = {}
-    for analyzer in analyzers:
-        analyzer_output = analyzer.get_operator_annotation_after_visit()
-        analyzer_outputs[analyzer] = analyzer_output
+    annotations_df = build_annotation_df_from_iters(inspections, annotation_iterators)
+    inspection_outputs = {}
+    for inspection in inspections:
+        inspection_output = inspection.get_operator_annotation_after_visit()
+        inspection_outputs[inspection] = inspection_output
 
-    stored_analyzer_results = code_reference_analyzer_output_map.get(code_reference, {})
-    stored_analyzer_results[func_name] = analyzer_outputs
-    code_reference_analyzer_output_map[code_reference] = stored_analyzer_results
+    stored_inspection_results = code_reference_inspection_output_map.get(code_reference, {})
+    stored_inspection_results[func_name] = inspection_outputs
+    code_reference_inspection_output_map[code_reference] = stored_inspection_results
     return_value = MlinspectCsrMatrix(return_value)
     return_value.annotations = annotations_df
     assert isinstance(return_value, MlinspectCsrMatrix)
     return return_value
 
 
-def store_analyzer_outputs_estimator(annotation_iterators, code_reference, analyzers,
-                                     code_reference_analyzer_output_map, func_name):
+def store_inspection_outputs_estimator(annotation_iterators, code_reference, inspections,
+                                       code_reference_inspection_output_map, func_name):
     """
-    Stores the analyzer annotations for the rows in the dataframe and the
-    analyzer annotations for the DAG operators in a map
+    Stores the inspection annotations for the rows in the dataframe and the
+    inspection annotations for the DAG operators in a map
     """
     # pylint: disable=too-many-arguments
-    build_annotation_df_from_iters(analyzers, annotation_iterators)
+    build_annotation_df_from_iters(inspections, annotation_iterators)
 
-    analyzer_outputs = {}
-    for analyzer in analyzers:
-        analyzer_output = analyzer.get_operator_annotation_after_visit()
-        analyzer_outputs[analyzer] = analyzer_output
+    inspection_outputs = {}
+    for inspection in inspections:
+        inspection_output = inspection.get_operator_annotation_after_visit()
+        inspection_outputs[inspection] = inspection_output
 
-    stored_analyzer_results = code_reference_analyzer_output_map.get(code_reference, {})
-    stored_analyzer_results[func_name] = analyzer_outputs
-    code_reference_analyzer_output_map[code_reference] = stored_analyzer_results
+    stored_inspection_results = code_reference_inspection_output_map.get(code_reference, {})
+    stored_inspection_results[func_name] = inspection_outputs
+    code_reference_inspection_output_map[code_reference] = stored_inspection_results

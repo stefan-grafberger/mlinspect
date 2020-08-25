@@ -1,11 +1,11 @@
 """
-A simple example analyzer
+A simple example inspection
 """
 from typing import Union, Iterable
 
-from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputDataSource, \
-    AnalyzerInputUnaryOperator
-from mlinspect.instrumentation.analyzers.analyzer import Analyzer
+from mlinspect.instrumentation.inspections.inspection_input import OperatorContext, InspectionInputDataSource, \
+    InspectionInputUnaryOperator
+from mlinspect.instrumentation.inspections.inspection import Inspection
 from mlinspect.instrumentation.dag_node import OperatorType
 
 
@@ -13,17 +13,17 @@ def get_current_annotation(row):
     """
     Get the current row annotation value
     """
-    if isinstance(row, AnalyzerInputUnaryOperator):
+    if isinstance(row, InspectionInputUnaryOperator):
         annotation = row.annotation.get_value_by_column_index(0)
     else:
-        assert not isinstance(row, AnalyzerInputDataSource)
+        assert not isinstance(row, InspectionInputDataSource)
         annotation = row.annotation[0].get_value_by_column_index(0)
     return annotation
 
 
-class MissingEmbeddingInspection(Analyzer):
+class MissingEmbeddingInspection(Inspection):
     """
-    A simple example analyzer
+    A simple example inspection
     """
 
     def __init__(self):
@@ -31,11 +31,11 @@ class MissingEmbeddingInspection(Analyzer):
         self._missing_embedding_count = 0
 
     @property
-    def analyzer_id(self):
+    def inspection_id(self):
         return None
 
     def visit_operator(self, operator_context: OperatorContext,
-                       row_iterator: Union[Iterable[AnalyzerInputDataSource], Iterable[AnalyzerInputUnaryOperator]])\
+                       row_iterator: Union[Iterable[InspectionInputDataSource], Iterable[InspectionInputUnaryOperator]])\
             -> Iterable[any]:
         """
         Visit an operator

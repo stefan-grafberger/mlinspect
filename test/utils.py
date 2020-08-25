@@ -5,12 +5,12 @@ import os
 import ast
 from inspect import cleandoc
 
-from test.instrumentation.backends.random_annotation_testing_analyzer import RandomAnnotationTestingAnalyzer
-from test.instrumentation.backends.row_index_annotation_testing_analyzer import RowIndexAnnotationTestingAnalyzer
+from test.instrumentation.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
+from test.instrumentation.backends.row_index_annotation_testing_inspection import RowIndexAnnotationTestingInspection
 
 import networkx
 
-from mlinspect.instrumentation.analyzers.materialize_first_rows_analyzer import MaterializeFirstRowsAnalyzer
+from mlinspect.instrumentation.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
 from mlinspect.instrumentation.dag_node import DagNode, OperatorType, CodeReference
 from mlinspect.instrumentation.wir_extractor import WirExtractor
 from mlinspect.pipeline_inspector import PipelineInspector
@@ -315,11 +315,11 @@ def run_random_annotation_testing_analyzer(code):
     """
     inspection_result = PipelineInspector \
         .on_pipeline_from_string(code) \
-        .add_analyzer(RandomAnnotationTestingAnalyzer(10)) \
+        .add_inspection(RandomAnnotationTestingInspection(10)) \
         .execute()
     analyzer_results = inspection_result.analyzer_to_annotations
-    assert RandomAnnotationTestingAnalyzer(10) in analyzer_results
-    random_annotation_analyzer_result = analyzer_results[RandomAnnotationTestingAnalyzer(10)]
+    assert RandomAnnotationTestingInspection(10) in analyzer_results
+    random_annotation_analyzer_result = analyzer_results[RandomAnnotationTestingInspection(10)]
     return random_annotation_analyzer_result
 
 
@@ -329,11 +329,11 @@ def run_row_index_annotation_testing_analyzer(code):
     """
     inspection_result = PipelineInspector \
         .on_pipeline_from_string(code) \
-        .add_analyzer(RowIndexAnnotationTestingAnalyzer(10)) \
+        .add_inspection(RowIndexAnnotationTestingInspection(10)) \
         .execute()
     analyzer_results = inspection_result.analyzer_to_annotations
-    assert RowIndexAnnotationTestingAnalyzer(10) in analyzer_results
-    result = analyzer_results[RowIndexAnnotationTestingAnalyzer(10)]
+    assert RowIndexAnnotationTestingInspection(10) in analyzer_results
+    result = analyzer_results[RowIndexAnnotationTestingInspection(10)]
     return result
 
 
@@ -342,11 +342,11 @@ def run_multiple_test_analyzers(code):
    An utility function to test backends.
    Also useful to debug annotation propagation.
    """
-    analyzers = [RandomAnnotationTestingAnalyzer(2), MaterializeFirstRowsAnalyzer(5),
-                 RowIndexAnnotationTestingAnalyzer(2)]
+    analyzers = [RandomAnnotationTestingInspection(2), MaterializeFirstRowsInspection(5),
+                 RowIndexAnnotationTestingInspection(2)]
     inspection_result = PipelineInspector \
         .on_pipeline_from_string(code) \
-        .add_analyzers(analyzers) \
+        .add_inspections(analyzers) \
         .execute()
     analyzer_results = inspection_result.analyzer_to_annotations
     return analyzer_results, analyzers

@@ -14,7 +14,7 @@ class SklearnDagPostprocessor:
 
     @staticmethod
     def postprocess_dag(graph, wir_post_processing_map):
-        """Associate DAG nodes with the correct analyzer output from sklearn pipelines"""
+        """Associate DAG nodes with the correct inspection output from sklearn pipelines"""
         new_code_references = {}
 
         def process_node(node, _):

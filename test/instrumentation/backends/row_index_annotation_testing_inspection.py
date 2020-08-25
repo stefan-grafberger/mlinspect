@@ -3,12 +3,12 @@ A simple analyzer for testing annotation propagation
 """
 from typing import Iterable
 
-from mlinspect.instrumentation.analyzers.analyzer import Analyzer
-from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputUnaryOperator, \
-    AnalyzerInputNAryOperator, AnalyzerInputSinkOperator
+from mlinspect.instrumentation.inspections.inspection import Inspection
+from mlinspect.instrumentation.inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator, \
+    InspectionInputNAryOperator, InspectionInputSinkOperator
 
 
-class RowIndexAnnotationTestingAnalyzer(Analyzer):
+class RowIndexAnnotationTestingInspection(Inspection):
     """
     A simple analyzer for testing annotation propagation
     """
@@ -38,14 +38,14 @@ class RowIndexAnnotationTestingAnalyzer(Analyzer):
         else:
             for row in row_iterator:
                 current_count += 1
-                assert isinstance(row, (AnalyzerInputUnaryOperator, AnalyzerInputNAryOperator,
-                                        AnalyzerInputSinkOperator))
-                if isinstance(row, AnalyzerInputUnaryOperator):
+                assert isinstance(row, (InspectionInputUnaryOperator, InspectionInputNAryOperator,
+                                        InspectionInputSinkOperator))
+                if isinstance(row, InspectionInputUnaryOperator):
                     annotation = (self._operator_count, row.annotation.get_value_by_column_index(0)[1])
                 else:
                     previous_row_index = row.annotation[0].get_value_by_column_index(0)[1]
                     annotation = (self._operator_count, previous_row_index)
-                if current_count < self.row_count and not isinstance(row, AnalyzerInputSinkOperator):
+                if current_count < self.row_count and not isinstance(row, InspectionInputSinkOperator):
                     operator_output.append((annotation, row.output))
                 elif current_count < self.row_count:
                     operator_output.append((annotation, None))
@@ -61,5 +61,5 @@ class RowIndexAnnotationTestingAnalyzer(Analyzer):
         return result
 
     @property
-    def analyzer_id(self):
+    def inspection_id(self):
         return self._analyzer_id
