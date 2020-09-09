@@ -20,6 +20,9 @@ class OperatorType(Enum):
     FIT = "Fit Transformers and Estimators"
     TRAIN_DATA = "Train Data"
     TRAIN_LABELS = "Train Labels"
+    JOIN = "Join"
+    GROUP_BY_AGG = "Groupby and Aggregate"
+    TRAIN_TEST_SPLIT = "Train Test Split"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -29,6 +32,8 @@ class CodeReference:
     """
     lineno: int
     col_offset: int
+    end_lineno: int
+    end_col_offset: int
 
 
 @dataclasses.dataclass

@@ -3,13 +3,13 @@ A simple example analyzer
 """
 from typing import Union, Iterable
 
-from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputDataSource, \
-    AnalyzerInputUnaryOperator
-from mlinspect.instrumentation.analyzers.analyzer import Analyzer
-from mlinspect.instrumentation.dag_node import OperatorType
+from .inspection import Inspection
+from .inspection_input import OperatorContext, InspectionInputDataSource, \
+    InspectionInputUnaryOperator
+from ..instrumentation.dag_node import OperatorType
 
 
-class MaterializeFirstRowsAnalyzer(Analyzer):
+class MaterializeFirstRowsInspection(Inspection):
     """
     A simple example analyzer
     """
@@ -17,15 +17,15 @@ class MaterializeFirstRowsAnalyzer(Analyzer):
     def __init__(self, row_count: int):
         self.row_count = row_count
         self._analyzer_id = self.row_count
-        self._operator_output = None
+        self._first_rows_op_output = None
         self._operator_type = None
 
     @property
-    def analyzer_id(self):
+    def inspection_id(self):
         return self._analyzer_id
 
     def visit_operator(self, operator_context: OperatorContext,
-                       row_iterator: Union[Iterable[AnalyzerInputDataSource], Iterable[AnalyzerInputUnaryOperator]])\
+                       row_iterator: Union[Iterable[InspectionInputDataSource], Iterable[InspectionInputUnaryOperator]])\
             -> Iterable[any]:
         """
         Visit an operator
@@ -44,14 +44,14 @@ class MaterializeFirstRowsAnalyzer(Analyzer):
             for _ in row_iterator:
                 yield None
 
-        self._operator_output = operator_output
+        self._first_rows_op_output = operator_output
 
     def get_operator_annotation_after_visit(self) -> any:
         assert self._operator_type
         if self._operator_type is not OperatorType.ESTIMATOR:
-            assert self._operator_output  # May only be called after the operator visit is finished
-            result = self._operator_output
-            self._operator_output = None
+            assert self._first_rows_op_output  # May only be called after the operator visit is finished
+            result = self._first_rows_op_output
+            self._first_rows_op_output = None
             self._operator_type = None
             return result
         self._operator_type = None

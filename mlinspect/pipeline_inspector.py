@@ -3,7 +3,7 @@ User-facing API for inspecting the pipeline
 """
 from typing import Iterable
 
-from .instrumentation.analyzers.analyzer import Analyzer
+from mlinspect.inspections.inspection import Inspection
 from .instrumentation.inspection_result import InspectionResult
 from .instrumentation.pipeline_executor import singleton
 
@@ -20,27 +20,27 @@ class PipelineInspectorBuilder:
         self.notebook_path = notebook_path
         self.python_path = python_path
         self.python_code = python_code
-        self.analyzers = []
+        self.inspections = []
 
-    def add_analyzer(self, analyzer: Analyzer):
+    def add_inspection(self, inspection: Inspection):
         """
         Add an analyzer
         """
-        self.analyzers.append(analyzer)
+        self.inspections.append(inspection)
         return self
 
-    def add_analyzers(self, analyzers: Iterable[Analyzer]):
+    def add_inspections(self, inspections: Iterable[Inspection]):
         """
-        Add a list of analyzers
+        Add a list of inspections
         """
-        self.analyzers.extend(analyzers)
+        self.inspections.extend(inspections)
         return self
 
     def execute(self) -> InspectionResult:
         """
         Instrument and execute the pipeline
         """
-        return singleton.run(self.notebook_path, self.python_path, self.python_code, self.analyzers)
+        return singleton.run(self.notebook_path, self.python_path, self.python_code, self.inspections)
 
 
 class PipelineInspector:

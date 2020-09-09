@@ -5,8 +5,8 @@ import ast
 from astmonkey import transformers
 import networkx
 
-from mlinspect.instrumentation.dag_node import CodeReference
-from mlinspect.instrumentation.wir_node import WirNode
+from ..instrumentation.dag_node import CodeReference
+from ..instrumentation.wir_node import WirNode
 
 
 class WirExtractor:
@@ -64,7 +64,7 @@ class WirExtractor:
         elif isinstance(ast_node, ast.Tuple):
             self.extract_wir_tuple(ast_node)
         elif isinstance(ast_node, (ast.Attribute, ast.Expr, ast.Index, ast.Load, ast.Module, ast.Name, ast.Store,
-                                   ast.alias)):
+                                   ast.alias, ast.Gt, ast.Mult, ast.BinOp, ast.Compare, ast.Sub)):
             pass  # TODO: Test if we really covered all necessary edge cases
         else:
             print("AST Node Type not supported yet: {}!".format(str(ast_node)))
@@ -75,18 +75,25 @@ class WirExtractor:
         Creates a tuple vertex.
         """
         parent_in_wir_ast_nodes = ast_node.children[:-1]
+        # Only look at loads, stores get handled by assign
+        parent_in_wir_ast_nodes = [node for node in parent_in_wir_ast_nodes if
+                                   (not isinstance(node, ast.Name) or isinstance(node.ctx, ast.Load))]
         wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
         new_wir_node = WirNode(self.get_next_wir_id(), "as_tuple", "Tuple",
-                               CodeReference(ast_node.lineno, ast_node.col_offset))
-        self.graph.add_node(new_wir_node)
-        for parent_index, parent in enumerate(wir_parents):
-            self.graph.add_edge(parent, new_wir_node, type="input", arg_index=parent_index)
-        self.store_ast_node_wir_mapping(ast_node, new_wir_node)
+                               CodeReference(ast_node.lineno, ast_node.col_offset,
+                                             ast_node.end_lineno, ast_node.end_col_offset))
+        if len(parent_in_wir_ast_nodes) > 0:
+            self.graph.add_node(new_wir_node)
+            for parent_index, parent in enumerate(wir_parents):
+                self.graph.add_edge(parent, new_wir_node, type="input", arg_index=parent_index)
+            self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
     def extract_wir_subscript(self, ast_node):
         """
         Creates a subscript vertex. Currently only supports index subscripts.
         """
+        if not isinstance(ast_node.ctx, ast.Load):
+            return
         value_ast = ast_node.children[0]
         if isinstance(value_ast, ast.Call):
             assert value_ast.func.id == "before_call_used_value"  # TODO:  Cover other edge cases
@@ -99,14 +106,15 @@ class WirExtractor:
         name_wir = self.get_wir_node_for_variable(name_name_ast)
         index_ast = ast_node.children[1]
         assert isinstance(index_ast, ast.Index)
-        index_constant_ast = index_ast.children[0]
-        assert isinstance(index_constant_ast, ast.Constant)
-        constant_wir = self.get_wir_node_for_ast(index_constant_ast)
+
+        index_value_ast = index_ast.children[0]
+        index_value_wir = self.get_wir_node_for_ast(index_value_ast)
         new_wir_node = WirNode(self.get_next_wir_id(), "Index-Subscript", "Subscript",
-                               CodeReference(ast_node.lineno, ast_node.col_offset))
+                               CodeReference(ast_node.lineno, ast_node.col_offset,
+                                             ast_node.end_lineno, ast_node.end_col_offset))
         self.graph.add_node(new_wir_node)
         self.graph.add_edge(name_wir, new_wir_node, type="caller", arg_index=-1)
-        self.graph.add_edge(constant_wir, new_wir_node, type="input", arg_index=0)
+        self.graph.add_edge(index_value_wir, new_wir_node, type="input", arg_index=0)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
     def extract_wir_list(self, ast_node):
@@ -116,7 +124,8 @@ class WirExtractor:
         parent_in_wir_ast_nodes = ast_node.children[:-1]
         wir_parents = [self.get_wir_node_for_ast(ast_child) for ast_child in parent_in_wir_ast_nodes]
         new_wir_node = WirNode(self.get_next_wir_id(), "as_list", "List",
-                               CodeReference(ast_node.lineno, ast_node.col_offset))
+                               CodeReference(ast_node.lineno, ast_node.col_offset,
+                                             ast_node.end_lineno, ast_node.end_col_offset))
         self.graph.add_node(new_wir_node)
         for parent_index, parent in enumerate(wir_parents):
             self.graph.add_edge(parent, new_wir_node, type="input", arg_index=parent_index)
@@ -128,7 +137,8 @@ class WirExtractor:
         """
         module_name = ast_node.module
         new_wir_node = WirNode(self.get_next_wir_id(), module_name, "Import",
-                               CodeReference(ast_node.lineno, ast_node.col_offset))
+                               CodeReference(ast_node.lineno, ast_node.col_offset,
+                                             ast_node.end_lineno, ast_node.end_col_offset))
         self.graph.add_node(new_wir_node)
         for imported_entity_ast in ast_node.children:
             assert isinstance(imported_entity_ast, ast.alias)
@@ -147,7 +157,8 @@ class WirExtractor:
         else:
             alias_name = module_name
         new_wir_node = WirNode(self.get_next_wir_id(), module_name, "Import",
-                               CodeReference(ast_node.lineno, ast_node.col_offset))
+                               CodeReference(ast_node.lineno, ast_node.col_offset,
+                                             ast_node.end_lineno, ast_node.end_col_offset))
         self.graph.add_node(new_wir_node)
         self.store_variable_wir_mapping(alias_name, new_wir_node)
 
@@ -169,19 +180,45 @@ class WirExtractor:
         assign_left_ast = ast_node.children[0]
         assign_right_ast = ast_node.children[1]
         assign_right_wir = self.get_wir_node_for_ast(assign_right_ast)
-        var_name = assign_left_ast.id
-        new_wir_node = WirNode(self.get_next_wir_id(), var_name, "Assign",
-                               CodeReference(ast_node.lineno, ast_node.col_offset))
-        self.graph.add_node(new_wir_node)
-        self.graph.add_edge(assign_right_wir, new_wir_node, type="input", arg_index=0)
-        self.store_variable_wir_mapping(var_name, new_wir_node)
+        if isinstance(assign_left_ast, ast.Name):
+            var_name = assign_left_ast.id
+            new_wir_node = WirNode(self.get_next_wir_id(), var_name, "Assign",
+                                   CodeReference(ast_node.lineno, ast_node.col_offset,
+                                                 ast_node.end_lineno, ast_node.end_col_offset))
+            self.graph.add_node(new_wir_node)
+            self.graph.add_edge(assign_right_wir, new_wir_node, type="input", arg_index=0)
+            self.store_variable_wir_mapping(var_name, new_wir_node)
+        elif isinstance(assign_left_ast, ast.Subscript):  # TODO: Cover more edge cases
+            data_name = assign_left_ast.children[0].id
+            data_wir = self.get_wir_node_for_variable(data_name)
+            index_value = assign_left_ast.children[1].value.n
+            new_wir_node = WirNode(self.get_next_wir_id(), "{}.{}".format(data_name, index_value), "Subscript-Assign",
+                                   CodeReference(assign_left_ast.lineno, assign_left_ast.col_offset,
+                                                 assign_left_ast.end_lineno, assign_left_ast.end_col_offset))
+            self.graph.add_node(new_wir_node)
+            self.graph.add_edge(data_wir, new_wir_node, type="caller", arg_index=-1)
+            var_name = assign_left_ast.children[0].id
+            self.store_variable_wir_mapping(var_name, new_wir_node)
+        elif isinstance(assign_left_ast, ast.Tuple):
+            tuple_children = assign_left_ast.children[:-1]
+            for child in tuple_children:
+                assert isinstance(child, ast.Name) and isinstance(child.ctx, ast.Store)  # TODO: load
+                new_wir_node = WirNode(self.get_next_wir_id(), child.id, "Assign",
+                                       CodeReference(child.lineno, child.col_offset,
+                                                     child.end_lineno, child.end_col_offset))
+                self.graph.add_node(new_wir_node)
+                self.graph.add_edge(assign_right_wir, new_wir_node, type="input", arg_index=0)
+                self.store_variable_wir_mapping(child.id, new_wir_node)
+        else:
+            assert False
 
     def extract_wir_constant(self, ast_node):
         """
         Creates a vertex for a constant in the code like a String or number
         """
         new_wir_node = WirNode(self.get_next_wir_id(), str(ast_node.n), "Constant",
-                               CodeReference(ast_node.lineno, ast_node.col_offset))
+                               CodeReference(ast_node.lineno, ast_node.col_offset,
+                                             ast_node.end_lineno, ast_node.end_col_offset))
         self.graph.add_node(new_wir_node)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
@@ -212,7 +249,8 @@ class WirExtractor:
             assert False
 
         new_wir_node = WirNode(self.get_next_wir_id(), name, "Call",
-                               CodeReference(ast_node.lineno, ast_node.col_offset))
+                               CodeReference(ast_node.lineno, ast_node.col_offset,
+                                             ast_node.end_lineno, ast_node.end_col_offset))
         self.graph.add_node(new_wir_node)
         if caller_parent:
             self.graph.add_edge(caller_parent, new_wir_node, type="caller", arg_index=-1)
@@ -225,7 +263,9 @@ class WirExtractor:
         After executing the pipeline, annotate call nodes with the captured module info
         """
         for node in self.graph.nodes:
-            if (node.operation == "Call" or node.operation == "Subscript") and node.code_reference in code_reference_to_module:
+            if (node.operation == "Call" or node.operation == "Subscript"
+                    or node.operation == "Subscript-Assign") and \
+                    node.code_reference in code_reference_to_module:
                 node.module = code_reference_to_module[node.code_reference]
                 if node.code_reference in code_reference_to_description:
                     node.dag_operator_description = code_reference_to_description[node.code_reference]

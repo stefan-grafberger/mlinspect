@@ -36,17 +36,17 @@ Prerequisite: python >=  3.8
 Make it easy to analyze your pipeline and automatically check for common issues.
 ```python
 from mlinspect.pipeline_inspector import PipelineInspector
-from mlinspect.instrumentation.analyzers.materialize_first_rows_analyzer import MaterializeFirstRowsAnalyzer
+from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
 
 IPYNB_PATH = ...
 
 inspection_result = PipelineInspector \
         .on_pipeline_from_ipynb_file(IPYNB_PATH) \
-        .add_analyzer(MaterializeFirstRowsAnalyzer(2)) \
+        .add_inspection(MaterializeFirstRowsInspection(2)) \
         .execute()
 
 extracted_dag = inspection_result.dag
-analyzer_results = inspection_result.analyzer_to_annotations
+inspection_to_annotations = inspection_result.inspection_to_annotations
 ```
     
 ## Notes

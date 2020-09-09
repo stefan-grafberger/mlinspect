@@ -12,7 +12,7 @@ class MlinspectSeries(Series):
     """
     # pylint: disable=too-many-ancestors
 
-    _metadata = ['annotations']
+    _metadata = ['annotations', 'backend']
 
     @property
     def _constructor(self):
@@ -29,7 +29,7 @@ class MlinspectDataFrame(DataFrame):
     See the pandas documentation: https://pandas.pydata.org/pandas-docs/stable/development/extending.html
     """
 
-    _metadata = ['annotations']
+    _metadata = ['annotations', 'backend']
 
     @property
     def _constructor(self):
@@ -42,3 +42,13 @@ class MlinspectDataFrame(DataFrame):
     @property
     def _constructor_expanddim(self):
         return MlinspectDataFrame
+
+    def __setitem__(self, key, value):
+        if key not in {'mlinspect_index', 'mlinspect_index_x', 'mlinspect_index_y'}:
+            assert self.backend
+
+            previous_df = self.copy()
+            super()._set_item(key, value)
+            self.backend.after_call_used_setkey(key, previous_df, self)
+        else:
+            super()._set_item(key, value)

@@ -4,8 +4,8 @@ Preprocess Sklearn WIR nodes to enable DAG extraction
 import networkx
 from more_itertools import pairwise
 
-from mlinspect.instrumentation.wir_node import WirNode
-from mlinspect.utils import traverse_graph_and_process_nodes, get_sorted_node_parents
+from ..instrumentation.wir_node import WirNode
+from ..utils import traverse_graph_and_process_nodes, get_sorted_node_parents
 
 
 class SklearnWirPreprocessor:
@@ -16,7 +16,10 @@ class SklearnWirPreprocessor:
     KNOWN_SINGLE_STEPS = {
         ('sklearn.preprocessing._encoders', 'OneHotEncoder'),
         ('sklearn.preprocessing._data', 'StandardScaler'),
-        ('sklearn.tree._classes', 'DecisionTreeClassifier')
+        ('sklearn.tree._classes', 'DecisionTreeClassifier'),
+        ('sklearn.impute._base', 'SimpleImputer'),
+        ('sklearn.demo.healthcare.demo_utils', 'MyW2VTransformer'),
+        ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')
     }
 
     KNOWN_MULTI_STEPS = {
@@ -147,6 +150,7 @@ class SklearnWirPreprocessor:
         """
         Get the sub-pipelines specified in the 'steps' argument of Pipelines
         """
+        # pylint: disable=too-many-locals
         parents = list(graph.predecessors(node))
         parents_with_arg_index = [(parent, graph.get_edge_data(parent, node)) for parent in parents]
         steps_list = [parent for parent in parents_with_arg_index if parent[1]['arg_index'] == 0][0][0]
@@ -164,12 +168,26 @@ class SklearnWirPreprocessor:
             if transformer.module in self.KNOWN_SINGLE_STEPS:
                 new_transformer_module = (transformer.module[0],
                                           transformer.module[1], "Pipeline")
-                transformer = WirNode(transformer.node_id, transformer.name, transformer.operation,
-                                      transformer.code_reference, new_transformer_module,
-                                      transformer.dag_operator_description)
-                self.wir_node_to_sub_pipeline_start[transformer] = [transformer]
-                self.wir_node_to_sub_pipeline_end[transformer] = transformer
-            transformers_list.append(transformer)
+
+                new_transformer = WirNode(transformer.node_id, transformer.name, transformer.operation,
+                                          transformer.code_reference, new_transformer_module,
+                                          transformer.dag_operator_description)
+
+                parents = list(graph.predecessors(transformer))
+                for parent in parents:
+                    graph.add_edge(parent, new_transformer)
+                children = list(graph.successors(transformer))
+                for child in children:
+                    graph.add_edge(new_transformer, child)
+
+                graph.remove_node(transformer)
+                graph.add_node(new_transformer)
+
+                self.wir_node_to_sub_pipeline_start[new_transformer] = [new_transformer]
+                self.wir_node_to_sub_pipeline_end[new_transformer] = new_transformer
+            else:
+                new_transformer = transformer
+            transformers_list.append(new_transformer)
 
         return transformers_list
 
@@ -177,10 +195,7 @@ class SklearnWirPreprocessor:
         """
         Get the 'pipeline' value of Pipeline.fit
         """
-        parents = list(graph.predecessors(node))
-        parents_with_arg_index = [(parent, graph.get_edge_data(parent, node)) for parent in parents]
-        direct_pipeline_parent_node = [parent for parent in parents_with_arg_index if
-                                       parent[1]['arg_index'] == -1][0][0]
+        direct_pipeline_parent_node = get_sorted_node_parents(graph, node)[0]
         actual_pipeline_node = self.get_sklearn_call_wir_node(graph, direct_pipeline_parent_node)
 
         assert actual_pipeline_node.operation == "Call"
@@ -216,7 +231,7 @@ class SklearnWirPreprocessor:
         projection_wirs = []
         for column_node in column_constant_nodes:
             projection_module = (node.module[0], node.module[1], "Projection")
-            projection_description = "to {}".format([column_node.name])
+            projection_description = "to {} (ColumnTransformer)".format([column_node.name])
             projection_wir = WirNode(column_node.node_id, column_node.name, node.operation,
                                      node.code_reference, projection_module, projection_description)
             projection_wirs.append(projection_wir)
@@ -231,6 +246,7 @@ class SklearnWirPreprocessor:
                 graph.add_edge(projection_wir, start_transformer)
             graph.add_edge(end_transformer, concatenation_wir)
         self.wir_node_to_sub_pipeline_start[node].extend(projection_wirs)
+        self.preprocess_column_transformer_delete_original_transformer(graph, call_node)
 
     def preprocess_column_transformer_copy_transformer_per_column(self, graph, transformer_node, new_node_id,
                                                                   description):
@@ -239,12 +255,16 @@ class SklearnWirPreprocessor:
         each column
         """
         transformer_node = self.get_sklearn_call_wir_node(graph, transformer_node)
-        start_copy = set(self.wir_node_to_sub_pipeline_start[transformer_node])
+        start_copy = list(self.wir_node_to_sub_pipeline_start[transformer_node])
         end_copy = self.wir_node_to_sub_pipeline_end[transformer_node]
         assert start_copy
         assert end_copy
         start_transformers = []
         end_transformer = []
+        last_copied_wir = []
+
+        def child_filter(child):
+            return child.module and len(child.module) == 3
 
         def copy_node(current_node, _):
             new_module = (current_node.module[0], current_node.module[1], "Pipeline")
@@ -254,17 +274,13 @@ class SklearnWirPreprocessor:
 
             if current_node in start_copy:
                 start_transformers.append(copied_wir)
+                last_copied_wir.append(copied_wir)
             else:
-                parents = list(graph.predecessors(current_node))
-                relevant_parents = [parent for parent in parents if parent.node_id == new_node_id]
-                for parent in relevant_parents:
-                    graph.add_edge(parent, copied_wir)
+                graph.add_edge(last_copied_wir[0], copied_wir)
+                last_copied_wir[0] = copied_wir
 
             if current_node == end_copy:
                 end_transformer.append(copied_wir)
-
-        def child_filter(child):
-            return child.module and len(child.module) == 3
 
         traverse_graph_and_process_nodes(graph, copy_node, list(start_copy), end_copy, child_filter)
 
@@ -272,6 +288,25 @@ class SklearnWirPreprocessor:
         assert end_transformer
 
         return start_transformers, end_transformer[0]
+
+    def preprocess_column_transformer_delete_original_transformer(self, graph, transformer_node):
+        """
+        Preprocessing for ColumnTransformers: Each transformer in a ColumnTransformer needs to be copied for
+        each column. Afterwards, the original nodes need to be deleted
+        """
+        transformer_node = self.get_sklearn_call_wir_node(graph, transformer_node)
+        start_copy = list(self.wir_node_to_sub_pipeline_start[transformer_node])
+        end_copy = self.wir_node_to_sub_pipeline_end[transformer_node]
+        assert start_copy
+        assert end_copy
+
+        def child_filter(child):
+            return child.module and len(child.module) == 3
+
+        def copy_node(current_node, _):
+            graph.remove_node(current_node)
+
+        traverse_graph_and_process_nodes(graph, copy_node, list(start_copy), end_copy, child_filter)
 
     def get_sklearn_call_wir_node(self, graph, transformer):
         """

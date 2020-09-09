@@ -4,12 +4,12 @@ A simple analyzer for testing annotation propagation
 import random
 from typing import Iterable
 
-from mlinspect.instrumentation.analyzers.analyzer import Analyzer
-from mlinspect.instrumentation.analyzers.analyzer_input import OperatorContext, AnalyzerInputUnaryOperator, \
-    AnalyzerInputNAryOperator, AnalyzerInputSinkOperator
+from mlinspect.inspections.inspection import Inspection
+from mlinspect.inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator, \
+    InspectionInputNAryOperator, InspectionInputSinkOperator
 
 
-class RandomAnnotationTestingAnalyzer(Analyzer):
+class RandomAnnotationTestingInspection(Inspection):
     """
     A simple analyzer for testing annotation propagation
     """
@@ -42,7 +42,7 @@ class RandomAnnotationTestingAnalyzer(Analyzer):
             filtered_rows = 0
             for row in row_iterator:
                 current_count += 1
-                assert isinstance(row, AnalyzerInputUnaryOperator)  # This analyzer is really only for testing
+                assert isinstance(row, InspectionInputUnaryOperator)  # This analyzer is really only for testing
                 annotation = row.annotation.get_value_by_column_index(0)
                 if current_count < self.row_count:
                     output_tuple = tuple(row.output.values)
@@ -56,9 +56,9 @@ class RandomAnnotationTestingAnalyzer(Analyzer):
                 yield annotation
         else:
             for row in row_iterator:
-                assert isinstance(row, (AnalyzerInputUnaryOperator, AnalyzerInputNAryOperator,
-                                        AnalyzerInputSinkOperator))
-                if isinstance(row, AnalyzerInputUnaryOperator):
+                assert isinstance(row, (InspectionInputUnaryOperator, InspectionInputNAryOperator,
+                                        InspectionInputSinkOperator))
+                if isinstance(row, InspectionInputUnaryOperator):
                     annotation = row.annotation.get_value_by_column_index(0)
                 else:
                     annotation = row.annotation[0].get_value_by_column_index(0)
@@ -73,5 +73,5 @@ class RandomAnnotationTestingAnalyzer(Analyzer):
         return result
 
     @property
-    def analyzer_id(self):
+    def inspection_id(self):
         return self._analyzer_id

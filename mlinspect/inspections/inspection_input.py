@@ -1,16 +1,16 @@
 """
-Data classes used as input for the analyzers
+Data classes used as input for the inspections
 """
 import dataclasses
 from typing import Tuple, List
 
 import numpy
 
-from mlinspect.instrumentation.dag_node import OperatorType
+from ..instrumentation.dag_node import OperatorType
 
 
 @dataclasses.dataclass(frozen=True)
-class AnalyzerInputRow:
+class InspectionInputRow:
     """
     A class we use to efficiently pass pandas/sklearn rows
     """
@@ -32,52 +32,52 @@ class AnalyzerInputRow:
         return self.values[index]
 
     def __eq__(self, other):
-        return (isinstance(other, AnalyzerInputRow) and
+        return (isinstance(other, InspectionInputRow) and
                 numpy.array_equal(self.values, other.values) and
                 self.fields == other.fields)
 
 
 @dataclasses.dataclass(frozen=True)
-class AnalyzerInputDataSource:
+class InspectionInputDataSource:
     """
     Wrapper class for the only operator without a parent: a Data Source
     """
-    output: AnalyzerInputRow
+    output: InspectionInputRow
 
 
 @dataclasses.dataclass(frozen=True)
-class AnalyzerInputUnaryOperator:
+class InspectionInputUnaryOperator:
     """
     Wrapper class for the operators with one parent like Selections and Projections
     """
-    input: AnalyzerInputRow
-    annotation: AnalyzerInputRow
-    output: AnalyzerInputRow
+    input: InspectionInputRow
+    annotation: InspectionInputRow
+    output: InspectionInputRow
 
 
 @dataclasses.dataclass(frozen=True)
-class AnalyzerInputNAryOperator:
+class InspectionInputNAryOperator:
     """
     Wrapper class for the operators with multiple parents like Concatenations
     """
-    input: List[AnalyzerInputRow]
-    annotation: List[AnalyzerInputRow]
-    output: AnalyzerInputRow
+    input: List[InspectionInputRow]
+    annotation: List[InspectionInputRow]
+    output: InspectionInputRow
 
 
 @dataclasses.dataclass(frozen=True)
-class AnalyzerInputSinkOperator:
+class InspectionInputSinkOperator:
     """
     Wrapper class for operators like Estimators that only get fitted
     """
-    input: List[AnalyzerInputRow]
-    annotation: List[AnalyzerInputRow]
+    input: List[InspectionInputRow]
+    annotation: List[InspectionInputRow]
 
 
 @dataclasses.dataclass(frozen=True)
 class OperatorContext:
     """
-    Additional context for the analyzer. Contains, most importantly, the operator type.
+    Additional context for the inspection. Contains, most importantly, the operator type.
     """
     operator: OperatorType
     function_info: Tuple[str, str]

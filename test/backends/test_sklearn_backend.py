@@ -27,8 +27,8 @@ def test_sklearn_backend_row_index_annotation_propagation():
     """
     with open(FILE_PY) as file:
         code = file.read()
-        row_index_annotation_analyzer_result = run_row_index_annotation_testing_analyzer(code)
-        assert len(row_index_annotation_analyzer_result) == 16
+        lineage_result = run_row_index_annotation_testing_analyzer(code)
+        assert len(lineage_result) == 16
 
 
 def test_sklearn_backend_annotation_propagation_multiple_analyzers():

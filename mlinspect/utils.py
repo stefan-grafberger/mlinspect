@@ -56,7 +56,8 @@ def traverse_graph_and_process_nodes(graph: networkx.DiGraph, func, start_nodes=
         if not end_node or node != end_node:
             for child in children:
                 if child not in processed_nodes:
-                    if processed_nodes.issuperset(graph.predecessors(child)):
+                    predecessors = graph.predecessors(child)
+                    if child_filter or processed_nodes.issuperset(predecessors):
                         current_nodes.append(child)
 
         func(node, processed_nodes)

@@ -4,8 +4,9 @@ Tests whether the Sklearn DAG extraction works
 import os
 
 import networkx
+from testfixtures import compare
 
-from mlinspect.instrumentation.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
+from mlinspect.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
 from mlinspect.instrumentation.wir_to_dag_transformer import WirToDagTransformer
 from mlinspect.utils import get_project_root
 from ..utils import get_expected_dag_adult_easy_py, get_test_wir
@@ -25,4 +26,4 @@ def test_sklearn_wir_preprocessing():
 
     expected_dag = get_expected_dag_adult_easy_py()
 
-    assert networkx.to_dict_of_dicts(preprocessed_wir) == networkx.to_dict_of_dicts(expected_dag)
+    compare(networkx.to_dict_of_dicts(preprocessed_wir), networkx.to_dict_of_dicts(expected_dag))

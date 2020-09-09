@@ -13,8 +13,8 @@ class Backend(metaclass=abc.ABCMeta):
 
     def __init__(self):
         self.code_reference_to_description = {}
-        self.dag_node_identifier_to_analyzer_output = {}
-        self.analyzers = []
+        self.dag_node_identifier_to_inspection_output = {}
+        self.inspections = []
 
     @property
     @abc.abstractmethod
@@ -41,7 +41,7 @@ class Backend(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def postprocess_dag(self, dag: networkx.DiGraph) -> networkx.DiGraph:
-        """Postprocess the wir if necessary"""
+        """Postprocess the dag if necessary"""
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -52,7 +52,8 @@ class Backend(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, args_values):
+    def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, store,
+                              args_values):
         """The arguments a function may be called with"""
         # pylint: disable=too-many-arguments, unused-argument
         raise NotImplementedError

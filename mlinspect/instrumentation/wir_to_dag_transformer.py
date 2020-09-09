@@ -3,9 +3,10 @@ Extract a DAG from the WIR (Workflow Intermediate Representation)
 """
 import networkx
 
-from mlinspect.instrumentation.backends.all_backends import get_all_backends
-from mlinspect.instrumentation.dag_node import DagNode
-from mlinspect.utils import traverse_graph_and_process_nodes
+from ..backends.all_backends import get_all_backends
+from ..instrumentation.dag_node import DagNode
+from ..instrumentation.wir_extractor import WirExtractor
+from ..utils import traverse_graph_and_process_nodes
 
 
 class WirToDagTransformer:
@@ -20,8 +21,6 @@ class WirToDagTransformer:
         """
         Extract the final DAG
         """
-        for backend in get_all_backends():
-            wir = backend.preprocess_wir(wir)
         cleaned_wir = WirToDagTransformer.remove_all_nodes_but_calls_and_subscripts(wir)
         dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
 
@@ -42,7 +41,9 @@ class WirToDagTransformer:
                     for child_node in children:
                         graph.add_edge(parent_node, child_node)
                 graph.remove_node(node)
-            elif node.operation in {"Call", "Subscript"}:
+            elif node.operation in {"Call", "Subscript", "Subscript-Assign"}:
+                pass
+            elif node == WirExtractor.NOT_FOUND_WIR:
                 pass
             else:
                 print("Unknown WIR Node Type: {}".format(node))
@@ -67,11 +68,13 @@ class WirToDagTransformer:
             if node.module in WirToDagTransformer.OPERATOR_MAP:
                 new_dag_vertex = DagNode(node.node_id, WirToDagTransformer.OPERATOR_MAP[node.module],
                                          node.code_reference, node.module, node.dag_operator_description)
+                graph.remove_node(node)
+                graph.add_node(new_dag_vertex)
                 for parent in parents:
                     graph.add_edge(parent, new_dag_vertex)
                 for child in children:
                     graph.add_edge(new_dag_vertex, child)
-                graph.remove_node(node)
+
                 processed_nodes.add(new_dag_vertex)
             else:
                 for parent in parents:
