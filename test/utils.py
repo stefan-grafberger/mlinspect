@@ -313,13 +313,13 @@ def run_random_annotation_testing_analyzer(code):
     """
     An utility function to test backends
     """
-    inspection_result = PipelineInspector \
+    result = PipelineInspector \
         .on_pipeline_from_string(code) \
         .add_inspection(RandomAnnotationTestingInspection(10)) \
         .execute()
-    analyzer_results = inspection_result.analyzer_to_annotations
-    assert RandomAnnotationTestingInspection(10) in analyzer_results
-    random_annotation_analyzer_result = analyzer_results[RandomAnnotationTestingInspection(10)]
+    inspection_results = result.inspection_to_annotations
+    assert RandomAnnotationTestingInspection(10) in inspection_results
+    random_annotation_analyzer_result = inspection_results[RandomAnnotationTestingInspection(10)]
     return random_annotation_analyzer_result
 
 
@@ -327,13 +327,13 @@ def run_row_index_annotation_testing_analyzer(code):
     """
     An utility function to test backends
     """
-    inspection_result = PipelineInspector \
+    result = PipelineInspector \
         .on_pipeline_from_string(code) \
         .add_inspection(LineageDemoInspection(10)) \
         .execute()
-    analyzer_results = inspection_result.analyzer_to_annotations
-    assert LineageDemoInspection(10) in analyzer_results
-    result = analyzer_results[LineageDemoInspection(10)]
+    inspection_results = result.inspection_to_annotations
+    assert LineageDemoInspection(10) in inspection_results
+    result = inspection_results[LineageDemoInspection(10)]
     return result
 
 
@@ -344,9 +344,9 @@ def run_multiple_test_analyzers(code):
    """
     analyzers = [RandomAnnotationTestingInspection(2), MaterializeFirstRowsInspection(5),
                  LineageDemoInspection(2)]
-    inspection_result = PipelineInspector \
+    result = PipelineInspector \
         .on_pipeline_from_string(code) \
         .add_inspections(analyzers) \
         .execute()
-    analyzer_results = inspection_result.analyzer_to_annotations
-    return analyzer_results, analyzers
+    inspection_results = result.inspection_to_annotations
+    return inspection_results, analyzers

@@ -2,7 +2,6 @@
 An example pipeline
 """
 import os
-import time
 
 import pandas as pd
 from sklearn.compose import ColumnTransformer
@@ -14,9 +13,7 @@ from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 from demo.healthcare.demo_utils import MyW2VTransformer, create_model
 from mlinspect.utils import get_project_root
 
-COUNTIES_OF_INTEREST = ['Iowa', 'Florida', 'Ohio', 'California', 'Nevada', 'Texas', 'New York', 'Missouri', 'Virginia']
-
-start = time.time()
+COUNTIES_OF_INTEREST = ['county2', 'county3']
 
 # load input data sources (data generated with https://www.mockaroo.com as a single file and then split into two)
 patients = pd.read_csv(os.path.join(str(get_project_root()), "demo", "healthcare", "healthcare_patients.csv"), na_values='?')
@@ -48,12 +45,12 @@ impute_and_one_hot_encode = Pipeline([
 
 featurisation = ColumnTransformer(transformers=[
     ("impute_and_one_hot_encode", impute_and_one_hot_encode, ['smoker', 'county', 'race']),
-    ('word2vec', MyW2VTransformer(min_count=1), ['last_name']),
+    ('word2vec', MyW2VTransformer(min_count=2), ['last_name']),
     ('numeric', StandardScaler(), ['num_children', 'income'])
 ])
 
 # define the training pipeline for the model
-neural_net = KerasClassifier(build_fn=create_model, epochs=10, batch_size=1, verbose=0, input_dim=201)
+neural_net = KerasClassifier(build_fn=create_model, epochs=10, batch_size=1, verbose=0, input_dim=109)
 pipeline = Pipeline([
     ('features', featurisation),
     ('learner', neural_net)])
@@ -64,8 +61,3 @@ train_data, test_data = train_test_split(data, random_state=0)
 model = pipeline.fit(train_data, train_data['label'])
 # model evaluation
 print(model.score(test_data, test_data['label']))
-
-end = time.time()
-execution_time = end - start
-print("Pipeline finished in:")
-print(execution_time)

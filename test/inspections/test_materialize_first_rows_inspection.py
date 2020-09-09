@@ -20,13 +20,13 @@ def test_materialize_first_rows_inspection():
     """
     Tests whether the MaterializeFirstRowsInspection works
     """
-    inspection_result = PipelineInspector \
+    inspector_result = PipelineInspector \
         .on_pipeline_from_py_file(FILE_PY) \
         .add_inspection(MaterializeFirstRowsInspection(2)) \
         .execute()
-    analyzer_results = inspection_result.analyzer_to_annotations
-    assert MaterializeFirstRowsInspection(2) in analyzer_results
-    result = analyzer_results[MaterializeFirstRowsInspection(2)]
+    inspection_result = inspector_result.inspection_to_annotations
+    assert MaterializeFirstRowsInspection(2) in inspection_result
+    result = inspection_result[MaterializeFirstRowsInspection(2)]
 
     compare(result, get_expected_result())
 

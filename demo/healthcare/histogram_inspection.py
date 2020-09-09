@@ -65,7 +65,7 @@ class HistogramInspection(Inspection):
                     race_count_map[race] = group_count
 
                 yield None
-        elif self._operator_type is OperatorType.PROJECTION:
+        elif self._operator_type in {OperatorType.PROJECTION, OperatorType.TRANSFORMER}:
             for row in row_iterator:
                 current_count += 1
                 if "age_group" in row.input.fields and "age_group" not in row.output.fields:
@@ -74,8 +74,11 @@ class HistogramInspection(Inspection):
                 else:
                     age_group = get_current_annotation(row)[0]
                 if "race" in row.input.fields and "race" not in row.output.fields:
-                    race_index = row.input.fields.index("race")
-                    race = row.input.values[race_index]
+                    if operator_context.function_info != ('sklearn.impute._base', 'fit_transform'):
+                        race_index = row.input.fields.index("race")
+                        race = row.input.values[race_index]
+                    else:
+                        race = row.output.values[0]
                 else:
                     race = get_current_annotation(row)[1]
 
