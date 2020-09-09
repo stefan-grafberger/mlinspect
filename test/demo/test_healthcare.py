@@ -5,6 +5,7 @@ import ast
 import os
 
 from importnb import Notebook
+import matplotlib
 
 from mlinspect.utils import get_project_root
 
@@ -30,4 +31,5 @@ def test_demo_nb():
     """
     Tests whether the .py version of the inspector works
     """
+    matplotlib.use("template")  # Disable plt.show when executing nb as part of this test
     Notebook.load(DEMO_NB_FILE)
