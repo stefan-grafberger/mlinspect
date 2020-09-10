@@ -180,8 +180,12 @@ class PandasBackend(Backend):
             return_value.name = description  # TODO: Do not use name here but something else to transport the value
         if function_info == ('pandas.core.frame', 'merge'):
             operator_context = OperatorContext(OperatorType.JOIN, function_info)
-            return_value = self.execute_inspection_visits_join_operator_df(operator_context, code_reference,
-                                                                           return_value)
+            return_value = execute_inspection_visits_join_operator_df(self, operator_context, code_reference,
+                                                                      self.input_data[-1],
+                                                                      self.input_data[-1].annotations,
+                                                                      self.df_arg,
+                                                                      self.df_arg.annotations,
+                                                                      return_value)
 
         self.input_data.pop()
 
@@ -209,29 +213,32 @@ class PandasBackend(Backend):
                                                    operator_context)
         return return_value
 
-    def execute_inspection_visits_join_operator_df(self, operator_context, code_reference, return_value_df):
-        """Execute inspections when the current operator has one parent in the DAG"""
-        # pylint: disable=unused-argument
-        assert "mlinspect_index_x" in return_value_df.columns
-        assert "mlinspect_index_y" in return_value_df.columns
-        assert isinstance(self.input_data[-1], MlinspectDataFrame)
-        assert isinstance(self.df_arg, MlinspectDataFrame)
-        annotation_iterators = []
-        for inspection in self.inspections:
-            inspection_count = len(self.inspections)
-            inspection_index = self.inspections.index(inspection)
-            iterator_for_inspection = iter_input_annotation_output_df_pair_df(inspection_count,
-                                                                              inspection_index,
-                                                                              self.input_data[-1],
-                                                                              self.input_data[-1].annotations,
-                                                                              self.df_arg,
-                                                                              self.df_arg.annotations,
-                                                                              return_value_df)
-            annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
-            annotation_iterators.append(annotations_iterator)
-        return_value = store_inspection_outputs_df(self, annotation_iterators, code_reference, return_value_df,
-                                                   operator_context)
-        return return_value
+
+def execute_inspection_visits_join_operator_df(backend, operator_context, code_reference, input_data_one,
+                                               input_annotations_one, input_data_two, input_annotations_two,
+                                               return_value_df):
+    """Execute inspections when the current operator has one parent in the DAG"""
+    # pylint: disable=too-many-arguments
+    assert "mlinspect_index_x" in return_value_df.columns
+    assert "mlinspect_index_y" in return_value_df.columns
+    assert isinstance(input_data_one, MlinspectDataFrame)
+    assert isinstance(input_data_two, MlinspectDataFrame)
+    annotation_iterators = []
+    for inspection in backend.inspections:
+        inspection_count = len(backend.inspections)
+        inspection_index = backend.inspections.index(inspection)
+        iterator_for_inspection = iter_input_annotation_output_df_pair_df(inspection_count,
+                                                                          inspection_index,
+                                                                          input_data_one,
+                                                                          input_annotations_one,
+                                                                          input_data_two,
+                                                                          input_annotations_two,
+                                                                          return_value_df)
+        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
+        annotation_iterators.append(annotations_iterator)
+    return_value = store_inspection_outputs_df(backend, annotation_iterators, code_reference, return_value_df,
+                                               operator_context)
+    return return_value
 
 
 def execute_inspection_visits_unary_operator_series(backend, operator_context, code_reference, input_data,
