@@ -5,10 +5,8 @@ The scikit-learn backend
 import networkx
 
 from .backend import Backend
-from .pandas_backend import execute_inspection_visits_unary_operator, store_inspection_outputs, \
-    iter_input_annotation_output_df_projection
+from .pandas_backend import execute_inspection_visits_unary_operator
 from .pandas_backend_frame_wrapper import MlinspectSeries, MlinspectDataFrame
-from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
 from .sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer
 from .sklearn_dag_postprocessor import SklearnDagPostprocessor
 from .sklearn_wir_preprocessor import SklearnWirPreprocessor
@@ -127,10 +125,11 @@ class SklearnBackend(Backend):
         # pylint: disable=too-many-arguments, unused-argument, no-self-use
         if function_info == ('sklearn.preprocessing._label', 'label_binarize'):
             operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
-            return_value = execute_inspection_visits_df_input_np_output(self, operator_context, code_reference,
-                                                                        self.input_data,
-                                                                        self.input_data.annotations,
-                                                                        return_value)
+            return_value = execute_inspection_visits_unary_operator(self, operator_context, code_reference,
+                                                                    self.input_data,
+                                                                    self.input_data.annotations,
+                                                                    return_value,
+                                                                    False)
         elif function_info == ('sklearn.model_selection._split', 'train_test_split'):
             operator_context = OperatorContext(OperatorType.TRAIN_TEST_SPLIT, function_info)
             train_data, test_data = return_value
@@ -154,29 +153,3 @@ class SklearnBackend(Backend):
         self.input_data = None
 
         return return_value
-
-
-# -------------------------------------------------------
-# Execute inspections functions
-# -------------------------------------------------------
-
-def execute_inspection_visits_df_input_np_output(backend, operator_context, code_reference, input_data,
-                                                 input_annotations, return_value_array):
-    """Execute inspections when the current operator has one parent in the DAG"""
-    # pylint: disable=too-many-arguments
-    assert isinstance(input_data, MlinspectSeries)
-    annotation_iterators = []
-    for inspection in backend.inspections:
-        inspection_index = backend.inspections.index(inspection)
-        # TODO: Create arrays only once, return iterators over those same arrays repeatedly
-        iterator_for_inspection = iter_input_annotation_output_df_projection(inspection_index,
-                                                                             input_data,
-                                                                             input_annotations,
-                                                                             return_value_array)
-        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
-        annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs(backend, annotation_iterators, code_reference, return_value_array,
-                                            operator_context)
-    backend.input_data = None
-    assert isinstance(return_value, MlinspectNdarray)
-    return return_value
