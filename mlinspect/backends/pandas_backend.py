@@ -5,8 +5,10 @@ import os
 from collections import namedtuple
 
 import networkx
+import numpy
 import pandas
 
+from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
 from ..inspections.inspection_input import InspectionInputUnaryOperator, \
     InspectionInputDataSource, OperatorContext, InspectionInputNAryOperator
 from .backend import Backend
@@ -425,13 +427,13 @@ def store_inspection_outputs(backend, annotation_iterators, code_reference, retu
     dag_node_identifier = DagNodeIdentifier(operator_context.operator, code_reference,
                                             backend.code_reference_to_description.get(code_reference))
     annotations_df = build_annotation_df_from_iters(backend.inspections, annotation_iterators)
-    annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
     inspection_outputs = {}
     for inspection in backend.inspections:
         inspection_outputs[inspection] = inspection.get_operator_annotation_after_visit()
     backend.dag_node_identifier_to_inspection_output[dag_node_identifier] = inspection_outputs
     if isinstance(return_value, pandas.DataFrame):
         return_value = MlinspectDataFrame(return_value)
+        annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
         return_value.annotations = annotations_df
         return_value.backend = backend
         if "mlinspect_index" in return_value.columns:
@@ -442,6 +444,11 @@ def store_inspection_outputs(backend, annotation_iterators, code_reference, retu
         new_return_value = return_value
     elif isinstance(return_value, pandas.Series):
         return_value = MlinspectSeries(return_value)
+        annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
+        return_value.annotations = annotations_df
+        new_return_value = return_value
+    elif isinstance(return_value, numpy.ndarray):
+        return_value = MlinspectNdarray(return_value)
         return_value.annotations = annotations_df
         new_return_value = return_value
     else:

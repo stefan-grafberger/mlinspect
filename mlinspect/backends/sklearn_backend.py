@@ -7,15 +7,15 @@ import networkx
 from ..inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator
 from .backend import Backend
 from .backend_utils import get_numpy_array_row_iterator, \
-    build_annotation_df_from_iters, get_series_row_iterator
-from .pandas_backend import execute_inspection_visits_unary_operator
+    get_series_row_iterator
+from .pandas_backend import execute_inspection_visits_unary_operator, store_inspection_outputs
 from .pandas_backend_frame_wrapper import MlinspectSeries, MlinspectDataFrame
 from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
 from .sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer, \
     get_df_row_iterator
 from .sklearn_dag_postprocessor import SklearnDagPostprocessor
 from .sklearn_wir_preprocessor import SklearnWirPreprocessor
-from ..instrumentation.dag_node import OperatorType, DagNodeIdentifier
+from ..instrumentation.dag_node import OperatorType
 
 
 class SklearnBackend(Backend):
@@ -177,8 +177,9 @@ def execute_inspection_visits_df_input_np_output(backend, operator_context, code
                                                                             return_value_array)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs_array(backend, annotation_iterators, code_reference, return_value_array,
-                                                  operator_context)
+    return_value = store_inspection_outputs(backend, annotation_iterators, code_reference, return_value_array,
+                                            operator_context)
+    backend.input_data = None
     assert isinstance(return_value, MlinspectNdarray)
     return return_value
 
@@ -203,26 +204,3 @@ def iter_input_annotation_output_series_array(inspection_index, input_df, annota
 
     return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
-
-# -------------------------------------------------------
-# Store inspection results functions
-# -------------------------------------------------------
-
-
-def store_inspection_outputs_array(backend, annotation_iterators, code_reference, return_value, operator_context):
-    """
-    Stores the inspection annotations for the rows in the dataframe and the
-    inspection annotations for the DAG operators in a map
-    """
-    dag_node_identifier = DagNodeIdentifier(backend.operator_map[operator_context.function_info], code_reference,
-                                            backend.code_reference_to_description.get(code_reference))
-    annotations_df = build_annotation_df_from_iters(backend.inspections, annotation_iterators)
-    inspection_outputs = {}
-    for inspection in backend.inspections:
-        inspection_outputs[inspection] = inspection.get_operator_annotation_after_visit()
-    backend.dag_node_identifier_to_inspection_output[dag_node_identifier] = inspection_outputs
-    return_value = MlinspectNdarray(return_value)
-    return_value.annotations = annotations_df
-    backend.input_data = None
-    assert isinstance(return_value, MlinspectNdarray)
-    return return_value
