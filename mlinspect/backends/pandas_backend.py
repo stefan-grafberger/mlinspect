@@ -13,7 +13,7 @@ from ..inspections.inspection_input import InspectionInputUnaryOperator, \
     InspectionInputDataSource, OperatorContext, InspectionInputNAryOperator
 from .backend import Backend
 from .backend_utils import get_df_row_iterator, build_annotation_df_from_iters, \
-    get_series_row_iterator
+    get_series_row_iterator, get_numpy_array_row_iterator
 from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from .pandas_wir_preprocessor import PandasWirPreprocessor
 from ..instrumentation.dag_node import OperatorType, DagNodeIdentifier
@@ -297,24 +297,34 @@ def iter_input_annotation_output_df_projection(inspection_index, input_data, inp
     # pylint: disable=too-many-locals
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-    data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
-                                                right_on="mlinspect_index")
+    if isinstance(input_data, pandas.DataFrame):
+        data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
+                                                    right_on="mlinspect_index")
 
-    column_index_input_end = len(input_data.columns)
-    column_annotation_current_inspection = column_index_input_end + inspection_index
+        column_index_input_end = len(input_data.columns)
+        column_annotation_current_inspection = column_index_input_end + inspection_index
 
-    input_df_view = data_before_with_annotations.iloc[:, 0:column_index_input_end - 1]
-    input_df_view.columns = input_data.columns[0:-1]
+        input_df_view = data_before_with_annotations.iloc[:, 0:column_index_input_end - 1]
+        input_df_view.columns = input_data.columns[0:-1]
 
-    annotation_df_view = data_before_with_annotations.iloc[:, column_annotation_current_inspection:
-                                                           column_annotation_current_inspection + 1]
+        annotation_df_view = data_before_with_annotations.iloc[:, column_annotation_current_inspection:
+                                                               column_annotation_current_inspection + 1]
 
-    input_rows = get_df_row_iterator(input_df_view)
-    annotation_rows = get_df_row_iterator(annotation_df_view)
+        input_rows = get_df_row_iterator(input_df_view)
+        annotation_rows = get_df_row_iterator(annotation_df_view)
+    elif isinstance(input_data, pandas.Series):
+        annotation_df_view = input_annotations.iloc[:, inspection_index:inspection_index + 1]
+        input_rows = get_series_row_iterator(input_data)
+        annotation_rows = get_df_row_iterator(annotation_df_view)
+    else:
+        assert False
+
     if isinstance(output, pandas.Series):
         output_rows = get_series_row_iterator(output)
     elif isinstance(output, pandas.DataFrame):
         output_rows = get_df_row_iterator(output)
+    elif isinstance(output, numpy.ndarray):
+        output_rows = get_numpy_array_row_iterator(output)
     else:
         assert False
 

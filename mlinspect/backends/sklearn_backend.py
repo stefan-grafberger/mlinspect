@@ -4,17 +4,15 @@ The scikit-learn backend
 
 import networkx
 
-from ..inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator
 from .backend import Backend
-from .backend_utils import get_numpy_array_row_iterator, \
-    get_series_row_iterator
-from .pandas_backend import execute_inspection_visits_unary_operator, store_inspection_outputs
+from .pandas_backend import execute_inspection_visits_unary_operator, store_inspection_outputs, \
+    iter_input_annotation_output_df_projection
 from .pandas_backend_frame_wrapper import MlinspectSeries, MlinspectDataFrame
 from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
-from .sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer, \
-    get_df_row_iterator
+from .sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer
 from .sklearn_dag_postprocessor import SklearnDagPostprocessor
 from .sklearn_wir_preprocessor import SklearnWirPreprocessor
+from ..inspections.inspection_input import OperatorContext
 from ..instrumentation.dag_node import OperatorType
 
 
@@ -171,10 +169,10 @@ def execute_inspection_visits_df_input_np_output(backend, operator_context, code
     for inspection in backend.inspections:
         inspection_index = backend.inspections.index(inspection)
         # TODO: Create arrays only once, return iterators over those same arrays repeatedly
-        iterator_for_inspection = iter_input_annotation_output_series_array(inspection_index,
-                                                                            input_data,
-                                                                            input_annotations,
-                                                                            return_value_array)
+        iterator_for_inspection = iter_input_annotation_output_df_projection(inspection_index,
+                                                                             input_data,
+                                                                             input_annotations,
+                                                                             return_value_array)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
     return_value = store_inspection_outputs(backend, annotation_iterators, code_reference, return_value_array,
@@ -182,25 +180,3 @@ def execute_inspection_visits_df_input_np_output(backend, operator_context, code
     backend.input_data = None
     assert isinstance(return_value, MlinspectNdarray)
     return return_value
-
-
-# -------------------------------------------------------
-# Functions to create the iterators for the inspections
-# -------------------------------------------------------
-
-def iter_input_annotation_output_series_array(inspection_index, input_df, annotation_df, output_array):
-    """
-    Create an efficient iterator for the inspection input for operators with one parent.
-    """
-    # pylint: disable=too-many-locals
-    # Performance tips:
-    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-
-    annotation_df_view = annotation_df.iloc[:, inspection_index:inspection_index + 1]
-
-    input_rows = get_series_row_iterator(input_df)
-    annotation_rows = get_df_row_iterator(annotation_df_view)
-    output_rows = get_numpy_array_row_iterator(output_array)
-
-    return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
-               zip(input_rows, annotation_rows, output_rows))
