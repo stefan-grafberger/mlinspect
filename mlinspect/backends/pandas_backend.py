@@ -213,8 +213,8 @@ def execute_inspection_visits_no_parents(backend, operator_context, code_referen
         iterator_for_inspection = iter_input_data_source(return_value)  # TODO: Create arrays only once
         annotation_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotation_iterator)
-    return_value = store_inspection_outputs_df(backend, annotation_iterators, code_reference, return_value,
-                                               operator_context)
+    return_value = store_inspection_outputs(backend, annotation_iterators, code_reference, return_value,
+                                            operator_context)
     return return_value
 
 
@@ -240,8 +240,8 @@ def execute_inspection_visits_join_operator_df(backend, operator_context, code_r
                                                                           return_value_df)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs_df(backend, annotation_iterators, code_reference, return_value_df,
-                                               operator_context)
+    return_value = store_inspection_outputs(backend, annotation_iterators, code_reference, return_value_df,
+                                            operator_context)
     return return_value
 
 
@@ -260,8 +260,8 @@ def execute_inspection_visits_unary_operator_series(backend, operator_context, c
                                                                          return_value_series)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs_series(backend, annotation_iterators, code_reference, return_value_series,
-                                                   operator_context)
+    return_value = store_inspection_outputs(backend, annotation_iterators, code_reference, return_value_series,
+                                            operator_context)
     return return_value
 
 
@@ -283,8 +283,8 @@ def execute_inspection_visits_unary_operator_df(backend, operator_context, code_
                                                                      appends_col)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs_df(backend, annotation_iterators, code_reference, return_value_df,
-                                               operator_context)
+    return_value = store_inspection_outputs(backend, annotation_iterators, code_reference, return_value_df,
+                                            operator_context)
     return return_value
 
 
@@ -428,7 +428,7 @@ def iter_input_annotation_output_df_pair_df(inspection_count, inspection_index, 
 # Store inspection results functions
 # -------------------------------------------------------
 
-def store_inspection_outputs_df(backend, annotation_iterators, code_reference, return_value, operator_context):
+def store_inspection_outputs(backend, annotation_iterators, code_reference, return_value, operator_context):
     """
     Stores the inspection annotations for the rows in the dataframe and the
     inspection annotations for the DAG operators in a map
@@ -441,32 +441,20 @@ def store_inspection_outputs_df(backend, annotation_iterators, code_reference, r
     for inspection in backend.inspections:
         inspection_outputs[inspection] = inspection.get_operator_annotation_after_visit()
     backend.dag_node_identifier_to_inspection_output[dag_node_identifier] = inspection_outputs
-    return_value = MlinspectDataFrame(return_value)
-    return_value.annotations = annotations_df
-    return_value.backend = backend
-    if "mlinspect_index" in return_value.columns:
-        return_value = return_value.drop("mlinspect_index", axis=1)
-    elif "mlinspect_index_x" in return_value.columns:
-        return_value = return_value.drop(["mlinspect_index_x", "mlinspect_index_y"], axis=1)
-    assert "mlinspect_index" not in return_value.columns
-    assert isinstance(return_value, MlinspectDataFrame)
-    return return_value
-
-
-def store_inspection_outputs_series(backend, annotation_iterators, code_reference, return_value, operator_context):
-    """
-    Stores the inspection annotations for the rows in the dataframe and the
-    inspection annotations for the DAG operators in a map
-    """
-    dag_node_identifier = DagNodeIdentifier(backend.operator_map[operator_context.function_info], code_reference,
-                                            backend.code_reference_to_description.get(code_reference))
-    annotations_df = build_annotation_df_from_iters(backend.inspections, annotation_iterators)
-    annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
-    inspection_outputs = {}
-    for inspection in backend.inspections:
-        inspection_outputs[inspection] = inspection.get_operator_annotation_after_visit()
-    backend.dag_node_identifier_to_inspection_output[dag_node_identifier] = inspection_outputs
-    return_value = MlinspectSeries(return_value)
-    return_value.annotations = annotations_df
-    assert isinstance(return_value, MlinspectSeries)
-    return return_value
+    if isinstance(return_value, pandas.DataFrame):
+        return_value = MlinspectDataFrame(return_value)
+        return_value.annotations = annotations_df
+        return_value.backend = backend
+        if "mlinspect_index" in return_value.columns:
+            return_value = return_value.drop("mlinspect_index", axis=1)
+        elif "mlinspect_index_x" in return_value.columns:
+            return_value = return_value.drop(["mlinspect_index_x", "mlinspect_index_y"], axis=1)
+        assert "mlinspect_index" not in return_value.columns
+        new_return_value = return_value
+    elif isinstance(return_value, pandas.Series):
+        return_value = MlinspectSeries(return_value)
+        return_value.annotations = annotations_df
+        new_return_value = return_value
+    else:
+        assert False
+    return new_return_value
