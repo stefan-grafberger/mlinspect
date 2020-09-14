@@ -148,43 +148,46 @@ class PandasBackend(Backend):
                                                                 return_value.reset_index())
         elif function_info == ('pandas.core.frame', 'dropna'):
             operator_context = OperatorContext(OperatorType.SELECTION, function_info)
-            return_value = execute_inspection_visits_unary_operator_df(self, operator_context, code_reference,
-                                                                       self.input_data[-1],
-                                                                       self.input_data[-1].annotations,
-                                                                       return_value)
+            return_value = execute_inspection_visits_unary_operator(self, operator_context, code_reference,
+                                                                    self.input_data[-1],
+                                                                    self.input_data[-1].annotations,
+                                                                    return_value,
+                                                                    True)
         elif function_info == ('pandas.core.frame', '__getitem__'):
             if self.select:
                 self.select = False
                 # Gets converted to Selection later?
                 operator_context = OperatorContext(OperatorType.SELECTION, function_info)
-                return_value = execute_inspection_visits_unary_operator_df(self, operator_context, code_reference,
-                                                                           self.input_data[-1],
-                                                                           self.input_data[-1].annotations,
-                                                                           return_value)
+                return_value = execute_inspection_visits_unary_operator(self, operator_context, code_reference,
+                                                                        self.input_data[-1],
+                                                                        self.input_data[-1].annotations,
+                                                                        return_value,
+                                                                        True)
             elif isinstance(return_value, MlinspectDataFrame):
                 operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
-                return_value['mlinspect_index'] = range(1, len(return_value) + 1)
-                return_value = execute_inspection_visits_unary_operator_df(self, operator_context, code_reference,
-                                                                           self.input_data[-1],
-                                                                           self.input_data[-1].annotations,
-                                                                           return_value)
+                return_value = execute_inspection_visits_unary_operator(self, operator_context, code_reference,
+                                                                        self.input_data[-1],
+                                                                        self.input_data[-1].annotations,
+                                                                        return_value,
+                                                                        False)
             elif isinstance(return_value, MlinspectSeries):
                 operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
-                return_value = execute_inspection_visits_unary_operator_series(self, operator_context, code_reference,
-                                                                               self.input_data[-1],
-                                                                               self.input_data[-1].annotations,
-                                                                               return_value)
+                return_value = execute_inspection_visits_unary_operator(self, operator_context, code_reference,
+                                                                        self.input_data[-1],
+                                                                        self.input_data[-1].annotations,
+                                                                        return_value,
+                                                                        False)
         elif function_info == ('pandas.core.frame', 'groupby'):
             description = self.code_reference_to_description[code_reference]
             return_value.name = description  # TODO: Do not use name here but something else to transport the value
         if function_info == ('pandas.core.frame', 'merge'):
             operator_context = OperatorContext(OperatorType.JOIN, function_info)
-            return_value = execute_inspection_visits_join_operator_df(self, operator_context, code_reference,
-                                                                      self.input_data[-1],
-                                                                      self.input_data[-1].annotations,
-                                                                      self.df_arg,
-                                                                      self.df_arg.annotations,
-                                                                      return_value)
+            return_value = execute_inspection_visits_join(self, operator_context, code_reference,
+                                                          self.input_data[-1],
+                                                          self.input_data[-1].annotations,
+                                                          self.df_arg,
+                                                          self.df_arg.annotations,
+                                                          return_value)
 
         self.input_data.pop()
 
@@ -196,9 +199,9 @@ class PandasBackend(Backend):
         code_reference, function_info, args_code = self.set_key_info
         operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
         value_before['mlinspect_index'] = range(1, len(value_after) + 1)
-        execute_inspection_visits_unary_operator_df(self, operator_context, code_reference,
-                                                    value_before, value_before.annotations,
-                                                    value_after, True)
+        execute_inspection_visits_unary_operator(self, operator_context, code_reference,
+                                                 value_before, value_before.annotations,
+                                                 value_after, False)
 
 
 # -------------------------------------------------------
@@ -218,9 +221,37 @@ def execute_inspection_visits_no_parents(backend, operator_context, code_referen
     return return_value
 
 
-def execute_inspection_visits_join_operator_df(backend, operator_context, code_reference, input_data_one,
-                                               input_annotations_one, input_data_two, input_annotations_two,
-                                               return_value_df):
+def execute_inspection_visits_unary_operator(backend, operator_context, code_reference, input_data,
+                                             input_annotations, return_value_df, resampled):
+    """Execute inspections when the current operator has one parent in the DAG"""
+    # pylint: disable=too-many-arguments, unused-argument
+    assert not resampled or "mlinspect_index" in return_value_df.columns
+    assert isinstance(input_data, (MlinspectDataFrame, MlinspectSeries))
+    annotation_iterators = []
+    for inspection in backend.inspections:
+        inspection_count = len(backend.inspections)
+        inspection_index = backend.inspections.index(inspection)
+        if resampled:
+            iterator_for_inspection = iter_input_annotation_output_resampled(inspection_count,
+                                                                             inspection_index,
+                                                                             input_data,
+                                                                             input_annotations,
+                                                                             return_value_df)
+        else:
+            iterator_for_inspection = iter_input_annotation_output_df_projection(inspection_index,
+                                                                                 input_data,
+                                                                                 input_annotations,
+                                                                                 return_value_df)
+        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
+        annotation_iterators.append(annotations_iterator)
+    return_value = store_inspection_outputs(backend, annotation_iterators, code_reference, return_value_df,
+                                            operator_context)
+    return return_value
+
+
+def execute_inspection_visits_join(backend, operator_context, code_reference, input_data_one,
+                                   input_annotations_one, input_data_two, input_annotations_two,
+                                   return_value_df):
     """Execute inspections when the current operator has one parent in the DAG"""
     # pylint: disable=too-many-arguments
     assert "mlinspect_index_x" in return_value_df.columns
@@ -245,49 +276,6 @@ def execute_inspection_visits_join_operator_df(backend, operator_context, code_r
     return return_value
 
 
-def execute_inspection_visits_unary_operator_series(backend, operator_context, code_reference, input_data,
-                                                    input_annotations, return_value_series):
-    """Execute inspections when the current operator has one parent in the DAG"""
-    # pylint: disable=too-many-arguments
-    assert isinstance(input_data, MlinspectDataFrame)
-    assert isinstance(return_value_series, MlinspectSeries)
-    annotation_iterators = []
-    for inspection in backend.inspections:
-        inspection_index = backend.inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output_df_series(inspection_index,
-                                                                         input_data,
-                                                                         input_annotations,
-                                                                         return_value_series)
-        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
-        annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs(backend, annotation_iterators, code_reference, return_value_series,
-                                            operator_context)
-    return return_value
-
-
-def execute_inspection_visits_unary_operator_df(backend, operator_context, code_reference, input_data,
-                                                input_annotations, return_value_df, appends_col=False):
-    """Execute inspections when the current operator has one parent in the DAG"""
-    # pylint: disable=too-many-arguments, unused-argument
-    assert "mlinspect_index" in return_value_df.columns
-    assert isinstance(input_data, MlinspectDataFrame)
-    annotation_iterators = []
-    for inspection in backend.inspections:
-        inspection_count = len(backend.inspections)
-        inspection_index = backend.inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output_df_df(inspection_count,
-                                                                     inspection_index,
-                                                                     input_data,
-                                                                     input_annotations,
-                                                                     return_value_df,
-                                                                     appends_col)
-        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
-        annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs(backend, annotation_iterators, code_reference, return_value_df,
-                                            operator_context)
-    return return_value
-
-
 # -------------------------------------------------------
 # Functions to create the iterators for the inspections
 # -------------------------------------------------------
@@ -300,8 +288,39 @@ def iter_input_data_source(output):
     return map(InspectionInputDataSource, output)
 
 
-def iter_input_annotation_output_df_df(inspection_count, inspection_index, input_data, input_annotations, output,
-                                       appends_col=False):
+def iter_input_annotation_output_df_projection(inspection_index, input_data, input_annotations, output):
+    """
+    Create an efficient iterator for the inspection input for operators with one parent.
+    """
+    # pylint: disable=too-many-locals
+    # Performance tips:
+    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+    data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
+                                                right_on="mlinspect_index")
+
+    column_index_input_end = len(input_data.columns)
+    column_annotation_current_inspection = column_index_input_end + inspection_index
+
+    input_df_view = data_before_with_annotations.iloc[:, 0:column_index_input_end - 1]
+    input_df_view.columns = input_data.columns[0:-1]
+
+    annotation_df_view = data_before_with_annotations.iloc[:, column_annotation_current_inspection:
+                                                           column_annotation_current_inspection + 1]
+
+    input_rows = get_df_row_iterator(input_df_view)
+    annotation_rows = get_df_row_iterator(annotation_df_view)
+    if isinstance(output, pandas.Series):
+        output_rows = get_series_row_iterator(output)
+    elif isinstance(output, pandas.DataFrame):
+        output_rows = get_df_row_iterator(output)
+    else:
+        assert False
+
+    return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
+               zip(input_rows, annotation_rows, output_rows))
+
+
+def iter_input_annotation_output_resampled(inspection_count, inspection_index, input_data, input_annotations, output):
     """
     Create an efficient iterator for the inspection input for operators with one parent.
     """
@@ -324,41 +343,11 @@ def iter_input_annotation_output_df_df(inspection_count, inspection_index, input
                                         column_annotation_current_inspection:column_annotation_current_inspection + 1]
 
     output_df_view = joined_df.iloc[:, column_index_annotation_end:]
-    if not appends_col:
-        output_df_view.columns = output.columns[0:-1]
-    else:  # e.g., __setkey__  can add columns, but they are then behind mlinspect_index
-        output_df_view.columns = list(output.columns[0:-2]) + list(output.columns[-1:])
+    output_df_view.columns = output.columns[0:-1]
 
     input_rows = get_df_row_iterator(input_df_view)
     annotation_rows = get_df_row_iterator(annotation_df_view)
     output_rows = get_df_row_iterator(output_df_view)
-
-    return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
-               zip(input_rows, annotation_rows, output_rows))
-
-
-def iter_input_annotation_output_df_series(inspection_index, input_data, input_annotations, output):
-    """
-    Create an efficient iterator for the inspection input for operators with one parent.
-    """
-    # pylint: disable=too-many-locals
-    # Performance tips:
-    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-    data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
-                                                right_on="mlinspect_index")
-
-    column_index_input_end = len(input_data.columns)
-    column_annotation_current_inspection = column_index_input_end + inspection_index
-
-    input_df_view = data_before_with_annotations.iloc[:, 0:column_index_input_end - 1]
-    input_df_view.columns = input_data.columns[0:-1]
-
-    annotation_df_view = data_before_with_annotations.iloc[:, column_annotation_current_inspection:
-                                                           column_annotation_current_inspection + 1]
-
-    input_rows = get_df_row_iterator(input_df_view)
-    annotation_rows = get_df_row_iterator(annotation_df_view)
-    output_rows = get_series_row_iterator(output)
 
     return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))

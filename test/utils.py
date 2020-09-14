@@ -305,6 +305,7 @@ def get_pandas_read_csv_and_dropna_code():
             train_file = os.path.join(str(get_project_root()), "test", "data", "adult_train.csv")
             raw_data = pd.read_csv(train_file)
             data = raw_data.dropna()
+            relevant_data = data[['age', 'workclass', 'education']]
             """)
     return code
 

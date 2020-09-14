@@ -8,7 +8,7 @@ from ..inspections.inspection_input import OperatorContext, InspectionInputUnary
 from .backend import Backend
 from .backend_utils import get_numpy_array_row_iterator, \
     build_annotation_df_from_iters, get_series_row_iterator
-from .pandas_backend import execute_inspection_visits_unary_operator_df
+from .pandas_backend import execute_inspection_visits_unary_operator
 from .pandas_backend_frame_wrapper import MlinspectSeries, MlinspectDataFrame
 from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
 from .sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer, \
@@ -136,10 +136,11 @@ class SklearnBackend(Backend):
         elif function_info == ('sklearn.model_selection._split', 'train_test_split'):
             operator_context = OperatorContext(OperatorType.TRAIN_TEST_SPLIT, function_info)
             train_data, test_data = return_value
-            train_data = execute_inspection_visits_unary_operator_df(self, operator_context, code_reference,
-                                                                     self.input_data,
-                                                                     self.input_data.annotations,
-                                                                     train_data)
+            train_data = execute_inspection_visits_unary_operator(self, operator_context, code_reference,
+                                                                  self.input_data,
+                                                                  self.input_data.annotations,
+                                                                  train_data,
+                                                                  True)
             return_value = train_data, test_data
         elif function_info in {('sklearn.preprocessing._encoders', 'OneHotEncoder'),
                                ('sklearn.preprocessing._data', 'StandardScaler'),

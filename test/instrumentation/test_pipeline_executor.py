@@ -71,7 +71,8 @@ def test_pipeline_executor_function_call_info_extraction():
                             CodeReference(5, 26, 5, 49): ('builtins', 'str'),
                             CodeReference(5, 30, 5, 48): ('mlinspect.utils', 'get_project_root'),
                             CodeReference(6, 11, 6, 34): ('pandas.io.parsers', 'read_csv'),
-                            CodeReference(7, 7, 7, 24): ('pandas.core.frame', 'dropna')}
+                            CodeReference(7, 7, 7, 24): ('pandas.core.frame', 'dropna'),
+                            CodeReference(8, 16, 8, 55): ('pandas.core.frame', '__getitem__')}
 
     compare(pipeline_executor.singleton.code_reference_to_module, expected_module_info)
 
