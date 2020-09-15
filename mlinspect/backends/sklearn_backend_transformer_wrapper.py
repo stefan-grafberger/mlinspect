@@ -394,23 +394,6 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 # Functions to create the iterators for the inspections
 # -------------------------------------------------------
 
-def iter_input_annotation_output_df_array(inspection_index, input_data, annotations, output_data):
-    """
-    Create an efficient iterator for the inspection input
-    """
-    # pylint: disable=too-many-locals
-    # Performance tips:
-    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-
-    annotation_df_view = annotations.iloc[:, inspection_index:inspection_index + 1]
-
-    input_rows = get_df_row_iterator(input_data)
-    annotation_rows = get_df_row_iterator(annotation_df_view)
-    output_rows = get_numpy_array_row_iterator(output_data, False)
-
-    return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
-               zip(input_rows, annotation_rows, output_rows))
-
 
 def iter_input_annotation_output_df_csr(inspection_index, input_data, annotations, output_data):
     """
@@ -639,10 +622,10 @@ def execute_inspection_visits_df_array_column_transformer(operator_context, code
     annotation_iterators = []
     for inspection in inspections:
         inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output_df_array(inspection_index,
-                                                                        input_data,
-                                                                        annotations,
-                                                                        output_data)
+        iterator_for_inspection = iter_input_annotation_output(inspection_index,
+                                                               input_data,
+                                                               annotations,
+                                                               output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
