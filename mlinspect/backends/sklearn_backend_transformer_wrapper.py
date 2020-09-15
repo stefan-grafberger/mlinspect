@@ -516,41 +516,30 @@ def iter_input_annotation_output_estimator_nothing(inspection_index, data, targe
                zip(input_rows, annotation_rows))
 
 
-def iter_input_annotation_output_df_df(inspection_index, input_df, annotation_df, output_df):
+def iter_input_annotation_output(inspection_index, input_data, input_annotations, output):
     """
     Create an efficient iterator for the inspection input
     """
     # pylint: disable=too-many-locals
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-    assert isinstance(input_df, DataFrame)
-    assert isinstance(output_df, DataFrame)
+    if isinstance(input_data, DataFrame):
+        input_rows = get_df_row_iterator(input_data)
+    elif isinstance(input_data, numpy.ndarray):
+        input_rows = get_numpy_array_row_iterator(input_data)
+    else:
+        assert False
 
-    annotation_df_view = annotation_df.iloc[:, inspection_index:inspection_index + 1]
 
-    input_rows = get_df_row_iterator(input_df)
+    annotation_df_view = input_annotations.iloc[:, inspection_index:inspection_index + 1]
     annotation_rows = get_df_row_iterator(annotation_df_view)
-    output_rows = get_df_row_iterator(output_df)
 
-    return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
-               zip(input_rows, annotation_rows, output_rows))
-
-
-def iter_input_annotation_output_array_array(inspection_index, input_df, annotation_df, output_df):
-    """
-    Create an efficient iterator for the inspection input
-    """
-    # pylint: disable=too-many-locals
-    # Performance tips:
-    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-    assert isinstance(input_df, numpy.ndarray)
-    assert isinstance(output_df, numpy.ndarray)
-
-    annotation_df_view = annotation_df.iloc[:, inspection_index:inspection_index + 1]
-
-    input_rows = get_numpy_array_row_iterator(input_df)
-    annotation_rows = get_df_row_iterator(annotation_df_view)
-    output_rows = get_numpy_array_row_iterator(output_df, False)
+    if isinstance(output, DataFrame):
+        output_rows = get_df_row_iterator(output)
+    elif isinstance(output, numpy.ndarray):
+        output_rows = get_numpy_array_row_iterator(output, False)
+    else:
+        assert False
 
     return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
@@ -644,10 +633,10 @@ def execute_inspection_visits_df_df(operator_context, code_reference, input_data
     annotation_iterators = []
     for inspection in inspections:
         inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output_df_df(inspection_index,
-                                                                     input_data,
-                                                                     input_data.annotations,
-                                                                     output_data)
+        iterator_for_inspection = iter_input_annotation_output(inspection_index,
+                                                               input_data,
+                                                               input_data.annotations,
+                                                               output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
@@ -709,10 +698,10 @@ def execute_inspection_visits_array_array(operator_context, code_reference, inpu
     annotation_iterators = []
     for inspection in inspections:
         inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output_array_array(inspection_index,
-                                                                           input_data,
-                                                                           annotations,
-                                                                           output_data)
+        iterator_for_inspection = iter_input_annotation_output(inspection_index,
+                                                               input_data,
+                                                               annotations,
+                                                               output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
