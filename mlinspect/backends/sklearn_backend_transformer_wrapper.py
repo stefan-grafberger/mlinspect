@@ -214,14 +214,14 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 index_start = output_dimension_index[column_index]
                 index_end = output_dimension_index[column_index + 1]
 
-                col_result = execute_inspection_visits_df_csr_column_transformer(operator_context,
-                                                                                 self.code_reference,
-                                                                                 X[[column]],
-                                                                                 X.annotations[self],
-                                                                                 result[:, index_start:index_end],
-                                                                                 self.inspections,
-                                                                                 self.code_ref_inspection_output_map,
-                                                                                 description)
+                col_result = execute_inspection_visits_unary_op(operator_context,
+                                                                self.code_reference,
+                                                                X[[column]],
+                                                                X.annotations[self],
+                                                                result[:, index_start:index_end],
+                                                                self.inspections,
+                                                                self.code_ref_inspection_output_map,
+                                                                description)
                 annotations_for_columns = self.annotation_result_concat_workaround or []
                 annotations_for_columns.append(col_result.annotations)
                 self.annotation_result_concat_workaround = annotations_for_columns
@@ -598,28 +598,6 @@ def execute_inspection_visits_df_array_column_transformer(operator_context, code
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
                                             code_reference_inspection_output_map, func_name, StorageType.NORMAL)
     assert isinstance(return_value, MlinspectNdarray)
-    return return_value
-
-
-def execute_inspection_visits_df_csr_column_transformer(operator_context, code_reference,
-                                                        input_data, annotations, output_data, inspections,
-                                                        code_reference_inspection_output_map,
-                                                        func_name):
-    """Execute inspections"""
-    # pylint: disable=too-many-arguments
-    assert isinstance(input_data, MlinspectDataFrame)
-    annotation_iterators = []
-    for inspection in inspections:
-        inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output_unary_op(inspection_index,
-                                                                        input_data,
-                                                                        annotations,
-                                                                        output_data)
-        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
-        annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
-                                            code_reference_inspection_output_map, func_name, StorageType.NORMAL)
-    assert isinstance(return_value, MlinspectCsrMatrix)
     return return_value
 
 
