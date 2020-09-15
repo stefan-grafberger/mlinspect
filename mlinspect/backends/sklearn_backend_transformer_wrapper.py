@@ -4,9 +4,10 @@ definition style
 """
 import inspect
 import uuid
+from enum import Enum
 
 import numpy
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator
 
@@ -593,8 +594,8 @@ def execute_inspection_visits_csr_list_csr(operator_context, code_reference, tra
                                                                             output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs_csr(annotation_iterators, code_reference, output_data, inspections,
-                                                code_ref_inspection_output_map, func_name)
+    return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
+                                            code_ref_inspection_output_map, func_name, StorageType.NORMAL)
     assert isinstance(return_value, MlinspectCsrMatrix)
     return return_value
 
@@ -612,8 +613,8 @@ def execute_inspection_visits_array_list_array(operator_context, code_reference,
                                                                                 output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs_array(annotation_iterators, code_reference, output_data, inspections,
-                                                  code_reference_inspection_output_map, func_name)
+    return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
+                                            code_reference_inspection_output_map, func_name, StorageType.NORMAL)
     assert isinstance(return_value, MlinspectNdarray)
     return return_value
 
@@ -630,8 +631,8 @@ def execute_inspection_visits_estimator_input_nothing(operator_context, code_ref
         iterator_for_inspection = iter_input_annotation_output_estimator_nothing(inspection_index, data, target)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    store_inspection_outputs_estimator(annotation_iterators, code_reference, inspections,
-                                       code_reference_inspection_output_map, func_name)
+    store_inspection_outputs(annotation_iterators, code_reference, None, inspections,
+                             code_reference_inspection_output_map, func_name, StorageType.ESTIMATOR)
 
 
 def execute_inspection_visits_df_df(operator_context, code_reference, input_data, output_data, inspections,
@@ -649,9 +650,9 @@ def execute_inspection_visits_df_df(operator_context, code_reference, input_data
                                                                      output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs_df(annotation_iterators, code_reference, output_data, inspections,
-                                               code_reference_inspection_output_map, func_name, transformer,
-                                               full_return_value)
+    return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
+                                            code_reference_inspection_output_map, func_name,
+                                            StorageType.COLUMN_TRANSFORMER, transformer, full_return_value)
     assert isinstance(return_value, MlinspectDataFrame)
     return return_value
 
@@ -672,8 +673,8 @@ def execute_inspection_visits_df_array_column_transformer(operator_context, code
                                                                         output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs_array(annotation_iterators, code_reference, output_data, inspections,
-                                                  code_reference_inspection_output_map, func_name)
+    return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
+                                            code_reference_inspection_output_map, func_name, StorageType.NORMAL)
     assert isinstance(return_value, MlinspectNdarray)
     return return_value
 
@@ -694,8 +695,8 @@ def execute_inspection_visits_df_csr_column_transformer(operator_context, code_r
                                                                       output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs_csr(annotation_iterators, code_reference, output_data, inspections,
-                                                code_reference_inspection_output_map, func_name)
+    return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
+                                            code_reference_inspection_output_map, func_name, StorageType.NORMAL)
     assert isinstance(return_value, MlinspectCsrMatrix)
     return return_value
 
@@ -714,8 +715,8 @@ def execute_inspection_visits_array_array(operator_context, code_reference, inpu
                                                                            output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs_array(annotation_iterators, code_reference, output_data, inspections,
-                                                  code_reference_inspection_output_map, func_name)
+    return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
+                                            code_reference_inspection_output_map, func_name, StorageType.NORMAL)
     assert isinstance(return_value, MlinspectNdarray)
     return return_value
 
@@ -734,8 +735,8 @@ def execute_inspection_visits_series_series(operator_context, code_reference, in
                                                                              output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs_series(annotation_iterators, code_reference, output_data, inspections,
-                                                   code_reference_inspection_output_map, func_name)
+    return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
+                                            code_reference_inspection_output_map, func_name, StorageType.NORMAL)
     assert isinstance(return_value, MlinspectSeries)
     return return_value
 
@@ -744,122 +745,64 @@ def execute_inspection_visits_series_series(operator_context, code_reference, in
 # Store inspection results functions
 # -------------------------------------------------------
 
+class StorageType(Enum):
+    """
+    The different operator types in our DAG
+    """
+    ESTIMATOR = 1
+    COLUMN_TRANSFORMER = 2
+    NORMAL = 3
 
-def store_inspection_outputs_df(annotation_iterators, code_reference, return_value, inspections,
-                                code_reference_inspection_output_map, func_name, transformer=None,
-                                full_return_value=None):
+
+def store_inspection_outputs(annotation_iterators, code_reference, return_value, inspections,
+                             code_reference_inspection_output_map, func_name, storage_type,
+                             transformer=None, full_return_value=None):
     """
     Stores the inspection annotations for the rows in the dataframe and the
     inspection annotations for the DAG operators in a map
     """
-    # pylint: disable=too-many-arguments, too-many-locals
+    # pylint: disable=too-many-arguments, too-many-locals, too-many-branches
     annotations_df = build_annotation_df_from_iters(inspections, annotation_iterators)
     inspection_outputs = {}
     for inspection in inspections:
-        inspection_output = inspection.get_operator_annotation_after_visit()
-        inspection_outputs[inspection] = inspection_output
+        inspection_outputs[inspection] = inspection.get_operator_annotation_after_visit()
 
     stored_inspection_results = code_reference_inspection_output_map.get(code_reference, {})
     stored_inspection_results[func_name] = inspection_outputs
     code_reference_inspection_output_map[code_reference] = stored_inspection_results
 
-    # If the transformer is a column transformer, we have multiple annotations we need to pass to different transformers
-    # If we do not want to override internal column transformer functions, we have to work around these black
-    # box functions and pass the annotations using a different mechanism
-    if transformer is None:
-        assert full_return_value is None
-        new_return_value = MlinspectDataFrame(return_value)
-        new_return_value.annotations = annotations_df
-    else:
-        if not isinstance(full_return_value, MlinspectDataFrame):
-            new_return_value = MlinspectDataFrame(full_return_value)
+    if storage_type == StorageType.COLUMN_TRANSFORMER:
+        # If the transformer is a column transformer, we have multiple annotations we need to pass to different
+        # transformers.  If we do not want to override internal column transformer functions, we have to work around
+        # these black box functions and pass the annotations using a different mechanism
+        if transformer is None:
+            assert full_return_value is None
+            new_return_value = MlinspectDataFrame(return_value)
+            new_return_value.annotations = annotations_df
         else:
-            new_return_value = full_return_value
-        if not hasattr(new_return_value, "annotations") or not isinstance(new_return_value.annotations, dict):
-            new_return_value.annotations = dict()
-        new_return_value.annotations[transformer] = annotations_df
-    assert isinstance(new_return_value, MlinspectDataFrame)
+            if not isinstance(full_return_value, MlinspectDataFrame):
+                new_return_value = MlinspectDataFrame(full_return_value)
+            else:
+                new_return_value = full_return_value
+            if not hasattr(new_return_value, "annotations") or not isinstance(new_return_value.annotations, dict):
+                new_return_value.annotations = dict()
+            new_return_value.annotations[transformer] = annotations_df
+        assert isinstance(new_return_value, MlinspectDataFrame)
+    elif storage_type == StorageType.ESTIMATOR:
+        new_return_value = None
+    else:
+        if isinstance(return_value, numpy.ndarray):
+            return_value = MlinspectNdarray(return_value)
+            return_value.annotations = annotations_df
+            new_return_value = return_value
+        elif isinstance(return_value, Series):
+            return_value = MlinspectSeries(return_value)
+            return_value.annotations = annotations_df
+            new_return_value = return_value
+        elif isinstance(return_value, csr_matrix):
+            return_value = MlinspectCsrMatrix(return_value)
+            return_value.annotations = annotations_df
+            new_return_value = return_value
+        else:
+            assert False
     return new_return_value
-
-
-def store_inspection_outputs_array(annotation_iterators, code_reference, return_value, inspections,
-                                   code_reference_inspection_output_map, func_name):
-    """
-    Stores the inspection annotations for the rows in the dataframe and the
-    inspection annotations for the DAG operators in a map
-    """
-    # pylint: disable=too-many-arguments
-    annotations_df = build_annotation_df_from_iters(inspections, annotation_iterators)
-    inspection_outputs = {}
-    for inspection in inspections:
-        inspection_outputs[inspection] = inspection.get_operator_annotation_after_visit()
-
-    stored_inspection_results = code_reference_inspection_output_map.get(code_reference, {})
-    stored_inspection_results[func_name] = inspection_outputs
-    code_reference_inspection_output_map[code_reference] = stored_inspection_results
-    return_value = MlinspectNdarray(return_value)
-    return_value.annotations = annotations_df
-    assert isinstance(return_value, MlinspectNdarray)
-    return return_value
-
-
-def store_inspection_outputs_series(annotation_iterators, code_reference, return_value, inspections,
-                                    code_reference_inspection_output_map, func_name):
-    """
-    Stores the inspection annotations for the rows in the dataframe and the
-    inspection annotations for the DAG operators in a map
-    """
-    # pylint: disable=too-many-arguments
-    annotations_df = build_annotation_df_from_iters(inspections, annotation_iterators)
-    inspection_outputs = {}
-    for inspection in inspections:
-        inspection_outputs[inspection] = inspection.get_operator_annotation_after_visit()
-
-    stored_inspection_results = code_reference_inspection_output_map.get(code_reference, {})
-    stored_inspection_results[func_name] = inspection_outputs
-    code_reference_inspection_output_map[code_reference] = stored_inspection_results
-    return_value = MlinspectSeries(return_value)
-    return_value.annotations = annotations_df
-    assert isinstance(return_value, MlinspectSeries)
-    return return_value
-
-
-def store_inspection_outputs_csr(annotation_iterators, code_reference, return_value, inspections,
-                                 code_reference_inspection_output_map, func_name):
-    """
-    Stores the inspection annotations for the rows in the dataframe and the
-    inspection annotations for the DAG operators in a map
-    """
-    # pylint: disable=too-many-arguments
-    annotations_df = build_annotation_df_from_iters(inspections, annotation_iterators)
-    inspection_outputs = {}
-    for inspection in inspections:
-        inspection_output = inspection.get_operator_annotation_after_visit()
-        inspection_outputs[inspection] = inspection_output
-
-    stored_inspection_results = code_reference_inspection_output_map.get(code_reference, {})
-    stored_inspection_results[func_name] = inspection_outputs
-    code_reference_inspection_output_map[code_reference] = stored_inspection_results
-    return_value = MlinspectCsrMatrix(return_value)
-    return_value.annotations = annotations_df
-    assert isinstance(return_value, MlinspectCsrMatrix)
-    return return_value
-
-
-def store_inspection_outputs_estimator(annotation_iterators, code_reference, inspections,
-                                       code_reference_inspection_output_map, func_name):
-    """
-    Stores the inspection annotations for the rows in the dataframe and the
-    inspection annotations for the DAG operators in a map
-    """
-    # pylint: disable=too-many-arguments
-    build_annotation_df_from_iters(inspections, annotation_iterators)
-
-    inspection_outputs = {}
-    for inspection in inspections:
-        inspection_output = inspection.get_operator_annotation_after_visit()
-        inspection_outputs[inspection] = inspection_output
-
-    stored_inspection_results = code_reference_inspection_output_map.get(code_reference, {})
-    stored_inspection_results[func_name] = inspection_outputs
-    code_reference_inspection_output_map[code_reference] = stored_inspection_results
