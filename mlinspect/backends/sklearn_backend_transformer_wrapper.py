@@ -527,9 +527,10 @@ def iter_input_annotation_output(inspection_index, input_data, input_annotations
         input_rows = get_df_row_iterator(input_data)
     elif isinstance(input_data, numpy.ndarray):
         input_rows = get_numpy_array_row_iterator(input_data)
+    elif isinstance(input_data, MlinspectSeries):
+        input_rows = get_series_row_iterator(input_data)
     else:
         assert False
-
 
     annotation_df_view = input_annotations.iloc[:, inspection_index:inspection_index + 1]
     annotation_rows = get_df_row_iterator(annotation_df_view)
@@ -538,28 +539,10 @@ def iter_input_annotation_output(inspection_index, input_data, input_annotations
         output_rows = get_df_row_iterator(output)
     elif isinstance(output, numpy.ndarray):
         output_rows = get_numpy_array_row_iterator(output, False)
+    elif isinstance(output, MlinspectSeries):
+        output_rows = get_series_row_iterator(output)
     else:
         assert False
-
-    return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
-               zip(input_rows, annotation_rows, output_rows))
-
-
-def iter_input_annotation_output_series_series(inspection_index, input_series, annotation_df, output_series):
-    """
-    Create an efficient iterator for the inspection input
-    """
-    # pylint: disable=too-many-locals
-    # Performance tips:
-    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-    assert isinstance(input_series, MlinspectSeries)
-    assert isinstance(output_series, MlinspectSeries)
-
-    annotation_df_view = annotation_df.iloc[:, inspection_index:inspection_index + 1]
-
-    input_rows = get_series_row_iterator(input_series)
-    annotation_rows = get_df_row_iterator(annotation_df_view)
-    output_rows = get_series_row_iterator(output_series)
 
     return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
@@ -718,10 +701,10 @@ def execute_inspection_visits_series_series(operator_context, code_reference, in
     annotation_iterators = []
     for inspection in inspections:
         inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output_series_series(inspection_index,
-                                                                             input_data,
-                                                                             input_data.annotations,
-                                                                             output_data)
+        iterator_for_inspection = iter_input_annotation_output(inspection_index,
+                                                               input_data,
+                                                               input_data.annotations,
+                                                               output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
