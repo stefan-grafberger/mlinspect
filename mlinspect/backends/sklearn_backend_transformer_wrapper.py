@@ -355,22 +355,11 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         X_new = execute_inspection_visits_unary_op(operator_context, self.code_reference, X, X.annotations, X,
                                                    self.inspections, self.code_ref_inspection_output_map, "fit X")
         assert y is not None
-        if isinstance(y, MlinspectNdarray):
-            operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
-            y_new = execute_inspection_visits_unary_op(operator_context, self.code_reference, y, y.annotations, y,
-                                                       self.inspections,
-                                                       self.code_ref_inspection_output_map, "fit y")
-            assert isinstance(y_new, MlinspectNdarray)
-            result = X_new, y_new
-        elif isinstance(y, MlinspectSeries):
-            operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
-            y_new = execute_inspection_visits_unary_op(operator_context, self.code_reference, y,
-                                                       y.annotations, y, self.inspections,
-                                                       self.code_ref_inspection_output_map, "fit y")
-            assert isinstance(y_new, MlinspectSeries)
-            result = X_new, y_new
-        else:
-            assert False
+        operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
+        y_new = execute_inspection_visits_unary_op(operator_context, self.code_reference, y,
+                                                   y.annotations, y, self.inspections,
+                                                   self.code_ref_inspection_output_map, "fit y")
+        result = X_new, y_new
         return result
 
     def score(self, X, y):
