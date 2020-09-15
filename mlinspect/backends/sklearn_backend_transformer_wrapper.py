@@ -126,14 +126,14 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
             operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
             description = "Numerical Encoder (StandardScaler), Column: '{}'".format(column)
-            column_result = execute_inspection_visits_df_array_column_transformer(operator_context,
-                                                                                  self.code_reference,
-                                                                                  X[[column]],
-                                                                                  X.annotations[self],
-                                                                                  result[:, column_index],
-                                                                                  self.inspections,
-                                                                                  self.code_ref_inspection_output_map,
-                                                                                  description)
+            column_result = execute_inspection_visits_unary_op(operator_context,
+                                                               self.code_reference,
+                                                               X[[column]],
+                                                               X.annotations[self],
+                                                               result[:, column_index],
+                                                               self.inspections,
+                                                               self.code_ref_inspection_output_map,
+                                                               description)
             annotations_for_columns = self.annotation_result_concat_workaround or []
             annotations_for_columns.append(column_result.annotations)
             self.annotation_result_concat_workaround = annotations_for_columns
@@ -151,15 +151,15 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
             operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
             description = "Imputer (SimpleImputer), Column: '{}'".format(column)
-            column_result = execute_inspection_visits_df_array_column_transformer(operator_context,
-                                                                                  self.code_reference,
-                                                                                  X[[column]],
-                                                                                  X.annotations[
-                                                                                      self.parent_transformer],
-                                                                                  result[:, column_index],
-                                                                                  self.inspections,
-                                                                                  self.code_ref_inspection_output_map,
-                                                                                  description)
+            column_result = execute_inspection_visits_unary_op(operator_context,
+                                                               self.code_reference,
+                                                               X[[column]],
+                                                               X.annotations[
+                                                                   self.parent_transformer],
+                                                               result[:, column_index],
+                                                               self.inspections,
+                                                               self.code_ref_inspection_output_map,
+                                                               description)
             annotations_for_columns = self.annotation_result_concat_workaround or []
             annotations_for_columns.append((column, column_result.annotations))
             self.annotation_result_concat_workaround = annotations_for_columns
@@ -179,14 +179,14 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             function_info = (self.module_name, "fit_transform")  # TODO: could also be used for multiple columns at once
             operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
             description = "Word2Vec, Column: '{}'".format(column)
-            column_result = execute_inspection_visits_df_array_column_transformer(operator_context,
-                                                                                  self.code_reference,
-                                                                                  X[[column]],
-                                                                                  X.annotations[self],
-                                                                                  result[:, :],
-                                                                                  self.inspections,
-                                                                                  self.code_ref_inspection_output_map,
-                                                                                  description)
+            column_result = execute_inspection_visits_unary_op(operator_context,
+                                                               self.code_reference,
+                                                               X[[column]],
+                                                               X.annotations[self],
+                                                               result[:, :],
+                                                               self.inspections,
+                                                               self.code_ref_inspection_output_map,
+                                                               description)
             annotations_for_columns = self.annotation_result_concat_workaround or []
             annotations_for_columns.append(column_result.annotations)
             self.annotation_result_concat_workaround = annotations_for_columns
@@ -576,28 +576,6 @@ def execute_inspection_visits_df_df(operator_context, code_reference, input_data
                                             code_reference_inspection_output_map, func_name,
                                             StorageType.COLUMN_TRANSFORMER, transformer, full_return_value)
     assert isinstance(return_value, MlinspectDataFrame)
-    return return_value
-
-
-def execute_inspection_visits_df_array_column_transformer(operator_context, code_reference,
-                                                          input_data, annotations, output_data, inspections,
-                                                          code_reference_inspection_output_map,
-                                                          func_name):
-    """Execute inspections"""
-    # pylint: disable=too-many-arguments
-    assert isinstance(input_data, MlinspectDataFrame)
-    annotation_iterators = []
-    for inspection in inspections:
-        inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output_unary_op(inspection_index,
-                                                                        input_data,
-                                                                        annotations,
-                                                                        output_data)
-        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
-        annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
-                                            code_reference_inspection_output_map, func_name, StorageType.NORMAL)
-    assert isinstance(return_value, MlinspectNdarray)
     return return_value
 
 
