@@ -330,10 +330,10 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
             operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
             description = "to ['{}'] (ColumnTransformer)".format(column)
-            X_new[0] = execute_inspection_visits_df_df(operator_context, self.code_reference, X_old,
-                                                       projected_df, self.inspections,
-                                                       self.code_ref_inspection_output_map, description,
-                                                       transformer, X_new[0])
+            X_new[0] = execute_inspection_visits_unary_op(operator_context, self.code_reference, X_old,
+                                                          X_old.annotations, projected_df, self.inspections,
+                                                          self.code_ref_inspection_output_map, description,
+                                                          True, transformer, X_new[0])
         return X_new[0]
 
     def estimator_visits(self, X, y):
@@ -360,8 +360,8 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         # pylint: disable=invalid-name
         function_info = (self.module_name, "fit")  # TODO: nested pipelines
         operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
-        X_new = execute_inspection_visits_df_df(operator_context, self.code_reference, X, X, self.inspections,
-                                                self.code_ref_inspection_output_map, "fit X")
+        X_new = execute_inspection_visits_unary_op(operator_context, self.code_reference, X, X.annotations, X,
+                                                   self.inspections, self.code_ref_inspection_output_map, "fit X")
         assert y is not None
         if isinstance(y, MlinspectNdarray):
             operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
@@ -557,32 +557,11 @@ def execute_inspection_visits_estimator_input_nothing(operator_context, code_ref
                              code_reference_inspection_output_map, func_name, StorageType.ESTIMATOR)
 
 
-def execute_inspection_visits_df_df(operator_context, code_reference, input_data, output_data, inspections,
-                                    code_reference_inspection_output_map, func_name, transformer=None,
-                                    full_return_value=None):
-    """Execute inspections"""
-    # pylint: disable=too-many-arguments
-    assert isinstance(input_data, MlinspectDataFrame)
-    annotation_iterators = []
-    for inspection in inspections:
-        inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output_unary_op(inspection_index,
-                                                                        input_data,
-                                                                        input_data.annotations,
-                                                                        output_data)
-        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
-        annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
-                                            code_reference_inspection_output_map, func_name,
-                                            StorageType.COLUMN_TRANSFORMER, transformer, full_return_value)
-    assert isinstance(return_value, MlinspectDataFrame)
-    return return_value
-
-
 def execute_inspection_visits_unary_op(operator_context, code_reference, input_data, input_annotations, output_data,
-                                       inspections, code_reference_inspection_output_map, func_name):
+                                       inspections, code_reference_inspection_output_map, func_name,
+                                       column_transformer_projection=False, transformer=None, full_return_value=None):
     """Execute inspections"""
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-locals
     annotation_iterators = []
     for inspection in inspections:
         inspection_index = inspections.index(inspection)
@@ -592,8 +571,13 @@ def execute_inspection_visits_unary_op(operator_context, code_reference, input_d
                                                                         output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
-                                            code_reference_inspection_output_map, func_name, StorageType.NORMAL)
+    if not column_transformer_projection:
+        return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
+                                                code_reference_inspection_output_map, func_name, StorageType.NORMAL)
+    else:
+        return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
+                                                code_reference_inspection_output_map, func_name,
+                                                StorageType.COLUMN_TRANSFORMER, transformer, full_return_value)
     return return_value
 
 
@@ -631,24 +615,23 @@ def store_inspection_outputs(annotation_iterators, code_reference, return_value,
         # If the transformer is a column transformer, we have multiple annotations we need to pass to different
         # transformers.  If we do not want to override internal column transformer functions, we have to work around
         # these black box functions and pass the annotations using a different mechanism
-        if transformer is None:
-            assert full_return_value is None
-            new_return_value = MlinspectDataFrame(return_value)
-            new_return_value.annotations = annotations_df
+        if not isinstance(full_return_value, MlinspectDataFrame):
+            new_return_value = MlinspectDataFrame(full_return_value)
         else:
-            if not isinstance(full_return_value, MlinspectDataFrame):
-                new_return_value = MlinspectDataFrame(full_return_value)
-            else:
-                new_return_value = full_return_value
-            if not hasattr(new_return_value, "annotations") or not isinstance(new_return_value.annotations, dict):
-                new_return_value.annotations = dict()
-            new_return_value.annotations[transformer] = annotations_df
+            new_return_value = full_return_value
+        if not hasattr(new_return_value, "annotations") or not isinstance(new_return_value.annotations, dict):
+            new_return_value.annotations = dict()
+        new_return_value.annotations[transformer] = annotations_df
         assert isinstance(new_return_value, MlinspectDataFrame)
     elif storage_type == StorageType.ESTIMATOR:
         new_return_value = None
     else:
         if isinstance(return_value, numpy.ndarray):
             return_value = MlinspectNdarray(return_value)
+            return_value.annotations = annotations_df
+            new_return_value = return_value
+        elif isinstance(return_value, DataFrame):
+            return_value = MlinspectDataFrame(return_value)
             return_value.annotations = annotations_df
             new_return_value = return_value
         elif isinstance(return_value, Series):
