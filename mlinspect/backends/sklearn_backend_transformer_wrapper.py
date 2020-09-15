@@ -293,17 +293,9 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
         operator_context = OperatorContext(OperatorType.CONCATENATION, function_info)
         description = "concat"
-        if isinstance(result, csr_matrix):
-            result = execute_inspection_visits_csr_list_csr(operator_context, self.code_reference,
-                                                            transformer_data_with_annotations, result, self.inspections,
-                                                            self.code_ref_inspection_output_map, description)
-        elif isinstance(result, numpy.ndarray):
-            result = execute_inspection_visits_array_list_array(operator_context, self.code_reference,
-                                                                transformer_data_with_annotations, result,
-                                                                self.inspections,
-                                                                self.code_ref_inspection_output_map, description)
-        else:
-            assert False
+        result = execute_inspection_visits_nary_op(operator_context, self.code_reference,
+                                                   transformer_data_with_annotations, result, self.inspections,
+                                                   self.code_ref_inspection_output_map, description)
         return result
 
     def column_transformer_visits_save_child_results(self):
@@ -345,9 +337,9 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         assert y is not None
         operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
         description = "fit"
-        execute_inspection_visits_estimator_input_nothing(operator_context, self.code_reference,
-                                                          X, y, self.inspections,
-                                                          self.code_ref_inspection_output_map, description)
+        execute_inspection_visits_sink_op(operator_context, self.code_reference,
+                                          X, y, self.inspections,
+                                          self.code_ref_inspection_output_map, description)
         X_new = X
         y_new = y
         return X_new, y_new
@@ -503,9 +495,9 @@ def iter_input_annotation_output_unary_op(inspection_index, input_data, input_an
 # Execute inspections functions
 # -------------------------------------------------------
 
-def execute_inspection_visits_csr_list_csr(operator_context, code_reference, transformer_data_with_annotations,
-                                           output_data, inspections,
-                                           code_ref_inspection_output_map, func_name):
+def execute_inspection_visits_nary_op(operator_context, code_reference, transformer_data_with_annotations,
+                                      output_data, inspections,
+                                      code_ref_inspection_output_map, func_name):
     """Execute inspections"""
     # pylint: disable=too-many-arguments
     annotation_iterators = []
@@ -518,31 +510,11 @@ def execute_inspection_visits_csr_list_csr(operator_context, code_reference, tra
         annotation_iterators.append(annotations_iterator)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
                                             code_ref_inspection_output_map, func_name, StorageType.NORMAL)
-    assert isinstance(return_value, MlinspectCsrMatrix)
     return return_value
 
 
-def execute_inspection_visits_array_list_array(operator_context, code_reference, transformer_data_with_annotations,
-                                               output_data, inspections,
-                                               code_reference_inspection_output_map, func_name):
-    """Execute inspections"""
-    # pylint: disable=too-many-arguments
-    annotation_iterators = []
-    for inspection in inspections:
-        inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output_nary_op(inspection_index,
-                                                                       transformer_data_with_annotations,
-                                                                       output_data)
-        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
-        annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
-                                            code_reference_inspection_output_map, func_name, StorageType.NORMAL)
-    assert isinstance(return_value, MlinspectNdarray)
-    return return_value
-
-
-def execute_inspection_visits_estimator_input_nothing(operator_context, code_reference, data, target,
-                                                      inspections, code_reference_inspection_output_map, func_name):
+def execute_inspection_visits_sink_op(operator_context, code_reference, data, target,
+                                      inspections, code_reference_inspection_output_map, func_name):
     """Execute inspections"""
     # pylint: disable=too-many-arguments
     assert isinstance(data, (MlinspectCsrMatrix, MlinspectNdarray))
