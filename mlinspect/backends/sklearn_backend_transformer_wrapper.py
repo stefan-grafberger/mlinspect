@@ -394,7 +394,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 # Functions to create the iterators for the inspections
 # -------------------------------------------------------
 
-def iter_input_annotation_output_csr_list_csr(inspection_index, transformer_data_with_annotations, output_data):
+def iter_input_annotation_output_nary_op(inspection_index, transformer_data_with_annotations, output_data):
     """
     Create an efficient iterator for the inspection input
     """
@@ -407,44 +407,29 @@ def iter_input_annotation_output_csr_list_csr(inspection_index, transformer_data
     for input_data, annotations in transformer_data_with_annotations:
         annotation_df_view = annotations.iloc[:, inspection_index:inspection_index + 1]
 
-        input_iterators.append(get_csr_row_iterator(input_data))
+        if isinstance(input_data, numpy.ndarray):
+            input_iterators.append(get_numpy_array_row_iterator(input_data))
+        elif isinstance(input_data, csr_matrix):
+            input_iterators.append(get_csr_row_iterator(input_data))
+        else:
+            assert False
         annotation_iterators.append(get_df_row_iterator(annotation_df_view))
 
     input_rows = map(list, zip(*input_iterators))
     annotation_rows = map(list, zip(*annotation_iterators))
 
-    output_rows = get_csr_row_iterator(output_data)
+    if isinstance(output_data, numpy.ndarray):
+        output_rows = get_numpy_array_row_iterator(output_data, False)
+    elif isinstance(output_data, csr_matrix):
+        output_rows = get_csr_row_iterator(output_data)
+    else:
+        assert False
 
     return map(lambda input_tuple: InspectionInputNAryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
 
 
-def iter_input_annotation_output_array_list_array(inspection_index, transformer_data_with_annotations, output_data):
-    """
-    Create an efficient iterator for the inspection input
-    """
-    # pylint: disable=too-many-locals
-    # Performance tips:
-    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-
-    input_iterators = []
-    annotation_iterators = []
-    for input_data, annotations in transformer_data_with_annotations:
-        annotation_df_view = annotations.iloc[:, inspection_index:inspection_index + 1]
-
-        input_iterators.append(get_numpy_array_row_iterator(input_data))
-        annotation_iterators.append(get_df_row_iterator(annotation_df_view))
-
-    input_rows = map(list, zip(*input_iterators))
-    annotation_rows = map(list, zip(*annotation_iterators))
-
-    output_rows = get_numpy_array_row_iterator(output_data, False)
-
-    return map(lambda input_tuple: InspectionInputNAryOperator(*input_tuple),
-               zip(input_rows, annotation_rows, output_rows))
-
-
-def iter_input_annotation_output_estimator_nothing(inspection_index, data, target):
+def iter_input_annotation_output_sink_op(inspection_index, data, target):
     """
     Create an efficient iterator for the inspection input
     """
@@ -480,7 +465,7 @@ def iter_input_annotation_output_estimator_nothing(inspection_index, data, targe
                zip(input_rows, annotation_rows))
 
 
-def iter_input_annotation_output(inspection_index, input_data, input_annotations, output):
+def iter_input_annotation_output_unary_op(inspection_index, input_data, input_annotations, output):
     """
     Create an efficient iterator for the inspection input
     """
@@ -518,7 +503,6 @@ def iter_input_annotation_output(inspection_index, input_data, input_annotations
 # Execute inspections functions
 # -------------------------------------------------------
 
-
 def execute_inspection_visits_csr_list_csr(operator_context, code_reference, transformer_data_with_annotations,
                                            output_data, inspections,
                                            code_ref_inspection_output_map, func_name):
@@ -527,9 +511,9 @@ def execute_inspection_visits_csr_list_csr(operator_context, code_reference, tra
     annotation_iterators = []
     for inspection in inspections:
         inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output_csr_list_csr(inspection_index,
-                                                                            transformer_data_with_annotations,
-                                                                            output_data)
+        iterator_for_inspection = iter_input_annotation_output_nary_op(inspection_index,
+                                                                       transformer_data_with_annotations,
+                                                                       output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
@@ -546,9 +530,9 @@ def execute_inspection_visits_array_list_array(operator_context, code_reference,
     annotation_iterators = []
     for inspection in inspections:
         inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output_array_list_array(inspection_index,
-                                                                                transformer_data_with_annotations,
-                                                                                output_data)
+        iterator_for_inspection = iter_input_annotation_output_nary_op(inspection_index,
+                                                                       transformer_data_with_annotations,
+                                                                       output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
@@ -566,7 +550,7 @@ def execute_inspection_visits_estimator_input_nothing(operator_context, code_ref
     annotation_iterators = []
     for inspection in inspections:
         inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output_estimator_nothing(inspection_index, data, target)
+        iterator_for_inspection = iter_input_annotation_output_sink_op(inspection_index, data, target)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
     store_inspection_outputs(annotation_iterators, code_reference, None, inspections,
@@ -582,10 +566,10 @@ def execute_inspection_visits_df_df(operator_context, code_reference, input_data
     annotation_iterators = []
     for inspection in inspections:
         inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output(inspection_index,
-                                                               input_data,
-                                                               input_data.annotations,
-                                                               output_data)
+        iterator_for_inspection = iter_input_annotation_output_unary_op(inspection_index,
+                                                                        input_data,
+                                                                        input_data.annotations,
+                                                                        output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
@@ -605,10 +589,10 @@ def execute_inspection_visits_df_array_column_transformer(operator_context, code
     annotation_iterators = []
     for inspection in inspections:
         inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output(inspection_index,
-                                                               input_data,
-                                                               annotations,
-                                                               output_data)
+        iterator_for_inspection = iter_input_annotation_output_unary_op(inspection_index,
+                                                                        input_data,
+                                                                        annotations,
+                                                                        output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
@@ -627,10 +611,10 @@ def execute_inspection_visits_df_csr_column_transformer(operator_context, code_r
     annotation_iterators = []
     for inspection in inspections:
         inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output(inspection_index,
-                                                               input_data,
-                                                               annotations,
-                                                               output_data)
+        iterator_for_inspection = iter_input_annotation_output_unary_op(inspection_index,
+                                                                        input_data,
+                                                                        annotations,
+                                                                        output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
@@ -647,10 +631,10 @@ def execute_inspection_visits_array_array(operator_context, code_reference, inpu
     annotation_iterators = []
     for inspection in inspections:
         inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output(inspection_index,
-                                                               input_data,
-                                                               annotations,
-                                                               output_data)
+        iterator_for_inspection = iter_input_annotation_output_unary_op(inspection_index,
+                                                                        input_data,
+                                                                        annotations,
+                                                                        output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
@@ -667,10 +651,10 @@ def execute_inspection_visits_series_series(operator_context, code_reference, in
     annotation_iterators = []
     for inspection in inspections:
         inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output(inspection_index,
-                                                               input_data,
-                                                               input_data.annotations,
-                                                               output_data)
+        iterator_for_inspection = iter_input_annotation_output_unary_op(inspection_index,
+                                                                        input_data,
+                                                                        input_data.annotations,
+                                                                        output_data)
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
