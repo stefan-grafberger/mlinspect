@@ -68,9 +68,8 @@ class PandasBackend(Backend):
             assert isinstance(value_value, MlinspectDataFrame)
             value_value['mlinspect_index'] = range(0, len(value_value))
         elif function_info == ('pandas.core.frame', '__getitem__'):
-            # Can also be a select
-            assert isinstance(value_value, MlinspectDataFrame)
-            value_value['mlinspect_index'] = range(0, len(value_value))
+            # Can also be a select, but we do only need an index in some cases
+            pass
         elif function_info == ('pandas.core.groupby.generic', 'agg'):
             description = value_value.name
             self.code_reference_to_description[code_reference] = description
@@ -88,6 +87,8 @@ class PandasBackend(Backend):
             self.df_arg = args_values[0]
         elif function_info == ('pandas.core.frame', '__getitem__') and isinstance(args_values, MlinspectSeries):
             self.select = True
+            assert isinstance(self.input_data[-1], MlinspectDataFrame)
+            self.input_data[-1]['mlinspect_index'] = range(0, len(self.input_data[-1]))
         self.before_call_used_args_add_description(args_values, code_reference, function_info, args_code)
 
     def before_call_used_args_add_description(self, args_values, code_reference, function_info, args_code):
@@ -163,6 +164,7 @@ class PandasBackend(Backend):
                                                                         self.input_data[-1].annotations,
                                                                         return_value,
                                                                         True)
+                self.input_data[-1].drop("mlinspect_index", axis=1, inplace=True)
             elif isinstance(return_value, MlinspectDataFrame):
                 operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
                 return_value = execute_inspection_visits_unary_operator(self, operator_context, code_reference,
@@ -177,7 +179,6 @@ class PandasBackend(Backend):
                                                                         self.input_data[-1].annotations,
                                                                         return_value,
                                                                         False)
-            self.input_data[-1].drop("mlinspect_index", axis=1, inplace=True)
         elif function_info == ('pandas.core.frame', 'groupby'):
             description = self.code_reference_to_description[code_reference]
             return_value.name = description  # TODO: Do not use name here but something else to transport the value
@@ -297,7 +298,7 @@ def iter_input_annotation_output_df_projection(inspection_index, input_data, inp
     # pylint: disable=too-many-locals
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-    
+
     input_rows = get_iterator_for_type(input_data)
     annotation_df_view = input_annotations.iloc[:, inspection_index:inspection_index + 1]
     annotation_rows = get_df_row_iterator(annotation_df_view)
