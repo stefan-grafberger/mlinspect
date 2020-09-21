@@ -349,13 +349,10 @@ def iter_input_annotation_output_df_pair_df(inspection_count, inspection_index, 
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
 
-    x_annotations['mlinspect_index'] = range(0, len(x_annotations))  # TODO: Probably unnecessary
-    y_annotations['mlinspect_index'] = range(0, len(y_annotations))  # TODO: Probably unnecessary
-
     x_before_with_annotations = pandas.merge(x_data, x_annotations, left_on="mlinspect_index_x",
-                                             right_on="mlinspect_index", suffixes=["_x_data", "_x_annot"])
+                                             right_index=True, suffixes=["_x_data", "_x_annot"])
     y_before_with_annotations = pandas.merge(y_data, y_annotations, left_on="mlinspect_index_y",
-                                             right_on="mlinspect_index", suffixes=["_y_data", "_y_annot"])
+                                             right_index=True, suffixes=["_y_data", "_y_annot"])
     df_x_output = pandas.merge(x_before_with_annotations, output, left_on="mlinspect_index_x",
                                right_on="mlinspect_index_x", suffixes=["_x", "_output"])
     df_x_output_y = pandas.merge(df_x_output, y_before_with_annotations, left_on="mlinspect_index_y",
@@ -368,7 +365,7 @@ def iter_input_annotation_output_df_pair_df(inspection_count, inspection_index, 
     column_index_y_end = column_index_y_start + len(y_data.columns) - 1
     column_annotation_y_current_inspection = column_index_y_end + inspection_index
 
-    df_x_output_y = df_x_output_y.drop(['mlinspect_index_x_output', 'mlinspect_index_y'], axis=1)
+    df_x_output_y = df_x_output_y.drop('mlinspect_index_y', axis=1)
 
     input_x_view = df_x_output_y.iloc[:, 0:column_index_x_end - 1]
     input_x_view.columns = x_data.columns[0:-1]
