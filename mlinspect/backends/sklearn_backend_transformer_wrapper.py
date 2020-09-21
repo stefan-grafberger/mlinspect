@@ -14,7 +14,7 @@ from sklearn.base import BaseEstimator
 from ..inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator, \
     InspectionInputNAryOperator, InspectionInputSinkOperator
 from .backend_utils import get_numpy_array_row_iterator, get_df_row_iterator, \
-    get_csr_row_iterator, build_annotation_df_from_iters, get_series_row_iterator
+    get_csr_row_iterator, build_annotation_df_from_iters, get_iterator_for_type
 from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from .sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
 from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
@@ -387,24 +387,12 @@ def iter_input_annotation_output_nary_op(inspection_index, transformer_data_with
     annotation_iterators = []
     for input_data, annotations in transformer_data_with_annotations:
         annotation_df_view = annotations.iloc[:, inspection_index:inspection_index + 1]
-
-        if isinstance(input_data, numpy.ndarray):
-            input_iterators.append(get_numpy_array_row_iterator(input_data))
-        elif isinstance(input_data, csr_matrix):
-            input_iterators.append(get_csr_row_iterator(input_data))
-        else:
-            assert False
+        input_iterators.append(get_iterator_for_type(input_data, True))
         annotation_iterators.append(get_df_row_iterator(annotation_df_view))
 
     input_rows = map(list, zip(*input_iterators))
     annotation_rows = map(list, zip(*annotation_iterators))
-
-    if isinstance(output_data, numpy.ndarray):
-        output_rows = get_numpy_array_row_iterator(output_data, False)
-    elif isinstance(output_data, csr_matrix):
-        output_rows = get_csr_row_iterator(output_data)
-    else:
-        assert False
+    output_rows = get_iterator_for_type(output_data, False)
 
     return map(lambda input_tuple: InspectionInputNAryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
@@ -422,22 +410,12 @@ def iter_input_annotation_output_sink_op(inspection_index, data, target):
     annotation_iterators = []
 
     data_annotation_df_view = data.annotations.iloc[:, inspection_index:inspection_index + 1]
-    if isinstance(data, MlinspectCsrMatrix):
-        input_iterators.append(get_csr_row_iterator(data))
-    elif isinstance(data, MlinspectNdarray):
-        input_iterators.append(get_numpy_array_row_iterator(data, False))
-    else:
-        assert False
+    input_iterators.append(get_iterator_for_type(data, False))
     annotation_iterators.append(get_df_row_iterator(data_annotation_df_view))
 
     target_annotation_df_view = target.annotations.iloc[:, inspection_index:inspection_index + 1]
-    if isinstance(target, MlinspectNdarray):
-        input_iterators.append(get_numpy_array_row_iterator(target))
-    elif isinstance(target, MlinspectSeries):
-        input_iterators.append(get_series_row_iterator(target))
-    else:
-        assert False
-    annotation_iterators.append(get_df_row_iterator(target_annotation_df_view))
+    input_iterators.append(get_iterator_for_type(target, True))
+    annotation_iterators.append(get_iterator_for_type(target_annotation_df_view))
 
     input_rows = map(list, zip(*input_iterators))
     annotation_rows = map(list, zip(*annotation_iterators))
@@ -453,28 +431,12 @@ def iter_input_annotation_output_unary_op(inspection_index, input_data, input_an
     # pylint: disable=too-many-locals
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-    if isinstance(input_data, DataFrame):
-        input_rows = get_df_row_iterator(input_data)
-    elif isinstance(input_data, numpy.ndarray):
-        input_rows = get_numpy_array_row_iterator(input_data)
-    elif isinstance(input_data, MlinspectSeries):
-        input_rows = get_series_row_iterator(input_data)
-    else:
-        assert False
+    input_rows = get_iterator_for_type(input_data, True)
 
     annotation_df_view = input_annotations.iloc[:, inspection_index:inspection_index + 1]
     annotation_rows = get_df_row_iterator(annotation_df_view)
 
-    if isinstance(output, DataFrame):
-        output_rows = get_df_row_iterator(output)
-    elif isinstance(output, numpy.ndarray):
-        output_rows = get_numpy_array_row_iterator(output, False)
-    elif isinstance(output, MlinspectSeries):
-        output_rows = get_series_row_iterator(output)
-    elif isinstance(output, csr_matrix):
-        output_rows = get_csr_row_iterator(output)
-    else:
-        assert False
+    output_rows = get_iterator_for_type(output, False)
 
     return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))
