@@ -5,17 +5,15 @@ import os
 from collections import namedtuple
 
 import networkx
-import numpy
 import pandas
 
-from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
-from ..inspections.inspection_input import InspectionInputUnaryOperator, \
-    InspectionInputDataSource, OperatorContext, InspectionInputNAryOperator
 from .backend import Backend
 from .backend_utils import get_df_row_iterator, build_annotation_df_from_iters, \
-    get_series_row_iterator, get_iterator_for_type
+    get_series_row_iterator, get_iterator_for_type, create_wrapper_with_annotations
 from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from .pandas_wir_preprocessor import PandasWirPreprocessor
+from ..inspections.inspection_input import InspectionInputUnaryOperator, \
+    InspectionInputDataSource, OperatorContext, InspectionInputNAryOperator
 from ..instrumentation.dag_node import OperatorType, DagNodeIdentifier
 
 
@@ -256,8 +254,8 @@ def execute_inspection_visits_join(backend, operator_context, code_reference, in
                                    return_value_df):
     """Execute inspections when the current operator has one parent in the DAG"""
     # pylint: disable=too-many-arguments
-    assert "mlinspect_index_x" in return_value_df.columns
-    assert "mlinspect_index_y" in return_value_df.columns
+    assert "mlinspect_index_x" in return_value_df
+    assert "mlinspect_index_y" in return_value_df
     assert isinstance(input_data_one, MlinspectDataFrame)
     assert isinstance(input_data_two, MlinspectDataFrame)
     annotation_iterators = []
@@ -298,6 +296,7 @@ def iter_input_annotation_output_df_projection(inspection_index, input_data, inp
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
     if isinstance(input_data, pandas.DataFrame):
+        input_annotations['mlinspect_index'] = range(1, len(input_annotations) + 1)  # TODO: Probably unnecessary
         data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
                                                     right_on="mlinspect_index")
 
@@ -330,6 +329,8 @@ def iter_input_annotation_output_resampled(inspection_count, inspection_index, i
     # pylint: disable=too-many-locals, too-many-arguments
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+    input_annotations['mlinspect_index'] = range(1, len(input_annotations) + 1)  # TODO: Probably unnecessary
+
     data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
                                                 right_on="mlinspect_index")
     joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
@@ -363,6 +364,10 @@ def iter_input_annotation_output_df_pair_df(inspection_count, inspection_index, 
     # pylint: disable=too-many-locals, too-many-arguments
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+
+    x_annotations['mlinspect_index'] = range(1, len(x_annotations) + 1)  # TODO: Probably unnecessary
+    y_annotations['mlinspect_index'] = range(1, len(y_annotations) + 1)  # TODO: Probably unnecessary
+
     x_before_with_annotations = pandas.merge(x_data, x_annotations, left_on="mlinspect_index_x",
                                              right_on="mlinspect_index", suffixes=["_x_data", "_x_annot"])
     y_before_with_annotations = pandas.merge(y_data, y_annotations, left_on="mlinspect_index_y",
@@ -431,26 +436,5 @@ def store_inspection_outputs(backend, annotation_iterators, code_reference, retu
     for inspection in backend.inspections:
         inspection_outputs[inspection] = inspection.get_operator_annotation_after_visit()
     backend.dag_node_identifier_to_inspection_output[dag_node_identifier] = inspection_outputs
-    if isinstance(return_value, pandas.DataFrame):
-        return_value = MlinspectDataFrame(return_value)
-        annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
-        return_value.annotations = annotations_df
-        return_value.backend = backend
-        if "mlinspect_index" in return_value.columns:
-            return_value = return_value.drop("mlinspect_index", axis=1)
-        elif "mlinspect_index_x" in return_value.columns:
-            return_value = return_value.drop(["mlinspect_index_x", "mlinspect_index_y"], axis=1)
-        assert "mlinspect_index" not in return_value.columns
-        new_return_value = return_value
-    elif isinstance(return_value, pandas.Series):
-        return_value = MlinspectSeries(return_value)
-        annotations_df['mlinspect_index'] = range(1, len(annotations_df) + 1)
-        return_value.annotations = annotations_df
-        new_return_value = return_value
-    elif isinstance(return_value, numpy.ndarray):
-        return_value = MlinspectNdarray(return_value)
-        return_value.annotations = annotations_df
-        new_return_value = return_value
-    else:
-        assert False
+    new_return_value = create_wrapper_with_annotations(annotations_df, return_value, backend)
     return new_return_value
