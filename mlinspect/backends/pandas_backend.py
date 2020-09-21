@@ -68,7 +68,6 @@ class PandasBackend(Backend):
             assert isinstance(value_value, MlinspectDataFrame)
             value_value['mlinspect_index'] = range(1, len(value_value) + 1)
         elif function_info == ('pandas.core.frame', '__getitem__'):
-            # TODO: Can this also be a select?
             assert isinstance(value_value, MlinspectDataFrame)
             value_value['mlinspect_index'] = range(1, len(value_value) + 1)
         elif function_info == ('pandas.core.groupby.generic', 'agg'):
@@ -99,7 +98,6 @@ class PandasBackend(Backend):
         elif function_info == ('pandas.core.frame', 'dropna'):
             description = "dropna"
         elif function_info == ('pandas.core.frame', '__getitem__'):
-            # TODO: Can this also be a select?
             if isinstance(args_values, MlinspectSeries):
                 self.code_reference_to_set_item_op[code_reference] = 'Selection'
                 description = "Select by series"  # TODO: prettier representation
