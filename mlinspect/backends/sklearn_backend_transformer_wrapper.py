@@ -6,13 +6,10 @@ import inspect
 import uuid
 from enum import Enum
 
-import numpy
-from pandas import DataFrame, Series
-from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator
 
 from .backend_utils import get_df_row_iterator, \
-    build_annotation_df_from_iters, get_iterator_for_type
+    build_annotation_df_from_iters, get_iterator_for_type, create_wrapper_with_annotations
 from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from .sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
 from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
@@ -549,22 +546,5 @@ def store_inspection_outputs(annotation_iterators, code_reference, return_value,
     elif storage_type == StorageType.ESTIMATOR:
         new_return_value = None
     else:
-        if isinstance(return_value, numpy.ndarray):
-            return_value = MlinspectNdarray(return_value)
-            return_value.annotations = annotations_df
-            new_return_value = return_value
-        elif isinstance(return_value, DataFrame):
-            return_value = MlinspectDataFrame(return_value)
-            return_value.annotations = annotations_df
-            new_return_value = return_value
-        elif isinstance(return_value, Series):
-            return_value = MlinspectSeries(return_value)
-            return_value.annotations = annotations_df
-            new_return_value = return_value
-        elif isinstance(return_value, csr_matrix):
-            return_value = MlinspectCsrMatrix(return_value)
-            return_value.annotations = annotations_df
-            new_return_value = return_value
-        else:
-            assert False
+        new_return_value = create_wrapper_with_annotations(annotations_df, return_value)
     return new_return_value

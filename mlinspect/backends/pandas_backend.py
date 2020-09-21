@@ -306,19 +306,17 @@ def iter_input_annotation_output_df_projection(inspection_index, input_data, inp
 
         input_df_view = data_before_with_annotations.iloc[:, 0:column_index_input_end - 1]
         input_df_view.columns = input_data.columns[0:-1]
+        input_rows = get_df_row_iterator(input_df_view)
 
         annotation_df_view = data_before_with_annotations.iloc[:, column_annotation_current_inspection:
                                                                column_annotation_current_inspection + 1]
-
-        input_rows = get_df_row_iterator(input_df_view)
-        annotation_rows = get_df_row_iterator(annotation_df_view)
     elif isinstance(input_data, pandas.Series):
-        annotation_df_view = input_annotations.iloc[:, inspection_index:inspection_index + 1]
         input_rows = get_series_row_iterator(input_data)
-        annotation_rows = get_df_row_iterator(annotation_df_view)
+        annotation_df_view = input_annotations.iloc[:, inspection_index:inspection_index + 1]
     else:
         assert False
 
+    annotation_rows = get_df_row_iterator(annotation_df_view)
     output_rows = get_iterator_for_type(output, True)
 
     return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
@@ -343,15 +341,14 @@ def iter_input_annotation_output_resampled(inspection_count, inspection_index, i
 
     input_df_view = joined_df.iloc[:, 0:column_index_input_end - 1]
     input_df_view.columns = input_data.columns[0:-1]
+    input_rows = get_df_row_iterator(input_df_view)
 
     annotation_df_view = joined_df.iloc[:,
                                         column_annotation_current_inspection:column_annotation_current_inspection + 1]
+    annotation_rows = get_df_row_iterator(annotation_df_view)
 
     output_df_view = joined_df.iloc[:, column_index_annotation_end:]
     output_df_view.columns = output.columns[0:-1]
-
-    input_rows = get_df_row_iterator(input_df_view)
-    annotation_rows = get_df_row_iterator(annotation_df_view)
     output_rows = get_df_row_iterator(output_df_view)
 
     return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
