@@ -84,7 +84,7 @@ class SklearnBackend(Backend):
             self.input_data = args_values[0]
         elif function_info == ('sklearn.model_selection._split', 'train_test_split'):
             assert isinstance(args_values[0], MlinspectDataFrame)
-            args_values[0]['mlinspect_index'] = range(1, len(args_values[0]) + 1)
+            args_values[0]['mlinspect_index'] = range(0, len(args_values[0]))
             self.input_data = args_values[0]
 
     def before_call_used_args_add_description(self, code_reference, function_info):

@@ -82,16 +82,16 @@ def get_expected_result():
                 code_reference=CodeReference(24, 18, 26, 51), description=None): [
                     InspectionInputRow(
                         values=[46, 'Private', 128645, 'Some-college', 10, 'Divorced', 'Prof-specialty',
-                                'Not-in-family', 'White', 'Female', 0, 0, 40, 'United-States', '<=50K', 1],
+                                'Not-in-family', 'White', 'Female', 0, 0, 40, 'United-States', '<=50K'],
                         fields=['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status',
                                 'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
-                                'hours-per-week', 'native-country', 'income-per-year', 'mlinspect_index']),
+                                'hours-per-week', 'native-country', 'income-per-year']),
                     InspectionInputRow(
                         values=[29, 'Local-gov', 115585, 'Some-college', 10, 'Never-married', 'Handlers-cleaners',
-                                'Not-in-family', 'White', 'Male', 0, 0, 50, 'United-States', '<=50K', 2],
+                                'Not-in-family', 'White', 'Male', 0, 0, 50, 'United-States', '<=50K'],
                         fields=['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status',
                                 'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
-                                'hours-per-week', 'native-country', 'income-per-year', 'mlinspect_index'])],
+                                'hours-per-week', 'native-country', 'income-per-year'])],
         DagNode(node_id=56, operator_type=OperatorType.TRAIN_LABELS, module=('sklearn.pipeline', 'fit', 'Train Labels'),
                 code_reference=CodeReference(24, 18, 26, 51), description=None): [
                     InspectionInputRow(values=[array(1)], fields=['array']),

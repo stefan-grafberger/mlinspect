@@ -66,17 +66,17 @@ class PandasBackend(Backend):
         # pylint: disable=too-many-arguments
         if function_info == ('pandas.core.frame', 'dropna'):
             assert isinstance(value_value, MlinspectDataFrame)
-            value_value['mlinspect_index'] = range(1, len(value_value) + 1)
+            value_value['mlinspect_index'] = range(0, len(value_value))
         elif function_info == ('pandas.core.frame', '__getitem__'):
             # Can also be a select
             assert isinstance(value_value, MlinspectDataFrame)
-            value_value['mlinspect_index'] = range(1, len(value_value) + 1)
+            value_value['mlinspect_index'] = range(0, len(value_value))
         elif function_info == ('pandas.core.groupby.generic', 'agg'):
             description = value_value.name
             self.code_reference_to_description[code_reference] = description
         elif function_info == ('pandas.core.frame', 'merge'):
             assert isinstance(value_value, MlinspectDataFrame)
-            value_value['mlinspect_index_x'] = range(1, len(value_value) + 1)
+            value_value['mlinspect_index_x'] = range(0, len(value_value))
         self.input_data.append(value_value)
 
     def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, store, args_values):
@@ -84,7 +84,7 @@ class PandasBackend(Backend):
         # pylint: disable=too-many-arguments
         if function_info == ('pandas.core.frame', 'merge'):
             assert isinstance(args_values[0], MlinspectDataFrame)
-            args_values[0]['mlinspect_index_y'] = range(1, len(args_values[0]) + 1)
+            args_values[0]['mlinspect_index_y'] = range(0, len(args_values[0]))
             self.df_arg = args_values[0]
         elif function_info == ('pandas.core.frame', '__getitem__') and isinstance(args_values, MlinspectSeries):
             self.select = True
@@ -197,7 +197,7 @@ class PandasBackend(Backend):
         # pylint: disable=unused-argument
         code_reference, function_info, args_code = self.set_key_info
         operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
-        value_before['mlinspect_index'] = range(1, len(value_after) + 1)
+        value_before['mlinspect_index'] = range(0, len(value_after))
         execute_inspection_visits_unary_operator(self, operator_context, code_reference,
                                                  value_before, value_before.annotations,
                                                  value_after, False)
@@ -311,7 +311,7 @@ def iter_input_annotation_output_resampled(inspection_count, inspection_index, i
     # pylint: disable=too-many-locals, too-many-arguments
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-    input_annotations['mlinspect_index'] = range(1, len(input_annotations) + 1)  # TODO: Probably unnecessary
+    input_annotations['mlinspect_index'] = range(0, len(input_annotations))  # TODO: Probably unnecessary
 
     data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
                                                 right_on="mlinspect_index")
@@ -347,8 +347,8 @@ def iter_input_annotation_output_df_pair_df(inspection_count, inspection_index, 
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
 
-    x_annotations['mlinspect_index'] = range(1, len(x_annotations) + 1)  # TODO: Probably unnecessary
-    y_annotations['mlinspect_index'] = range(1, len(y_annotations) + 1)  # TODO: Probably unnecessary
+    x_annotations['mlinspect_index'] = range(0, len(x_annotations))  # TODO: Probably unnecessary
+    y_annotations['mlinspect_index'] = range(0, len(y_annotations))  # TODO: Probably unnecessary
 
     x_before_with_annotations = pandas.merge(x_data, x_annotations, left_on="mlinspect_index_x",
                                              right_on="mlinspect_index", suffixes=["_x_data", "_x_annot"])

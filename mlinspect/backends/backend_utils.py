@@ -52,7 +52,7 @@ def create_wrapper_with_annotations(annotations_df, return_value, pandas_backend
         return_value = MlinspectNdarray(return_value)
         return_value.annotations = annotations_df
         new_return_value = return_value
-    elif isinstance(return_value, DataFrame):
+    elif isinstance(return_value, (DataFrame, MlinspectDataFrame)):
         if not pandas_backend:
             pandas_backend = return_value.backend
         return_value = MlinspectDataFrame(return_value)
