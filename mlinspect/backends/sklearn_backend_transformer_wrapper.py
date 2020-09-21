@@ -11,13 +11,13 @@ from pandas import DataFrame, Series
 from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator
 
-from ..inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator, \
-    InspectionInputNAryOperator, InspectionInputSinkOperator
-from .backend_utils import get_numpy_array_row_iterator, get_df_row_iterator, \
-    get_csr_row_iterator, build_annotation_df_from_iters, get_iterator_for_type
+from .backend_utils import get_df_row_iterator, \
+    build_annotation_df_from_iters, get_iterator_for_type
 from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from .sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
 from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
+from ..inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator, \
+    InspectionInputNAryOperator, InspectionInputSinkOperator
 from ..instrumentation.dag_node import CodeReference, OperatorType
 
 

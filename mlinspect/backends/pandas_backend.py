@@ -13,7 +13,7 @@ from ..inspections.inspection_input import InspectionInputUnaryOperator, \
     InspectionInputDataSource, OperatorContext, InspectionInputNAryOperator
 from .backend import Backend
 from .backend_utils import get_df_row_iterator, build_annotation_df_from_iters, \
-    get_series_row_iterator, get_numpy_array_row_iterator
+    get_series_row_iterator, get_iterator_for_type
 from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from .pandas_wir_preprocessor import PandasWirPreprocessor
 from ..instrumentation.dag_node import OperatorType, DagNodeIdentifier
@@ -319,14 +319,7 @@ def iter_input_annotation_output_df_projection(inspection_index, input_data, inp
     else:
         assert False
 
-    if isinstance(output, pandas.Series):
-        output_rows = get_series_row_iterator(output)
-    elif isinstance(output, pandas.DataFrame):
-        output_rows = get_df_row_iterator(output)
-    elif isinstance(output, numpy.ndarray):
-        output_rows = get_numpy_array_row_iterator(output)
-    else:
-        assert False
+    output_rows = get_iterator_for_type(output, True)
 
     return map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
                zip(input_rows, annotation_rows, output_rows))

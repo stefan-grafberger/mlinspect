@@ -30,7 +30,7 @@ def get_iterator_for_type(data, np_nditer_with_refs=False):
         iterator = get_df_row_iterator(data)
     elif isinstance(data, numpy.ndarray):
         # TODO: Measure performance impact of np_nditer_with_refs. To support arbitrary pipelines, remove this
-        #  or check the type of the standard iterator
+        #  or check the type of the standard iterator. It seems the nditer variant is faster but does not always work
         iterator = get_numpy_array_row_iterator(data, np_nditer_with_refs)
     elif isinstance(data, Series):
         iterator = get_series_row_iterator(data)
