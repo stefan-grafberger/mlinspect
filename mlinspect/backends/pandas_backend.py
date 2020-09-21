@@ -315,10 +315,8 @@ def iter_input_annotation_output_resampled(inspection_count, inspection_index, i
     # pylint: disable=too-many-locals, too-many-arguments
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-    input_annotations['mlinspect_index'] = range(0, len(input_annotations))  # TODO: Probably unnecessary
-
     data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
-                                                right_on="mlinspect_index")
+                                                right_index=True)
     joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
                              right_on="mlinspect_index")
 
