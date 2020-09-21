@@ -9,7 +9,7 @@ import pandas
 
 from .backend import Backend
 from .backend_utils import get_df_row_iterator, build_annotation_df_from_iters, \
-    get_series_row_iterator, get_iterator_for_type, create_wrapper_with_annotations
+    get_iterator_for_type, create_wrapper_with_annotations
 from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from .pandas_wir_preprocessor import PandasWirPreprocessor
 from ..inspections.inspection_input import InspectionInputUnaryOperator, \
@@ -68,6 +68,7 @@ class PandasBackend(Backend):
             assert isinstance(value_value, MlinspectDataFrame)
             value_value['mlinspect_index'] = range(1, len(value_value) + 1)
         elif function_info == ('pandas.core.frame', '__getitem__'):
+            # Can also be a select
             assert isinstance(value_value, MlinspectDataFrame)
             value_value['mlinspect_index'] = range(1, len(value_value) + 1)
         elif function_info == ('pandas.core.groupby.generic', 'agg'):
@@ -293,26 +294,9 @@ def iter_input_annotation_output_df_projection(inspection_index, input_data, inp
     # pylint: disable=too-many-locals
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-    if isinstance(input_data, pandas.DataFrame):
-        input_annotations['mlinspect_index'] = range(1, len(input_annotations) + 1)  # TODO: Probably unnecessary
-        data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
-                                                    right_on="mlinspect_index")
 
-        column_index_input_end = len(input_data.columns)
-        column_annotation_current_inspection = column_index_input_end + inspection_index
-
-        input_df_view = data_before_with_annotations.iloc[:, 0:column_index_input_end - 1]
-        input_df_view.columns = input_data.columns[0:-1]
-        input_rows = get_df_row_iterator(input_df_view)
-
-        annotation_df_view = data_before_with_annotations.iloc[:, column_annotation_current_inspection:
-                                                               column_annotation_current_inspection + 1]
-    elif isinstance(input_data, pandas.Series):
-        input_rows = get_series_row_iterator(input_data)
-        annotation_df_view = input_annotations.iloc[:, inspection_index:inspection_index + 1]
-    else:
-        assert False
-
+    input_rows = get_iterator_for_type(input_data)
+    annotation_df_view = input_annotations.iloc[:, inspection_index:inspection_index + 1]
     annotation_rows = get_df_row_iterator(annotation_df_view)
     output_rows = get_iterator_for_type(output, True)
 
