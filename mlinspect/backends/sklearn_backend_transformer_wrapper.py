@@ -6,6 +6,8 @@ import inspect
 import uuid
 from enum import Enum
 
+import numpy
+from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator
 
 from .backend_utils import get_df_row_iterator, \
@@ -92,16 +94,21 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [len(one_hot_categories) for one_hot_categories in
                                       self.transformer.categories_]
-            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, transformer_name)
+            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self, transformer_name)
         elif self.call_function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
             result = self.standard_scaler_visits(X, y)
         elif self.call_function_info == ('demo.healthcare.demo_utils', 'MyW2VTransformer'):
             transformer_name = "Word2Vec"
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [result.shape[1]]
-            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, transformer_name)
+            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self, transformer_name)
         elif self.call_function_info == ('sklearn.impute._base', 'SimpleImputer'):
-            result = self.simple_imputer_visits(X, y)
+            result = self.transformer.fit_transform(X, y)
+            self.output_dimensions = [1 for _ in range(result.shape[1])]
+            transformer_name = "Imputer (SimpleImputer)"
+            # TODO: Remove parent transformer workaround
+            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self.parent_transformer,
+                                                   transformer_name)
         elif self.call_function_info == ('sklearn.pipeline', 'Pipeline'):
             self.transformer.steps[0][1].parent_transformer = self
             result = self.transformer.fit_transform(X, y)
@@ -139,39 +146,11 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                                                self.code_ref_inspection_output_map,
                                                                description)
             annotations_for_columns = self.annotation_result_concat_workaround or []
-            annotations_for_columns.append(column_result.annotations)
-            self.annotation_result_concat_workaround = annotations_for_columns
-        return result
-
-    def simple_imputer_visits(self, X, y):
-        """
-        Inspection visits for the StandardScaler Transformer
-        """
-        # pylint: disable=invalid-name
-        assert isinstance(X.annotations, dict) and self.parent_transformer in X.annotations
-        result = self.transformer.fit_transform(X, y)
-        self.output_dimensions = [1 for _ in range(result.shape[1])]
-        for column_index, column in enumerate(X.columns):
-            function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
-            operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
-            description = "Imputer (SimpleImputer), Column: '{}'".format(column)
-            column_result = execute_inspection_visits_unary_op(operator_context,
-                                                               self.code_reference,
-                                                               X[[column]],
-                                                               X.annotations[
-                                                                   self.parent_transformer],
-                                                               result[:, column_index],
-                                                               self.inspections,
-                                                               self.code_ref_inspection_output_map,
-                                                               description)
-            annotations_for_columns = self.annotation_result_concat_workaround or []
             annotations_for_columns.append((column, column_result.annotations))
             self.annotation_result_concat_workaround = annotations_for_columns
-        result = MlinspectNdarray(result)
-        result.annotations = self.annotation_result_concat_workaround
         return result
 
-    def normal_transformer_visit(self, X, y, result, dimensions, transformer_name):
+    def normal_transformer_visit(self, X, y, result, dimensions, transformer_with_input_annotations, transformer_name):
         """
         Inspection visits for the OneHotEncoder Transformer
         """
@@ -185,9 +164,9 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
         for column_index in range(X.shape[1]):
             if isinstance(X.annotations, dict):  # A dict is used for ColumnTransformer projections
-                assert isinstance(X, MlinspectDataFrame) and self in X.annotations
+                assert isinstance(X, MlinspectDataFrame) and transformer_with_input_annotations in X.annotations
                 column_name = X.columns[column_index]
-                annotations = X.annotations[self]
+                annotations = X.annotations[transformer_with_input_annotations]
                 input_data = X.iloc[:, column_index]
             elif isinstance(X.annotations, list):  # List because transformer impls process multiple columns at once
                 assert isinstance(X, MlinspectNdarray)
@@ -208,8 +187,16 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                                                self.code_ref_inspection_output_map,
                                                                description)
             annotations_for_columns = self.annotation_result_concat_workaround or []
-            annotations_for_columns.append(column_result.annotations)
+            annotations_for_columns.append((column_name, column_result.annotations))
             self.annotation_result_concat_workaround = annotations_for_columns
+        if isinstance(result, numpy.ndarray):
+            result = MlinspectNdarray(result)
+            result.annotations = self.annotation_result_concat_workaround
+        elif isinstance(result, csr_matrix):
+            result = MlinspectCsrMatrix(result)
+            result.annotations = self.annotation_result_concat_workaround
+        else:
+            assert False
         return result
 
     def column_transformer_visits(self, X, y):
@@ -243,7 +230,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                     for column in transformer_tuple[2]]
         for index, _ in enumerate(columns_with_transformer):
             data = result[:, result_indices[index]:result_indices[index + 1]]
-            annotation = annotations[index]
+            _, annotation = annotations[index]
             transformer_data_with_annotations.append((data, annotation))
         function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
         operator_context = OperatorContext(OperatorType.CONCATENATION, function_info)
