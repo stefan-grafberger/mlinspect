@@ -88,11 +88,18 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         if self.call_function_info == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
             result = self.column_transformer_visits(X, y)
         elif self.call_function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
-            result = self.one_hot_encoder_visits(X, y)
+            transformer_name = "Categorical Encoder (OneHotEncoder)"
+            result = self.transformer.fit_transform(X, y)
+            self.output_dimensions = [len(one_hot_categories) for one_hot_categories in
+                                      self.transformer.categories_]
+            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, transformer_name)
         elif self.call_function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
             result = self.standard_scaler_visits(X, y)
         elif self.call_function_info == ('demo.healthcare.demo_utils', 'MyW2VTransformer'):
-            result = self.w2v_visits(X, y)
+            transformer_name = "Word2Vec"
+            result = self.transformer.fit_transform(X, y)
+            self.output_dimensions = [result.shape[1]]
+            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, transformer_name)
         elif self.call_function_info == ('sklearn.impute._base', 'SimpleImputer'):
             result = self.simple_imputer_visits(X, y)
         elif self.call_function_info == ('sklearn.pipeline', 'Pipeline'):
@@ -164,41 +171,11 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         result.annotations = self.annotation_result_concat_workaround
         return result
 
-    def w2v_visits(self, X, y):
-        """
-        Inspection visits for the StandardScaler Transformer
-        """
-        # pylint: disable=invalid-name
-        assert isinstance(X.annotations, dict) and self in X.annotations
-        result = self.transformer.fit_transform(X, y)
-        self.output_dimensions = [result.shape[1]]
-        for column in X.columns:
-            function_info = (self.module_name, "fit_transform")  # TODO: could also be used for multiple columns at once
-            operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
-            description = "Word2Vec, Column: '{}'".format(column)
-            column_result = execute_inspection_visits_unary_op(operator_context,
-                                                               self.code_reference,
-                                                               X[[column]],
-                                                               X.annotations[self],
-                                                               result[:, :],
-                                                               self.inspections,
-                                                               self.code_ref_inspection_output_map,
-                                                               description)
-            annotations_for_columns = self.annotation_result_concat_workaround or []
-            annotations_for_columns.append(column_result.annotations)
-            self.annotation_result_concat_workaround = annotations_for_columns
-        return result
-
-    def one_hot_encoder_visits(self, X, y):
+    def normal_transformer_visit(self, X, y, result, dimensions, transformer_name):
         """
         Inspection visits for the OneHotEncoder Transformer
         """
-        # pylint: disable=invalid-name, too-many-locals
-        transformer_name = "Categorical Encoder (OneHotEncoder)"
-        result = self.transformer.fit_transform(X, y)
-        self.output_dimensions = [len(one_hot_categories) for one_hot_categories in
-                                  self.transformer.categories_]
-
+        # pylint: disable=invalid-name, too-many-locals, too-many-arguments, unused-argument
         output_dimension_index = [0]
         for dimension in self.output_dimensions:
             output_dimension_index.append(output_dimension_index[-1] + dimension)
