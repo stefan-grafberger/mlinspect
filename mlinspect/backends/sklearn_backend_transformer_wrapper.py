@@ -194,69 +194,45 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         Inspection visits for the OneHotEncoder Transformer
         """
         # pylint: disable=invalid-name, too-many-locals
-        if isinstance(X.annotations, dict):
-            assert isinstance(X, MlinspectDataFrame)
-            assert self in X.annotations
-            result = self.transformer.fit_transform(X, y)
-            self.output_dimensions = [len(one_hot_categories) for one_hot_categories in
-                                      self.transformer.categories_]
-            output_dimension_index = [0]
-            for dimension in self.output_dimensions:
-                output_dimension_index.append(output_dimension_index[-1] + dimension)
-            assert isinstance(X, MlinspectDataFrame)
-            for column_index, _ in enumerate(X.columns):
-                function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
-                operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
+        transformer_name = "Categorical Encoder (OneHotEncoder)"
+        result = self.transformer.fit_transform(X, y)
+        self.output_dimensions = [len(one_hot_categories) for one_hot_categories in
+                                  self.transformer.categories_]
+
+        output_dimension_index = [0]
+        for dimension in self.output_dimensions:
+            output_dimension_index.append(output_dimension_index[-1] + dimension)
+
+        function_info = (self.module_name, "fit_transform")
+        operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
+
+        for column_index in range(X.shape[1]):
+            if isinstance(X.annotations, dict):  # A dict is used for ColumnTransformer projections
+                assert isinstance(X, MlinspectDataFrame) and self in X.annotations
                 column_name = X.columns[column_index]
                 annotations = X.annotations[self]
                 input_data = X.iloc[:, column_index]
-                description = "Categorical Encoder (OneHotEncoder), Column: '{}'".format(column_name)
-
-                index_start = output_dimension_index[column_index]
-                index_end = output_dimension_index[column_index + 1]
-
-                col_result = execute_inspection_visits_unary_op(operator_context,
-                                                                self.code_reference,
-                                                                input_data,
-                                                                annotations,
-                                                                result[:, index_start:index_end],
-                                                                self.inspections,
-                                                                self.code_ref_inspection_output_map,
-                                                                description)
-                annotations_for_columns = self.annotation_result_concat_workaround or []
-                annotations_for_columns.append(col_result.annotations)
-                self.annotation_result_concat_workaround = annotations_for_columns
-        elif isinstance(X.annotations, list):
-            result = self.transformer.fit_transform(X, y)
-            self.output_dimensions = [len(one_hot_categories) for one_hot_categories in
-                                      self.transformer.categories_]
-            output_dimension_index = [0]
-            for dimension in self.output_dimensions:
-                output_dimension_index.append(output_dimension_index[-1] + dimension)
-            assert isinstance(X, MlinspectNdarray)
-            for column_index in range(X.shape[1]):
-                function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
-                operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
+            elif isinstance(X.annotations, list):  # List because transformer impls process multiple columns at once
+                assert isinstance(X, MlinspectNdarray)
                 column_name, annotations = X.annotations[column_index]
                 input_data = X[:, column_index]
-                description = "Categorical Encoder (OneHotEncoder), Column: '{}'".format(column_name)
+            else:
+                assert False
 
-                index_start = output_dimension_index[column_index]
-                index_end = output_dimension_index[column_index + 1]
-
-                column_result = execute_inspection_visits_unary_op(operator_context,
-                                                                   self.code_reference,
-                                                                   input_data,
-                                                                   annotations,
-                                                                   result[:, index_start:index_end],
-                                                                   self.inspections,
-                                                                   self.code_ref_inspection_output_map,
-                                                                   description)
-                annotations_for_columns = self.annotation_result_concat_workaround or []
-                annotations_for_columns.append(column_result.annotations)
-                self.annotation_result_concat_workaround = annotations_for_columns
-        else:
-            assert False
+            description = "{}, Column: '{}'".format(transformer_name, column_name)
+            index_start = output_dimension_index[column_index]
+            index_end = output_dimension_index[column_index + 1]
+            column_result = execute_inspection_visits_unary_op(operator_context,
+                                                               self.code_reference,
+                                                               input_data,
+                                                               annotations,
+                                                               result[:, index_start:index_end],
+                                                               self.inspections,
+                                                               self.code_ref_inspection_output_map,
+                                                               description)
+            annotations_for_columns = self.annotation_result_concat_workaround or []
+            annotations_for_columns.append(column_result.annotations)
+            self.annotation_result_concat_workaround = annotations_for_columns
         return result
 
     def column_transformer_visits(self, X, y):
