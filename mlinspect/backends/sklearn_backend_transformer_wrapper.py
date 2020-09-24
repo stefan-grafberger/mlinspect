@@ -203,18 +203,22 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             output_dimension_index = [0]
             for dimension in self.output_dimensions:
                 output_dimension_index.append(output_dimension_index[-1] + dimension)
-            for column_index, column in enumerate(X.columns):
+            assert isinstance(X, MlinspectDataFrame)
+            for column_index, _ in enumerate(X.columns):
                 function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
                 operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
-                description = "Categorical Encoder (OneHotEncoder), Column: '{}'".format(column)
+                column_name = X.columns[column_index]
+                annotations = X.annotations[self]
+                input_data = X.iloc[:, column_index]
+                description = "Categorical Encoder (OneHotEncoder), Column: '{}'".format(column_name)
 
                 index_start = output_dimension_index[column_index]
                 index_end = output_dimension_index[column_index + 1]
 
                 col_result = execute_inspection_visits_unary_op(operator_context,
                                                                 self.code_reference,
-                                                                X[[column]],
-                                                                X.annotations[self],
+                                                                input_data,
+                                                                annotations,
                                                                 result[:, index_start:index_end],
                                                                 self.inspections,
                                                                 self.code_ref_inspection_output_map,
@@ -234,6 +238,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
                 operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
                 column_name, annotations = X.annotations[column_index]
+                input_data = X[:, column_index]
                 description = "Categorical Encoder (OneHotEncoder), Column: '{}'".format(column_name)
 
                 index_start = output_dimension_index[column_index]
@@ -241,7 +246,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
                 column_result = execute_inspection_visits_unary_op(operator_context,
                                                                    self.code_reference,
-                                                                   X[:, column_index],
+                                                                   input_data,
                                                                    annotations,
                                                                    result[:, index_start:index_end],
                                                                    self.inspections,
