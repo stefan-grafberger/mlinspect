@@ -96,7 +96,10 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                       self.transformer.categories_]
             result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self, transformer_name)
         elif self.call_function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
-            result = self.standard_scaler_visits(X, y)
+            transformer_name = "Numerical Encoder (StandardScaler)"
+            result = self.transformer.fit_transform(X, y)
+            self.output_dimensions = [1 for _ in range(result.shape[1])]
+            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self, transformer_name)
         elif self.call_function_info == ('demo.healthcare.demo_utils', 'MyW2VTransformer'):
             transformer_name = "Word2Vec"
             result = self.transformer.fit_transform(X, y)
@@ -106,7 +109,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [1 for _ in range(result.shape[1])]
             transformer_name = "Imputer (SimpleImputer)"
-            # TODO: Remove parent transformer workaround
+            # TODO: Remove parent transformer workaround, if not, fix when to use parent_transformer
             result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self.parent_transformer,
                                                    transformer_name)
         elif self.call_function_info == ('sklearn.pipeline', 'Pipeline'):
@@ -123,31 +126,6 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         else:
             result = self.transformer.fit_transform(X, y)
 
-        return result
-
-    def standard_scaler_visits(self, X, y):
-        """
-        Inspection visits for the StandardScaler Transformer
-        """
-        # pylint: disable=invalid-name
-        assert isinstance(X.annotations, dict) and self in X.annotations
-        result = self.transformer.fit_transform(X, y)
-        self.output_dimensions = [1 for _ in range(result.shape[1])]
-        for column_index, column in enumerate(X.columns):
-            function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
-            operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
-            description = "Numerical Encoder (StandardScaler), Column: '{}'".format(column)
-            column_result = execute_inspection_visits_unary_op(operator_context,
-                                                               self.code_reference,
-                                                               X[[column]],
-                                                               X.annotations[self],
-                                                               result[:, column_index],
-                                                               self.inspections,
-                                                               self.code_ref_inspection_output_map,
-                                                               description)
-            annotations_for_columns = self.annotation_result_concat_workaround or []
-            annotations_for_columns.append((column, column_result.annotations))
-            self.annotation_result_concat_workaround = annotations_for_columns
         return result
 
     def normal_transformer_visit(self, X, y, result, dimensions, transformer_with_input_annotations, transformer_name):
