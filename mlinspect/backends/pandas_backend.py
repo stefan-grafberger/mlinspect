@@ -296,9 +296,6 @@ def iter_input_annotation_output_df_projection(inspection_index, input_data, inp
     Create an efficient iterator for the inspection input for operators with one parent.
     """
     # pylint: disable=too-many-locals
-    # Performance tips:
-    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-
     input_rows = get_iterator_for_type(input_data)
     annotation_df_view = input_annotations.iloc[:, inspection_index:inspection_index + 1]
     annotation_rows = get_df_row_iterator(annotation_df_view)
@@ -313,8 +310,6 @@ def iter_input_annotation_output_resampled(inspection_count, inspection_index, i
     Create an efficient iterator for the inspection input for operators with one parent.
     """
     # pylint: disable=too-many-locals, too-many-arguments
-    # Performance tips:
-    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
     data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
                                                 right_index=True)
     joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
@@ -346,9 +341,6 @@ def iter_input_annotation_output_df_pair_df(inspection_count, inspection_index, 
     Create an efficient iterator for the inspection input for operators with one parent.
     """
     # pylint: disable=too-many-locals, too-many-arguments
-    # Performance tips:
-    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-
     x_before_with_annotations = pandas.merge(x_data, x_annotations, left_on="mlinspect_index_x",
                                              right_index=True, suffixes=["_x_data", "_x_annot"])
     y_before_with_annotations = pandas.merge(y_data, y_annotations, left_on="mlinspect_index_y",

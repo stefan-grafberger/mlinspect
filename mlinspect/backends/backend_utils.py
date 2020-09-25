@@ -88,6 +88,8 @@ def get_df_row_iterator(dataframe):
     Create an efficient iterator for the data frame rows.
     The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
     """
+    # Performance tips:
+    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
     arrays = []
     fields = list(dataframe.columns)
     arrays.extend(dataframe.iloc[:, k] for k in range(0, len(dataframe.columns)))

@@ -85,45 +85,28 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         # pylint: disable=invalid-name
         if self.call_function_info == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
             result = self.column_transformer_visits(X, y)
+        elif self.call_function_info == ('sklearn.pipeline', 'Pipeline'):
+            result = self.pipeline_visit(X, y)
+        elif self.call_function_info in {('sklearn.preprocessing._data', 'StandardScaler'),
+                                         ('sklearn.impute._base', 'SimpleImputer')}:
+            result = self.transformer.fit_transform(X, y)
+            self.output_dimensions = [1 for _ in range(result.shape[1])]
+            result = self.normal_transformer_visit(X, y, result)
+        elif self.call_function_info == ('demo.healthcare.demo_utils', 'MyW2VTransformer'):
+            result = self.transformer.fit_transform(X, y)
+            self.output_dimensions = [result.shape[1]]
+            result = self.normal_transformer_visit(X, y, result)
         elif self.call_function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [len(one_hot_categories) for one_hot_categories in
                                       self.transformer.categories_]
-            result = self.normal_transformer_visit(X, y, result, self.output_dimensions)
-        elif self.call_function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
-            result = self.transformer.fit_transform(X, y)
-            self.output_dimensions = [1 for _ in range(result.shape[1])]
-            result = self.normal_transformer_visit(X, y, result, self.output_dimensions)
-        elif self.call_function_info == ('demo.healthcare.demo_utils', 'MyW2VTransformer'):
-            result = self.transformer.fit_transform(X, y)
-            self.output_dimensions = [result.shape[1]]
-            result = self.normal_transformer_visit(X, y, result, self.output_dimensions)
-        elif self.call_function_info == ('sklearn.impute._base', 'SimpleImputer'):
-            result = self.transformer.fit_transform(X, y)
-            self.output_dimensions = [1 for _ in range(result.shape[1])]
-            # TODO: Remove parent transformer workaround, if not, fix when to use parent_transformer
-            result = self.normal_transformer_visit(X, y, result, self.output_dimensions)
-        elif self.call_function_info == ('sklearn.pipeline', 'Pipeline'):
-            if self.annotation_result_project_workaround is not None:
-                first_step_transformer = self.transformer.steps[0][1]
-                first_step_transformer.annotation_result_project_workaround = self.annotation_result_project_workaround
-
-            result = self.transformer.fit_transform(X, y)
-
-            last_step_transformer = self.transformer.steps[-1][1]
-            self.annotation_result_concat_workaround = last_step_transformer.annotation_result_concat_workaround
-            self.output_dimensions = last_step_transformer.output_dimensions
-
-            transformers_tuples = self.transformer.steps
-            transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
-            for transformer in transformers:
-                self.code_ref_inspection_output_map.update(transformer.code_ref_inspection_output_map)
+            result = self.normal_transformer_visit(X, y, result)
         else:
             result = self.transformer.fit_transform(X, y)
 
         return result
 
-    def normal_transformer_visit(self, X, y, result, dimensions):
+    def normal_transformer_visit(self, X, y, result):
         """
         Inspection visits for the OneHotEncoder Transformer
         """
@@ -174,6 +157,23 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             assert False
         return result
 
+    def pipeline_visit(self, X, y):
+        """
+        Inspection visits for a Pipeline within a Pipeline
+        """
+        if self.annotation_result_project_workaround is not None:
+            first_step_transformer = self.transformer.steps[0][1]
+            first_step_transformer.annotation_result_project_workaround = self.annotation_result_project_workaround
+        result = self.transformer.fit_transform(X, y)
+        last_step_transformer = self.transformer.steps[-1][1]
+        self.annotation_result_concat_workaround = last_step_transformer.annotation_result_concat_workaround
+        self.output_dimensions = last_step_transformer.output_dimensions
+        transformers_tuples = self.transformer.steps
+        transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
+        for transformer in transformers:
+            self.code_ref_inspection_output_map.update(transformer.code_ref_inspection_output_map)
+        return result
+
     def column_transformer_visits(self, X, y):
         """
         The projections and the final concat.
@@ -195,7 +195,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                     for column in transformer_tuple[2]]
         for column, transformer in columns_with_transformer:
             projected_df = X[[column]]
-            function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
+            function_info = (self.module_name, "fit_transform")
             operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
             description = "to ['{}'] (ColumnTransformer)".format(column)
             local_result = execute_inspection_visits_unary_op(operator_context, self.code_reference, X,
@@ -242,7 +242,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             data = result[:, result_indices[index]:result_indices[index + 1]]
             _, annotation = annotations[index]
             transformer_data_with_annotations.append((data, annotation))
-        function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
+        function_info = (self.module_name, "fit_transform")
         operator_context = OperatorContext(OperatorType.CONCATENATION, function_info)
         description = "concat"
         result = execute_inspection_visits_nary_op(operator_context, self.code_reference,
@@ -255,7 +255,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         Inspection visits for the estimator DAG node
         """
         # pylint: disable=invalid-name
-        function_info = (self.module_name, "fit")  # TODO: nested pipelines
+        function_info = (self.module_name, "fit")
         assert y is not None
         operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
         description = "fit"
@@ -272,7 +272,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         Only need to do two scans for train data and train labels
         """
         # pylint: disable=invalid-name
-        function_info = (self.module_name, "fit")  # TODO: nested pipelines
+        function_info = (self.module_name, "fit")
         operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
         X_new = execute_inspection_visits_unary_op(operator_context, self.code_reference, X, X.annotations, X,
                                                    self.inspections, self.code_ref_inspection_output_map, "fit X")
@@ -301,9 +301,6 @@ def iter_input_annotation_output_nary_op(inspection_index, transformer_data_with
     Create an efficient iterator for the inspection input
     """
     # pylint: disable=too-many-locals
-    # Performance tips:
-    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-
     input_iterators = []
     annotation_iterators = []
     for input_data, annotations in transformer_data_with_annotations:
@@ -324,9 +321,6 @@ def iter_input_annotation_output_sink_op(inspection_index, data, target):
     Create an efficient iterator for the inspection input
     """
     # pylint: disable=too-many-locals
-    # Performance tips:
-    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
-
     input_iterators = []
     annotation_iterators = []
 
@@ -350,8 +344,6 @@ def iter_input_annotation_output_unary_op(inspection_index, input_data, input_an
     Create an efficient iterator for the inspection input
     """
     # pylint: disable=too-many-locals
-    # Performance tips:
-    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
     input_rows = get_iterator_for_type(input_data, True)
 
     annotation_df_view = input_annotations.iloc[:, inspection_index:inspection_index + 1]
