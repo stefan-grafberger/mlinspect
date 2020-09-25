@@ -201,30 +201,23 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         transformers_tuples = self.transformer.transformers
         columns_with_transformer = [(column, transformer_tuple[1]) for transformer_tuple in transformers_tuples
                                     for column in transformer_tuple[2]]
-        X_old = X.copy()
-        X_new = [X]
-        annotations_for_each_transformer = dict()
         for column, transformer in columns_with_transformer:
-            projected_df = X_old[[column]]
+            projected_df = X[[column]]
             function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
             operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
             description = "to ['{}'] (ColumnTransformer)".format(column)
-            X_new[0] = execute_inspection_visits_unary_op(operator_context, self.code_reference, X_old,
-                                                          X_old.annotations, projected_df, self.inspections,
-                                                          self.code_ref_inspection_output_map, description)
+            local_result = execute_inspection_visits_unary_op(operator_context, self.code_reference, X,
+                                                              X.annotations, projected_df, self.inspections,
+                                                              self.code_ref_inspection_output_map, description)
 
             # If the transformer is a column transformer, we have multiple annotations we need to pass to different
             # transformers.  If we do not want to override internal column transformer functions, we have to work around
             # these black box functions and pass the annotations using a different mechanism
-            current_annotations = X_new[0].annotations
-            current_annotations_for_transformer = annotations_for_each_transformer.get(transformer, [])
+            current_annotations = local_result.annotations
+            current_annotations_for_transformer = transformer.annotation_result_project_workaround or []
             current_annotations_for_transformer.append(current_annotations)
-            annotations_for_each_transformer[transformer] = current_annotations_for_transformer
-
-        transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
-        for transformer in transformers:
-            transformer.annotation_result_project_workaround = annotations_for_each_transformer[transformer]
-        return X_old
+            transformer.annotation_result_project_workaround = current_annotations_for_transformer
+        return X
 
     def column_transformer_visits_save_child_results(self):
         """
