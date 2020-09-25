@@ -179,8 +179,8 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         The projections and the final concat.
         """
         # pylint: disable=invalid-name
-        X_new = self.column_transformer_visits_projections(X)
-        result = self.transformer.fit_transform(X_new, y)
+        self.column_transformer_visits_projections(X)
+        result = self.transformer.fit_transform(X, y)
         self.column_transformer_visits_save_child_results()
         result = self.column_transformer_visits_concat(result)
         return result
@@ -209,7 +209,6 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             current_annotations_for_transformer = transformer.annotation_result_project_workaround or []
             current_annotations_for_transformer.append(current_annotations)
             transformer.annotation_result_project_workaround = current_annotations_for_transformer
-        return X
 
     def column_transformer_visits_save_child_results(self):
         """
