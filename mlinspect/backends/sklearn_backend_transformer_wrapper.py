@@ -22,7 +22,9 @@ transformer_names = {
         ('sklearn.preprocessing._encoders', 'OneHotEncoder'): "Categorical Encoder (OneHotEncoder)",
         ('sklearn.preprocessing._data', 'StandardScaler'): "Numerical Encoder (StandardScaler)",
         ('demo.healthcare.demo_utils', 'MyW2VTransformer'): "Word2Vec",
-        ('sklearn.impute._base', 'SimpleImputer'): "Imputer (SimpleImputer)"
+        ('sklearn.impute._base', 'SimpleImputer'): "Imputer (SimpleImputer)",
+        ('sklearn.tree._classes', 'DecisionTreeClassifier'): "Decision Tree",
+        ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'): "Neural Network"
     }
 
 
@@ -32,7 +34,6 @@ class MlinspectEstimatorTransformer(BaseEstimator):
     definition style
     See: https://scikit-learn.org/stable/developers/develop.html
     """
-
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self, transformer, code_reference: CodeReference, inspections, code_ref_inspection_output_map,
@@ -271,14 +272,14 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         # pylint: disable=invalid-name
         function_info = (self.module_name, "fit")
         operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
-        X_new = execute_inspection_visits_unary_op(operator_context, self.code_reference, X, X.annotations, X,
-                                                   self.inspections, self.code_ref_inspection_output_map, "fit X")
+        X_annotated = execute_inspection_visits_unary_op(operator_context, self.code_reference, X, X.annotations, X,
+                                                         self.inspections, self.code_ref_inspection_output_map, "fit X")
         assert y is not None
         operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
-        y_new = execute_inspection_visits_unary_op(operator_context, self.code_reference, y,
-                                                   y.annotations, y, self.inspections,
-                                                   self.code_ref_inspection_output_map, "fit y")
-        return X_new, y_new
+        y_annotated = execute_inspection_visits_unary_op(operator_context, self.code_reference, y,
+                                                         y.annotations, y, self.inspections,
+                                                         self.code_ref_inspection_output_map, "fit y")
+        return X_annotated, y_annotated
 
     def score(self, X, y):
         """

@@ -7,7 +7,7 @@ import networkx
 from .backend import Backend
 from .pandas_backend import execute_inspection_visits_unary_operator
 from .pandas_backend_frame_wrapper import MlinspectSeries, MlinspectDataFrame
-from .sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer
+from .sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer, transformer_names
 from .sklearn_dag_postprocessor import SklearnDagPostprocessor
 from .sklearn_wir_preprocessor import SklearnWirPreprocessor
 from ..inspections.inspection_input import OperatorContext
@@ -89,21 +89,7 @@ class SklearnBackend(Backend):
 
     def before_call_used_args_add_description(self, code_reference, function_info):
         """Add special descriptions to certain sklearn operators"""
-        description = None
-
-        if function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
-            description = "Categorical Encoder (OneHotEncoder)"
-        elif function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
-            description = "Numerical Encoder (StandardScaler)"
-        elif function_info == ('sklearn.impute._base', 'SimpleImputer'):
-            description = "Imputer (SimpleImputer)"
-        elif function_info == ('sklearn.tree._classes', 'DecisionTreeClassifier'):
-            description = "Decision Tree"
-        elif function_info == ('sklearn.demo.healthcare.demo_utils', 'MyW2VTransformer'):
-            description = "Word2Vec"
-        elif function_info == ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'):
-            description = "Neural Network"
-
+        description = transformer_names.get(function_info, None)
         if description:
             self.code_reference_to_description[code_reference] = description
 
