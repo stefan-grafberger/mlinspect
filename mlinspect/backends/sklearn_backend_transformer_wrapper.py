@@ -148,8 +148,9 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
         for column_index in range(X.shape[1]):
             if self.annotation_result_project_workaround is not None:
+                assert isinstance(X, MlinspectDataFrame)
                 column_name = X.columns[column_index]
-                annotations = self.annotation_result_project_workaround  # Only one column, contains annots_df directly
+                annotations = self.annotation_result_project_workaround[column_index]
                 input_data = X.iloc[:, column_index]
             elif isinstance(X.annotations, list):  # List because transformer impls process multiple columns at once
                 assert isinstance(X, MlinspectNdarray)
@@ -203,6 +204,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                     for column in transformer_tuple[2]]
         X_old = X.copy()
         X_new = [X]
+        annotations_for_each_transformer = dict()
         for column, transformer in columns_with_transformer:
             projected_df = X_old[[column]]
             function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
@@ -212,11 +214,19 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                                           X_old.annotations, projected_df, self.inspections,
                                                           self.code_ref_inspection_output_map, description,
                                                           True, transformer, X_new[0])
-        annotations_for_each_transformer = X_new[0].annotations
+
+            # If the transformer is a column transformer, we have multiple annotations we need to pass to different
+            # transformers.  If we do not want to override internal column transformer functions, we have to work around
+            # these black box functions and pass the annotations using a different mechanism
+            current_annotations = X_new[0].annotations
+            current_annotations_for_transformer = annotations_for_each_transformer.get(transformer, [])
+            current_annotations_for_transformer.append(current_annotations)
+            annotations_for_each_transformer[transformer] = current_annotations_for_transformer
+
         transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
         for transformer in transformers:
             transformer.annotation_result_project_workaround = annotations_for_each_transformer[transformer]
-        return X_new[0]
+        return X_old
 
     def column_transformer_visits_save_child_results(self):
         """
@@ -463,17 +473,7 @@ def store_inspection_outputs(annotation_iterators, code_reference, return_value,
     code_reference_inspection_output_map[code_reference] = stored_inspection_results
 
     if storage_type == StorageType.COLUMN_TRANSFORMER:
-        # If the transformer is a column transformer, we have multiple annotations we need to pass to different
-        # transformers.  If we do not want to override internal column transformer functions, we have to work around
-        # these black box functions and pass the annotations using a different mechanism
-        if not isinstance(full_return_value, MlinspectDataFrame):
-            new_return_value = MlinspectDataFrame(full_return_value)
-        else:
-            new_return_value = full_return_value
-        if not hasattr(new_return_value, "annotations") or not isinstance(new_return_value.annotations, dict):
-            new_return_value.annotations = dict()
-        new_return_value.annotations[transformer] = annotations_df
-        assert isinstance(new_return_value, MlinspectDataFrame)
+        new_return_value = create_wrapper_with_annotations(annotations_df, return_value)
     elif storage_type == StorageType.ESTIMATOR:
         new_return_value = None
     else:
