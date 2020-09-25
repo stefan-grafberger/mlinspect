@@ -58,12 +58,12 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         """
         # pylint: disable=invalid-name
         if self.call_function_info == ('sklearn.pipeline', 'Pipeline'):
-            X_new, y_new = self.train_data_and_labels_visits(X, y)
-            self.transformer = self.transformer.fit(X_new, y_new)
+            X_annotated, y_annotated = self.train_data_and_labels_visits(X, y)
+            self.transformer = self.transformer.fit(X_annotated, y_annotated)
         elif self.call_function_info in {('sklearn.tree._classes', 'DecisionTreeClassifier'),
                                          ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')}:
-            X_new, y_new = self.estimator_visits(X, y)
-            self.transformer.fit(X_new, y_new)
+            self.estimator_visits(X, y)
+            self.transformer.fit(X, y)
         else:
             assert False
 
@@ -262,9 +262,6 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         execute_inspection_visits_sink_op(operator_context, self.code_reference,
                                           X, y, self.inspections,
                                           self.code_ref_inspection_output_map, description)
-        X_new = X
-        y_new = y
-        return X_new, y_new
 
     def train_data_and_labels_visits(self, X, y):
         """
@@ -281,8 +278,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         y_new = execute_inspection_visits_unary_op(operator_context, self.code_reference, y,
                                                    y.annotations, y, self.inspections,
                                                    self.code_ref_inspection_output_map, "fit y")
-        result = X_new, y_new
-        return result
+        return X_new, y_new
 
     def score(self, X, y):
         """
@@ -414,7 +410,6 @@ def execute_inspection_visits_unary_op(operator_context, code_reference, input_d
 # -------------------------------------------------------
 # Store inspection results functions
 # -------------------------------------------------------
-
 
 def store_inspection_outputs(annotation_iterators, code_reference, return_value, inspections,
                              code_reference_inspection_output_map, func_name, is_sink):
