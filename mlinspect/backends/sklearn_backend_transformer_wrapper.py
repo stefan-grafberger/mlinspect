@@ -20,6 +20,14 @@ from ..inspections.inspection_input import OperatorContext, InspectionInputUnary
 from ..instrumentation.dag_node import CodeReference, OperatorType
 
 
+transformer_names = {
+        ('sklearn.preprocessing._encoders', 'OneHotEncoder'): "Categorical Encoder (OneHotEncoder)",
+        ('sklearn.preprocessing._data', 'StandardScaler'): "Numerical Encoder (StandardScaler)",
+        ('demo.healthcare.demo_utils', 'MyW2VTransformer'): "Word2Vec",
+        ('sklearn.impute._base', 'SimpleImputer'): "Imputer (SimpleImputer)"
+    }
+
+
 class MlinspectEstimatorTransformer(BaseEstimator):
     """
     A wrapper for sklearn transformers to capture method calls we do not see otherwise because of the pipeline
@@ -29,15 +37,8 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
     # pylint: disable=too-many-instance-attributes
 
-    transformer_names = {
-        ('sklearn.preprocessing._encoders', 'OneHotEncoder'): "Categorical Encoder (OneHotEncoder)",
-        ('sklearn.preprocessing._data', 'StandardScaler'): "Numerical Encoder (StandardScaler)",
-        ('demo.healthcare.demo_utils', 'MyW2VTransformer'): "Word2Vec",
-        ('sklearn.impute._base', 'SimpleImputer'): "Imputer (SimpleImputer)"
-    }
-
     def __init__(self, transformer, code_reference: CodeReference, inspections, code_ref_inspection_output_map,
-                 output_dimensions=None, transformer_uuid=None):
+                 output_dimensions=None, transformer_uuid=None, annotation_result_project_workaround=None):
         # pylint: disable=too-many-arguments
         # None arguments are not passed directly when we create them. Still needed though because the
         # Column transformer clones child transformers and does not pass parameters otherwise
@@ -52,11 +53,8 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         self.code_ref_inspection_output_map = code_ref_inspection_output_map
         self.output_dimensions = output_dimensions
         self.annotation_result_concat_workaround = None
-        self.parent_transformer = None  # needed for nested pipelines
-        if transformer_uuid is None:
-            self.transformer_uuid = uuid.uuid4()
-        else:
-            self.transformer_uuid = transformer_uuid
+        self.annotation_result_project_workaround = annotation_result_project_workaround
+        self.transformer_uuid = transformer_uuid or uuid.uuid4()
 
     def __eq__(self, other):
         return isinstance(other, MlinspectEstimatorTransformer) and self.transformer_uuid == other.transformer_uuid
@@ -100,23 +98,27 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [len(one_hot_categories) for one_hot_categories in
                                       self.transformer.categories_]
-            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self)
+            result = self.normal_transformer_visit(X, y, result, self.output_dimensions)
         elif self.call_function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [1 for _ in range(result.shape[1])]
-            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self)
+            result = self.normal_transformer_visit(X, y, result, self.output_dimensions)
         elif self.call_function_info == ('demo.healthcare.demo_utils', 'MyW2VTransformer'):
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [result.shape[1]]
-            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self)
+            result = self.normal_transformer_visit(X, y, result, self.output_dimensions)
         elif self.call_function_info == ('sklearn.impute._base', 'SimpleImputer'):
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [1 for _ in range(result.shape[1])]
             # TODO: Remove parent transformer workaround, if not, fix when to use parent_transformer
-            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self.parent_transformer)
+            result = self.normal_transformer_visit(X, y, result, self.output_dimensions)
         elif self.call_function_info == ('sklearn.pipeline', 'Pipeline'):
-            self.transformer.steps[0][1].parent_transformer = self  # This needs to be fixed
+            if self.annotation_result_project_workaround is not None:
+                first_step_transformer = self.transformer.steps[0][1]
+                first_step_transformer.annotation_result_project_workaround = self.annotation_result_project_workaround
+
             result = self.transformer.fit_transform(X, y)
+
             last_step_transformer = self.transformer.steps[-1][1]
             self.annotation_result_concat_workaround = last_step_transformer.annotation_result_concat_workaround
             self.output_dimensions = last_step_transformer.output_dimensions
@@ -130,12 +132,12 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
         return result
 
-    def normal_transformer_visit(self, X, y, result, dimensions, transformer_with_input_annotations):
+    def normal_transformer_visit(self, X, y, result, dimensions):
         """
         Inspection visits for the OneHotEncoder Transformer
         """
         # pylint: disable=invalid-name, too-many-locals, too-many-arguments, unused-argument
-        transformer_name = self.transformer_names[self.call_function_info]
+        transformer_name = transformer_names[self.call_function_info]
 
         output_dimension_index = [0]
         for dimension in self.output_dimensions:
@@ -145,10 +147,9 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
 
         for column_index in range(X.shape[1]):
-            if isinstance(X.annotations, dict):  # A dict is used for ColumnTransformer projections
-                assert isinstance(X, MlinspectDataFrame) and transformer_with_input_annotations in X.annotations
+            if self.annotation_result_project_workaround is not None:
                 column_name = X.columns[column_index]
-                annotations = X.annotations[transformer_with_input_annotations]
+                annotations = self.annotation_result_project_workaround  # Only one column, contains annots_df directly
                 input_data = X.iloc[:, column_index]
             elif isinstance(X.annotations, list):  # List because transformer impls process multiple columns at once
                 assert isinstance(X, MlinspectNdarray)
@@ -211,6 +212,10 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                                           X_old.annotations, projected_df, self.inspections,
                                                           self.code_ref_inspection_output_map, description,
                                                           True, transformer, X_new[0])
+        annotations_for_each_transformer = X_new[0].annotations
+        transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
+        for transformer in transformers:
+            transformer.annotation_result_project_workaround = annotations_for_each_transformer[transformer]
         return X_new[0]
 
     def column_transformer_visits_save_child_results(self):
@@ -291,7 +296,6 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         Forward some score call of an estimator
         """
         # pylint: disable=invalid-name
-        # TODO: Probably split the transformer_estimator wrapper into two for transforemrs and estimators
         return self.transformer.score(X, y)
 
 
