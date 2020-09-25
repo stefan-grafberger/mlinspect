@@ -113,6 +113,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         transformer_name = transformer_names[self.call_function_info]
 
         output_dimension_index = [0]
+        assert self.output_dimensions
         for dimension in self.output_dimensions:
             output_dimension_index.append(output_dimension_index[-1] + dimension)
 
