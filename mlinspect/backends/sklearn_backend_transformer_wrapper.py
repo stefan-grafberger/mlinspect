@@ -3,7 +3,6 @@ A wrapper for sklearn transformers to capture method calls we do not see otherwi
 definition style
 """
 import inspect
-import uuid
 
 import numpy
 from scipy.sparse import csr_matrix
@@ -37,7 +36,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self, transformer, code_reference: CodeReference, inspections, code_ref_inspection_output_map,
-                 output_dimensions=None, transformer_uuid=None, annotation_result_project_workaround=None):
+                 output_dimensions=None, annotation_result_project_workaround=None):
         # pylint: disable=too-many-arguments
         # None arguments are not passed directly when we create them. Still needed though because the
         # Column transformer clones child transformers and does not pass parameters otherwise
@@ -53,13 +52,6 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         self.output_dimensions = output_dimensions
         self.annotation_result_concat_workaround = None
         self.annotation_result_project_workaround = annotation_result_project_workaround
-        self.transformer_uuid = transformer_uuid or uuid.uuid4()
-
-    def __eq__(self, other):
-        return isinstance(other, MlinspectEstimatorTransformer) and self.transformer_uuid == other.transformer_uuid
-
-    def __hash__(self):
-        return hash(self.transformer_uuid)
 
     def fit(self, X, y=None) -> 'MlinspectEstimatorTransformer':
         """
