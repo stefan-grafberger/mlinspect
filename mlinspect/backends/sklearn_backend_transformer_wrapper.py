@@ -29,6 +29,13 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
     # pylint: disable=too-many-instance-attributes
 
+    transformer_names = {
+        ('sklearn.preprocessing._encoders', 'OneHotEncoder'): "Categorical Encoder (OneHotEncoder)",
+        ('sklearn.preprocessing._data', 'StandardScaler'): "Numerical Encoder (StandardScaler)",
+        ('demo.healthcare.demo_utils', 'MyW2VTransformer'): "Word2Vec",
+        ('sklearn.impute._base', 'SimpleImputer'): "Imputer (SimpleImputer)"
+    }
+
     def __init__(self, transformer, code_reference: CodeReference, inspections, code_ref_inspection_output_map,
                  output_dimensions=None, transformer_uuid=None):
         # pylint: disable=too-many-arguments
@@ -90,30 +97,25 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         if self.call_function_info == ('sklearn.compose._column_transformer', 'ColumnTransformer'):
             result = self.column_transformer_visits(X, y)
         elif self.call_function_info == ('sklearn.preprocessing._encoders', 'OneHotEncoder'):
-            transformer_name = "Categorical Encoder (OneHotEncoder)"
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [len(one_hot_categories) for one_hot_categories in
                                       self.transformer.categories_]
-            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self, transformer_name)
+            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self)
         elif self.call_function_info == ('sklearn.preprocessing._data', 'StandardScaler'):
-            transformer_name = "Numerical Encoder (StandardScaler)"
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [1 for _ in range(result.shape[1])]
-            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self, transformer_name)
+            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self)
         elif self.call_function_info == ('demo.healthcare.demo_utils', 'MyW2VTransformer'):
-            transformer_name = "Word2Vec"
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [result.shape[1]]
-            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self, transformer_name)
+            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self)
         elif self.call_function_info == ('sklearn.impute._base', 'SimpleImputer'):
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [1 for _ in range(result.shape[1])]
-            transformer_name = "Imputer (SimpleImputer)"
             # TODO: Remove parent transformer workaround, if not, fix when to use parent_transformer
-            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self.parent_transformer,
-                                                   transformer_name)
+            result = self.normal_transformer_visit(X, y, result, self.output_dimensions, self.parent_transformer)
         elif self.call_function_info == ('sklearn.pipeline', 'Pipeline'):
-            self.transformer.steps[0][1].parent_transformer = self
+            self.transformer.steps[0][1].parent_transformer = self  # This needs to be fixed
             result = self.transformer.fit_transform(X, y)
             last_step_transformer = self.transformer.steps[-1][1]
             self.annotation_result_concat_workaround = last_step_transformer.annotation_result_concat_workaround
@@ -128,11 +130,13 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
         return result
 
-    def normal_transformer_visit(self, X, y, result, dimensions, transformer_with_input_annotations, transformer_name):
+    def normal_transformer_visit(self, X, y, result, dimensions, transformer_with_input_annotations):
         """
         Inspection visits for the OneHotEncoder Transformer
         """
         # pylint: disable=invalid-name, too-many-locals, too-many-arguments, unused-argument
+        transformer_name = self.transformer_names[self.call_function_info]
+
         output_dimension_index = [0]
         for dimension in self.output_dimensions:
             output_dimension_index.append(output_dimension_index[-1] + dimension)
@@ -188,6 +192,36 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         result = self.column_transformer_visits_concat(result)
         return result
 
+    def column_transformer_visits_projections(self, X):
+        """
+        Inspection visits for the different projections
+        """
+        # pylint: disable=invalid-name
+        transformers_tuples = self.transformer.transformers
+        columns_with_transformer = [(column, transformer_tuple[1]) for transformer_tuple in transformers_tuples
+                                    for column in transformer_tuple[2]]
+        X_old = X.copy()
+        X_new = [X]
+        for column, transformer in columns_with_transformer:
+            projected_df = X_old[[column]]
+            function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
+            operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
+            description = "to ['{}'] (ColumnTransformer)".format(column)
+            X_new[0] = execute_inspection_visits_unary_op(operator_context, self.code_reference, X_old,
+                                                          X_old.annotations, projected_df, self.inspections,
+                                                          self.code_ref_inspection_output_map, description,
+                                                          True, transformer, X_new[0])
+        return X_new[0]
+
+    def column_transformer_visits_save_child_results(self):
+        """
+        Because Column transformer creates deep copies, we need to extract results here
+        """
+        transformers_tuples = self.transformer.transformers_[:-1]
+        transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
+        for transformer in transformers:
+            self.code_ref_inspection_output_map.update(transformer.code_ref_inspection_output_map)
+
     def column_transformer_visits_concat(self, result):
         """
         Inspection visits for the concat DAG node
@@ -217,36 +251,6 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                                    transformer_data_with_annotations, result, self.inspections,
                                                    self.code_ref_inspection_output_map, description)
         return result
-
-    def column_transformer_visits_save_child_results(self):
-        """
-        Because Column transformer creates deep copies, we need to extract results here
-        """
-        transformers_tuples = self.transformer.transformers_[:-1]
-        transformers = [transformer_tuple[1] for transformer_tuple in transformers_tuples]
-        for transformer in transformers:
-            self.code_ref_inspection_output_map.update(transformer.code_ref_inspection_output_map)
-
-    def column_transformer_visits_projections(self, X):
-        """
-        Inspection visits for the different projections
-        """
-        # pylint: disable=invalid-name
-        transformers_tuples = self.transformer.transformers
-        columns_with_transformer = [(column, transformer_tuple[1]) for transformer_tuple in transformers_tuples
-                                    for column in transformer_tuple[2]]
-        X_old = X.copy()
-        X_new = [X]
-        for column, transformer in columns_with_transformer:
-            projected_df = X_old[[column]]
-            function_info = (self.module_name, "fit_transform")  # TODO: nested pipelines
-            operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
-            description = "to ['{}'] (ColumnTransformer)".format(column)
-            X_new[0] = execute_inspection_visits_unary_op(operator_context, self.code_reference, X_old,
-                                                          X_old.annotations, projected_df, self.inspections,
-                                                          self.code_ref_inspection_output_map, description,
-                                                          True, transformer, X_new[0])
-        return X_new[0]
 
     def estimator_visits(self, X, y):
         """
