@@ -40,10 +40,9 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         # pylint: disable=too-many-arguments
         # None arguments are not passed directly when we create them. Still needed though because the
         # Column transformer clones child transformers and does not pass parameters otherwise
-        self.transformer = transformer
-        self.name = transformer.__class__.__name__
-
         module = inspect.getmodule(transformer)
+
+        self.transformer = transformer
         self.module_name = module.__name__
         self.call_function_info = (module.__name__, transformer.__class__.__name__)
         self.code_reference = code_reference
@@ -161,6 +160,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         """
         Inspection visits for a Pipeline within a Pipeline
         """
+        # pylint: disable=invalid-name
         if self.annotation_result_project_workaround is not None:
             first_step_transformer = self.transformer.steps[0][1]
             first_step_transformer.annotation_result_project_workaround = self.annotation_result_project_workaround
