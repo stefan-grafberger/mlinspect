@@ -22,8 +22,6 @@ class PandasBackend(Backend):
     The pandas backend
     """
 
-    prefix = "pandas"
-
     operator_map = {
         ('pandas.io.parsers', 'read_csv'): OperatorType.DATA_SOURCE,
         ('pandas.core.frame', 'dropna'): OperatorType.SELECTION,
@@ -52,6 +50,10 @@ class PandasBackend(Backend):
         self.set_key_info = None
         self.select = False
         self.code_reference_to_set_item_op = {}
+
+    def is_responsible_for_call(self, function_info, function_prefix, value=None):
+        """Checks whether the backend is responsible for the current method call"""
+        return function_prefix == "pandas"
 
     def preprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
         """

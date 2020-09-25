@@ -19,8 +19,6 @@ class SklearnBackend(Backend):
     The scikit-learn backend
     """
 
-    prefix = "sklearn"
-
     operator_map = {
         ('sklearn.preprocessing._label', 'label_binarize'): OperatorType.PROJECTION_MODIFY,
         ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'): OperatorType.PROJECTION,
@@ -43,6 +41,10 @@ class SklearnBackend(Backend):
         'demo.healthcare.demo_utils': 'sklearn.demo.healthcare.demo_utils',
         'tensorflow.python.keras.wrappers.scikit_learn': 'sklearn.tensorflow.python.keras.wrappers.scikit_learn'
     }
+
+    def is_responsible_for_call(self, function_info, function_prefix, value=None):
+        """Checks whether the backend is responsible for the current method call"""
+        return function_prefix == "sklearn"
 
     def preprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
         """

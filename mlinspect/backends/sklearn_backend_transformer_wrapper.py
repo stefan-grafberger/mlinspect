@@ -21,7 +21,8 @@ from ..instrumentation.dag_node import CodeReference, OperatorType
 transformer_names = {
         ('sklearn.preprocessing._encoders', 'OneHotEncoder'): "Categorical Encoder (OneHotEncoder)",
         ('sklearn.preprocessing._data', 'StandardScaler'): "Numerical Encoder (StandardScaler)",
-        ('demo.healthcare.demo_utils', 'MyW2VTransformer'): "Word2Vec",
+        ('demo.healthcare.demo_utils', 'MyW2VTransformer'): "Word2Vec",  # FIXME
+        ('sklearn.demo.healthcare.demo_utils', 'MyW2VTransformer'): "Word2Vec",
         ('sklearn.impute._base', 'SimpleImputer'): "Imputer (SimpleImputer)",
         ('sklearn.tree._classes', 'DecisionTreeClassifier'): "Decision Tree",
         ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'): "Neural Network"

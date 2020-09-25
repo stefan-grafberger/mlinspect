@@ -16,10 +16,9 @@ class Backend(metaclass=abc.ABCMeta):
         self.dag_node_identifier_to_inspection_output = {}
         self.inspections = []
 
-    @property
     @abc.abstractmethod
-    def prefix(self):
-        """The prefix of the module of the library the backend is for"""
+    def is_responsible_for_call(self, function_info, function_prefix, value=None):
+        """Checks whether the backend is responsible for the current method call"""
         raise NotImplementedError
 
     @property

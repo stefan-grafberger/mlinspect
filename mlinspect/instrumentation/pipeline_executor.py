@@ -25,7 +25,7 @@ class PipelineExecutor:
                                 backend.replacement_type_map.items())
 
     script_scope = {}
-    backend_map = {}
+    backends = []
     code_reference_to_module = {}
 
     def run(self, notebook_path: str or None, python_path: str or None, python_code: str or None,
@@ -48,16 +48,16 @@ class PipelineExecutor:
         wir_extractor.extract_wir()
 
         code_reference_to_description = {}
-        for backend in self.backend_map.values():
+        for backend in self.backends:
             code_reference_to_description = {**code_reference_to_description, **backend.code_reference_to_description}
         wir = wir_extractor.add_runtime_info(self.code_reference_to_module, code_reference_to_description)
 
-        for backend in self.backend_map.values():
+        for backend in self.backends:
             wir = backend.preprocess_wir(wir)
 
         dag = WirToDagTransformer.extract_dag(wir)
 
-        for backend in self.backend_map.values():
+        for backend in self.backends:
             dag = backend.postprocess_dag(dag)
 
         inspection_to_call_to_annotation = self.build_inspection_result_map(dag)
@@ -68,8 +68,8 @@ class PipelineExecutor:
         """
         Because variables that the user code has to update are static, we need to set them here
         """
-        PipelineExecutor.backend_map = dict((backend.prefix, backend) for backend in get_all_backends())
-        for backend in self.backend_map.values():
+        PipelineExecutor.backends = get_all_backends()
+        for backend in self.backends:
             backend.inspections = inspections
         PipelineExecutor.script_scope = {}
         PipelineExecutor.code_reference_to_module = {}
@@ -84,7 +84,7 @@ class PipelineExecutor:
             dag_node_identifiers_to_dag_nodes[dag_node_identifier] = node
 
         dag_node_identifier_to_inspection_output = {}
-        for backend in self.backend_map.values():
+        for backend in self.backends:
             dag_node_identifier_to_inspection_output = {**dag_node_identifier_to_inspection_output,
                                                         **backend.dag_node_identifier_to_inspection_output}
         inspection_to_dag_node_to_annotation = {}
@@ -142,10 +142,10 @@ class PipelineExecutor:
         """
         # pylint: disable=too-many-arguments
         function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript, value_value)
-        if function_prefix in self.backend_map:
-            backend = self.backend_map[function_prefix]
-            backend.before_call_used_value(function_info, subscript, call_code, value_code,
-                                           value_value, code_reference)
+        for backend in self.backends:
+            if backend.is_responsible_for_call(function_info, function_prefix, value_value):
+                backend.before_call_used_value(function_info, subscript, call_code, value_code,
+                                               value_value, code_reference)
 
         return value_value
 
@@ -159,10 +159,10 @@ class PipelineExecutor:
         if store:
             self.code_reference_to_module[code_reference] = function_info
 
-        if function_prefix in self.backend_map:
-            backend = self.backend_map[function_prefix]
-            backend.before_call_used_args(function_info, subscript, call_code, args_code, code_reference, store,
-                                          args_values)
+        for backend in self.backends:
+            if backend.is_responsible_for_call(function_info, function_prefix):
+                backend.before_call_used_args(function_info, subscript, call_code, args_code, code_reference, store,
+                                              args_values)
 
         return args_values
 
@@ -173,10 +173,10 @@ class PipelineExecutor:
         # pylint: disable=too-many-arguments
         assert not subscript  # we currently only consider __getitem__ subscripts, these do not take kwargs
         function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript)
-        if function_prefix in self.backend_map:
-            backend = self.backend_map[function_prefix]
-            backend.before_call_used_kwargs(function_info, subscript, call_code, kwargs_code,
-                                            code_reference, kwargs_values)
+        for backend in self.backends:
+            if backend.is_responsible_for_call(function_info, function_prefix):
+                backend.before_call_used_kwargs(function_info, subscript, call_code, kwargs_code,
+                                                code_reference, kwargs_values)
 
         return kwargs_values
 
@@ -191,9 +191,9 @@ class PipelineExecutor:
         #  and end_line_no to code_reference
         self.code_reference_to_module[code_reference] = function_info
 
-        if function_prefix in self.backend_map:
-            backend = self.backend_map[function_prefix]
-            return backend.after_call_used(function_info, subscript, call_code, return_value, code_reference)
+        for backend in self.backends:
+            if backend.is_responsible_for_call(function_info, function_prefix):
+                return backend.after_call_used(function_info, subscript, call_code, return_value, code_reference)
 
         return return_value
 
