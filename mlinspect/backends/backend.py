@@ -28,12 +28,6 @@ class Backend(metaclass=abc.ABCMeta):
         """The list of known operator mappings"""
         raise NotImplementedError
 
-    @property
-    @abc.abstractmethod
-    def replacement_type_map(self):
-        """The list of used data type replacements"""
-        raise NotImplementedError
-
     @abc.abstractmethod
     def preprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
         """Preprocess the wir if necessary"""

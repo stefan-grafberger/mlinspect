@@ -53,7 +53,8 @@ class PandasBackend(Backend):
 
     def is_responsible_for_call(self, function_info, function_prefix, value=None):
         """Checks whether the backend is responsible for the current method call"""
-        return function_prefix == "pandas"
+        function_info = self.replace_wrapper_modules(function_info)
+        return function_info in self.operator_map or function_prefix == "pandas"
 
     def preprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
         """
@@ -66,6 +67,7 @@ class PandasBackend(Backend):
                                code_reference):
         """The value or module a function may be called on"""
         # pylint: disable=too-many-arguments
+        function_info = self.replace_wrapper_modules(function_info)
         if function_info == ('pandas.core.frame', 'dropna'):
             assert isinstance(value_value, MlinspectDataFrame)
             value_value['mlinspect_index'] = range(0, len(value_value))
@@ -83,6 +85,7 @@ class PandasBackend(Backend):
     def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, store, args_values):
         """The arguments a function may be called with"""
         # pylint: disable=too-many-arguments
+        function_info = self.replace_wrapper_modules(function_info)
         if store:
             self.code_reference_to_module[code_reference] = function_info
 
@@ -98,6 +101,7 @@ class PandasBackend(Backend):
 
     def before_call_used_args_add_description(self, args_values, code_reference, function_info, args_code):
         """Add special descriptions to certain pandas operators"""
+        function_info = self.replace_wrapper_modules(function_info)
         description = None
         if function_info == ('pandas.io.parsers', 'read_csv'):
             filename = args_values[0].split(os.path.sep)[-1]
@@ -129,6 +133,7 @@ class PandasBackend(Backend):
     def before_call_used_kwargs(self, function_info, subscript, call_code, kwargs_code, code_reference, kwargs_values):
         """The keyword arguments a function may be called with"""
         # pylint: disable=too-many-arguments, unused-argument, no-self-use, unnecessary-pass
+        function_info = self.replace_wrapper_modules(function_info)
         description = None
         if function_info == ('pandas.core.frame', 'merge'):
             on_column = kwargs_values['on']
@@ -143,6 +148,7 @@ class PandasBackend(Backend):
     def after_call_used(self, function_info, subscript, call_code, return_value, code_reference):
         """The return value of some function"""
         # pylint: disable=too-many-arguments
+        function_info = self.replace_wrapper_modules(function_info)
         self.code_reference_to_module[code_reference] = function_info
 
         if function_info == ('pandas.io.parsers', 'read_csv'):
@@ -212,6 +218,13 @@ class PandasBackend(Backend):
         execute_inspection_visits_unary_operator(self, operator_context, code_reference,
                                                  value_before, value_before.annotations,
                                                  value_after, False)
+
+    def replace_wrapper_modules(self, function_info):
+        """Replace the module of mlinspect wrappers with the original modules"""
+        if function_info[0] in self.replacement_type_map:
+            new_type = self.replacement_type_map[function_info[0]]
+            function_info = (new_type, function_info[1])
+        return function_info
 
 
 # -------------------------------------------------------

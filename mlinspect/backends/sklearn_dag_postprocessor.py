@@ -24,7 +24,7 @@ class SklearnDagPostprocessor:
             if node.module in {('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'),
                                ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'),
                                ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'),
-                               ('sklearn.demo.healthcare.demo_utils', 'MyW2VTransformer', 'Pipeline'),
+                               ('demo.healthcare.demo_utils', 'MyW2VTransformer', 'Pipeline'),
                                ('sklearn.impute._base', 'SimpleImputer', 'Pipeline')
                                }:
                 annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
@@ -43,7 +43,7 @@ class SklearnDagPostprocessor:
                 annotations = annotations_for_all_associated_dag_nodes['concat']
                 new_code_references[dag_node_identifier] = annotations
             elif node.module in {('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'),
-                                 ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier',
+                                 ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier',
                                   'Pipeline')}:
                 annotations_for_all_associated_dag_nodes = wir_post_processing_map[node.code_reference]
                 annotations = annotations_for_all_associated_dag_nodes['fit']

@@ -32,19 +32,16 @@ class SklearnBackend(Backend):
         ('sklearn.pipeline', 'fit', 'Train Labels'): OperatorType.TRAIN_LABELS,
         ('sklearn.model_selection._split', 'train_test_split'): OperatorType.TRAIN_TEST_SPLIT,
         # TODO: We  can remove this later by checking if subclass of transformer/estimator
-        ('sklearn.demo.healthcare.demo_utils', 'MyW2VTransformer', 'Pipeline'): OperatorType.TRANSFORMER,
-        ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier', 'Pipeline'): OperatorType.ESTIMATOR
-    }
-
-    replacement_type_map = {
-        # TODO: We  can remove this later by checking if subclass of transformer/estimator
-        'demo.healthcare.demo_utils': 'sklearn.demo.healthcare.demo_utils',
-        'tensorflow.python.keras.wrappers.scikit_learn': 'sklearn.tensorflow.python.keras.wrappers.scikit_learn'
+        ('demo.healthcare.demo_utils', 'MyW2VTransformer', 'Pipeline'): OperatorType.TRANSFORMER,
+        ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier', 'Pipeline'): OperatorType.ESTIMATOR
     }
 
     def is_responsible_for_call(self, function_info, function_prefix, value=None):
         """Checks whether the backend is responsible for the current method call"""
-        return function_prefix == "sklearn"
+        return function_prefix == "sklearn" or function_info[0] in {
+            'demo.healthcare.demo_utils',
+            'tensorflow.python.keras.wrappers.scikit_learn'
+        }
 
     def preprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
         """
@@ -132,8 +129,8 @@ class SklearnBackend(Backend):
         elif function_info in {('sklearn.preprocessing._encoders', 'OneHotEncoder'),
                                ('sklearn.preprocessing._data', 'StandardScaler'),
                                ('sklearn.tree._classes', 'DecisionTreeClassifier'),
-                               ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
-                               ('sklearn.demo.healthcare.demo_utils', 'MyW2VTransformer'),
+                               ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
+                               ('demo.healthcare.demo_utils', 'MyW2VTransformer'),
                                ('sklearn.impute._base', 'SimpleImputer'),
                                ('sklearn.compose._column_transformer', 'ColumnTransformer'),
                                ('sklearn.pipeline', 'Pipeline')}:

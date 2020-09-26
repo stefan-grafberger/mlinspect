@@ -21,8 +21,6 @@ class PipelineExecutor:
     """
     Internal class to instrument and execute pipelines
     """
-    REPLACEMENT_TYPE_MAP = dict(replacement for backend in get_all_backends() for replacement in
-                                backend.replacement_type_map.items())
 
     script_scope = {}
     backends = []
@@ -73,7 +71,6 @@ class PipelineExecutor:
         for backend in self.backends:
             backend.inspections = inspections
         PipelineExecutor.script_scope = {}
-        PipelineExecutor.code_reference_to_module = {}
 
     def build_inspection_result_map(self, dag):
         """
@@ -209,10 +206,6 @@ class PipelineExecutor:
                 function_info = (module_info.__name__, "__getitem__")
             else:
                 function_info = (module_info.__name__, "__setitem__")
-
-        if function_info[0] in PipelineExecutor.REPLACEMENT_TYPE_MAP:
-            new_type = PipelineExecutor.REPLACEMENT_TYPE_MAP[function_info[0]]
-            function_info = (new_type, function_info[1])
 
         # FIXME: move this into sklearn backend
         if value is not None and \
