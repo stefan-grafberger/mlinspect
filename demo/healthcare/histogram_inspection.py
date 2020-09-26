@@ -78,7 +78,7 @@ class HistogramInspection(Inspection):
                         race_index = row.input.fields.index("race")
                         race = row.input.values[race_index]
                     else:
-                        race = row.output.values[0]
+                        race = row.output.values[0][0]
                 else:
                     race = get_current_annotation(row)[1]
 

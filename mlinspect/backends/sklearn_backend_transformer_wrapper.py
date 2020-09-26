@@ -127,7 +127,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 assert isinstance(X, MlinspectDataFrame)
                 column_name = X.columns[column_index]
                 annotations = self.annotation_result_project_workaround[column_index]
-                input_data = X.iloc[:, column_index]
+                input_data = X[[column_name]]
             elif isinstance(X.annotations, list):  # List because transformer impls process multiple columns at once
                 assert isinstance(X, MlinspectNdarray)
                 column_name, annotations = X.annotations[column_index]
