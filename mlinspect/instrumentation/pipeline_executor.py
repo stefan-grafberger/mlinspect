@@ -139,7 +139,7 @@ class PipelineExecutor:
         This is the method we want to insert into the DAG
         """
         # pylint: disable=too-many-arguments
-        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript, value_value)
+        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript)
         for backend in self.backends:
             if backend.is_responsible_for_call(function_info, function_prefix, value_value):
                 backend.before_call_used_value(function_info, subscript, call_code, value_code,
@@ -180,16 +180,16 @@ class PipelineExecutor:
         This is the method we want to insert into the DAG
         """
         # pylint: disable=too-many-arguments
-        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript, return_value)
+        function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript)
 
         for backend in self.backends:
-            if backend.is_responsible_for_call(function_info, function_prefix):
+            if backend.is_responsible_for_call(function_info, function_prefix, return_value):
                 return backend.after_call_used(function_info, subscript, call_code, return_value, code_reference)
 
         return return_value
 
     @staticmethod
-    def get_function_info_and_prefix(call_code, subscript, value=None, store=False):
+    def get_function_info_and_prefix(call_code, subscript, store=False):
         """
         Get the function info and find out which backend to call
         """
@@ -206,12 +206,6 @@ class PipelineExecutor:
                 function_info = (module_info.__name__, "__getitem__")
             else:
                 function_info = (module_info.__name__, "__setitem__")
-
-        # FIXME: move this into sklearn backend
-        if value is not None and \
-                function_info[0] == 'mlinspect.backends.sklearn_backend_transformer_wrapper' and \
-                function_info[1] != "score":
-            function_info = (value.module_name, str(function_string.split(".")[-1]))
 
         function_prefix = function_info[0].split(".", 1)[0]
 

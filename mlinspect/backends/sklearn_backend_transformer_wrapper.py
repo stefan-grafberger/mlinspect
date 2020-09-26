@@ -25,7 +25,7 @@ transformer_names = {
         ('sklearn.demo.healthcare.demo_utils', 'MyW2VTransformer'): "Word2Vec",
         ('sklearn.impute._base', 'SimpleImputer'): "Imputer (SimpleImputer)",
         ('sklearn.tree._classes', 'DecisionTreeClassifier'): "Decision Tree",
-        ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'): "Neural Network"
+        ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'): "Neural Network"
     }
 
 
