@@ -100,9 +100,7 @@ class SklearnBackend(Backend):
     def after_call_used(self, function_info, subscript, call_code, return_value, code_reference):
         """The return value of some function"""
         # pylint: disable=too-many-arguments, unused-argument, no-self-use
-        function_info = self.replace_wrapper_modules(function_info, self.input_data)
-        self.after_call_used_add_description(code_reference, function_info)
-        self.code_reference_to_module[code_reference] = function_info
+        self.save_call_module_and_description(code_reference, function_info, self.input_data)
 
         if function_info == ('sklearn.preprocessing._label', 'label_binarize'):
             operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
@@ -135,17 +133,15 @@ class SklearnBackend(Backend):
 
         return return_value
 
-    def after_call_used_add_description(self, code_reference, function_info):
-        """Add special descriptions to certain sklearn operators"""
-        description = transformer_names.get(function_info, None)
-        if description:
-            self.code_reference_to_description[code_reference] = description
-
-    @staticmethod
-    def replace_wrapper_modules(function_info, maybe_wrapper_transformer):
+    def save_call_module_and_description(self, code_reference, function_info, maybe_wrapper_transformer):
         """Replace the module of mlinspect transformer wrappers with the original modules"""
         if maybe_wrapper_transformer is not None and \
                 function_info[0] == 'mlinspect.backends.sklearn_backend_transformer_wrapper' and \
                 function_info[1] != "score":
             function_info = (maybe_wrapper_transformer.module_name, function_info[1])
-        return function_info
+
+        description = transformer_names.get(function_info, None)
+        if description:
+            self.code_reference_to_description[code_reference] = description
+
+        self.code_reference_to_module[code_reference] = function_info

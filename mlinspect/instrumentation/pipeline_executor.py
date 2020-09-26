@@ -144,6 +144,7 @@ class PipelineExecutor:
             if backend.is_responsible_for_call(function_info, function_prefix, value_value):
                 backend.before_call_used_value(function_info, subscript, call_code, value_code,
                                                value_value, code_reference)
+                return value_value
 
         return value_value
 
@@ -158,6 +159,7 @@ class PipelineExecutor:
             if backend.is_responsible_for_call(function_info, function_prefix):
                 backend.before_call_used_args(function_info, subscript, call_code, args_code, code_reference, store,
                                               args_values)
+                return args_values
 
         return args_values
 
@@ -172,6 +174,7 @@ class PipelineExecutor:
             if backend.is_responsible_for_call(function_info, function_prefix):
                 backend.before_call_used_kwargs(function_info, subscript, call_code, kwargs_code,
                                                 code_reference, kwargs_values)
+                return kwargs_values
 
         return kwargs_values
 
