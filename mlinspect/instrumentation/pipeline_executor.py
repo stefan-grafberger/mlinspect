@@ -26,14 +26,13 @@ class PipelineExecutor:
 
     script_scope = {}
     backends = []
-    code_reference_to_module = {}
 
     def run(self, notebook_path: str or None, python_path: str or None, python_code: str or None,
             inspections: List[Inspection]) -> InspectionResult:
         """
         Instrument and execute the pipeline
         """
-        # pylint: disable=no-self-use
+        # pylint: disable=no-self-use, too-many-locals
         self.initialize_static_variables(inspections)
 
         source_code = self.load_source_code(notebook_path, python_path, python_code)
@@ -48,9 +47,11 @@ class PipelineExecutor:
         wir_extractor.extract_wir()
 
         code_reference_to_description = {}
+        code_reference_to_module = {}
         for backend in self.backends:
             code_reference_to_description = {**code_reference_to_description, **backend.code_reference_to_description}
-        wir = wir_extractor.add_runtime_info(self.code_reference_to_module, code_reference_to_description)
+            code_reference_to_module = {**code_reference_to_module, **backend.code_reference_to_module}
+        wir = wir_extractor.add_runtime_info(code_reference_to_module, code_reference_to_description)
 
         for backend in self.backends:
             wir = backend.preprocess_wir(wir)
@@ -156,9 +157,6 @@ class PipelineExecutor:
         # pylint: disable=too-many-arguments
         function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript, store=store)
 
-        if store:
-            self.code_reference_to_module[code_reference] = function_info
-
         for backend in self.backends:
             if backend.is_responsible_for_call(function_info, function_prefix):
                 backend.before_call_used_args(function_info, subscript, call_code, args_code, code_reference, store,
@@ -186,10 +184,6 @@ class PipelineExecutor:
         """
         # pylint: disable=too-many-arguments
         function_info, function_prefix = self.get_function_info_and_prefix(call_code, subscript, return_value)
-
-        # FIXME: To properly handle all edge cases with chained method calls, we need to add end_col_offset
-        #  and end_line_no to code_reference
-        self.code_reference_to_module[code_reference] = function_info
 
         for backend in self.backends:
             if backend.is_responsible_for_call(function_info, function_prefix):

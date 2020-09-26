@@ -7,6 +7,7 @@ from inspect import cleandoc
 import networkx
 from testfixtures import compare
 
+from mlinspect.backends.pandas_backend import PandasBackend
 from mlinspect.instrumentation.dag_node import CodeReference
 from mlinspect.utils import get_project_root
 from mlinspect.instrumentation import pipeline_executor
@@ -67,14 +68,13 @@ def test_pipeline_executor_function_call_info_extraction():
 
     pipeline_executor.singleton = pipeline_executor.PipelineExecutor()
     pipeline_executor.singleton.run(None, None, test_code, [])
-    expected_module_info = {CodeReference(5, 13, 5, 85): ('posixpath', 'join'),
-                            CodeReference(5, 26, 5, 49): ('builtins', 'str'),
-                            CodeReference(5, 30, 5, 48): ('mlinspect.utils', 'get_project_root'),
-                            CodeReference(6, 11, 6, 34): ('pandas.io.parsers', 'read_csv'),
+    expected_module_info = {CodeReference(6, 11, 6, 34): ('pandas.io.parsers', 'read_csv'),
                             CodeReference(7, 7, 7, 24): ('pandas.core.frame', 'dropna'),
                             CodeReference(8, 16, 8, 55): ('pandas.core.frame', '__getitem__')}
 
-    compare(pipeline_executor.singleton.code_reference_to_module, expected_module_info)
+    pandas_backend = [backend for backend in pipeline_executor.singleton.backends
+                      if isinstance(backend, PandasBackend)][0]
+    compare(pandas_backend.code_reference_to_module, expected_module_info)
 
 
 def test_pipeline_executor_function_subscript_index_info_extraction():
@@ -94,11 +94,10 @@ def test_pipeline_executor_function_subscript_index_info_extraction():
 
     pipeline_executor.singleton = pipeline_executor.PipelineExecutor()
     pipeline_executor.singleton.run(None, None, test_code, [])
-    expected_module_info = {CodeReference(5, 13, 5, 85): ('posixpath', 'join'),
-                            CodeReference(5, 26, 5, 49): ('builtins', 'str'),
-                            CodeReference(5, 30, 5, 48): ('mlinspect.utils', 'get_project_root'),
-                            CodeReference(6, 11, 6, 62): ('pandas.io.parsers', 'read_csv'),
+    expected_module_info = {CodeReference(6, 11, 6, 62): ('pandas.io.parsers', 'read_csv'),
                             CodeReference(7, 7, 7, 24): ('pandas.core.frame', 'dropna'),
                             CodeReference(8, 0, 8, 23): ('pandas.core.frame', '__getitem__')}
 
-    compare(pipeline_executor.singleton.code_reference_to_module, expected_module_info)
+    pandas_backend = [backend for backend in pipeline_executor.singleton.backends
+                      if isinstance(backend, PandasBackend)][0]
+    compare(pandas_backend.code_reference_to_module, expected_module_info)

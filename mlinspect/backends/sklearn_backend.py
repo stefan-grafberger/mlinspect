@@ -111,6 +111,8 @@ class SklearnBackend(Backend):
     def after_call_used(self, function_info, subscript, call_code, return_value, code_reference):
         """The return value of some function"""
         # pylint: disable=too-many-arguments, unused-argument, no-self-use
+        self.code_reference_to_module[code_reference] = function_info
+
         if function_info == ('sklearn.preprocessing._label', 'label_binarize'):
             operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
             return_value = execute_inspection_visits_unary_operator(self, operator_context, code_reference,

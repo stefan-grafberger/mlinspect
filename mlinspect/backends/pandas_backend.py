@@ -83,6 +83,9 @@ class PandasBackend(Backend):
     def before_call_used_args(self, function_info, subscript, call_code, args_code, code_reference, store, args_values):
         """The arguments a function may be called with"""
         # pylint: disable=too-many-arguments
+        if store:
+            self.code_reference_to_module[code_reference] = function_info
+
         if function_info == ('pandas.core.frame', 'merge'):
             assert isinstance(args_values[0], MlinspectDataFrame)
             args_values[0]['mlinspect_index_y'] = range(0, len(args_values[0]))
@@ -140,6 +143,8 @@ class PandasBackend(Backend):
     def after_call_used(self, function_info, subscript, call_code, return_value, code_reference):
         """The return value of some function"""
         # pylint: disable=too-many-arguments
+        self.code_reference_to_module[code_reference] = function_info
+
         if function_info == ('pandas.io.parsers', 'read_csv'):
             operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
             return_value = execute_inspection_visits_no_parents(self, operator_context, code_reference,

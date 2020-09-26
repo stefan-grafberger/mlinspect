@@ -12,6 +12,7 @@ class Backend(metaclass=abc.ABCMeta):
     """
 
     def __init__(self):
+        self.code_reference_to_module = {}
         self.code_reference_to_description = {}
         self.dag_node_identifier_to_inspection_output = {}
         self.inspections = []
