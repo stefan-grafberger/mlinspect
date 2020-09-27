@@ -326,17 +326,17 @@ def iter_input_annotation_output_df_projection(inspection_count, input_data, inp
     Create an efficient iterator for the inspection input for operators with one parent.
     """
     # pylint: disable=too-many-locals
-    input_rows = get_iterator_for_type(input_data)
+    input_rows = get_iterator_for_type(input_data, True)
+    output_rows = get_iterator_for_type(output, False)
     duplicated_input_iterators = itertools.tee(input_rows, inspection_count)
-    output_rows = get_iterator_for_type(output, True)
     duplicated_output_iterators = itertools.tee(output_rows, inspection_count)
 
     inspection_iterators = []
     for inspection_index in range(inspection_count):
-        annotation_df_view = input_annotations.iloc[:, inspection_index:inspection_index + 1]
-        annotation_rows = get_df_row_iterator(annotation_df_view)
         input_iterator = duplicated_input_iterators[inspection_index]
         output_iterator = duplicated_output_iterators[inspection_index]
+        annotation_df_view = input_annotations.iloc[:, inspection_index:inspection_index + 1]
+        annotation_rows = get_df_row_iterator(annotation_df_view)
         inspection_iterator = map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
                                   zip(input_iterator, annotation_rows, output_iterator))
         inspection_iterators.append(inspection_iterator)
@@ -368,14 +368,14 @@ def iter_input_annotation_output_resampled(inspection_count, input_data, input_a
 
     inspection_iterators = []
     for inspection_index in range(inspection_count):
+        input_iterator = duplicated_input_iterators[inspection_index]
+        output_iterator = duplicated_output_iterators[inspection_index]
         column_annotation_current_inspection = column_index_input_end + inspection_index
         annotation_df_view = joined_df.iloc[:,
                                             column_annotation_current_inspection:
                                             column_annotation_current_inspection + 1]
         annotation_rows = get_df_row_iterator(annotation_df_view)
 
-        input_iterator = duplicated_input_iterators[inspection_index]
-        output_iterator = duplicated_output_iterators[inspection_index]
         inspection_iterator = map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
                                   zip(input_iterator, annotation_rows, output_iterator))
         inspection_iterators.append(inspection_iterator)
@@ -422,6 +422,9 @@ def iter_input_annotation_output_df_pair_df(inspection_count, x_data, x_annotati
 
     inspection_iterators = []
     for inspection_index in range(inspection_count):
+        input_iterator = duplicated_input_iterators[inspection_index]
+        output_iterator = duplicated_output_iterators[inspection_index]
+
         column_annotation_y_current_inspection = column_index_y_end + inspection_index
         column_annotation_x_current_inspection = column_index_x_end + inspection_index
         annotation_x_view = df_x_output_y.iloc[:, column_annotation_x_current_inspection:
@@ -434,8 +437,6 @@ def iter_input_annotation_output_df_pair_df(inspection_count, x_data, x_annotati
 
         annotation_rows = map(list, zip(*annotation_iterators))
 
-        input_iterator = duplicated_input_iterators[inspection_index]
-        output_iterator = duplicated_output_iterators[inspection_index]
         inspection_iterator = map(lambda input_tuple: InspectionInputNAryOperator(*input_tuple),
                                   zip(input_iterator, annotation_rows, output_iterator))
         inspection_iterators.append(inspection_iterator)

@@ -11,6 +11,7 @@ from sklearn.base import BaseEstimator
 
 from .backend_utils import get_df_row_iterator, \
     build_annotation_df_from_iters, get_iterator_for_type, create_wrapper_with_annotations
+from .pandas_backend import iter_input_annotation_output_df_projection
 from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from .sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
 from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
@@ -327,10 +328,10 @@ def execute_inspection_visits_unary_op(operator_context, code_reference, input_d
     """Execute inspections"""
     # pylint: disable=too-many-arguments
     inspection_count = len(inspections)
-    iterators_for_inspections = iter_input_annotation_output_unary_op(inspection_count,
-                                                                      input_data,
-                                                                      input_annotations,
-                                                                      output_data)
+    iterators_for_inspections = iter_input_annotation_output_df_projection(inspection_count,
+                                                                           input_data,
+                                                                           input_annotations,
+                                                                           output_data)
     annotation_iterators = execute_visits(inspections, iterators_for_inspections, operator_context)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
                                             code_reference_inspection_output_map, func_name, False)
@@ -403,29 +404,6 @@ def iter_input_annotation_output_sink_op(inspection_count, data, target):
         annotation_rows = map(list, zip(*annotation_iterators))
         inspection_iterator = map(lambda input_tuple: InspectionInputSinkOperator(*input_tuple),
                                   zip(input_iterator, annotation_rows))
-        inspection_iterators.append(inspection_iterator)
-
-    return inspection_iterators
-
-
-def iter_input_annotation_output_unary_op(inspection_count, input_data, input_annotations, output):
-    """
-    Create an efficient iterator for the inspection input
-    """
-    # pylint: disable=too-many-locals
-    input_rows = get_iterator_for_type(input_data, True)
-    duplicated_input_iterators = itertools.tee(input_rows, inspection_count)
-    output_rows = get_iterator_for_type(output, False)
-    duplicated_output_iterators = itertools.tee(output_rows, inspection_count)
-
-    inspection_iterators = []
-    for inspection_index in range(inspection_count):
-        annotation_df_view = input_annotations.iloc[:, inspection_index:inspection_index + 1]
-        annotation_rows = get_df_row_iterator(annotation_df_view)
-        input_iterator = duplicated_input_iterators[inspection_index]
-        output_iterator = duplicated_output_iterators[inspection_index]
-        inspection_iterator = map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
-                                  zip(input_iterator, annotation_rows, output_iterator))
         inspection_iterators.append(inspection_iterator)
 
     return inspection_iterators
