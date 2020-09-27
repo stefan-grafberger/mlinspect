@@ -236,8 +236,11 @@ def execute_inspection_visits_no_parents(backend, operator_context, code_referen
     """Execute inspections when the current operator is a data source and does not have parents in the DAG"""
     # pylint: disable=unused-argument
     annotation_iterators = []
+    inspection_count = len(backend.inspections)
+    iterators_for_inspections = iter_input_data_source(inspection_count, return_value)
     for inspection in backend.inspections:
-        iterator_for_inspection = iter_input_data_source(return_value)  # TODO: Create arrays only once
+        inspection_index = backend.inspections.index(inspection)
+        iterator_for_inspection = iterators_for_inspections[inspection_index]
         annotation_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotation_iterator)
     return_value = store_inspection_outputs(backend, annotation_iterators, code_reference, return_value,
@@ -253,7 +256,6 @@ def execute_inspection_visits_unary_operator(backend, operator_context, code_ref
     assert isinstance(input_data, (MlinspectDataFrame, MlinspectSeries))
     annotation_iterators = []
     inspection_count = len(backend.inspections)
-
     if resampled:
         iterators_for_inspections = iter_input_annotation_output_resampled(inspection_count,
                                                                            input_data,
@@ -305,12 +307,19 @@ def execute_inspection_visits_join(backend, operator_context, code_reference, in
 # Functions to create the iterators for the inspections
 # -------------------------------------------------------
 
-def iter_input_data_source(output):
+def iter_input_data_source(inspection_count, output):
     """
     Create an efficient iterator for the inspection input for operators with no parent: Data Source
     """
-    output = get_df_row_iterator(output)
-    return map(InspectionInputDataSource, output)
+    output_rows = get_df_row_iterator(output)
+    duplicated_output_iterators = itertools.tee(output_rows, inspection_count)
+    inspection_iterators = []
+    for inspection_index in range(inspection_count):
+        output_iterator = duplicated_output_iterators[inspection_index]
+        inspection_iterator = map(InspectionInputDataSource, output_iterator)
+        inspection_iterators.append(inspection_iterator)
+
+    return inspection_iterators
 
 
 def iter_input_annotation_output_df_projection(inspection_count, input_data, input_annotations, output):
