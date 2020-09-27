@@ -14,6 +14,18 @@ from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
 from ..inspections.inspection_input import InspectionInputRow
 
 
+def get_annotation_rows(input_annotations, inspection_index):
+    """
+    In the pandas backend, we store annotations in a data frame, for the sklearn transformers lists are enough
+    """
+    if isinstance(input_annotations, DataFrame):
+        annotation_df_view = input_annotations.iloc[:, inspection_index]
+    else:
+        annotation_df_view = input_annotations[inspection_index]
+    annotation_rows = get_iterator_for_type(annotation_df_view, True)
+    return annotation_rows
+
+
 def build_annotation_df_from_iters(inspections, annotation_iterators):
     """
     Build the annotations dataframe
@@ -22,6 +34,14 @@ def build_annotation_df_from_iters(inspections, annotation_iterators):
     inspection_names = [str(inspection) for inspection in inspections]
     annotations_df = DataFrame(annotation_iterators, columns=inspection_names)
     return annotations_df
+
+
+def build_annotation_list_from_iters(annotation_iterators):
+    """
+    Build the annotations dataframe
+    """
+    annotation_lists = [list(iterator) for iterator in annotation_iterators]
+    return list(annotation_lists)
 
 
 def get_iterator_for_type(data, np_nditer_with_refs=False):
@@ -39,6 +59,8 @@ def get_iterator_for_type(data, np_nditer_with_refs=False):
         iterator = get_series_row_iterator(data)
     elif isinstance(data, csr_matrix):
         iterator = get_csr_row_iterator(data)
+    elif isinstance(data, list):
+        iterator = get_list_row_iterator(data)
     else:
         assert False
     return iterator
@@ -120,6 +142,18 @@ def get_numpy_array_row_iterator(nparray, nditer=False):
         numpy_iterator = numpy.nditer(nparray, ["refs_ok"])
     else:
         numpy_iterator = nparray.__iter__()
+    partial_func_create_row = partial(InspectionInputRow, fields=fields)
+
+    return map(partial_func_create_row, map(list, zip(numpy_iterator)))
+
+
+def get_list_row_iterator(list_data):
+    """
+    Create an efficient iterator for the data frame rows.
+    The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
+    """
+    fields = list(["array"])
+    numpy_iterator = list_data.__iter__()
     partial_func_create_row = partial(InspectionInputRow, fields=fields)
 
     return map(partial_func_create_row, map(list, zip(numpy_iterator)))

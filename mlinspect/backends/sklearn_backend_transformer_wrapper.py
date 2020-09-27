@@ -9,7 +9,8 @@ import numpy
 from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator
 
-from .backend_utils import build_annotation_df_from_iters, get_iterator_for_type, create_wrapper_with_annotations
+from .backend_utils import get_iterator_for_type, create_wrapper_with_annotations, \
+    build_annotation_list_from_iters, get_annotation_rows
 from .pandas_backend import iter_input_annotation_output_df_projection
 from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from .sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
@@ -370,8 +371,7 @@ def iter_input_annotation_output_nary_op(inspection_count, transformer_data_with
     for inspection_index in range(inspection_count):
         annotation_iterators = []
         for _, annotations in transformer_data_with_annotations:
-            annotation_view = annotations.iloc[:, inspection_index]
-            annotation_iterators.append(get_iterator_for_type(annotation_view, True))
+            annotation_iterators.append(get_annotation_rows(annotations, inspection_index))
         annotation_rows = map(list, zip(*annotation_iterators))
         input_iterator = duplicated_input_iterators[inspection_index]
         output_iterator = duplicated_output_iterators[inspection_index]
@@ -394,10 +394,8 @@ def iter_input_annotation_output_sink_op(inspection_count, data, target):
     inspection_iterators = []
     for inspection_index in range(inspection_count):
         input_iterator = duplicated_input_iterators[inspection_index]
-        data_annotation_view = data.annotations.iloc[:, inspection_index]
-        target_annotation_view = target.annotations.iloc[:, inspection_index]
-        annotation_iterators = [get_iterator_for_type(data_annotation_view, True),
-                                get_iterator_for_type(target_annotation_view, True)]
+        annotation_iterators = [get_annotation_rows(data.annotations, inspection_index),
+                                get_annotation_rows(target.annotations, inspection_index)]
         annotation_rows = map(list, zip(*annotation_iterators))
         inspection_iterator = map(lambda input_tuple: InspectionInputSinkOperator(*input_tuple),
                                   zip(input_iterator, annotation_rows))
@@ -417,7 +415,7 @@ def store_inspection_outputs(annotation_iterators, code_reference, return_value,
     inspection annotations for the DAG operators in a map
     """
     # pylint: disable=too-many-arguments, too-many-locals, too-many-branches
-    annotations_df = build_annotation_df_from_iters(inspections, annotation_iterators)
+    annotations_ndarray = build_annotation_list_from_iters(annotation_iterators)
     inspection_outputs = {}
     for inspection in inspections:
         inspection_outputs[inspection] = inspection.get_operator_annotation_after_visit()
@@ -429,5 +427,5 @@ def store_inspection_outputs(annotation_iterators, code_reference, return_value,
     if is_sink:
         new_return_value = None
     else:
-        new_return_value = create_wrapper_with_annotations(annotations_df, return_value)
+        new_return_value = create_wrapper_with_annotations(annotations_ndarray, return_value)
     return new_return_value
