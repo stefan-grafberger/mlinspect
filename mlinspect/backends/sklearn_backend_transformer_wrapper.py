@@ -9,16 +9,13 @@ import numpy
 from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator
 
-from .backend_utils import get_df_row_iterator, \
-    build_annotation_df_from_iters, get_iterator_for_type, create_wrapper_with_annotations
+from .backend_utils import build_annotation_df_from_iters, get_iterator_for_type, create_wrapper_with_annotations
 from .pandas_backend import iter_input_annotation_output_df_projection
 from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from .sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
 from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
-from ..inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator, \
-    InspectionInputNAryOperator, InspectionInputSinkOperator
+from ..inspections.inspection_input import OperatorContext, InspectionInputNAryOperator, InspectionInputSinkOperator
 from ..instrumentation.dag_node import CodeReference, OperatorType
-
 
 transformer_names = {
         ('sklearn.preprocessing._encoders', 'OneHotEncoder'): "Categorical Encoder (OneHotEncoder)",
@@ -373,8 +370,8 @@ def iter_input_annotation_output_nary_op(inspection_count, transformer_data_with
     for inspection_index in range(inspection_count):
         annotation_iterators = []
         for _, annotations in transformer_data_with_annotations:
-            annotation_df_view = annotations.iloc[:, inspection_index:inspection_index + 1]
-            annotation_iterators.append(get_df_row_iterator(annotation_df_view))
+            annotation_view = annotations.iloc[:, inspection_index]
+            annotation_iterators.append(get_iterator_for_type(annotation_view, True))
         annotation_rows = map(list, zip(*annotation_iterators))
         input_iterator = duplicated_input_iterators[inspection_index]
         output_iterator = duplicated_output_iterators[inspection_index]
@@ -397,10 +394,10 @@ def iter_input_annotation_output_sink_op(inspection_count, data, target):
     inspection_iterators = []
     for inspection_index in range(inspection_count):
         input_iterator = duplicated_input_iterators[inspection_index]
-        data_annotation_df_view = data.annotations.iloc[:, inspection_index:inspection_index + 1]
-        target_annotation_df_view = target.annotations.iloc[:, inspection_index:inspection_index + 1]
-        annotation_iterators = [get_df_row_iterator(data_annotation_df_view),
-                                get_iterator_for_type(target_annotation_df_view)]
+        data_annotation_view = data.annotations.iloc[:, inspection_index]
+        target_annotation_view = target.annotations.iloc[:, inspection_index]
+        annotation_iterators = [get_iterator_for_type(data_annotation_view, True),
+                                get_iterator_for_type(target_annotation_view, True)]
         annotation_rows = map(list, zip(*annotation_iterators))
         inspection_iterator = map(lambda input_tuple: InspectionInputSinkOperator(*input_tuple),
                                   zip(input_iterator, annotation_rows))

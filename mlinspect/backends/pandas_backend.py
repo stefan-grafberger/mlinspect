@@ -335,8 +335,8 @@ def iter_input_annotation_output_df_projection(inspection_count, input_data, inp
     for inspection_index in range(inspection_count):
         input_iterator = duplicated_input_iterators[inspection_index]
         output_iterator = duplicated_output_iterators[inspection_index]
-        annotation_df_view = input_annotations.iloc[:, inspection_index:inspection_index + 1]
-        annotation_rows = get_df_row_iterator(annotation_df_view)
+        annotation_df_view = input_annotations.iloc[:, inspection_index]
+        annotation_rows = get_iterator_for_type(annotation_df_view, True)
         inspection_iterator = map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
                                   zip(input_iterator, annotation_rows, output_iterator))
         inspection_iterators.append(inspection_iterator)
@@ -371,10 +371,8 @@ def iter_input_annotation_output_resampled(inspection_count, input_data, input_a
         input_iterator = duplicated_input_iterators[inspection_index]
         output_iterator = duplicated_output_iterators[inspection_index]
         column_annotation_current_inspection = column_index_input_end + inspection_index
-        annotation_df_view = joined_df.iloc[:,
-                                            column_annotation_current_inspection:
-                                            column_annotation_current_inspection + 1]
-        annotation_rows = get_df_row_iterator(annotation_df_view)
+        annotation_view = joined_df.iloc[:, column_annotation_current_inspection]
+        annotation_rows = get_iterator_for_type(annotation_view, True)
 
         inspection_iterator = map(lambda input_tuple: InspectionInputUnaryOperator(*input_tuple),
                                   zip(input_iterator, annotation_rows, output_iterator))
@@ -427,13 +425,10 @@ def iter_input_annotation_output_df_pair_df(inspection_count, x_data, x_annotati
 
         column_annotation_y_current_inspection = column_index_y_end + inspection_index
         column_annotation_x_current_inspection = column_index_x_end + inspection_index
-        annotation_x_view = df_x_output_y.iloc[:, column_annotation_x_current_inspection:
-                                               column_annotation_x_current_inspection + 1]
-        annotation_x_view.columns = [annotation_x_view.columns[0].replace("_x_output", "")]
-        annotation_y_view = df_x_output_y.iloc[:, column_annotation_y_current_inspection:
-                                               column_annotation_y_current_inspection + 1]
-        annotation_y_view.columns = [annotation_y_view.columns[0].replace("_y_output", "")]
-        annotation_iterators = [get_df_row_iterator(annotation_x_view), get_df_row_iterator(annotation_y_view)]
+        annotation_x_view = df_x_output_y.iloc[:, column_annotation_x_current_inspection]
+        annotation_y_view = df_x_output_y.iloc[:, column_annotation_y_current_inspection]
+        annotation_iterators = [get_iterator_for_type(annotation_x_view, True),
+                                get_iterator_for_type(annotation_y_view, True)]
 
         annotation_rows = map(list, zip(*annotation_iterators))
 
