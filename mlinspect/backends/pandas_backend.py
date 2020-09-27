@@ -238,14 +238,8 @@ def execute_inspection_visits_no_parents(backend, operator_context, code_referen
     annotation_iterators = []
     inspection_count = len(backend.inspections)
     iterators_for_inspections = iter_input_data_source(inspection_count, return_value)
-    for inspection in backend.inspections:
-        inspection_index = backend.inspections.index(inspection)
-        iterator_for_inspection = iterators_for_inspections[inspection_index]
-        annotation_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
-        annotation_iterators.append(annotation_iterator)
-    return_value = store_inspection_outputs(backend, annotation_iterators, code_reference, return_value,
-                                            operator_context)
-    return return_value
+    return execute_visits_and_store_results(annotation_iterators, backend, code_reference, iterators_for_inspections,
+                                            operator_context, return_value)
 
 
 def execute_inspection_visits_unary_operator(backend, operator_context, code_reference, input_data,
@@ -266,21 +260,15 @@ def execute_inspection_visits_unary_operator(backend, operator_context, code_ref
                                                                                input_data,
                                                                                input_annotations,
                                                                                return_value_df)
-    for inspection in backend.inspections:
-        inspection_index = backend.inspections.index(inspection)
-        iterator_for_inspection = iterators_for_inspections[inspection_index]
-        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
-        annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs(backend, annotation_iterators, code_reference, return_value_df,
-                                            operator_context)
-    return return_value
+    return execute_visits_and_store_results(annotation_iterators, backend, code_reference, iterators_for_inspections,
+                                            operator_context, return_value_df)
 
 
 def execute_inspection_visits_join(backend, operator_context, code_reference, input_data_one,
                                    input_annotations_one, input_data_two, input_annotations_two,
                                    return_value_df):
     """Execute inspections when the current operator has one parent in the DAG"""
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-locals
     assert "mlinspect_index_x" in return_value_df
     assert "mlinspect_index_y" in return_value_df
     assert isinstance(input_data_one, MlinspectDataFrame)
@@ -293,12 +281,22 @@ def execute_inspection_visits_join(backend, operator_context, code_reference, in
                                                                         input_data_two,
                                                                         input_annotations_two,
                                                                         return_value_df)
+    return execute_visits_and_store_results(annotation_iterators, backend, code_reference, iterators_for_inspections,
+                                            operator_context, return_value_df)
+
+
+def execute_visits_and_store_results(annotation_iterators, backend, code_reference, iterators_for_inspections,
+                                     operator_context, return_value):
+    """
+    After creating the iterators we need depending on the operator type, we need to execute the
+    generic inspection visits and store the annotations in the resulting data frame
+    """
     for inspection in backend.inspections:
         inspection_index = backend.inspections.index(inspection)
         iterator_for_inspection = iterators_for_inspections[inspection_index]
-        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
-        annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs(backend, annotation_iterators, code_reference, return_value_df,
+        annotation_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
+        annotation_iterators.append(annotation_iterator)
+    return_value = store_inspection_outputs(backend, annotation_iterators, code_reference, return_value,
                                             operator_context)
     return return_value
 
