@@ -291,8 +291,8 @@ def execute_visits_and_store_results(annotation_iterators, backend, code_referen
     After creating the iterators we need depending on the operator type, we need to execute the
     generic inspection visits and store the annotations in the resulting data frame
     """
-    for inspection in backend.inspections:
-        inspection_index = backend.inspections.index(inspection)
+    # pylint: disable=too-many-arguments
+    for inspection_index, inspection in enumerate(backend.inspections):
         iterator_for_inspection = iterators_for_inspections[inspection_index]
         annotation_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotation_iterator)
