@@ -315,27 +315,28 @@ def iter_input_annotation_output_nary_op(inspection_index, transformer_data_with
                zip(input_rows, annotation_rows, output_rows))
 
 
-def iter_input_annotation_output_sink_op(inspection_index, data, target):
+def iter_input_annotation_output_sink_op(inspection_count, data, target):
     """
     Create an efficient iterator for the inspection input
     """
     # pylint: disable=too-many-locals
-    input_iterators = []
-    annotation_iterators = []
-
-    data_annotation_df_view = data.annotations.iloc[:, inspection_index:inspection_index + 1]
-    input_iterators.append(get_iterator_for_type(data, False))
-    annotation_iterators.append(get_df_row_iterator(data_annotation_df_view))
-
-    target_annotation_df_view = target.annotations.iloc[:, inspection_index:inspection_index + 1]
-    input_iterators.append(get_iterator_for_type(target, True))
-    annotation_iterators.append(get_iterator_for_type(target_annotation_df_view))
-
+    input_iterators = [get_iterator_for_type(data, False), get_iterator_for_type(target, True)]
     input_rows = map(list, zip(*input_iterators))
-    annotation_rows = map(list, zip(*annotation_iterators))
+    duplicated_input_iterators = itertools.tee(input_rows, inspection_count)
 
-    return map(lambda input_tuple: InspectionInputSinkOperator(*input_tuple),
-               zip(input_rows, annotation_rows))
+    inspection_iterators = []
+    for inspection_index in range(inspection_count):
+        input_iterator = duplicated_input_iterators[inspection_index]
+        data_annotation_df_view = data.annotations.iloc[:, inspection_index:inspection_index + 1]
+        target_annotation_df_view = target.annotations.iloc[:, inspection_index:inspection_index + 1]
+        annotation_iterators = [get_df_row_iterator(data_annotation_df_view),
+                                get_iterator_for_type(target_annotation_df_view)]
+        annotation_rows = map(list, zip(*annotation_iterators))
+        inspection_iterator = map(lambda input_tuple: InspectionInputSinkOperator(*input_tuple),
+                                  zip(input_iterator, annotation_rows))
+        inspection_iterators.append(inspection_iterator)
+
+    return inspection_iterators
 
 
 def iter_input_annotation_output_unary_op(inspection_count, input_data, input_annotations, output):
@@ -390,9 +391,10 @@ def execute_inspection_visits_sink_op(operator_context, code_reference, data, ta
     assert isinstance(data, (MlinspectCsrMatrix, MlinspectNdarray))
     assert isinstance(target, (MlinspectNdarray, MlinspectSeries))
     annotation_iterators = []
-    for inspection in inspections:
-        inspection_index = inspections.index(inspection)
-        iterator_for_inspection = iter_input_annotation_output_sink_op(inspection_index, data, target)
+    inspection_count = len(inspections)
+    iterators_for_inspections = iter_input_annotation_output_sink_op(inspection_count, data, target)
+    for inspection_index, inspection in enumerate(inspections):
+        iterator_for_inspection = iterators_for_inspections[inspection_index]
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
     store_inspection_outputs(annotation_iterators, code_reference, None, inspections,
