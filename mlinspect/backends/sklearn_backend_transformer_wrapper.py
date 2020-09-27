@@ -292,6 +292,65 @@ class MlinspectEstimatorTransformer(BaseEstimator):
 
 
 # -------------------------------------------------------
+# Execute inspections functions
+# -------------------------------------------------------
+
+def execute_inspection_visits_nary_op(operator_context, code_reference, transformer_data_with_annotations,
+                                      output_data, inspections, code_ref_inspection_output_map, func_name):
+    """Execute inspections"""
+    # pylint: disable=too-many-arguments
+    inspection_count = len(inspections)
+    iterators_for_inspections = iter_input_annotation_output_nary_op(inspection_count,
+                                                                     transformer_data_with_annotations,
+                                                                     output_data)
+    annotation_iterators = execute_visits(inspections, iterators_for_inspections, operator_context)
+    return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
+                                            code_ref_inspection_output_map, func_name, False)
+    return return_value
+
+
+def execute_inspection_visits_sink_op(operator_context, code_reference, data, target,
+                                      inspections, code_reference_inspection_output_map, func_name):
+    """Execute inspections"""
+    # pylint: disable=too-many-arguments
+    assert isinstance(data, (MlinspectCsrMatrix, MlinspectNdarray))
+    assert isinstance(target, (MlinspectNdarray, MlinspectSeries))
+    inspection_count = len(inspections)
+    iterators_for_inspections = iter_input_annotation_output_sink_op(inspection_count, data, target)
+    annotation_iterators = execute_visits(inspections, iterators_for_inspections, operator_context)
+    store_inspection_outputs(annotation_iterators, code_reference, None, inspections,
+                             code_reference_inspection_output_map, func_name, True)
+
+
+def execute_inspection_visits_unary_op(operator_context, code_reference, input_data, input_annotations, output_data,
+                                       inspections, code_reference_inspection_output_map, func_name):
+    """Execute inspections"""
+    # pylint: disable=too-many-arguments
+    inspection_count = len(inspections)
+    iterators_for_inspections = iter_input_annotation_output_unary_op(inspection_count,
+                                                                      input_data,
+                                                                      input_annotations,
+                                                                      output_data)
+    annotation_iterators = execute_visits(inspections, iterators_for_inspections, operator_context)
+    return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
+                                            code_reference_inspection_output_map, func_name, False)
+    return return_value
+
+
+def execute_visits(inspections, iterators_for_inspections, operator_context):
+    """
+    After creating the iterators we need depending on the operator type, we need to execute the
+    generic inspection visits
+    """
+    annotation_iterators = []
+    for inspection_index, inspection in enumerate(inspections):
+        iterator_for_inspection = iterators_for_inspections[inspection_index]
+        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
+        annotation_iterators.append(annotations_iterator)
+    return annotation_iterators
+
+
+# -------------------------------------------------------
 # Functions to create the iterators for the inspections
 # -------------------------------------------------------
 
@@ -370,65 +429,6 @@ def iter_input_annotation_output_unary_op(inspection_count, input_data, input_an
         inspection_iterators.append(inspection_iterator)
 
     return inspection_iterators
-
-
-# -------------------------------------------------------
-# Execute inspections functions
-# -------------------------------------------------------
-
-def execute_inspection_visits_nary_op(operator_context, code_reference, transformer_data_with_annotations,
-                                      output_data, inspections,
-                                      code_ref_inspection_output_map, func_name):
-    """Execute inspections"""
-    # pylint: disable=too-many-arguments
-    annotation_iterators = []
-    inspection_count = len(inspections)
-    iterators_for_inspections = iter_input_annotation_output_nary_op(inspection_count,
-                                                                     transformer_data_with_annotations,
-                                                                     output_data)
-    for inspection_index, inspection in enumerate(inspections):
-        iterator_for_inspection = iterators_for_inspections[inspection_index]
-        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
-        annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
-                                            code_ref_inspection_output_map, func_name, False)
-    return return_value
-
-
-def execute_inspection_visits_sink_op(operator_context, code_reference, data, target,
-                                      inspections, code_reference_inspection_output_map, func_name):
-    """Execute inspections"""
-    # pylint: disable=too-many-arguments
-    assert isinstance(data, (MlinspectCsrMatrix, MlinspectNdarray))
-    assert isinstance(target, (MlinspectNdarray, MlinspectSeries))
-    annotation_iterators = []
-    inspection_count = len(inspections)
-    iterators_for_inspections = iter_input_annotation_output_sink_op(inspection_count, data, target)
-    for inspection_index, inspection in enumerate(inspections):
-        iterator_for_inspection = iterators_for_inspections[inspection_index]
-        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
-        annotation_iterators.append(annotations_iterator)
-    store_inspection_outputs(annotation_iterators, code_reference, None, inspections,
-                             code_reference_inspection_output_map, func_name, True)
-
-
-def execute_inspection_visits_unary_op(operator_context, code_reference, input_data, input_annotations, output_data,
-                                       inspections, code_reference_inspection_output_map, func_name):
-    """Execute inspections"""
-    # pylint: disable=too-many-arguments, too-many-locals
-    annotation_iterators = []
-    inspection_count = len(inspections)
-    iterators_for_inspections = iter_input_annotation_output_unary_op(inspection_count,
-                                                                      input_data,
-                                                                      input_annotations,
-                                                                      output_data)
-    for inspection_index, inspection in enumerate(inspections):
-        iterator_for_inspection = iterators_for_inspections[inspection_index]
-        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
-        annotation_iterators.append(annotations_iterator)
-    return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
-                                            code_reference_inspection_output_map, func_name, False)
-    return return_value
 
 
 # -------------------------------------------------------

@@ -235,11 +235,11 @@ class PandasBackend(Backend):
 def execute_inspection_visits_no_parents(backend, operator_context, code_reference, return_value):
     """Execute inspections when the current operator is a data source and does not have parents in the DAG"""
     # pylint: disable=unused-argument
-    annotation_iterators = []
     inspection_count = len(backend.inspections)
     iterators_for_inspections = iter_input_data_source(inspection_count, return_value)
-    return execute_visits_and_store_results(annotation_iterators, backend, code_reference, iterators_for_inspections,
-                                            operator_context, return_value)
+    return_value = execute_visits_and_store_results(backend, code_reference, iterators_for_inspections,
+                                                    operator_context, return_value)
+    return return_value
 
 
 def execute_inspection_visits_unary_operator(backend, operator_context, code_reference, input_data,
@@ -248,7 +248,6 @@ def execute_inspection_visits_unary_operator(backend, operator_context, code_ref
     # pylint: disable=too-many-arguments, unused-argument
     assert not resampled or "mlinspect_index" in return_value_df.columns
     assert isinstance(input_data, (MlinspectDataFrame, MlinspectSeries))
-    annotation_iterators = []
     inspection_count = len(backend.inspections)
     if resampled:
         iterators_for_inspections = iter_input_annotation_output_resampled(inspection_count,
@@ -260,8 +259,9 @@ def execute_inspection_visits_unary_operator(backend, operator_context, code_ref
                                                                                input_data,
                                                                                input_annotations,
                                                                                return_value_df)
-    return execute_visits_and_store_results(annotation_iterators, backend, code_reference, iterators_for_inspections,
-                                            operator_context, return_value_df)
+    return_value = execute_visits_and_store_results(backend, code_reference, iterators_for_inspections,
+                                                    operator_context, return_value_df)
+    return return_value
 
 
 def execute_inspection_visits_join(backend, operator_context, code_reference, input_data_one,
@@ -273,7 +273,6 @@ def execute_inspection_visits_join(backend, operator_context, code_reference, in
     assert "mlinspect_index_y" in return_value_df
     assert isinstance(input_data_one, MlinspectDataFrame)
     assert isinstance(input_data_two, MlinspectDataFrame)
-    annotation_iterators = []
     inspection_count = len(backend.inspections)
     iterators_for_inspections = iter_input_annotation_output_df_pair_df(inspection_count,
                                                                         input_data_one,
@@ -281,17 +280,19 @@ def execute_inspection_visits_join(backend, operator_context, code_reference, in
                                                                         input_data_two,
                                                                         input_annotations_two,
                                                                         return_value_df)
-    return execute_visits_and_store_results(annotation_iterators, backend, code_reference, iterators_for_inspections,
-                                            operator_context, return_value_df)
+    return_value = execute_visits_and_store_results(backend, code_reference, iterators_for_inspections,
+                                                    operator_context, return_value_df)
+    return return_value
 
 
-def execute_visits_and_store_results(annotation_iterators, backend, code_reference, iterators_for_inspections,
+def execute_visits_and_store_results(backend, code_reference, iterators_for_inspections,
                                      operator_context, return_value):
     """
     After creating the iterators we need depending on the operator type, we need to execute the
     generic inspection visits and store the annotations in the resulting data frame
     """
     # pylint: disable=too-many-arguments
+    annotation_iterators = []
     for inspection_index, inspection in enumerate(backend.inspections):
         iterator_for_inspection = iterators_for_inspections[inspection_index]
         annotation_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
