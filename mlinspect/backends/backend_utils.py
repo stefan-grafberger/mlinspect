@@ -18,12 +18,13 @@ def get_annotation_rows(input_annotations, inspection_index):
     """
     In the pandas backend, we store annotations in a data frame, for the sklearn transformers lists are enough
     """
-    # TODO: Potential for performance improvements: do not wrap in own class
     if isinstance(input_annotations, DataFrame):
-        annotation_df_view = input_annotations.iloc[:, inspection_index]
+        annotations_for_inspection = input_annotations.iloc[:, inspection_index]
+        assert isinstance(annotations_for_inspection, Series)
     else:
-        annotation_df_view = input_annotations[inspection_index]
-    annotation_rows = get_iterator_for_type(annotation_df_view, True)
+        annotations_for_inspection = input_annotations[inspection_index]
+        assert isinstance(annotations_for_inspection, list)
+    annotation_rows = annotations_for_inspection.__iter__()
     return annotation_rows
 
 

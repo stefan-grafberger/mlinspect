@@ -65,8 +65,7 @@ class LineageDemoInspection(Inspection):
             for row in row_iterator:
                 current_count += 1
 
-                parent_annotations = [annotation.values[0] for annotation in row.annotation]
-                annotation = JoinLineageId(parent_annotations)
+                annotation = JoinLineageId(row.annotation)
                 if current_count < self.row_count:
                     operator_output.append((annotation, row.output))
                 yield annotation
@@ -74,8 +73,7 @@ class LineageDemoInspection(Inspection):
             for row in row_iterator:
                 current_count += 1
 
-                parent_annotations = [annotation.values[0] for annotation in row.annotation]
-                annotation = ConcatLineageId(parent_annotations)
+                annotation = ConcatLineageId(row.annotation)
                 if current_count < self.row_count:
                     operator_output.append((annotation, row.output))
                 yield annotation
@@ -84,9 +82,9 @@ class LineageDemoInspection(Inspection):
                 current_count += 1
 
                 if isinstance(row, InspectionInputUnaryOperator):
-                    annotation = row.annotation.get_value_by_column_index(0)
+                    annotation = row.annotation
                 elif isinstance(row, InspectionInputSinkOperator):
-                    annotation = row.annotation[0].get_value_by_column_index(0)
+                    annotation = row.annotation[0]
                 else:
                     assert False
 

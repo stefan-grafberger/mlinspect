@@ -43,7 +43,7 @@ class RandomAnnotationTestingInspection(Inspection):
             for row in row_iterator:
                 current_count += 1
                 assert isinstance(row, InspectionInputUnaryOperator)  # This analyzer is really only for testing
-                annotation = row.annotation.get_value_by_column_index(0)
+                annotation = row.annotation
                 if current_count < self.row_count:
                     output_tuple = tuple(row.output.values)
                     if output_tuple in self.rows_to_random_numbers_operator_0:
@@ -59,9 +59,9 @@ class RandomAnnotationTestingInspection(Inspection):
                 assert isinstance(row, (InspectionInputUnaryOperator, InspectionInputNAryOperator,
                                         InspectionInputSinkOperator))
                 if isinstance(row, InspectionInputUnaryOperator):
-                    annotation = row.annotation.get_value_by_column_index(0)
+                    annotation = row.annotation
                 else:
-                    annotation = row.annotation[0].get_value_by_column_index(0)
+                    annotation = row.annotation[0]
                 yield annotation
         self.operator_count += 1
         self._operator_output = operator_output
