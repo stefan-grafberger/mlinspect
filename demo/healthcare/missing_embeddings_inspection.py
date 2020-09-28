@@ -1,11 +1,10 @@
 """
 A simple example inspection
 """
-from typing import Union, Iterable
-from mlinspect.inspections.inspection_input import OperatorContext, InspectionInputDataSource, \
-    InspectionInputUnaryOperator
-from mlinspect.instrumentation.dag_node import OperatorType
+from typing import Iterable
+
 from mlinspect.inspections.inspection import Inspection
+from mlinspect.inspections.inspection_input import InspectionInputUnaryOperator
 
 
 class MissingEmbeddingInspection(Inspection):
@@ -24,21 +23,20 @@ class MissingEmbeddingInspection(Inspection):
         Visit an operator
         """
         # pylint: disable=too-many-branches, too-many-statements
-        if operator_context.operator is OperatorType.TRANSFORMER:
-            for row in row_iterator:
-
+        if isinstance(inspection_input, InspectionInputUnaryOperator) and \
+                inspection_input.operator_context.function_info == ('demo.healthcare.demo_utils', 'fit_transform'):
+            self._is_embedding_operator = True
+            for row in inspection_input.row_iterator:
                 # Count missing embeddings
-                if operator_context.function_info == ('demo.healthcare.demo_utils', 'fit_transform'):
-                    self._is_embedding_operator = True
-                    embedding_array = row.output.values[0]
-                    is_zero_vector = not embedding_array.any()
-                    if is_zero_vector:
-                        self._missing_embedding_count += 1
-                        if len(self._missing_embeddings_examples) < self.example_threshold:
-                            self._missing_embeddings_examples.append(row.input.values[0])
-                yield None
+                embedding_array = row.output[0]
+                is_zero_vector = not embedding_array.any()
+                if is_zero_vector:
+                    self._missing_embedding_count += 1
+                    if len(self._missing_embeddings_examples) < self.example_threshold:
+                        self._missing_embeddings_examples.append(row.input[0])
+            yield None
         else:
-            for _ in row_iterator:
+            for _ in inspection_input.row_iterator:
                 yield None
 
     def get_operator_annotation_after_visit(self) -> any:

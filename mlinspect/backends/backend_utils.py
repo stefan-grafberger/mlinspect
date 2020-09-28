@@ -114,7 +114,7 @@ def get_df_row_iterator(dataframe):
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
     arrays = []
-    column_info = ColumnInfo(dataframe.columns)
+    column_info = ColumnInfo(list(dataframe.columns.values))
     arrays.extend(dataframe.iloc[:, k] for k in range(0, len(dataframe.columns)))
 
     return column_info, map(tuple, zip(*arrays))
