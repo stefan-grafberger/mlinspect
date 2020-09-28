@@ -235,7 +235,7 @@ def execute_inspection_visits_data_source(backend, operator_context, code_refere
     """Execute inspections when the current operator is a data source and does not have parents in the DAG"""
     # pylint: disable=unused-argument
     inspection_count = len(backend.inspections)
-    iterators_for_inspections = iter_input_data_source(inspection_count, return_value)
+    iterators_for_inspections = iter_input_data_source(inspection_count, return_value, operator_context)
     return_value = execute_visits_and_store_results(backend, code_reference, iterators_for_inspections,
                                                     operator_context, return_value)
     return return_value
@@ -252,12 +252,14 @@ def execute_inspection_visits_unary_operator(backend, operator_context, code_ref
         iterators_for_inspections = iter_input_annotation_output_resampled(inspection_count,
                                                                            input_data,
                                                                            input_annotations,
-                                                                           return_value_df)
+                                                                           return_value_df,
+                                                                           operator_context)
     else:
         iterators_for_inspections = iter_input_annotation_output_map(inspection_count,
                                                                      input_data,
                                                                      input_annotations,
-                                                                     return_value_df)
+                                                                     return_value_df,
+                                                                     operator_context)
     return_value = execute_visits_and_store_results(backend, code_reference, iterators_for_inspections,
                                                     operator_context, return_value_df)
     return return_value
@@ -278,7 +280,8 @@ def execute_inspection_visits_join(backend, operator_context, code_reference, in
                                                                   input_annotations_one,
                                                                   input_data_two,
                                                                   input_annotations_two,
-                                                                  return_value_df)
+                                                                  return_value_df,
+                                                                  operator_context)
     return_value = execute_visits_and_store_results(backend, code_reference, iterators_for_inspections,
                                                     operator_context, return_value_df)
     return return_value
@@ -294,7 +297,7 @@ def execute_visits_and_store_results(backend, code_reference, iterators_for_insp
     annotation_iterators = []
     for inspection_index, inspection in enumerate(backend.inspections):
         iterator_for_inspection = iterators_for_inspections[inspection_index]
-        annotation_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
+        annotation_iterator = inspection.visit_operator(iterator_for_inspection)
         annotation_iterators.append(annotation_iterator)
     return_value = store_inspection_outputs(backend, annotation_iterators, code_reference, return_value,
                                             operator_context)

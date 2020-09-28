@@ -2,7 +2,7 @@
 Data classes used as input for the inspections
 """
 import dataclasses
-from typing import Tuple, List
+from typing import Tuple, List, Iterable
 
 from ..instrumentation.dag_node import OperatorType
 
@@ -51,7 +51,7 @@ class InspectionInputDataSource:
     """
     operator_context: OperatorContext
     output_columns: ColumnInfo
-    row_iterator: InspectionRowDataSource
+    row_iterator: Iterable[InspectionRowDataSource]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -72,7 +72,7 @@ class InspectionInputUnaryOperator:
     operator_context: OperatorContext
     input_columns: ColumnInfo
     output_columns: ColumnInfo
-    row_iterator: InspectionRowUnaryOperator
+    row_iterator: Iterable[InspectionRowUnaryOperator]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -80,7 +80,6 @@ class InspectionRowNAryOperator:
     """
     Wrapper class for the operators with multiple parents like Concatenations
     """
-    operator_context: OperatorContext
     inputs: Tuple[Tuple]
     annotation: Tuple[any]
     output: Tuple
@@ -92,9 +91,9 @@ class InspectionInputNAryOperator:
     Additional context for the inspection. Contains, most importantly, the operator type.
     """
     operator_context: OperatorContext
-    inputs_columns: Tuple[ColumnInfo]
+    inputs_columns: List[ColumnInfo]
     output_columns: ColumnInfo
-    row_iterator: InspectionRowNAryOperator
+    row_iterator: Iterable[InspectionRowNAryOperator]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -112,5 +111,5 @@ class InspectionInputSinkOperator:
     Additional context for the inspection. Contains, most importantly, the operator type.
     """
     operator_context: OperatorContext
-    input_columns: ColumnInfo
-    row_iterator: InspectionRowSinkOperator
+    input_columns: List[ColumnInfo]
+    row_iterator: Iterable[InspectionRowSinkOperator]

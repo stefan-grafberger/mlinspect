@@ -21,7 +21,7 @@ class RandomAnnotationTestingInspection(Inspection):
         self._operator_output = None
         self.rows_to_random_numbers_operator_0 = {}
 
-    def visit_operator(self, operator_context: OperatorContext, row_iterator) -> Iterable[any]:
+    def visit_operator(self, inspection_input) -> Iterable[any]:
         """Visit an operator, generate random number annotations and check whether they get propagated correctly"""
         # pylint: disable=too-many-branches
         operator_output = []

@@ -47,7 +47,7 @@ class LineageDemoInspection(Inspection):
         self._operator_count = 0
         self._op_output = None
 
-    def visit_operator(self, operator_context: OperatorContext, row_iterator) -> Iterable[any]:
+    def visit_operator(self, inspection_input) -> Iterable[any]:
         """Visit an operator, generate row index number annotations and check whether they get propagated correctly"""
         # pylint: disable=too-many-branches
         operator_output = []

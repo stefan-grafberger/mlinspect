@@ -301,8 +301,9 @@ def execute_inspection_visits_nary_op(operator_context, code_reference, transfor
     inspection_count = len(inspections)
     iterators_for_inspections = iter_input_annotation_output_nary_op(inspection_count,
                                                                      transformer_data_with_annotations,
-                                                                     output_data)
-    annotation_iterators = execute_visits(inspections, iterators_for_inspections, operator_context)
+                                                                     output_data,
+                                                                     operator_context)
+    annotation_iterators = execute_visits(inspections, iterators_for_inspections)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
                                             code_ref_inspection_output_map, func_name, False)
     return return_value
@@ -315,8 +316,8 @@ def execute_inspection_visits_sink_op(operator_context, code_reference, data, ta
     assert isinstance(data, (MlinspectCsrMatrix, MlinspectNdarray))
     assert isinstance(target, (MlinspectNdarray, MlinspectSeries))
     inspection_count = len(inspections)
-    iterators_for_inspections = iter_input_annotation_output_sink_op(inspection_count, data, target)
-    annotation_iterators = execute_visits(inspections, iterators_for_inspections, operator_context)
+    iterators_for_inspections = iter_input_annotation_output_sink_op(inspection_count, data, target, operator_context)
+    annotation_iterators = execute_visits(inspections, iterators_for_inspections)
     store_inspection_outputs(annotation_iterators, code_reference, None, inspections,
                              code_reference_inspection_output_map, func_name, True)
 
@@ -329,14 +330,15 @@ def execute_inspection_visits_unary_op(operator_context, code_reference, input_d
     iterators_for_inspections = iter_input_annotation_output_map(inspection_count,
                                                                  input_data,
                                                                  input_annotations,
-                                                                 output_data)
-    annotation_iterators = execute_visits(inspections, iterators_for_inspections, operator_context)
+                                                                 output_data,
+                                                                 operator_context)
+    annotation_iterators = execute_visits(inspections, iterators_for_inspections)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
                                             code_reference_inspection_output_map, func_name, False)
     return return_value
 
 
-def execute_visits(inspections, iterators_for_inspections, operator_context):
+def execute_visits(inspections, iterators_for_inspections):
     """
     After creating the iterators we need depending on the operator type, we need to execute the
     generic inspection visits
@@ -344,7 +346,7 @@ def execute_visits(inspections, iterators_for_inspections, operator_context):
     annotation_iterators = []
     for inspection_index, inspection in enumerate(inspections):
         iterator_for_inspection = iterators_for_inspections[inspection_index]
-        annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
+        annotations_iterator = inspection.visit_operator(iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
     return annotation_iterators
 

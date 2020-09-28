@@ -1,11 +1,10 @@
 """
 A simple example analyzer
 """
-from typing import Union, Iterable
+from typing import Iterable
 
 from .inspection import Inspection
-from .inspection_input import OperatorContext, InspectionInputDataSource, \
-    InspectionInputUnaryOperator
+from .inspection_input import InspectionInputSinkOperator
 from ..instrumentation.dag_node import OperatorType
 
 
@@ -24,24 +23,22 @@ class MaterializeFirstRowsInspection(Inspection):
     def inspection_id(self):
         return self._analyzer_id
 
-    def visit_operator(self, operator_context: OperatorContext,
-                       row_iterator: Union[Iterable[InspectionInputDataSource], Iterable[InspectionInputUnaryOperator]])\
-            -> Iterable[any]:
+    def visit_operator(self, inspection_input) -> Iterable[any]:
         """
         Visit an operator
         """
         current_count = - 1
         operator_output = []
-        self._operator_type = operator_context.operator
+        self._operator_type = inspection_input.operator_context.operator
 
-        if self._operator_type is not OperatorType.ESTIMATOR:
-            for row in row_iterator:
+        if not isinstance(inspection_input, InspectionInputSinkOperator):
+            for row in inspection_input.row_iterator:
                 current_count += 1
                 if current_count < self.row_count:
                     operator_output.append(row.output)
                 yield None
         else:
-            for _ in row_iterator:
+            for _ in inspection_input.row_iterator:
                 yield None
 
         self._first_rows_op_output = operator_output

@@ -30,9 +30,7 @@ class HistogramInspection(Inspection):
         self._histogram_op_output = None
         self._operator_type = None
 
-    def visit_operator(self, operator_context: OperatorContext,
-                       row_iterator: Union[Iterable[InspectionInputDataSource], Iterable[InspectionInputUnaryOperator]])\
-            -> Iterable[any]:
+    def visit_operator(self, inspection_input) -> Iterable[any]:
         """
         Visit an operator
         """

@@ -19,9 +19,7 @@ class MissingEmbeddingInspection(Inspection):
         self._missing_embeddings_examples = []
         self.example_threshold = example_threshold
 
-    def visit_operator(self, operator_context: OperatorContext,
-                       row_iterator: Union[Iterable[InspectionInputDataSource], Iterable[InspectionInputUnaryOperator]])\
-            -> Iterable[any]:
+    def visit_operator(self, inspection_input) -> Iterable[any]:
         """
         Visit an operator
         """

@@ -4,7 +4,7 @@ The Interface for the Inspection
 import abc
 from typing import Union, Iterable
 
-from mlinspect.inspections.inspection_input import OperatorContext, InspectionInputDataSource, \
+from mlinspect.inspections.inspection_input import InspectionInputDataSource, \
     InspectionInputUnaryOperator, InspectionInputNAryOperator, InspectionInputSinkOperator
 
 
@@ -19,9 +19,8 @@ class Inspection(metaclass=abc.ABCMeta):
         return None
 
     @abc.abstractmethod
-    def visit_operator(self, operator_context: OperatorContext,
-                       row_iterator: Union[Iterable[InspectionInputDataSource], Iterable[InspectionInputUnaryOperator],
-                                           Iterable[InspectionInputNAryOperator], Iterable[InspectionInputSinkOperator]])\
+    def visit_operator(self, inspection_input: Union[InspectionInputDataSource, InspectionInputUnaryOperator,
+                                                     InspectionInputNAryOperator, InspectionInputSinkOperator])\
             -> Iterable[any]:
         """Visit an operator in the DAG"""
         raise NotImplementedError
