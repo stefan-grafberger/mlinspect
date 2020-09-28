@@ -3,6 +3,8 @@ A simple example analyzer
 """
 from typing import Iterable
 
+from pandas import DataFrame
+
 from .inspection import Inspection
 from .inspection_input import InspectionInputSinkOperator
 from ..instrumentation.dag_node import OperatorType
@@ -18,6 +20,7 @@ class MaterializeFirstRowsInspection(Inspection):
         self._analyzer_id = self.row_count
         self._first_rows_op_output = None
         self._operator_type = None
+        self._output_columns = None
 
     @property
     def inspection_id(self):
@@ -32,6 +35,7 @@ class MaterializeFirstRowsInspection(Inspection):
         self._operator_type = inspection_input.operator_context.operator
 
         if not isinstance(inspection_input, InspectionInputSinkOperator):
+            self._output_columns = inspection_input.output_columns.fields
             for row in inspection_input.row_iterator:
                 current_count += 1
                 if current_count < self.row_count:
@@ -46,10 +50,12 @@ class MaterializeFirstRowsInspection(Inspection):
     def get_operator_annotation_after_visit(self) -> any:
         assert self._operator_type
         if self._operator_type is not OperatorType.ESTIMATOR:
-            assert self._first_rows_op_output  # May only be called after the operator visit is finished
-            result = self._first_rows_op_output
+            assert self._first_rows_op_output and self._output_columns is not None  # Visit must be finished
+            result = DataFrame(self._first_rows_op_output, columns=self._output_columns)
             self._first_rows_op_output = None
             self._operator_type = None
+            self._output_columns = None
             return result
         self._operator_type = None
+        self._output_columns = None
         return None
