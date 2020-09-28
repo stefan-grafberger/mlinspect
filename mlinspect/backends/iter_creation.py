@@ -10,16 +10,16 @@ from mlinspect.inspections.inspection_input import InspectionInputDataSource, In
     InspectionInputNAryOperator, InspectionInputSinkOperator
 
 
-def iter_input_data_source(inspection_count, output):
+def iter_input_data_source(inspection_count, output, operator_context):
     """
     Create an efficient iterator for the inspection input for operators with no parent: Data Source
     """
-    output_rows = get_df_row_iterator(output)
+    output_column_info, output_rows = get_df_row_iterator(output)
     duplicated_output_iterators = itertools.tee(output_rows, inspection_count)
     inspection_iterators = []
     for inspection_index in range(inspection_count):
         output_iterator = duplicated_output_iterators[inspection_index]
-        inspection_iterator = map(InspectionInputDataSource, output_iterator)
+        inspection_iterator = InspectionInputDataSource(operator_context, output_column_info, output_iterator)
         inspection_iterators.append(inspection_iterator)
 
     return inspection_iterators

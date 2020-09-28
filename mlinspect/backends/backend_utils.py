@@ -2,7 +2,6 @@
 Some utility functions the different instrumentation backends
 """
 import itertools
-from functools import partial
 
 import numpy
 from pandas import DataFrame, Series
@@ -11,7 +10,7 @@ from scipy.sparse import csr_matrix
 from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from .sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
 from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
-from ..inspections.inspection_input import InspectionInputRow
+from ..inspections.inspection_input import ColumnInfo
 
 
 def get_annotation_rows(input_annotations, inspection_index):
@@ -115,11 +114,10 @@ def get_df_row_iterator(dataframe):
     # Performance tips:
     # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
     arrays = []
-    fields = list(dataframe.columns)
+    column_info = ColumnInfo(dataframe.columns)
     arrays.extend(dataframe.iloc[:, k] for k in range(0, len(dataframe.columns)))
 
-    partial_func_create_row = partial(InspectionInputRow, fields=fields)
-    return map(partial_func_create_row, map(list, zip(*arrays)))
+    return column_info, map(tuple, zip(*arrays))
 
 
 def get_series_row_iterator(series):
@@ -127,11 +125,10 @@ def get_series_row_iterator(series):
     Create an efficient iterator for the data frame rows.
     The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
     """
-    fields = list(["array"])
+    column_info = ColumnInfo(["array"])
     numpy_iterator = series.__iter__()
-    partial_func_create_row = partial(InspectionInputRow, fields=fields)
 
-    return map(partial_func_create_row, map(list, zip(numpy_iterator)))
+    return column_info, map(tuple, zip(numpy_iterator))
 
 
 def get_numpy_array_row_iterator(nparray, nditer=False):
@@ -139,14 +136,13 @@ def get_numpy_array_row_iterator(nparray, nditer=False):
     Create an efficient iterator for the data frame rows.
     The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
     """
-    fields = list(["array"])
+    column_info = ColumnInfo(["array"])
     if nditer is True:
         numpy_iterator = numpy.nditer(nparray, ["refs_ok"])
     else:
         numpy_iterator = nparray.__iter__()
-    partial_func_create_row = partial(InspectionInputRow, fields=fields)
 
-    return map(partial_func_create_row, map(list, zip(numpy_iterator)))
+    return column_info, map(tuple, zip(numpy_iterator))
 
 
 def get_list_row_iterator(list_data):
@@ -154,11 +150,10 @@ def get_list_row_iterator(list_data):
     Create an efficient iterator for the data frame rows.
     The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
     """
-    fields = list(["array"])
+    column_info = ColumnInfo(["array"])
     numpy_iterator = list_data.__iter__()
-    partial_func_create_row = partial(InspectionInputRow, fields=fields)
 
-    return map(partial_func_create_row, map(list, zip(numpy_iterator)))
+    return column_info, map(tuple, zip(numpy_iterator))
 
 
 def get_csr_row_iterator(csr):
@@ -169,8 +164,7 @@ def get_csr_row_iterator(csr):
     # TODO: Maybe there is a way to use sparse rows that is faster
     #  However, this is the fastest way I discovered so far
     np_array = csr.toarray()
-    fields = list(["array"])
+    column_info = ColumnInfo(["array"])
     numpy_iterator = np_array.__iter__()
-    partial_func_create_row = partial(InspectionInputRow, fields=fields)
 
-    return map(partial_func_create_row, map(list, zip(numpy_iterator)))
+    return column_info, map(tuple, zip(numpy_iterator))
