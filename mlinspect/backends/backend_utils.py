@@ -18,6 +18,7 @@ def get_annotation_rows(input_annotations, inspection_index):
     """
     In the pandas backend, we store annotations in a data frame, for the sklearn transformers lists are enough
     """
+    # TODO: Potential for performance improvements: do not wrap in own class
     if isinstance(input_annotations, DataFrame):
         annotation_df_view = input_annotations.iloc[:, inspection_index]
     else:

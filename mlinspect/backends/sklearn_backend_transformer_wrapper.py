@@ -3,19 +3,19 @@ A wrapper for sklearn transformers to capture method calls we do not see otherwi
 definition style
 """
 import inspect
-import itertools
 
 import numpy
 from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator
 
-from .backend_utils import get_iterator_for_type, create_wrapper_with_annotations, \
-    build_annotation_list_from_iters, get_annotation_rows
-from .pandas_backend import iter_input_annotation_output_df_projection
+from .backend_utils import create_wrapper_with_annotations, \
+    build_annotation_list_from_iters
+from .iter_creation import iter_input_annotation_output_sink_op, iter_input_annotation_output_nary_op, \
+    iter_input_annotation_output_map
 from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from .sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
 from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
-from ..inspections.inspection_input import OperatorContext, InspectionInputNAryOperator, InspectionInputSinkOperator
+from ..inspections.inspection_input import OperatorContext
 from ..instrumentation.dag_node import CodeReference, OperatorType
 
 transformer_names = {
@@ -326,10 +326,10 @@ def execute_inspection_visits_unary_op(operator_context, code_reference, input_d
     """Execute inspections"""
     # pylint: disable=too-many-arguments
     inspection_count = len(inspections)
-    iterators_for_inspections = iter_input_annotation_output_df_projection(inspection_count,
-                                                                           input_data,
-                                                                           input_annotations,
-                                                                           output_data)
+    iterators_for_inspections = iter_input_annotation_output_map(inspection_count,
+                                                                 input_data,
+                                                                 input_annotations,
+                                                                 output_data)
     annotation_iterators = execute_visits(inspections, iterators_for_inspections, operator_context)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
                                             code_reference_inspection_output_map, func_name, False)
@@ -347,61 +347,6 @@ def execute_visits(inspections, iterators_for_inspections, operator_context):
         annotations_iterator = inspection.visit_operator(operator_context, iterator_for_inspection)
         annotation_iterators.append(annotations_iterator)
     return annotation_iterators
-
-
-# -------------------------------------------------------
-# Functions to create the iterators for the inspections
-# -------------------------------------------------------
-
-def iter_input_annotation_output_nary_op(inspection_count, transformer_data_with_annotations, output_data):
-    """
-    Create an efficient iterator for the inspection input
-    """
-    # pylint: disable=too-many-locals
-    input_iterators = []
-    for input_data, _ in transformer_data_with_annotations:
-        input_iterators.append(get_iterator_for_type(input_data, True))
-    input_rows = map(list, zip(*input_iterators))
-    duplicated_input_iterators = itertools.tee(input_rows, inspection_count)
-
-    output_rows = get_iterator_for_type(output_data, False)
-    duplicated_output_iterators = itertools.tee(output_rows, inspection_count)
-
-    inspection_iterators = []
-    for inspection_index in range(inspection_count):
-        annotation_iterators = []
-        for _, annotations in transformer_data_with_annotations:
-            annotation_iterators.append(get_annotation_rows(annotations, inspection_index))
-        annotation_rows = map(list, zip(*annotation_iterators))
-        input_iterator = duplicated_input_iterators[inspection_index]
-        output_iterator = duplicated_output_iterators[inspection_index]
-        inspection_iterator = map(lambda input_tuple: InspectionInputNAryOperator(*input_tuple),
-                                  zip(input_iterator, annotation_rows, output_iterator))
-        inspection_iterators.append(inspection_iterator)
-
-    return inspection_iterators
-
-
-def iter_input_annotation_output_sink_op(inspection_count, data, target):
-    """
-    Create an efficient iterator for the inspection input
-    """
-    # pylint: disable=too-many-locals
-    input_iterators = [get_iterator_for_type(data, False), get_iterator_for_type(target, True)]
-    input_rows = map(list, zip(*input_iterators))
-    duplicated_input_iterators = itertools.tee(input_rows, inspection_count)
-
-    inspection_iterators = []
-    for inspection_index in range(inspection_count):
-        input_iterator = duplicated_input_iterators[inspection_index]
-        annotation_iterators = [get_annotation_rows(data.annotations, inspection_index),
-                                get_annotation_rows(target.annotations, inspection_index)]
-        annotation_rows = map(list, zip(*annotation_iterators))
-        inspection_iterator = map(lambda input_tuple: InspectionInputSinkOperator(*input_tuple),
-                                  zip(input_iterator, annotation_rows))
-        inspection_iterators.append(inspection_iterator)
-
-    return inspection_iterators
 
 
 # -------------------------------------------------------
