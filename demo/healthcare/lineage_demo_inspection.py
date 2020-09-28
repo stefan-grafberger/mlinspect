@@ -5,8 +5,8 @@ import dataclasses
 from typing import Iterable, List
 
 from mlinspect.inspections.inspection import Inspection
-from mlinspect.inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator, \
-    InspectionInputSinkOperator
+from mlinspect.inspections.inspection_input import InspectionInputUnaryOperator, \
+    InspectionInputSinkOperator, InspectionInputDataSource, InspectionInputNAryOperator
 from mlinspect.instrumentation.dag_node import OperatorType
 
 
@@ -53,46 +53,49 @@ class LineageDemoInspection(Inspection):
         operator_output = []
         current_count = -1
 
-        if operator_context.operator in {OperatorType.DATA_SOURCE, OperatorType.GROUP_BY_AGG}:
-            for row in row_iterator:
+        if isinstance(inspection_input, InspectionInputDataSource):
+            for row in inspection_input.row_iterator:
                 current_count += 1
                 annotation = LineageId(self._operator_count, current_count)
                 if current_count < self.row_count:
                     operator_output.append((annotation, row.output))
                 yield annotation
 
-        elif operator_context.operator in {OperatorType.JOIN}:
-            for row in row_iterator:
-                current_count += 1
+        elif isinstance(inspection_input, InspectionInputNAryOperator):
+            if inspection_input.operator_context.operator == OperatorType.JOIN:
+                for row in inspection_input.row_iterator:
+                    current_count += 1
 
-                annotation = JoinLineageId(row.annotation)
+                    annotation = JoinLineageId(list(*row.annotation))
+                    if current_count < self.row_count:
+                        operator_output.append((annotation, row.output))
+                    yield annotation
+            elif inspection_input.operator_context.operator == OperatorType.CONCATENATION:
+                for row in inspection_input.row_iterator:
+                    current_count += 1
+
+                    annotation = ConcatLineageId(list(*row.annotation))
+                    if current_count < self.row_count:
+                        operator_output.append((annotation, row.output))
+                    yield annotation
+            else:
+                assert False
+        elif isinstance(inspection_input, InspectionInputUnaryOperator):
+            for row in inspection_input.row_iterator:
+                current_count += 1
+                annotation = row.annotation
+
                 if current_count < self.row_count:
                     operator_output.append((annotation, row.output))
                 yield annotation
-        elif operator_context.operator in {OperatorType.CONCATENATION}:
-            for row in row_iterator:
+        elif isinstance(inspection_input, InspectionInputSinkOperator):
+            for row in inspection_input.row_iterator:
                 current_count += 1
-
-                annotation = ConcatLineageId(row.annotation)
-                if current_count < self.row_count:
-                    operator_output.append((annotation, row.output))
+                annotation = row.annotation
+                operator_output.append((annotation, None))
                 yield annotation
         else:
-            for row in row_iterator:
-                current_count += 1
-
-                if isinstance(row, InspectionInputUnaryOperator):
-                    annotation = row.annotation
-                elif isinstance(row, InspectionInputSinkOperator):
-                    annotation = row.annotation[0]
-                else:
-                    assert False
-
-                if current_count < self.row_count and not isinstance(row, InspectionInputSinkOperator):
-                    operator_output.append((annotation, row.output))
-                elif current_count < self.row_count:
-                    operator_output.append((annotation, None))
-                yield annotation
+            assert False
         self._operator_count += 1
         self._op_output = operator_output
 

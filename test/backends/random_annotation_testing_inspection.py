@@ -5,8 +5,8 @@ import random
 from typing import Iterable
 
 from mlinspect.inspections.inspection import Inspection
-from mlinspect.inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator, \
-    InspectionInputNAryOperator, InspectionInputSinkOperator
+from mlinspect.inspections.inspection_input import InspectionRowUnaryOperator, InspectionRowNAryOperator, \
+    InspectionRowSinkOperator
 
 
 class RandomAnnotationTestingInspection(Inspection):
@@ -28,11 +28,11 @@ class RandomAnnotationTestingInspection(Inspection):
         current_count = - 1
 
         if self.operator_count == 0:
-            for row in row_iterator:
+            for row in inspection_input.row_iterator:
                 current_count += 1
                 if current_count < self.row_count:
                     random_number = random.randint(0, 10000)
-                    output_tuple = tuple(row.output.values)
+                    output_tuple = row.output
                     self.rows_to_random_numbers_operator_0[output_tuple] = random_number
                     operator_output.append(row.output)
                     yield random_number
@@ -40,12 +40,12 @@ class RandomAnnotationTestingInspection(Inspection):
                     yield None
         elif self.operator_count == 1:
             filtered_rows = 0
-            for row in row_iterator:
+            for row in inspection_input.row_iterator:
                 current_count += 1
-                assert isinstance(row, InspectionInputUnaryOperator)  # This analyzer is really only for testing
+                assert isinstance(row, InspectionRowUnaryOperator)  # This analyzer is really only for testing
                 annotation = row.annotation
                 if current_count < self.row_count:
-                    output_tuple = tuple(row.output.values)
+                    output_tuple = row.output
                     if output_tuple in self.rows_to_random_numbers_operator_0:
                         random_number = self.rows_to_random_numbers_operator_0[output_tuple]
                         assert annotation == random_number  # Test whether the annotation got propagated correctly
@@ -55,10 +55,10 @@ class RandomAnnotationTestingInspection(Inspection):
                     operator_output.append(row.output)
                 yield annotation
         else:
-            for row in row_iterator:
-                assert isinstance(row, (InspectionInputUnaryOperator, InspectionInputNAryOperator,
-                                        InspectionInputSinkOperator))
-                if isinstance(row, InspectionInputUnaryOperator):
+            for row in inspection_input.row_iterator:
+                assert isinstance(row, (InspectionRowUnaryOperator, InspectionRowNAryOperator,
+                                        InspectionRowSinkOperator))
+                if isinstance(row, InspectionRowUnaryOperator):
                     annotation = row.annotation
                 else:
                     annotation = row.annotation[0]

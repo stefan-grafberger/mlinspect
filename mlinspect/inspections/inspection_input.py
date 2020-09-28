@@ -101,7 +101,7 @@ class InspectionRowSinkOperator:
     """
     Wrapper class for operators like Estimators that only get fitted
     """
-    input: Tuple
+    input: Tuple[Tuple]
     annotation: any
 
 
@@ -111,5 +111,5 @@ class InspectionInputSinkOperator:
     Additional context for the inspection. Contains, most importantly, the operator type.
     """
     operator_context: OperatorContext
-    input_columns: List[ColumnInfo]
+    inputs_columns: List[ColumnInfo]
     row_iterator: Iterable[InspectionRowSinkOperator]

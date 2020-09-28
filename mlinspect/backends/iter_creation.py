@@ -196,8 +196,7 @@ def iter_input_annotation_output_sink_op(inspection_count, data, target, operato
     input_data_columns, input_data_iterators = get_iterator_for_type(data, False)
     input_target_columns, input_target_iterators = get_iterator_for_type(target, True)
     inputs_columns = [input_data_columns, input_target_columns]
-    input_iterators = [input_data_iterators, input_target_iterators]
-    input_rows = map(tuple, zip(*input_iterators))
+    input_rows = map(tuple, zip(input_data_iterators, input_target_iterators))
     duplicated_input_iterators = itertools.tee(input_rows, inspection_count)
 
     inspection_iterators = []

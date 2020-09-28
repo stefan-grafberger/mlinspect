@@ -39,8 +39,7 @@ def assert_df_dicts_equal(dict1, dict2):
     key1 = dict1.keys()
     key2 = dict2.keys()
     compare(key1, key2)
-    for key, val in dict1.items():
-        df1 = dict1[key]
+    for key, df1 in dict1.items():
         df2 = dict2[key]
         if isinstance(df1, DataFrame) and isinstance(df2, DataFrame):
             assert_frame_equal(df1, df2)
@@ -88,9 +87,9 @@ def get_expected_result():
                  'Not-in-family', 'White', 'Female', 0, 0, 40, 'United-States', '<=50K'],
                 [29, 'Local-gov', 115585, 'Some-college', 10, 'Never-married', 'Handlers-cleaners',
                  'Not-in-family', 'White', 'Male', 0, 0, 50, 'United-States', '<=50K']],
-                columns=['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status',
-                         'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
-                         'hours-per-week', 'native-country', 'income-per-year']),
+                      columns=['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status',
+                               'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
+                               'hours-per-week', 'native-country', 'income-per-year']),
         DagNode(node_id=56, operator_type=OperatorType.TRAIN_LABELS, module=('sklearn.pipeline', 'fit', 'Train Labels'),
                 code_reference=CodeReference(24, 18, 26, 51), description=None):
             DataFrame([[array(1)], [array(1)]], columns=['array']),
