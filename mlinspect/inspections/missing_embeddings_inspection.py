@@ -22,9 +22,10 @@ class MissingEmbeddingInspection(Inspection):
         """
         Visit an operator
         """
-        # pylint: disable=too-many-branches, too-many-statements
+        # pylint: disable=too-many-branches, too-many-statement
         if isinstance(inspection_input, InspectionInputUnaryOperator) and \
                 inspection_input.operator_context.function_info == ('demo.healthcare.demo_utils', 'fit_transform'):
+            # TODO: Are there existing word embedding transformers for sklearn we can use this for?
             self._is_embedding_operator = True
             for row in inspection_input.row_iterator:
                 # Count missing embeddings

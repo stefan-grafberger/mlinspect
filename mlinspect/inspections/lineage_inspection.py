@@ -41,6 +41,11 @@ class LineageInspection(Inspection):
     """
     A simple inspection for testing annotation propagation
     """
+    # TODO: Add an option to pass a list of lineage ids to this inspection. Then it materializes all related tuples.
+    #  To do this efficiently, we do not want to do expensive membership tests. We can collect all base LineageIds
+    #  in a set and then it is enough to check for set memberships in InspectionInputDataSource inspection inputs.
+    #  This set membership can be used as a 'materialize' flag we use as annotation. Then we simply need to check this
+    #  flag to check whether to materialize rows.
 
     def __init__(self, row_count: int):
         self.row_count = row_count
