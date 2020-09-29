@@ -42,12 +42,16 @@ class HistogramInspection(Inspection):
                         age_group = row.output[age_group_index][0]
                     else:
                         age_group = row.annotation[0]
-                    self.update_histogram_map(age_group, age_group_map)
+                    group_count = age_group_map.get(age_group, 0)
+                    group_count += 1
+                    age_group_map[age_group] = group_count
                     if race_present:
                         race = row.output[race_index][0]
                     else:
                         race = row.annotation[1]
-                    self.update_histogram_map(race, race_count_map)
+                    group_count = race_count_map.get(race, 0)
+                    group_count += 1
+                    race_count_map[race] = group_count
                     yield age_group, race
             else:
                 for row in inspection_input.row_iterator:
@@ -56,12 +60,16 @@ class HistogramInspection(Inspection):
                         age_group = row.input[age_group_index]
                     else:
                         age_group = row.annotation[0]
-                    self.update_histogram_map(age_group, age_group_map)
+                    group_count = age_group_map.get(age_group, 0)
+                    group_count += 1
+                    age_group_map[age_group] = group_count
                     if race_present:
                         race = row.input[race_index]
                     else:
                         race = row.annotation[1]
-                    self.update_histogram_map(race, race_count_map)
+                    group_count = race_count_map.get(race, 0)
+                    group_count += 1
+                    race_count_map[race] = group_count
                     yield age_group, race
         elif isinstance(inspection_input, InspectionInputDataSource):
             age_group_index = inspection_input.output_columns.get_index_of_column("age_group")
@@ -72,10 +80,14 @@ class HistogramInspection(Inspection):
                 current_count += 1
                 if age_group_present:
                     age_group = row.output[age_group_index]
-                    self.update_histogram_map(age_group, age_group_map)
+                    group_count = age_group_map.get(age_group, 0)
+                    group_count += 1
+                    age_group_map[age_group] = group_count
                 if race_present:
                     race = row.output[race_index]
-                    self.update_histogram_map(race, race_count_map)
+                    group_count = race_count_map.get(race, 0)
+                    group_count += 1
+                    race_count_map[race] = group_count
                 yield None
         elif isinstance(inspection_input, InspectionInputNAryOperator):
             age_group_index = inspection_input.output_columns.get_index_of_column("age_group")
@@ -88,27 +100,22 @@ class HistogramInspection(Inspection):
                     age_group = row.output[age_group_index]
                 else:
                     age_group = row.annotation[0][0]
-                self.update_histogram_map(age_group, age_group_map)
+                group_count = age_group_map.get(age_group, 0)
+                group_count += 1
+                age_group_map[age_group] = group_count
                 if race_present:
                     race = row.output[race_index]
                 else:
                     race = row.annotation[0][1]
-                self.update_histogram_map(race, race_count_map)
+                group_count = race_count_map.get(race, 0)
+                group_count += 1
+                race_count_map[race] = group_count
                 yield age_group, race
         else:
             for _ in inspection_input.row_iterator:
                 yield None
 
         self._histogram_op_output = {"age_group_counts": age_group_map, "race_counts": race_count_map}
-
-    @staticmethod
-    def update_histogram_map(group, histogram_map):
-        """
-        Update the histogram maps.
-        """
-        group_count = histogram_map.get(group, 0)
-        group_count += 1
-        histogram_map[group] = group_count
 
     def get_operator_annotation_after_visit(self) -> any:
         assert self._operator_type
