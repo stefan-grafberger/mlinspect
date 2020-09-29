@@ -2,11 +2,13 @@
 A simple inspection for testing annotation propagation
 """
 import dataclasses
-from typing import Iterable, List
+from typing import Iterable, Tuple
+
+from pandas import DataFrame
 
 from mlinspect.inspections.inspection import Inspection
-from mlinspect.inspections.inspection_input import OperatorContext, InspectionInputUnaryOperator, \
-    InspectionInputSinkOperator
+from mlinspect.inspections.inspection_input import InspectionInputUnaryOperator, \
+    InspectionInputSinkOperator, InspectionInputDataSource, InspectionInputNAryOperator
 from mlinspect.instrumentation.dag_node import OperatorType
 
 
@@ -24,7 +26,7 @@ class JoinLineageId:
     """
     A lineage id class
     """
-    lineage_ids: List
+    lineage_ids: Tuple
 
 
 @dataclasses.dataclass(frozen=True)
@@ -32,7 +34,7 @@ class ConcatLineageId:
     """
     A lineage id class
     """
-    lineage_ids: List
+    lineage_ids: Tuple
 
 
 class LineageDemoInspection(Inspection):
@@ -46,62 +48,69 @@ class LineageDemoInspection(Inspection):
 
         self._operator_count = 0
         self._op_output = None
+        self._output_columns = None
 
-    def visit_operator(self, operator_context: OperatorContext, row_iterator) -> Iterable[any]:
+    def visit_operator(self, inspection_input) -> Iterable[any]:
         """Visit an operator, generate row index number annotations and check whether they get propagated correctly"""
         # pylint: disable=too-many-branches
         operator_output = []
         current_count = -1
 
-        if operator_context.operator in {OperatorType.DATA_SOURCE, OperatorType.GROUP_BY_AGG}:
-            for row in row_iterator:
+        self._output_columns = ["mlinspect_lineage"]
+        if not isinstance(inspection_input, InspectionInputSinkOperator):
+            self._output_columns.extend(inspection_input.output_columns.fields)
+
+        if isinstance(inspection_input, InspectionInputDataSource):
+            for row in inspection_input.row_iterator:
                 current_count += 1
                 annotation = LineageId(self._operator_count, current_count)
                 if current_count < self.row_count:
-                    operator_output.append((annotation, row.output))
+                    operator_output.append([annotation, *row.output])
                 yield annotation
 
-        elif operator_context.operator in {OperatorType.JOIN}:
-            for row in row_iterator:
-                current_count += 1
+        elif isinstance(inspection_input, InspectionInputNAryOperator):
+            if inspection_input.operator_context.operator == OperatorType.JOIN:
+                for row in inspection_input.row_iterator:
+                    current_count += 1
 
-                parent_annotations = [annotation.values[0] for annotation in row.annotation]
-                annotation = JoinLineageId(parent_annotations)
+                    annotation = JoinLineageId(row.annotation)
+                    if current_count < self.row_count:
+                        operator_output.append([annotation, *row.output])
+                    yield annotation
+            elif inspection_input.operator_context.operator == OperatorType.CONCATENATION:
+                for row in inspection_input.row_iterator:
+                    current_count += 1
+
+                    annotation = ConcatLineageId(row.annotation)
+                    if current_count < self.row_count:
+                        operator_output.append([annotation, *row.output])
+                    yield annotation
+            else:
+                assert False
+        elif isinstance(inspection_input, InspectionInputUnaryOperator):
+            for row in inspection_input.row_iterator:
+                current_count += 1
+                annotation = row.annotation
+
                 if current_count < self.row_count:
-                    operator_output.append((annotation, row.output))
+                    operator_output.append([annotation, *row.output])
                 yield annotation
-        elif operator_context.operator in {OperatorType.CONCATENATION}:
-            for row in row_iterator:
+        elif isinstance(inspection_input, InspectionInputSinkOperator):
+            for row in inspection_input.row_iterator:
                 current_count += 1
-
-                parent_annotations = [annotation.values[0] for annotation in row.annotation]
-                annotation = ConcatLineageId(parent_annotations)
-                if current_count < self.row_count:
-                    operator_output.append((annotation, row.output))
+                annotation = row.annotation
+                operator_output.append([annotation])
                 yield annotation
         else:
-            for row in row_iterator:
-                current_count += 1
-
-                if isinstance(row, InspectionInputUnaryOperator):
-                    annotation = row.annotation.get_value_by_column_index(0)
-                elif isinstance(row, InspectionInputSinkOperator):
-                    annotation = row.annotation[0].get_value_by_column_index(0)
-                else:
-                    assert False
-
-                if current_count < self.row_count and not isinstance(row, InspectionInputSinkOperator):
-                    operator_output.append((annotation, row.output))
-                elif current_count < self.row_count:
-                    operator_output.append((annotation, None))
-                yield annotation
+            assert False
         self._operator_count += 1
         self._op_output = operator_output
 
     def get_operator_annotation_after_visit(self) -> any:
         assert self._op_output  # May only be called after the operator visit is finished
-        result = self._op_output
+        result = DataFrame(self._op_output, columns=self._output_columns)
         self._op_output = None
+        self._output_columns = None
         return result
 
     @property

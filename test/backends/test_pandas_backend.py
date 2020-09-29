@@ -11,7 +11,7 @@ def test_pandas_backend_random_annotation_propagation():
     """
     code = get_pandas_read_csv_and_dropna_code()
     random_annotation_analyzer_result = run_random_annotation_testing_analyzer(code)
-    assert len(random_annotation_analyzer_result) == 2
+    assert len(random_annotation_analyzer_result) == 3
 
 
 def test_pandas_backend_row_index_annotation_propagation():
@@ -20,7 +20,7 @@ def test_pandas_backend_row_index_annotation_propagation():
     """
     code = get_pandas_read_csv_and_dropna_code()
     lineage_result = run_row_index_annotation_testing_analyzer(code)
-    assert len(lineage_result) == 2
+    assert len(lineage_result) == 3
 
 
 def test_pandas_backend_annotation_propagation_multiple_analyzers():
@@ -33,4 +33,4 @@ def test_pandas_backend_annotation_propagation_multiple_analyzers():
 
     for analyzer in analyzers:
         result = analyzer_results[analyzer]
-        assert len(result) == 2
+        assert len(result) == 3

@@ -12,26 +12,20 @@ class Backend(metaclass=abc.ABCMeta):
     """
 
     def __init__(self):
+        self.code_reference_to_module = {}
         self.code_reference_to_description = {}
         self.dag_node_identifier_to_inspection_output = {}
         self.inspections = []
 
-    @property
     @abc.abstractmethod
-    def prefix(self):
-        """The prefix of the module of the library the backend is for"""
+    def is_responsible_for_call(self, function_info, function_prefix, value=None):
+        """Checks whether the backend is responsible for the current method call"""
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def operator_map(self):
         """The list of known operator mappings"""
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def replacement_type_map(self):
-        """The list of used data type replacements"""
         raise NotImplementedError
 
     @abc.abstractmethod

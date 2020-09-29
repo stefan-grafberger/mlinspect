@@ -1,24 +1,12 @@
 """
 A simple example inspection
 """
-from typing import Union, Iterable
+from typing import Iterable
 
-from mlinspect.inspections.inspection_input import OperatorContext, InspectionInputDataSource, \
-    InspectionInputUnaryOperator
 from mlinspect.inspections.inspection import Inspection
+from mlinspect.inspections.inspection_input import InspectionInputDataSource, \
+    InspectionInputUnaryOperator, InspectionInputNAryOperator
 from mlinspect.instrumentation.dag_node import OperatorType
-
-
-def get_current_annotation(row):
-    """
-    Get the current row annotation value
-    """
-    if isinstance(row, InspectionInputUnaryOperator):
-        annotation = row.annotation.get_value_by_column_index(0)
-    else:
-        assert not isinstance(row, InspectionInputDataSource)
-        annotation = row.annotation[0].get_value_by_column_index(0)
-    return annotation
 
 
 class HistogramInspection(Inspection):
@@ -30,106 +18,104 @@ class HistogramInspection(Inspection):
         self._histogram_op_output = None
         self._operator_type = None
 
-    def visit_operator(self, operator_context: OperatorContext,
-                       row_iterator: Union[Iterable[InspectionInputDataSource], Iterable[InspectionInputUnaryOperator]])\
-            -> Iterable[any]:
+    def visit_operator(self, inspection_input) -> Iterable[any]:
         """
         Visit an operator
         """
-        # pylint: disable=too-many-branches, too-many-statements
+        # pylint: disable=too-many-branches, too-many-statements, too-many-locals
         current_count = - 1
 
         age_group_map = {}
         race_count_map = {}
-        histogram_map = {}
 
-        self._operator_type = operator_context.operator
+        self._operator_type = inspection_input.operator_context.operator
 
-        if self._operator_type in {OperatorType.DATA_SOURCE, OperatorType.GROUP_BY_AGG}:
-            for row in row_iterator:
-                current_count += 1
-                if "age_group" in row.output.fields:
-                    age_group_index = row.output.fields.index("age_group")
-                    age_group = row.output.values[age_group_index]
-
+        if isinstance(inspection_input, InspectionInputUnaryOperator):
+            age_group_index = inspection_input.input_columns.get_index_of_column("age_group")
+            age_group_present = "age_group" in inspection_input.input_columns.fields
+            race_index = inspection_input.input_columns.get_index_of_column("race")
+            race_present = "race" in inspection_input.input_columns.fields
+            if inspection_input.operator_context.function_info == ('sklearn.impute._base', 'fit_transform'):
+                for row in inspection_input.row_iterator:
+                    current_count += 1
+                    if age_group_present:
+                        age_group = row.output[age_group_index][0]
+                    else:
+                        age_group = row.annotation[0]
                     group_count = age_group_map.get(age_group, 0)
                     group_count += 1
                     age_group_map[age_group] = group_count
-
-                if "race" in row.output.fields:
-                    race_index = row.output.fields.index("race")
-                    race = row.output.values[race_index]
-
+                    if race_present:
+                        race = row.output[race_index][0]
+                    else:
+                        race = row.annotation[1]
                     group_count = race_count_map.get(race, 0)
                     group_count += 1
                     race_count_map[race] = group_count
-
-                yield None
-        elif self._operator_type in {OperatorType.PROJECTION, OperatorType.TRANSFORMER}:
-            for row in row_iterator:
-                current_count += 1
-                if "age_group" in row.input.fields and "age_group" not in row.output.fields:
-                    age_group_index = row.input.fields.index("age_group")
-                    age_group = row.input.values[age_group_index]
-                else:
-                    age_group = get_current_annotation(row)[0]
-                if "race" in row.input.fields and "race" not in row.output.fields:
-                    if operator_context.function_info != ('sklearn.impute._base', 'fit_transform'):
-                        race_index = row.input.fields.index("race")
-                        race = row.input.values[race_index]
+                    yield age_group, race
+            else:
+                for row in inspection_input.row_iterator:
+                    current_count += 1
+                    if age_group_present:
+                        age_group = row.input[age_group_index]
                     else:
-                        race = row.output.values[0]
-                else:
-                    race = get_current_annotation(row)[1]
-
-                group_count = age_group_map.get(age_group, 0)
-                group_count += 1
-                age_group_map[age_group] = group_count
-
-                group_count = race_count_map.get(race, 0)
-                group_count += 1
-                race_count_map[race] = group_count
-
-                annotation = (age_group, race)
-                group_count = histogram_map.get(annotation, 0)
-                group_count += 1
-                histogram_map[annotation] = group_count
-                yield annotation
-        elif self._operator_type is not OperatorType.ESTIMATOR:
-            for row in row_iterator:
-
+                        age_group = row.annotation[0]
+                    group_count = age_group_map.get(age_group, 0)
+                    group_count += 1
+                    age_group_map[age_group] = group_count
+                    if race_present:
+                        race = row.input[race_index]
+                    else:
+                        race = row.annotation[1]
+                    group_count = race_count_map.get(race, 0)
+                    group_count += 1
+                    race_count_map[race] = group_count
+                    yield age_group, race
+        elif isinstance(inspection_input, InspectionInputDataSource):
+            age_group_index = inspection_input.output_columns.get_index_of_column("age_group")
+            age_group_present = "age_group" in inspection_input.output_columns.fields
+            race_index = inspection_input.output_columns.get_index_of_column("race")
+            race_present = "race" in inspection_input.output_columns.fields
+            for row in inspection_input.row_iterator:
                 current_count += 1
-                if "age_group" in row.output.fields:
-                    age_group_index = row.output.fields.index("age_group")
-                    age_group = row.output.values[age_group_index]
+                if age_group_present:
+                    age_group = row.output[age_group_index]
+                    group_count = age_group_map.get(age_group, 0)
+                    group_count += 1
+                    age_group_map[age_group] = group_count
+                if race_present:
+                    race = row.output[race_index]
+                    group_count = race_count_map.get(race, 0)
+                    group_count += 1
+                    race_count_map[race] = group_count
+                yield None
+        elif isinstance(inspection_input, InspectionInputNAryOperator):
+            age_group_index = inspection_input.output_columns.get_index_of_column("age_group")
+            age_group_present = "age_group" in inspection_input.output_columns.fields
+            race_index = inspection_input.output_columns.get_index_of_column("race")
+            race_present = "race" in inspection_input.output_columns.fields
+            for row in inspection_input.row_iterator:
+                current_count += 1
+                if age_group_present:
+                    age_group = row.output[age_group_index]
                 else:
-                    age_group = get_current_annotation(row)[0]
-                if "race" in row.output.fields:
-                    race_index = row.output.fields.index("race")
-                    race = row.output.values[race_index]
-                else:
-                    race = get_current_annotation(row)[1]
-
+                    age_group = row.annotation[0][0]
                 group_count = age_group_map.get(age_group, 0)
                 group_count += 1
                 age_group_map[age_group] = group_count
-
+                if race_present:
+                    race = row.output[race_index]
+                else:
+                    race = row.annotation[0][1]
                 group_count = race_count_map.get(race, 0)
                 group_count += 1
                 race_count_map[race] = group_count
-
-                annotation = (age_group, race)
-                group_count = histogram_map.get(annotation, 0)
-                group_count += 1
-                histogram_map[annotation] = group_count
-
-                yield annotation
+                yield age_group, race
         else:
-            for _ in row_iterator:
+            for _ in inspection_input.row_iterator:
                 yield None
 
-        self._histogram_op_output = {"age_group_counts": age_group_map, "race_counts": race_count_map,
-                                     "age_groups_race_counts": histogram_map}
+        self._histogram_op_output = {"age_group_counts": age_group_map, "race_counts": race_count_map}
 
     def get_operator_annotation_after_visit(self) -> any:
         assert self._operator_type

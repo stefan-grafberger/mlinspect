@@ -18,8 +18,8 @@ class SklearnWirPreprocessor:
         ('sklearn.preprocessing._data', 'StandardScaler'),
         ('sklearn.tree._classes', 'DecisionTreeClassifier'),
         ('sklearn.impute._base', 'SimpleImputer'),
-        ('sklearn.demo.healthcare.demo_utils', 'MyW2VTransformer'),
-        ('sklearn.tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')
+        ('demo.healthcare.demo_utils', 'MyW2VTransformer'),
+        ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')
     }
 
     KNOWN_MULTI_STEPS = {
