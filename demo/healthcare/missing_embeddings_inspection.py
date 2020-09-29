@@ -22,7 +22,7 @@ class MissingEmbeddingInspection(Inspection):
         """
         Visit an operator
         """
-        # pylint: disable=too-many-branches, too-many-statement
+        # pylint: disable=too-many-branches, too-many-statements
         if isinstance(inspection_input, InspectionInputUnaryOperator) and \
                 inspection_input.operator_context.function_info == ('demo.healthcare.demo_utils', 'fit_transform'):
             # TODO: Are there existing word embedding transformers for sklearn we can use this for?

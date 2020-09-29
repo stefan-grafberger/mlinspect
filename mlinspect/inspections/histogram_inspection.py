@@ -14,9 +14,10 @@ class HistogramInspection(Inspection):
     A simple example inspection
     """
 
-    def __init__(self):
+    def __init__(self, sensitive_columns):
         self._histogram_op_output = None
         self._operator_type = None
+        self.sensitive_columns = sensitive_columns
 
     def visit_operator(self, inspection_input) -> Iterable[any]:
         """
@@ -25,97 +26,97 @@ class HistogramInspection(Inspection):
         # pylint: disable=too-many-branches, too-many-statements, too-many-locals
         current_count = - 1
 
-        age_group_map = {}
-        race_count_map = {}
+        histogram_maps = []
+        for _ in self.sensitive_columns:
+            histogram_maps.append({})
 
         self._operator_type = inspection_input.operator_context.operator
 
         if isinstance(inspection_input, InspectionInputUnaryOperator):
-            age_group_index = inspection_input.input_columns.get_index_of_column("age_group")
-            age_group_present = "age_group" in inspection_input.input_columns.fields
-            race_index = inspection_input.input_columns.get_index_of_column("race")
-            race_present = "race" in inspection_input.input_columns.fields
+            sensitive_columns_present = []
+            sensitive_columns_index = []
+            for column in self.sensitive_columns:
+                column_present = column in inspection_input.input_columns.fields
+                sensitive_columns_present.append(column_present)
+                column_index = inspection_input.input_columns.get_index_of_column(column)
+                sensitive_columns_index.append(column_index)
             if inspection_input.operator_context.function_info == ('sklearn.impute._base', 'fit_transform'):
                 for row in inspection_input.row_iterator:
                     current_count += 1
-                    if age_group_present:
-                        age_group = row.output[age_group_index][0]
-                    else:
-                        age_group = row.annotation[0]
-                    group_count = age_group_map.get(age_group, 0)
-                    group_count += 1
-                    age_group_map[age_group] = group_count
-                    if race_present:
-                        race = row.output[race_index][0]
-                    else:
-                        race = row.annotation[1]
-                    group_count = race_count_map.get(race, 0)
-                    group_count += 1
-                    race_count_map[race] = group_count
-                    yield age_group, race
+                    column_values = []
+                    for check_index, _ in enumerate(self.sensitive_columns):
+                        if sensitive_columns_present[check_index]:
+                            column_value = row.output[sensitive_columns_index[check_index]][0]
+                        else:
+                            column_value = row.annotation[check_index]
+                        column_values.append(column_value)
+                        group_count = histogram_maps[check_index].get(column_value, 0)
+                        group_count += 1
+                        histogram_maps[check_index][column_value] = group_count
+                    yield column_values
             else:
                 for row in inspection_input.row_iterator:
                     current_count += 1
-                    if age_group_present:
-                        age_group = row.input[age_group_index]
-                    else:
-                        age_group = row.annotation[0]
-                    group_count = age_group_map.get(age_group, 0)
-                    group_count += 1
-                    age_group_map[age_group] = group_count
-                    if race_present:
-                        race = row.input[race_index]
-                    else:
-                        race = row.annotation[1]
-                    group_count = race_count_map.get(race, 0)
-                    group_count += 1
-                    race_count_map[race] = group_count
-                    yield age_group, race
+                    column_values = []
+                    for check_index, _ in enumerate(self.sensitive_columns):
+                        if sensitive_columns_present[check_index]:
+                            column_value = row.input[sensitive_columns_index[check_index]]
+                        else:
+                            column_value = row.annotation[check_index]
+                        column_values.append(column_value)
+                        group_count = histogram_maps[check_index].get(column_value, 0)
+                        group_count += 1
+                        histogram_maps[check_index][column_value] = group_count
+                    yield column_values
         elif isinstance(inspection_input, InspectionInputDataSource):
-            age_group_index = inspection_input.output_columns.get_index_of_column("age_group")
-            age_group_present = "age_group" in inspection_input.output_columns.fields
-            race_index = inspection_input.output_columns.get_index_of_column("race")
-            race_present = "race" in inspection_input.output_columns.fields
+            sensitive_columns_present = []
+            sensitive_columns_index = []
+            for column in self.sensitive_columns:
+                column_present = column in inspection_input.output_columns.fields
+                sensitive_columns_present.append(column_present)
+                column_index = inspection_input.output_columns.get_index_of_column(column)
+                sensitive_columns_index.append(column_index)
             for row in inspection_input.row_iterator:
                 current_count += 1
-                if age_group_present:
-                    age_group = row.output[age_group_index]
-                    group_count = age_group_map.get(age_group, 0)
-                    group_count += 1
-                    age_group_map[age_group] = group_count
-                if race_present:
-                    race = row.output[race_index]
-                    group_count = race_count_map.get(race, 0)
-                    group_count += 1
-                    race_count_map[race] = group_count
-                yield None
+                column_values = []
+                for check_index, _ in enumerate(self.sensitive_columns):
+                    if sensitive_columns_present[check_index]:
+                        column_value = row.output[sensitive_columns_index[check_index]]
+                        column_values.append(column_value)
+                        group_count = histogram_maps[check_index].get(column_value, 0)
+                        group_count += 1
+                        histogram_maps[check_index][column_value] = group_count
+                    else:
+                        column_values.append(None)
+                yield column_values
         elif isinstance(inspection_input, InspectionInputNAryOperator):
-            age_group_index = inspection_input.output_columns.get_index_of_column("age_group")
-            age_group_present = "age_group" in inspection_input.output_columns.fields
-            race_index = inspection_input.output_columns.get_index_of_column("race")
-            race_present = "race" in inspection_input.output_columns.fields
+            sensitive_columns_present = []
+            sensitive_columns_index = []
+            for column in self.sensitive_columns:
+                column_present = column in inspection_input.output_columns.fields
+                sensitive_columns_present.append(column_present)
+                column_index = inspection_input.output_columns.get_index_of_column(column)
+                sensitive_columns_index.append(column_index)
             for row in inspection_input.row_iterator:
                 current_count += 1
-                if age_group_present:
-                    age_group = row.output[age_group_index]
-                else:
-                    age_group = row.annotation[0][0]
-                group_count = age_group_map.get(age_group, 0)
-                group_count += 1
-                age_group_map[age_group] = group_count
-                if race_present:
-                    race = row.output[race_index]
-                else:
-                    race = row.annotation[0][1]
-                group_count = race_count_map.get(race, 0)
-                group_count += 1
-                race_count_map[race] = group_count
-                yield age_group, race
+                column_values = []
+                for check_index, _ in enumerate(self.sensitive_columns):
+                    if sensitive_columns_present[check_index]:
+                        column_value = row.output[sensitive_columns_index[check_index]]
+                        column_values.append(column_value)
+                        group_count = histogram_maps[check_index].get(column_value, 0)
+                        group_count += 1
+                        histogram_maps[check_index][column_value] = group_count
+                    else:
+                        column_values.append(None)
+                yield column_values
         else:
             for _ in inspection_input.row_iterator:
                 yield None
 
-        self._histogram_op_output = {"age_group_counts": age_group_map, "race_counts": race_count_map}
+        self._histogram_op_output = {}
+        for check_index, column in enumerate(self.sensitive_columns):
+            self._histogram_op_output[column] = histogram_maps[check_index]
 
     def get_operator_annotation_after_visit(self) -> any:
         assert self._operator_type
