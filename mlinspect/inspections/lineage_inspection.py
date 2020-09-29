@@ -48,24 +48,27 @@ class LineageInspection(Inspection):
 
         self._operator_count = 0
         self._op_output = None
+        self._op_lineage = None
         self._output_columns = None
+        self._is_sink = False
 
     def visit_operator(self, inspection_input) -> Iterable[any]:
         """Visit an operator, generate row index number annotations and check whether they get propagated correctly"""
         # pylint: disable=too-many-branches
         operator_output = []
+        operator_lineage = []
         current_count = -1
 
-        self._output_columns = ["mlinspect_lineage"]
         if not isinstance(inspection_input, InspectionInputSinkOperator):
-            self._output_columns.extend(inspection_input.output_columns.fields)
+            self._output_columns = inspection_input.output_columns.fields
 
         if isinstance(inspection_input, InspectionInputDataSource):
             for row in inspection_input.row_iterator:
                 current_count += 1
                 annotation = LineageId(self._operator_count, current_count)
                 if current_count < self.row_count:
-                    operator_output.append([annotation, *row.output])
+                    operator_output.append(row.output)
+                    operator_lineage.append(annotation)
                 yield annotation
 
         elif isinstance(inspection_input, InspectionInputNAryOperator):
@@ -75,7 +78,8 @@ class LineageInspection(Inspection):
 
                     annotation = JoinLineageId(row.annotation)
                     if current_count < self.row_count:
-                        operator_output.append([annotation, *row.output])
+                        operator_output.append(row.output)
+                        operator_lineage.append(annotation)
                     yield annotation
             elif inspection_input.operator_context.operator == OperatorType.CONCATENATION:
                 for row in inspection_input.row_iterator:
@@ -83,7 +87,8 @@ class LineageInspection(Inspection):
 
                     annotation = ConcatLineageId(row.annotation)
                     if current_count < self.row_count:
-                        operator_output.append([annotation, *row.output])
+                        operator_output.append(row.output)
+                        operator_lineage.append(annotation)
                     yield annotation
             else:
                 assert False
@@ -93,24 +98,33 @@ class LineageInspection(Inspection):
                 annotation = row.annotation
 
                 if current_count < self.row_count:
-                    operator_output.append([annotation, *row.output])
+                    operator_output.append(row.output)
+                    operator_lineage.append(annotation)
                 yield annotation
         elif isinstance(inspection_input, InspectionInputSinkOperator):
+            self._is_sink = True
             for row in inspection_input.row_iterator:
                 current_count += 1
-                annotation = row.annotation
-                operator_output.append([annotation])
+                annotation = row.annotation[0]  # TODO: May want to also show lineage of target
+                operator_lineage.append(annotation)
                 yield annotation
         else:
             assert False
         self._operator_count += 1
         self._op_output = operator_output
+        self._op_lineage = operator_lineage
 
     def get_operator_annotation_after_visit(self) -> any:
-        assert self._op_output  # May only be called after the operator visit is finished
-        result = DataFrame(self._op_output, columns=self._output_columns)
+        assert self._op_lineage  # May only be called after the operator visit is finished
+        if not self._is_sink:
+            result = DataFrame(self._op_output, columns=self._output_columns)
+            result["mlinspect_lineage"] = self._op_lineage
+        else:
+            result = DataFrame(self._op_lineage, columns=["mlinspect_lineage"])
         self._op_output = None
+        self._op_lineage = None
         self._output_columns = None
+        self._is_sink = False
         return result
 
     @property
