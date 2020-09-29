@@ -8,7 +8,7 @@ from inspect import cleandoc
 from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
 import networkx
 
-from demo.healthcare.lineage_demo_inspection import LineageDemoInspection
+from mlinspect.inspections.lineage_inspection import LineageInspection
 
 from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
 from mlinspect.instrumentation.dag_node import DagNode, OperatorType, CodeReference
@@ -330,11 +330,11 @@ def run_row_index_annotation_testing_analyzer(code):
     """
     result = PipelineInspector \
         .on_pipeline_from_string(code) \
-        .add_inspection(LineageDemoInspection(10)) \
+        .add_inspection(LineageInspection(10)) \
         .execute()
     inspection_results = result.inspection_to_annotations
-    assert LineageDemoInspection(10) in inspection_results
-    result = inspection_results[LineageDemoInspection(10)]
+    assert LineageInspection(10) in inspection_results
+    result = inspection_results[LineageInspection(10)]
     return result
 
 
@@ -344,7 +344,7 @@ def run_multiple_test_analyzers(code):
    Also useful to debug annotation propagation.
    """
     analyzers = [RandomAnnotationTestingInspection(2), MaterializeFirstRowsInspection(5),
-                 LineageDemoInspection(2)]
+                 LineageInspection(2)]
     result = PipelineInspector \
         .on_pipeline_from_string(code) \
         .add_inspections(analyzers) \

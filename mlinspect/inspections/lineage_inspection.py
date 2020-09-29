@@ -37,7 +37,7 @@ class ConcatLineageId:
     lineage_ids: Tuple
 
 
-class LineageDemoInspection(Inspection):
+class LineageInspection(Inspection):
     """
     A simple inspection for testing annotation propagation
     """
