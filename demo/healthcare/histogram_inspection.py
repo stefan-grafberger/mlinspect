@@ -31,83 +31,43 @@ class HistogramInspection(Inspection):
         self._operator_type = inspection_input.operator_context.operator
 
         if isinstance(inspection_input, InspectionInputUnaryOperator):
-            age_group = [None, None]
-            if inspection_input.operator_context.function_info == ('sklearn.impute._base', 'fit_transform') and \
-                    "age_group" in inspection_input.input_columns.fields:
-                age_group_input_index = 0
-                age_group_output_index = inspection_input.input_columns.get_index_of_column("age_group")
-                age_group_input = 1
-                age_group_output = 0
-                age_group_annotation = 1
-            elif "age_group" in inspection_input.input_columns.fields:
-                age_group_input_index = inspection_input.input_columns.get_index_of_column("age_group")
-                age_group_output_index = 0
-                age_group_input = 0
-                age_group_output = 1
-                age_group_annotation = 1
-            else:
-                age_group_input_index = 0
-                age_group_output_index = 0
-                age_group_input = 1
-                age_group_output = 1
-                age_group_annotation = 0
-            race = [None, None]
-            if inspection_input.operator_context.function_info == ('sklearn.impute._base', 'fit_transform') and \
-                    "race" in inspection_input.input_columns.fields:
-                race_input_index = 0
-                race_output_index = inspection_input.input_columns.get_index_of_column("race")
-                race_input = 1
-                race_output = 0
-                race_annotation = 1
-            elif "race" in inspection_input.input_columns.fields:
-                race_input_index = inspection_input.input_columns.get_index_of_column("race")
-                race_output_index = 0
-                race_input = 0
-                race_output = 1
-                race_annotation = 1
-            else:
-                race_output_index = 0
-                race_input_index = 0
-                race_input = 1
-                race_output = 1
-                race_annotation = 0
-            if inspection_input.operator_context.operator != OperatorType.TRANSFORMER:
+            age_group_index = inspection_input.input_columns.get_index_of_column("age_group")
+            age_group_present = "age_group" in inspection_input.input_columns.fields
+            race_index = inspection_input.input_columns.get_index_of_column("race")
+            race_present = "race" in inspection_input.input_columns.fields
+            if inspection_input.operator_context.function_info == ('sklearn.impute._base', 'fit_transform'):
                 for row in inspection_input.row_iterator:
                     current_count += 1
-                    age_group[age_group_input] = row.input[age_group_input_index]
-                    age_group[age_group_annotation] = row.annotation[0]
-                    race[race_input] = row.input[race_input_index]
-                    race[race_annotation] = row.annotation[1]
-
-                    annotation = (age_group[0], race[0])
-                    self.update_histogram_map(age_group[0], age_group_map)
-                    self.update_histogram_map(race[0], race_count_map)
-                    yield annotation
+                    if age_group_present:
+                        age_group = row.output[age_group_index][0]
+                    else:
+                        age_group = row.annotation[0]
+                    self.update_histogram_map(age_group, age_group_map)
+                    if race_present:
+                        race = row.output[race_index][0]
+                    else:
+                        race = row.annotation[1]
+                    self.update_histogram_map(race, race_count_map)
+                    yield age_group, race
             else:
                 for row in inspection_input.row_iterator:
                     current_count += 1
-                    age_group[age_group_input] = row.input[age_group_input_index]
-                    age_group[age_group_output] = row.output[age_group_output_index][0]
-                    age_group[age_group_annotation] = row.annotation[0]
-                    race[race_input] = row.input[race_input_index]
-                    race[race_output] = row.output[race_output_index][0]
-                    race[race_annotation] = row.annotation[1]
-
-                    annotation = (age_group[0], race[0])
-                    self.update_histogram_map(age_group[0], age_group_map)
-                    self.update_histogram_map(race[0], race_count_map)
-                    yield annotation
+                    if age_group_present:
+                        age_group = row.input[age_group_index]
+                    else:
+                        age_group = row.annotation[0]
+                    self.update_histogram_map(age_group, age_group_map)
+                    if race_present:
+                        race = row.input[race_index]
+                    else:
+                        race = row.annotation[1]
+                    self.update_histogram_map(race, race_count_map)
+                    yield age_group, race
         elif isinstance(inspection_input, InspectionInputDataSource):
-            if "age_group" in inspection_input.output_columns.fields:
-                age_group_index = inspection_input.output_columns.get_index_of_column("age_group")
-                age_group_present = True
-            else:
-                age_group_present = False
-            if "race" in inspection_input.output_columns.fields:
-                race_index = inspection_input.output_columns.get_index_of_column("race")
-                race_present = True
-            else:
-                race_present = False
+            age_group_index = inspection_input.output_columns.get_index_of_column("age_group")
+            age_group_present = "age_group" in inspection_input.output_columns.fields
+            race_index = inspection_input.output_columns.get_index_of_column("race")
+            race_present = "race" in inspection_input.output_columns.fields
             for row in inspection_input.row_iterator:
                 current_count += 1
                 if age_group_present:
@@ -118,16 +78,10 @@ class HistogramInspection(Inspection):
                     self.update_histogram_map(race, race_count_map)
                 yield None
         elif isinstance(inspection_input, InspectionInputNAryOperator):
-            if "age_group" in inspection_input.output_columns.fields:
-                age_group_index = inspection_input.output_columns.get_index_of_column("age_group")
-                age_group_present = True
-            else:
-                age_group_present = False
-            if "race" in inspection_input.output_columns.fields:
-                race_index = inspection_input.output_columns.get_index_of_column("race")
-                race_present = True
-            else:
-                race_present = False
+            age_group_index = inspection_input.output_columns.get_index_of_column("age_group")
+            age_group_present = "age_group" in inspection_input.output_columns.fields
+            race_index = inspection_input.output_columns.get_index_of_column("race")
+            race_present = "race" in inspection_input.output_columns.fields
             for row in inspection_input.row_iterator:
                 current_count += 1
                 if age_group_present:
