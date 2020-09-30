@@ -42,7 +42,7 @@ IPYNB_PATH = ...
 
 inspection_result = PipelineInspector \
         .on_pipeline_from_ipynb_file(IPYNB_PATH) \
-        .add_inspection(MaterializeFirstRowsInspection(2)) \
+        .add_required_inspection(MaterializeFirstRowsInspection(2)) \
         .execute()
 
 extracted_dag = inspection_result.dag

@@ -23,7 +23,7 @@ def test_materialize_first_rows_inspection():
     """
     inspector_result = PipelineInspector \
         .on_pipeline_from_py_file(FILE_PY) \
-        .add_inspection(MaterializeFirstRowsInspection(2)) \
+        .add_required_inspection(MaterializeFirstRowsInspection(2)) \
         .execute()
     inspection_result = inspector_result.inspection_to_annotations
     assert MaterializeFirstRowsInspection(2) in inspection_result

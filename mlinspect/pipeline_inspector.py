@@ -4,6 +4,7 @@ User-facing API for inspecting the pipeline
 from typing import Iterable
 
 from mlinspect.inspections.inspection import Inspection
+from .checks.check import Check
 from .instrumentation.inspection_result import InspectionResult
 from .instrumentation.pipeline_executor import singleton
 
@@ -21,19 +22,34 @@ class PipelineInspectorBuilder:
         self.python_path = python_path
         self.python_code = python_code
         self.inspections = []
+        self.checks = []
 
-    def add_inspection(self, inspection: Inspection):
+    def add_required_inspection(self, inspection: Inspection):
         """
         Add an analyzer
         """
         self.inspections.append(inspection)
         return self
 
-    def add_inspections(self, inspections: Iterable[Inspection]):
+    def add_required_inspections(self, inspections: Iterable[Inspection]):
         """
         Add a list of inspections
         """
         self.inspections.extend(inspections)
+        return self
+
+    def add_check(self, check: Check):
+        """
+        Add an analyzer
+        """
+        self.checks.append(check)
+        return self
+
+    def add_checks(self, checks: Iterable[Check]):
+        """
+        Add a list of inspections
+        """
+        self.inspections.extend(checks)
         return self
 
     def execute(self) -> InspectionResult:

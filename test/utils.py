@@ -359,7 +359,7 @@ def run_random_annotation_testing_analyzer(code):
     """
     result = PipelineInspector \
         .on_pipeline_from_string(code) \
-        .add_inspection(RandomAnnotationTestingInspection(10)) \
+        .add_required_inspection(RandomAnnotationTestingInspection(10)) \
         .execute()
     inspection_results = result.inspection_to_annotations
     assert RandomAnnotationTestingInspection(10) in inspection_results
@@ -373,7 +373,7 @@ def run_row_index_annotation_testing_analyzer(code):
     """
     result = PipelineInspector \
         .on_pipeline_from_string(code) \
-        .add_inspection(LineageInspection(10)) \
+        .add_required_inspection(LineageInspection(10)) \
         .execute()
     inspection_results = result.inspection_to_annotations
     assert LineageInspection(10) in inspection_results
@@ -390,7 +390,7 @@ def run_multiple_test_analyzers(code):
                  LineageInspection(2)]
     result = PipelineInspector \
         .on_pipeline_from_string(code) \
-        .add_inspections(analyzers) \
+        .add_required_inspections(analyzers) \
         .execute()
     inspection_results = result.inspection_to_annotations
     return inspection_results, analyzers

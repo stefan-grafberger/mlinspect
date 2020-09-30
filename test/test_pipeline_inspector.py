@@ -21,7 +21,7 @@ def test_inspector_adult_easy_py_pipeline():
     """
     inspection_result = PipelineInspector\
         .on_pipeline_from_py_file(ADULT_EASY_FILE_PY)\
-        .add_inspection(MaterializeFirstRowsInspection(5))\
+        .add_required_inspection(MaterializeFirstRowsInspection(5))\
         .execute()
     extracted_dag = inspection_result.dag
     expected_dag = get_expected_dag_adult_easy_py()
@@ -34,7 +34,7 @@ def test_inspector_adult_easy_ipynb_pipeline():
     """
     inspection_result = PipelineInspector\
         .on_pipeline_from_ipynb_file(FILE_NB)\
-        .add_inspection(MaterializeFirstRowsInspection(5))\
+        .add_required_inspection(MaterializeFirstRowsInspection(5))\
         .execute()
     extracted_dag = inspection_result.dag
     expected_dag = get_expected_dag_adult_easy_ipynb()
@@ -50,7 +50,7 @@ def test_inspector_adult_easy_str_pipeline():
 
         inspection_result = PipelineInspector\
             .on_pipeline_from_string(code)\
-            .add_inspection(MaterializeFirstRowsInspection(5))\
+            .add_required_inspection(MaterializeFirstRowsInspection(5))\
             .execute()
         extracted_dag = inspection_result.dag
         expected_dag = get_expected_dag_adult_easy_py()
