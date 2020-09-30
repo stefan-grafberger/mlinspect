@@ -145,7 +145,8 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                                                                result[:, index_start:index_end],
                                                                self.inspections,
                                                                self.code_ref_inspection_output_map,
-                                                               description)
+                                                               description,
+                                                               [column_name])
             annotations_for_columns = self.annotation_result_concat_workaround or []
             annotations_for_columns.append((column_name, column_result.annotations))
             self.annotation_result_concat_workaround = annotations_for_columns
@@ -203,7 +204,8 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             description = "to ['{}'] (ColumnTransformer)".format(column)
             local_result = execute_inspection_visits_unary_op(operator_context, self.code_reference, X,
                                                               X.annotations, projected_df, self.inspections,
-                                                              self.code_ref_inspection_output_map, description)
+                                                              self.code_ref_inspection_output_map, description,
+                                                              [column])
 
             # If the transformer is a column transformer, we have multiple annotations we need to pass to different
             # transformers.  If we do not want to override internal column transformer functions, we have to work around
@@ -274,12 +276,17 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         function_info = (self.module_name, "fit")
         operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
         X_annotated = execute_inspection_visits_unary_op(operator_context, self.code_reference, X, X.annotations, X,
-                                                         self.inspections, self.code_ref_inspection_output_map, "fit X")
+                                                         self.inspections, self.code_ref_inspection_output_map, "fit X",
+                                                         list(X.columns.values))
         assert y is not None
         operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
+        if isinstance(y, MlinspectSeries):
+            columns = [y.name]
+        else:
+            columns = ["array"]
         y_annotated = execute_inspection_visits_unary_op(operator_context, self.code_reference, y,
                                                          y.annotations, y, self.inspections,
-                                                         self.code_ref_inspection_output_map, "fit y")
+                                                         self.code_ref_inspection_output_map, "fit y", columns)
         return X_annotated, y_annotated
 
     def score(self, X, y):
@@ -305,7 +312,7 @@ def execute_inspection_visits_nary_op(operator_context, code_reference, transfor
                                                                      operator_context)
     annotation_iterators = execute_visits(inspections, iterators_for_inspections)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
-                                            code_ref_inspection_output_map, func_name, False)
+                                            code_ref_inspection_output_map, func_name, False, ["array"])
     return return_value
 
 
@@ -319,11 +326,11 @@ def execute_inspection_visits_sink_op(operator_context, code_reference, data, ta
     iterators_for_inspections = iter_input_annotation_output_sink_op(inspection_count, data, target, operator_context)
     annotation_iterators = execute_visits(inspections, iterators_for_inspections)
     store_inspection_outputs(annotation_iterators, code_reference, None, inspections,
-                             code_reference_inspection_output_map, func_name, True)
+                             code_reference_inspection_output_map, func_name, True, None)
 
 
 def execute_inspection_visits_unary_op(operator_context, code_reference, input_data, input_annotations, output_data,
-                                       inspections, code_reference_inspection_output_map, func_name):
+                                       inspections, code_reference_inspection_output_map, func_name, columns):
     """Execute inspections"""
     # pylint: disable=too-many-arguments
     inspection_count = len(inspections)
@@ -331,10 +338,11 @@ def execute_inspection_visits_unary_op(operator_context, code_reference, input_d
                                                                  input_data,
                                                                  input_annotations,
                                                                  output_data,
-                                                                 operator_context)
+                                                                 operator_context,
+                                                                 columns)
     annotation_iterators = execute_visits(inspections, iterators_for_inspections)
     return_value = store_inspection_outputs(annotation_iterators, code_reference, output_data, inspections,
-                                            code_reference_inspection_output_map, func_name, False)
+                                            code_reference_inspection_output_map, func_name, False, columns)
     return return_value
 
 
@@ -356,7 +364,7 @@ def execute_visits(inspections, iterators_for_inspections):
 # -------------------------------------------------------
 
 def store_inspection_outputs(annotation_iterators, code_reference, return_value, inspections,
-                             code_reference_inspection_output_map, func_name, is_sink):
+                             code_reference_inspection_output_map, func_name, is_sink, columns):
     """
     Stores the inspection annotations for the rows in the dataframe and the
     inspection annotations for the DAG operators in a map
@@ -368,11 +376,12 @@ def store_inspection_outputs(annotation_iterators, code_reference, return_value,
         inspection_outputs[inspection] = inspection.get_operator_annotation_after_visit()
 
     stored_inspection_results = code_reference_inspection_output_map.get(code_reference, {})
-    stored_inspection_results[func_name] = inspection_outputs
+    stored_inspection_results[func_name] = (inspection_outputs, columns)
     code_reference_inspection_output_map[code_reference] = stored_inspection_results
 
     if is_sink:
         new_return_value = None
     else:
         new_return_value = create_wrapper_with_annotations(annotations_ndarray, return_value)
+
     return new_return_value

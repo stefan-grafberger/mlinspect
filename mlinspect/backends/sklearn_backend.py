@@ -54,11 +54,15 @@ class SklearnBackend(Backend):
         Preprocess scikit-learn pipeline operations to hide the special pipeline
         declaration style from other parts of the library
         """
-        new_dag_node_identifier_to_inspection_output = SklearnDagPostprocessor() \
+        post_processor_result = SklearnDagPostprocessor() \
             .postprocess_dag(dag, self.wir_post_processing_map)
+        new_dag_node_identifier_to_inspection_output = post_processor_result[0]
+        new_dag_node_identifier_to_columns = post_processor_result[1]
 
         self.dag_node_identifier_to_inspection_output = {**self.dag_node_identifier_to_inspection_output,
                                                          **new_dag_node_identifier_to_inspection_output}
+        self.dag_node_identifier_to_columns = {**self.dag_node_identifier_to_columns,
+                                               **new_dag_node_identifier_to_columns}
         return dag
 
     def __init__(self):

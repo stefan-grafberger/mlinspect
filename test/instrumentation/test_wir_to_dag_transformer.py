@@ -4,12 +4,13 @@ Tests whether the DAG extraction works
 import networkx
 from testfixtures import compare
 
-from mlinspect.instrumentation.dag_node import CodeReference
 from mlinspect.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
-from mlinspect.instrumentation.wir_to_dag_transformer import WirToDagTransformer
-from mlinspect.instrumentation.wir_node import WirNode
+from mlinspect.instrumentation.dag_node import CodeReference
 from mlinspect.instrumentation.wir_extractor import WirExtractor
-from ..utils import get_expected_dag_adult_easy_py, get_module_info, get_adult_easy_py_ast, get_test_wir
+from mlinspect.instrumentation.wir_node import WirNode
+from mlinspect.instrumentation.wir_to_dag_transformer import WirToDagTransformer
+from ..utils import get_module_info, get_adult_easy_py_ast, get_test_wir, \
+    get_expected_dag_adult_easy_py_without_columns
 
 
 def test_remove_all_nodes_but_calls_and_subscripts():
@@ -40,7 +41,7 @@ def test_remove_all_non_operators_and_update_names():
 
     assert len(dag) == 17
 
-    expected_graph = get_expected_dag_adult_easy_py()
+    expected_graph = get_expected_dag_adult_easy_py_without_columns()
 
     assert networkx.to_dict_of_dicts(cleaned_wir) == networkx.to_dict_of_dicts(expected_graph)
 

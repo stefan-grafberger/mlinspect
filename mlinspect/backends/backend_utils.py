@@ -45,7 +45,7 @@ def build_annotation_list_from_iters(annotation_iterators):
     return list(annotation_lists)
 
 
-def get_iterator_for_type(data, np_nditer_with_refs=False):
+def get_iterator_for_type(data, np_nditer_with_refs=False, columns=None):
     """
     Create an efficient iterator for the data.
     Automatically detects the data type and fails if it cannot handle that data type.
@@ -55,13 +55,13 @@ def get_iterator_for_type(data, np_nditer_with_refs=False):
     elif isinstance(data, numpy.ndarray):
         # TODO: Measure performance impact of np_nditer_with_refs. To support arbitrary pipelines, remove this
         #  or check the type of the standard iterator. It seems the nditer variant is faster but does not always work
-        iterator = get_numpy_array_row_iterator(data, np_nditer_with_refs)
+        iterator = get_numpy_array_row_iterator(data, np_nditer_with_refs, columns)
     elif isinstance(data, Series):
-        iterator = get_series_row_iterator(data)
+        iterator = get_series_row_iterator(data, columns)
     elif isinstance(data, csr_matrix):
-        iterator = get_csr_row_iterator(data)
+        iterator = get_csr_row_iterator(data, columns)
     elif isinstance(data, list):
-        iterator = get_list_row_iterator(data)
+        iterator = get_list_row_iterator(data, columns)
     else:
         assert False
     return iterator
@@ -120,23 +120,29 @@ def get_df_row_iterator(dataframe):
     return column_info, map(tuple, zip(*arrays))
 
 
-def get_series_row_iterator(series):
+def get_series_row_iterator(series, columns=None):
     """
     Create an efficient iterator for the data frame rows.
     The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
     """
-    column_info = ColumnInfo(["array"])
+    if columns:
+        column_info = ColumnInfo(columns)
+    else:
+        column_info = ColumnInfo(["array"])
     numpy_iterator = series.__iter__()
 
     return column_info, map(tuple, zip(numpy_iterator))
 
 
-def get_numpy_array_row_iterator(nparray, nditer=False):
+def get_numpy_array_row_iterator(nparray, nditer=False, columns=None):
     """
     Create an efficient iterator for the data frame rows.
     The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
     """
-    column_info = ColumnInfo(["array"])
+    if columns:
+        column_info = ColumnInfo(columns)
+    else:
+        column_info = ColumnInfo(["array"])
     if nditer is True:
         numpy_iterator = numpy.nditer(nparray, ["refs_ok"])
     else:
@@ -145,18 +151,21 @@ def get_numpy_array_row_iterator(nparray, nditer=False):
     return column_info, map(tuple, zip(numpy_iterator))
 
 
-def get_list_row_iterator(list_data):
+def get_list_row_iterator(list_data, columns=None):
     """
     Create an efficient iterator for the data frame rows.
     The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
     """
-    column_info = ColumnInfo(["array"])
+    if columns:
+        column_info = ColumnInfo(columns)
+    else:
+        column_info = ColumnInfo(["array"])
     numpy_iterator = list_data.__iter__()
 
     return column_info, map(tuple, zip(numpy_iterator))
 
 
-def get_csr_row_iterator(csr):
+def get_csr_row_iterator(csr, columns=None):
     """
     Create an efficient iterator for csr rows.
     The implementation is inspired by the implementation of the pandas DataFrame.itertuple method
@@ -164,7 +173,10 @@ def get_csr_row_iterator(csr):
     # TODO: Maybe there is a way to use sparse rows that is faster
     #  However, this is the fastest way I discovered so far
     np_array = csr.toarray()
-    column_info = ColumnInfo(["array"])
+    if columns:
+        column_info = ColumnInfo(columns)
+    else:
+        column_info = ColumnInfo(["array"])
     numpy_iterator = np_array.__iter__()
 
     return column_info, map(tuple, zip(numpy_iterator))

@@ -27,14 +27,15 @@ def iter_input_data_source(inspection_count, output, operator_context):
     return inspection_iterators
 
 
-def iter_input_annotation_output_map(inspection_count, input_data, input_annotations, output, operator_context):
+def iter_input_annotation_output_map(inspection_count, input_data, input_annotations, output, operator_context,
+                                     columns=None):
     """
     Create an efficient iterator for the inspection input for operators with one parent that do not
     change the row order.
     """
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals, too-many-arguments
     input_columns, input_rows = get_iterator_for_type(input_data, True)
-    output_columns, output_rows = get_iterator_for_type(output, False)
+    output_columns, output_rows = get_iterator_for_type(output, False, columns)
     duplicated_input_iterators = itertools.tee(input_rows, inspection_count)
     duplicated_output_iterators = itertools.tee(output_rows, inspection_count)
 
