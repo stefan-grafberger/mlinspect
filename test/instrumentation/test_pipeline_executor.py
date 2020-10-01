@@ -29,7 +29,7 @@ def test_pipeline_executor_py_file(mocker):
     before_call_used_kwargs_spy = mocker.spy(pipeline_executor, 'before_call_used_kwargs')
     after_call_used_spy = mocker.spy(pipeline_executor, 'after_call_used')
 
-    extracted_dag = pipeline_executor.singleton.run(None, FILE_PY, None, []).dag
+    extracted_dag = pipeline_executor.singleton.run(None, FILE_PY, None, [], []).dag
     expected_dag = get_expected_dag_adult_easy_py_without_columns()
     assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
 
@@ -50,7 +50,7 @@ def test_pipeline_executor_nb_file(mocker):
     before_call_used_kwargs_spy = mocker.spy(pipeline_executor, 'before_call_used_kwargs')
     after_call_used_spy = mocker.spy(pipeline_executor, 'after_call_used')
 
-    extracted_dag = pipeline_executor.singleton.run(FILE_NB, None, None, []).dag
+    extracted_dag = pipeline_executor.singleton.run(FILE_NB, None, None, [], []).dag
     expected_dag = get_expected_dag_adult_easy_ipynb_without_columns()
     compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
 
@@ -67,7 +67,7 @@ def test_pipeline_executor_function_call_info_extraction():
     test_code = get_pandas_read_csv_and_dropna_code()
 
     pipeline_executor.singleton = pipeline_executor.PipelineExecutor()
-    pipeline_executor.singleton.run(None, None, test_code, [])
+    pipeline_executor.singleton.run(None, None, test_code, [], [])
     expected_module_info = {CodeReference(6, 11, 6, 34): ('pandas.io.parsers', 'read_csv'),
                             CodeReference(7, 7, 7, 24): ('pandas.core.frame', 'dropna'),
                             CodeReference(8, 16, 8, 55): ('pandas.core.frame', '__getitem__')}
@@ -93,7 +93,7 @@ def test_pipeline_executor_function_subscript_index_info_extraction():
             """)
 
     pipeline_executor.singleton = pipeline_executor.PipelineExecutor()
-    pipeline_executor.singleton.run(None, None, test_code, [])
+    pipeline_executor.singleton.run(None, None, test_code, [], [])
     expected_module_info = {CodeReference(6, 11, 6, 62): ('pandas.io.parsers', 'read_csv'),
                             CodeReference(7, 7, 7, 24): ('pandas.core.frame', 'dropna'),
                             CodeReference(8, 0, 8, 23): ('pandas.core.frame', '__getitem__')}

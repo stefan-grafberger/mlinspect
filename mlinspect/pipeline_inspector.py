@@ -5,7 +5,7 @@ from typing import Iterable
 
 from mlinspect.inspections.inspection import Inspection
 from .checks.check import Check
-from .instrumentation.inspection_result import InspectionResult
+from .inspector_result import InspectorResult
 from .instrumentation.pipeline_executor import singleton
 
 
@@ -52,11 +52,11 @@ class PipelineInspectorBuilder:
         self.inspections.extend(checks)
         return self
 
-    def execute(self) -> InspectionResult:
+    def execute(self) -> InspectorResult:
         """
         Instrument and execute the pipeline
         """
-        return singleton.run(self.notebook_path, self.python_path, self.python_code, self.inspections)
+        return singleton.run(self.notebook_path, self.python_path, self.python_code, self.inspections, self.checks)
 
 
 class PipelineInspector:

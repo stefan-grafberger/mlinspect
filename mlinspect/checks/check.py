@@ -5,7 +5,8 @@ import dataclasses
 from enum import Enum
 from typing import List
 
-from mlinspect.checks.constraint import ConstraintResult
+from mlinspect.checks.constraint import ConstraintResult, ConstraintStatus
+from mlinspect.instrumentation.inspection_result import InspectionResult
 
 
 class CheckLevel(Enum):
@@ -59,3 +60,22 @@ class CheckResult:
     check: Check
     status: CheckStatus
     constraint_results: List[ConstraintResult]
+
+
+def evaluate_check(check: Check, inspection_result: InspectionResult) -> CheckResult:
+    """
+    Evaluate a check by evaluating all of the associated constraints
+    """
+    status = CheckStatus.SUCCESS
+    constraint_results = []
+    for constraint in check.constraints:
+        constraint_result = constraint.evaluate(inspection_result)
+        constraint_results.append(constraint_result)
+        if constraint_result.status == ConstraintStatus.FAILURE:
+            if check.level == CheckLevel.WARNING:
+                status = CheckStatus.WARNING
+            elif check.level == CheckLevel.ERROR:
+                status = CheckStatus.ERROR
+            else:
+                assert False
+    return CheckResult(check, status, constraint_results)
