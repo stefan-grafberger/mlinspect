@@ -13,7 +13,7 @@ from mlinspect.instrumentation.inspection_result import InspectionResult
 
 class NoBiasIntroducedForConstraint(Constraint):
     """
-    Constraints like no_bias_introduced
+    Does the user pipeline introduce bias because of operators like joins and selects?
     """
     # pylint: disable=unnecessary-pass, too-few-public-methods
 
@@ -22,10 +22,10 @@ class NoBiasIntroducedForConstraint(Constraint):
 
     @property
     def required_inspection(self) -> Iterable[Inspection]:
-        """The id of the inspection"""
+        """The id of the constraint"""
         return [HistogramInspection(self.sensitive_columns)]
 
     def evaluate(self, inspection_result: InspectionResult) -> ConstraintResult:
-        """The id of the inspection"""
+        """Evaluate the constraint"""
         # TODO
         return ConstraintResult(self, ConstraintStatus.SUCCESS)

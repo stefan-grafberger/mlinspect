@@ -37,29 +37,29 @@ class Constraint(metaclass=abc.ABCMeta):
 
     @property
     def constraint_id(self):
-        """The id of the inspection"""
+        """The id of the Constraints"""
         return None
 
     @property
     @abc.abstractmethod
     def required_inspection(self) -> Iterable[Inspection]:
-        """The id of the inspection"""
+        """Inspections required to evaluate this constraint"""
         raise NotImplementedError
 
     @abc.abstractmethod
     def evaluate(self, inspection_result: InspectionResult) -> ConstraintResult:
-        """The id of the inspection"""
+        """Evaluate the constraint"""
         raise NotImplementedError
 
     def __eq__(self, other):
-        """Inspections must implement equals"""
+        """Constraints must implement equals"""
         return (isinstance(other, self.__class__) and
                 self.constraint_id == other.constraint_id)
 
     def __hash__(self):
-        """Inspections must be hashable"""
+        """Constraints must be hashable"""
         return hash((self.__class__.__name__, self.constraint_id))
 
     def __repr__(self):
-        """Inspections must have a str representation"""
+        """Constraints must have a str representation"""
         return "{}({})".format(self.__class__.__name__, self.constraint_id)

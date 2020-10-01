@@ -5,7 +5,7 @@ import dataclasses
 from enum import Enum
 from typing import List
 
-from mlinspect.checks.constraint import ConstraintResult, ConstraintStatus
+from mlinspect.checks.constraint import ConstraintResult, ConstraintStatus, Constraint
 from mlinspect.checks.no_bias_introduced_for_constraint import NoBiasIntroducedForConstraint
 from mlinspect.checks.no_illegal_features_constraint import NoIllegalFeaturesConstraint
 from mlinspect.instrumentation.inspection_result import InspectionResult
@@ -28,14 +28,14 @@ class CheckStatus(Enum):
     ERROR = "Error"
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(eq=True, frozen=True)
 class Check:
     """
-    Additional context for the inspection. Contains, most importantly, the operator type.
+    A check
     """
     level = CheckLevel.ERROR
     description = ""
-    constraints = []  # List[Constraint]
+    constraints: List[Constraint] = dataclasses.field(default_factory=list)
 
     def no_illegal_features(self, additional_illegal_feature_names=None):
         """
@@ -52,6 +52,10 @@ class Check:
         no_bias_introduced_constraint = NoBiasIntroducedForConstraint(column_names)
         self.constraints.append(no_bias_introduced_constraint)
         return self
+
+    def __hash__(self):
+        """Checks need to be hashable"""
+        return hash((self.level, self.description, tuple(self.constraints)))
 
 
 @dataclasses.dataclass

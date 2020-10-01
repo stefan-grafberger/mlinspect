@@ -16,6 +16,10 @@ from .utils import get_expected_dag_adult_easy_ipynb, get_expected_dag_adult_eas
 ADULT_EASY_FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 FILE_NB = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.ipynb")
 
+check = Check()\
+        .no_bias_introduced_for(['race'])\
+        .no_illegal_features()
+
 
 def test_inspector_adult_easy_py_pipeline():
     """
@@ -24,14 +28,16 @@ def test_inspector_adult_easy_py_pipeline():
     inspector_result = PipelineInspector\
         .on_pipeline_from_py_file(ADULT_EASY_FILE_PY)\
         .add_required_inspection(MaterializeFirstRowsInspection(5))\
-        .add_check(Check().no_bias_introduced_for(['race']))\
+        .add_check(check)\
         .execute()
     extracted_dag = inspector_result.dag
     expected_dag = get_expected_dag_adult_easy_py()
     compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
+
     assert HistogramInspection(['race']) in inspector_result.inspection_to_annotations
-    check_result = inspector_result.check_to_check_results[Check().no_bias_introduced_for(['race'])]
-    assert check_result.status == CheckStatus.SUCCESS
+    assert check in inspector_result.check_to_check_results
+    check_result = inspector_result.check_to_check_results[check]
+    assert check_result.status == CheckStatus.ERROR
 
 
 def test_inspector_adult_easy_ipynb_pipeline():
@@ -41,14 +47,16 @@ def test_inspector_adult_easy_ipynb_pipeline():
     inspector_result = PipelineInspector\
         .on_pipeline_from_ipynb_file(FILE_NB)\
         .add_required_inspection(MaterializeFirstRowsInspection(5)) \
-        .add_check(Check().no_bias_introduced_for(['race'])) \
+        .add_check(check) \
         .execute()
     extracted_dag = inspector_result.dag
     expected_dag = get_expected_dag_adult_easy_ipynb()
     compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
+
     assert HistogramInspection(['race']) in inspector_result.inspection_to_annotations
-    check_result = inspector_result.check_to_check_results[Check().no_bias_introduced_for(['race'])]
-    assert check_result.status == CheckStatus.SUCCESS
+    assert check in inspector_result.check_to_check_results
+    check_result = inspector_result.check_to_check_results[check]
+    assert check_result.status == CheckStatus.ERROR
 
 
 def test_inspector_adult_easy_str_pipeline():
@@ -61,11 +69,13 @@ def test_inspector_adult_easy_str_pipeline():
         inspector_result = PipelineInspector\
             .on_pipeline_from_string(code)\
             .add_required_inspection(MaterializeFirstRowsInspection(5)) \
-            .add_check(Check().no_bias_introduced_for(['race'])) \
+            .add_check(check) \
             .execute()
         extracted_dag = inspector_result.dag
         expected_dag = get_expected_dag_adult_easy_py()
-        assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
+        compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
+
         assert HistogramInspection(['race']) in inspector_result.inspection_to_annotations
-        check_result = inspector_result.check_to_check_results[Check().no_bias_introduced_for(['race'])]
-        assert check_result.status == CheckStatus.SUCCESS
+        assert check in inspector_result.check_to_check_results
+        check_result = inspector_result.check_to_check_results[check]
+        assert check_result.status == CheckStatus.ERROR
