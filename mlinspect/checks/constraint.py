@@ -9,6 +9,7 @@ from enum import Enum
 from typing import Iterable
 
 from mlinspect.inspections.inspection import Inspection
+from mlinspect.instrumentation.inspection_result import InspectionResult
 
 
 class ConstraintStatus(Enum):
@@ -20,7 +21,7 @@ class ConstraintStatus(Enum):
 
 
 @dataclasses.dataclass
-class ConstraintResult(Enum):
+class ConstraintResult:
     """
     Does this check cause an error or a warning if it fails?
     """
@@ -46,7 +47,7 @@ class Constraint(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def evaluate(self, inspection_result) -> ConstraintResult:
+    def evaluate(self, inspection_result: InspectionResult) -> ConstraintResult:
         """The id of the inspection"""
         raise NotImplementedError
 

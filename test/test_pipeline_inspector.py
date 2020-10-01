@@ -6,6 +6,8 @@ import os
 import networkx
 from testfixtures import compare
 
+from mlinspect.checks.check import Check, CheckStatus
+from mlinspect.inspections.histogram_inspection import HistogramInspection
 from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
 from mlinspect.utils import get_project_root
 from mlinspect.pipeline_inspector import PipelineInspector
@@ -19,26 +21,34 @@ def test_inspector_adult_easy_py_pipeline():
     """
     Tests whether the .py version of the inspector works
     """
-    inspection_result = PipelineInspector\
+    inspector_result = PipelineInspector\
         .on_pipeline_from_py_file(ADULT_EASY_FILE_PY)\
         .add_required_inspection(MaterializeFirstRowsInspection(5))\
+        .add_check(Check().no_bias_introduced_for(['race']))\
         .execute()
-    extracted_dag = inspection_result.dag
+    extracted_dag = inspector_result.dag
     expected_dag = get_expected_dag_adult_easy_py()
     compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
+    assert HistogramInspection(['race']) in inspector_result.inspection_to_annotations
+    check_result = inspector_result.check_to_check_results[Check().no_bias_introduced_for(['race'])]
+    assert check_result.status == CheckStatus.SUCCESS
 
 
 def test_inspector_adult_easy_ipynb_pipeline():
     """
     Tests whether the .ipynb version of the inspector works
     """
-    inspection_result = PipelineInspector\
+    inspector_result = PipelineInspector\
         .on_pipeline_from_ipynb_file(FILE_NB)\
-        .add_required_inspection(MaterializeFirstRowsInspection(5))\
+        .add_required_inspection(MaterializeFirstRowsInspection(5)) \
+        .add_check(Check().no_bias_introduced_for(['race'])) \
         .execute()
-    extracted_dag = inspection_result.dag
+    extracted_dag = inspector_result.dag
     expected_dag = get_expected_dag_adult_easy_ipynb()
     compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
+    assert HistogramInspection(['race']) in inspector_result.inspection_to_annotations
+    check_result = inspector_result.check_to_check_results[Check().no_bias_introduced_for(['race'])]
+    assert check_result.status == CheckStatus.SUCCESS
 
 
 def test_inspector_adult_easy_str_pipeline():
@@ -48,10 +58,14 @@ def test_inspector_adult_easy_str_pipeline():
     with open(ADULT_EASY_FILE_PY) as file:
         code = file.read()
 
-        inspection_result = PipelineInspector\
+        inspector_result = PipelineInspector\
             .on_pipeline_from_string(code)\
-            .add_required_inspection(MaterializeFirstRowsInspection(5))\
+            .add_required_inspection(MaterializeFirstRowsInspection(5)) \
+            .add_check(Check().no_bias_introduced_for(['race'])) \
             .execute()
-        extracted_dag = inspection_result.dag
+        extracted_dag = inspector_result.dag
         expected_dag = get_expected_dag_adult_easy_py()
         assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
+        assert HistogramInspection(['race']) in inspector_result.inspection_to_annotations
+        check_result = inspector_result.check_to_check_results[Check().no_bias_introduced_for(['race'])]
+        assert check_result.status == CheckStatus.SUCCESS

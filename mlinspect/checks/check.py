@@ -6,6 +6,8 @@ from enum import Enum
 from typing import List
 
 from mlinspect.checks.constraint import ConstraintResult, ConstraintStatus
+from mlinspect.checks.no_bias_introduced_for_constraint import NoBiasIntroducedForConstraint
+from mlinspect.checks.no_illegal_features_constraint import NoIllegalFeaturesConstraint
 from mlinspect.instrumentation.inspection_result import InspectionResult
 
 
@@ -26,7 +28,7 @@ class CheckStatus(Enum):
     ERROR = "Error"
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Check:
     """
     Additional context for the inspection. Contains, most importantly, the operator type.
@@ -39,7 +41,7 @@ class Check:
         """
         Ensure no potentially problematic features like 'race' or 'age' are used directly as feature
         """
-        no_illegal_feature_constraint = "TODO {}".format(additional_illegal_feature_names)  # FIXME
+        no_illegal_feature_constraint = NoIllegalFeaturesConstraint(additional_illegal_feature_names)
         self.constraints.append(no_illegal_feature_constraint)
         return self
 
@@ -47,7 +49,7 @@ class Check:
         """
         Ensure no bias is introduced by operators like joins
         """
-        no_bias_introduced_constraint = "TODO {}".format(column_names)  # FIXME
+        no_bias_introduced_constraint = NoBiasIntroducedForConstraint(column_names)
         self.constraints.append(no_bias_introduced_constraint)
         return self
 
