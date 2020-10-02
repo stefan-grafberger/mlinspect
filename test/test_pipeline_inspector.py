@@ -40,6 +40,18 @@ def test_inspector_adult_easy_py_pipeline():
     assert check_result.status == CheckStatus.ERROR
 
 
+def test_inspector_adult_easy_py_pipeline_without_inspections():
+    """
+    Tests whether the .py version of the inspector works
+    """
+    inspector_result = PipelineInspector\
+        .on_pipeline_from_py_file(ADULT_EASY_FILE_PY)\
+        .execute()
+    extracted_dag = inspector_result.dag
+    expected_dag = get_expected_dag_adult_easy_py()
+    compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
+
+
 def test_inspector_adult_easy_ipynb_pipeline():
     """
     Tests whether the .ipynb version of the inspector works

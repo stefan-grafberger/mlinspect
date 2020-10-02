@@ -94,15 +94,19 @@ class PipelineExecutor:
                                                         **backend.dag_node_identifier_to_inspection_output}
             dag_node_identifier_to_columns = {**dag_node_identifier_to_columns,
                                               **backend.dag_node_identifier_to_columns}
+        for dag_node_identifier, inspection_output_map in dag_node_identifier_to_columns.items():
+            dag_node = dag_node_identifiers_to_dag_nodes[dag_node_identifier]
+            dag_node_columns = dag_node_identifier_to_columns[dag_node_identifier]
+            dag_node.columns = dag_node_columns
+
         inspection_to_dag_node_to_annotation = {}
         for dag_node_identifier, inspection_output_map in dag_node_identifier_to_inspection_output.items():
             for inspection, annotation in inspection_output_map.items():
                 dag_node_to_annotation = inspection_to_dag_node_to_annotation.get(inspection, {})
                 dag_node = dag_node_identifiers_to_dag_nodes[dag_node_identifier]
-                dag_node_columns = dag_node_identifier_to_columns[dag_node_identifier]
-                dag_node.columns = dag_node_columns
                 dag_node_to_annotation[dag_node] = annotation
                 inspection_to_dag_node_to_annotation[inspection] = dag_node_to_annotation
+
         return inspection_to_dag_node_to_annotation
 
     @staticmethod
