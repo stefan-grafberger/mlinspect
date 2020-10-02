@@ -33,11 +33,11 @@ class PipelineExecutor:
         Instrument and execute the pipeline and evaluate all checks
         """
         # pylint: disable=too-many-arguments
-        check_inspections = []
+        check_inspections = set()
         for check in checks:
             for constraint in check.constraints:
-                check_inspections.extend(constraint.required_inspection)
-        all_inspections = inspections + check_inspections
+                check_inspections.update(constraint.required_inspection)
+        all_inspections = list(set(inspections).union(check_inspections))
         inspection_result = self.run_inspections(all_inspections, notebook_path, python_code, python_path)
         check_to_results = dict((check, evaluate_check(check, inspection_result)) for check in checks)
         return InspectorResult(inspection_result.dag, inspection_result.inspection_to_annotations, check_to_results)

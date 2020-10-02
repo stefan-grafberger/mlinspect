@@ -51,6 +51,9 @@ extracted_dag = inspector_result.dag
 inspection_to_annotations = inspector_result.inspection_to_annotations
 check_to_check_results = inspector_result.check_to_check_results
 ```
+
+## Detailed Example
+We prepared a [demo notebook](demo/healthcare/healthcare_demo.ipynb) to showcase mlinspect and its features.
     
 ## Notes
 * For debugging in PyCharm, set the pytest flag `--no-cov` ([Link](https://stackoverflow.com/questions/34870962/how-to-debug-py-test-in-pycharm-when-coverage-is-enabled))

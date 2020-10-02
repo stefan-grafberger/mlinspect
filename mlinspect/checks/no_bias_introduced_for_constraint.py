@@ -54,7 +54,6 @@ class NoBiasIntroducedForConstraint(Constraint):
 
     def evaluate(self, inspection_result: InspectionResult) -> ConstraintResult:
         """Evaluate the constraint"""
-        # pylint: disable=too-many-locals
         dag = inspection_result.dag
         histograms = inspection_result.inspection_to_annotations[HistogramInspection(self.sensitive_columns)]
         relevant_nodes = [node for node in dag.nodes if node.operator_type in {OperatorType.JOIN,
@@ -67,32 +66,40 @@ class NoBiasIntroducedForConstraint(Constraint):
             parents = list(dag.predecessors(node))
             column_results = {}
             for column in self.sensitive_columns:
-                after_map = histograms[node][column]
-                before_map = {}
-                for parent in parents:
-                    parent_histogram = histograms[parent][column]
-                    before_map = {**before_map, **parent_histogram}
-                removed_groups = [group_key for group_key in after_map.keys() if group_key not in before_map and
-                                  group_key != "None"]
-                if removed_groups:
-                    max_abs_change = 1.0
-                else:
-                    before_count_all = sum(before_map.values())
-                    after_count_all = sum(after_map.values())
-                    abs_relative_changes = []
-                    for group_key in after_map:
-                        after_count = after_map[group_key]
-                        after_ratio = after_count / after_count_all
-                        before_count = before_map.get(group_key, 0)
-                        before_ratio = before_count / before_count_all or 0
-                        relative_change = (after_ratio - before_ratio) / after_ratio
-                        abs_relative_changes.append(abs(relative_change))
-                    max_abs_change = max(abs_relative_changes)
-
-                all_changes_acceptable = max_abs_change <= self.max_relative_change
-                if not all_changes_acceptable:
-                    constraint_result = ConstraintStatus.FAILURE
-                column_results[column] = BiasDistributionChange(all_changes_acceptable, max_abs_change,
-                                                                before_map, after_map)
+                constraint_result = self.get_histograms_for_node_and_column(column, column_results, constraint_result,
+                                                                            histograms, node, parents)
             bias_distribution_change[node] = column_results
         return NoBiasIntroducedForConstraintResult(self, constraint_result, bias_distribution_change)
+
+    def get_histograms_for_node_and_column(self, column, column_results, constraint_result, histograms, node, parents):
+        """
+        Compute histograms for a dag node like a join and a concrete sensitive column like race
+        """
+        # pylint: disable=too-many-locals, too-many-arguments
+        after_map = histograms[node][column]
+        before_map = {}
+        for parent in parents:
+            parent_histogram = histograms[parent][column]
+            before_map = {**before_map, **parent_histogram}
+        removed_groups = [group_key for group_key in after_map.keys() if group_key not in before_map and
+                          group_key != "None"]
+        if removed_groups:
+            max_abs_change = 1.0
+        else:
+            before_count_all = sum(before_map.values())
+            after_count_all = sum(after_map.values())
+            abs_relative_changes = []
+            for group_key in after_map:
+                after_count = after_map[group_key]
+                after_ratio = after_count / after_count_all
+                before_count = before_map.get(group_key, 0)
+                before_ratio = before_count / before_count_all or 0
+                relative_change = (after_ratio - before_ratio) / after_ratio
+                abs_relative_changes.append(abs(relative_change))
+            max_abs_change = max(abs_relative_changes)
+        all_changes_acceptable = max_abs_change <= self.max_relative_change
+        if not all_changes_acceptable:
+            constraint_result = ConstraintStatus.FAILURE
+        column_results[column] = BiasDistributionChange(all_changes_acceptable, max_abs_change,
+                                                        before_map, after_map)
+        return constraint_result
