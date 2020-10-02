@@ -4,11 +4,12 @@ The Interface for the Constraints
 from __future__ import annotations
 
 import dataclasses
-from typing import List, Iterable
+from typing import Iterable, Dict
 
-from demo.healthcare.missing_embeddings_inspection import MissingEmbeddingInspection
+from demo.healthcare.missing_embeddings_inspection import MissingEmbeddingInspection, MissingEmbeddingsInfo
 from mlinspect.checks.constraint import Constraint, ConstraintStatus, ConstraintResult
 from mlinspect.inspections.inspection import Inspection
+from mlinspect.instrumentation.dag_node import DagNode
 from mlinspect.instrumentation.inspection_result import InspectionResult
 
 ILLEGAL_FEATURES = {"race", "gender", "age"}
@@ -19,7 +20,7 @@ class NoMissingEmbeddingsConstraintResult(ConstraintResult):
     """
     Does the pipeline use illegal features?
     """
-    missing_embeddings_for_values: List[str]
+    dag_node_to_missing_embeddings: Dict[DagNode, MissingEmbeddingsInfo]
 
 
 class NoMissingEmbeddingsConstraint(Constraint):
@@ -43,16 +44,17 @@ class NoMissingEmbeddingsConstraint(Constraint):
 
     def evaluate(self, inspection_result: InspectionResult) -> ConstraintResult:
         """Evaluate the constraint"""
-        # TODO: Make this robust and add extensive testing
         dag = inspection_result.dag
         embedding_inspection_result = inspection_result.inspection_to_annotations[
             MissingEmbeddingInspection(self.example_threshold)]
-        missing_embeddings = []
+        dag_node_to_missing_embeddings = {}
         for dag_node in dag.nodes:
             if dag_node in embedding_inspection_result and embedding_inspection_result[dag_node] is not None:
-                missing_embeddings.extend(embedding_inspection_result[dag_node]["missing_embeddings_examples"])
-        if missing_embeddings:
-            result = NoMissingEmbeddingsConstraintResult(self, ConstraintStatus.FAILURE, missing_embeddings)
+                missing_embedding_info = embedding_inspection_result[dag_node]
+                if missing_embedding_info.missing_embedding_count > 0:
+                    dag_node_to_missing_embeddings[dag_node] = missing_embedding_info
+        if dag_node_to_missing_embeddings:
+            result = NoMissingEmbeddingsConstraintResult(self, ConstraintStatus.FAILURE, dag_node_to_missing_embeddings)
         else:
-            result = NoMissingEmbeddingsConstraintResult(self, ConstraintStatus.SUCCESS, [])
+            result = NoMissingEmbeddingsConstraintResult(self, ConstraintStatus.SUCCESS, {})
         return result
