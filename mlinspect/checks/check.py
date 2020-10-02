@@ -37,6 +37,13 @@ class Check:
     description = ""
     constraints: List[Constraint] = dataclasses.field(default_factory=list)
 
+    def add_constraint(self, constraint):
+        """
+        Add custom constraints to the check that may not be available with a shortcut here
+        """
+        self.constraints.append(constraint)
+        return self
+
     def no_illegal_features(self, additional_illegal_feature_names=None):
         """
         Ensure no potentially problematic features like 'race' or 'age' are used directly as feature
