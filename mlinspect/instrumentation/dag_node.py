@@ -3,7 +3,7 @@ The Nodes used in the DAG as nodes for the networkx.DiGraph
 """
 import dataclasses
 from enum import Enum
-from typing import Tuple
+from typing import Tuple, List
 
 
 class OperatorType(Enum):
@@ -47,6 +47,7 @@ class DagNode:
     code_reference: CodeReference or None = None
     module: Tuple or None = None
     description: str or None = None
+    columns: List[str] = None
 
     def __hash__(self):
         return hash(self.node_id)

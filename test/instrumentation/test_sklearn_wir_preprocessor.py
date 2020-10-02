@@ -9,7 +9,7 @@ from testfixtures import compare
 from mlinspect.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
 from mlinspect.instrumentation.wir_to_dag_transformer import WirToDagTransformer
 from mlinspect.utils import get_project_root
-from ..utils import get_expected_dag_adult_easy_py, get_test_wir
+from ..utils import get_test_wir, get_expected_dag_adult_easy_py_without_columns
 
 FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 
@@ -24,6 +24,6 @@ def test_sklearn_wir_preprocessing():
 
     assert len(dag) == 17
 
-    expected_dag = get_expected_dag_adult_easy_py()
+    expected_dag = get_expected_dag_adult_easy_py_without_columns()
 
     compare(networkx.to_dict_of_dicts(preprocessed_wir), networkx.to_dict_of_dicts(expected_dag))

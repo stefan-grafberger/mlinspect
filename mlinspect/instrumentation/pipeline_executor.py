@@ -8,6 +8,7 @@ from typing import List
 import nbformat
 from nbconvert import PythonExporter
 
+from ..checks.check import Check, evaluate_check
 from ..inspections.inspection import Inspection
 from ..backends.all_backends import get_all_backends
 from .call_capture_transformer import CallCaptureTransformer
@@ -15,6 +16,7 @@ from .dag_node import CodeReference, DagNodeIdentifier
 from .inspection_result import InspectionResult
 from .wir_extractor import WirExtractor
 from .wir_to_dag_transformer import WirToDagTransformer
+from ..inspector_result import InspectorResult
 
 
 class PipelineExecutor:
@@ -26,41 +28,45 @@ class PipelineExecutor:
     backends = []
 
     def run(self, notebook_path: str or None, python_path: str or None, python_code: str or None,
-            inspections: List[Inspection]) -> InspectionResult:
+            inspections: List[Inspection], checks: List[Check]) -> InspectorResult:
+        """
+        Instrument and execute the pipeline and evaluate all checks
+        """
+        # pylint: disable=too-many-arguments
+        check_inspections = set()
+        for check in checks:
+            for constraint in check.constraints:
+                check_inspections.update(constraint.required_inspection)
+        all_inspections = list(set(inspections).union(check_inspections))
+        inspection_result = self.run_inspections(all_inspections, notebook_path, python_code, python_path)
+        check_to_results = dict((check, evaluate_check(check, inspection_result)) for check in checks)
+        return InspectorResult(inspection_result.dag, inspection_result.inspection_to_annotations, check_to_results)
+
+    def run_inspections(self, inspections, notebook_path, python_code, python_path) -> InspectionResult:
         """
         Instrument and execute the pipeline
         """
         # pylint: disable=no-self-use, too-many-locals
         self.initialize_static_variables(inspections)
-
         source_code = self.load_source_code(notebook_path, python_path, python_code)
         parsed_ast = ast.parse(source_code)
         original_parsed_ast = copy.deepcopy(parsed_ast)  # Some ast functions modify in-place
-
         parsed_modified_ast = self.instrument_pipeline(parsed_ast)
-
         exec(compile(parsed_modified_ast, filename="<ast>", mode="exec"), PipelineExecutor.script_scope)
-
         wir_extractor = WirExtractor(original_parsed_ast)
         wir_extractor.extract_wir()
-
         code_reference_to_description = {}
         code_reference_to_module = {}
         for backend in self.backends:
             code_reference_to_description = {**code_reference_to_description, **backend.code_reference_to_description}
             code_reference_to_module = {**code_reference_to_module, **backend.code_reference_to_module}
         wir = wir_extractor.add_runtime_info(code_reference_to_module, code_reference_to_description)
-
         for backend in self.backends:
             wir = backend.preprocess_wir(wir)
-
         dag = WirToDagTransformer.extract_dag(wir)
-
         for backend in self.backends:
             dag = backend.postprocess_dag(dag)
-
         inspection_to_call_to_annotation = self.build_inspection_result_map(dag)
-
         return InspectionResult(dag, inspection_to_call_to_annotation)
 
     def initialize_static_variables(self, inspections):
@@ -82,9 +88,17 @@ class PipelineExecutor:
             dag_node_identifiers_to_dag_nodes[dag_node_identifier] = node
 
         dag_node_identifier_to_inspection_output = {}
+        dag_node_identifier_to_columns = {}
         for backend in self.backends:
             dag_node_identifier_to_inspection_output = {**dag_node_identifier_to_inspection_output,
                                                         **backend.dag_node_identifier_to_inspection_output}
+            dag_node_identifier_to_columns = {**dag_node_identifier_to_columns,
+                                              **backend.dag_node_identifier_to_columns}
+        for dag_node_identifier, inspection_output_map in dag_node_identifier_to_columns.items():
+            dag_node = dag_node_identifiers_to_dag_nodes[dag_node_identifier]
+            dag_node_columns = dag_node_identifier_to_columns[dag_node_identifier]
+            dag_node.columns = dag_node_columns
+
         inspection_to_dag_node_to_annotation = {}
         for dag_node_identifier, inspection_output_map in dag_node_identifier_to_inspection_output.items():
             for inspection, annotation in inspection_output_map.items():
@@ -92,6 +106,7 @@ class PipelineExecutor:
                 dag_node = dag_node_identifiers_to_dag_nodes[dag_node_identifier]
                 dag_node_to_annotation[dag_node] = annotation
                 inspection_to_dag_node_to_annotation[inspection] = dag_node_to_annotation
+
         return inspection_to_dag_node_to_annotation
 
     @staticmethod

@@ -37,17 +37,23 @@ Make it easy to analyze your pipeline and automatically check for common issues.
 ```python
 from mlinspect.pipeline_inspector import PipelineInspector
 from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
+from mlinspect.checks.check import Check
 
 IPYNB_PATH = ...
 
-inspection_result = PipelineInspector \
-        .on_pipeline_from_ipynb_file(IPYNB_PATH) \
-        .add_inspection(MaterializeFirstRowsInspection(2)) \
+inspector_result = PipelineInspector\
+        .on_pipeline_from_py_file(ADULT_EASY_FILE_PY)\
+        .add_required_inspection(MaterializeFirstRowsInspection(5))\
+        .add_check(Check().no_bias_introduced_for(['race']))\
         .execute()
 
-extracted_dag = inspection_result.dag
-inspection_to_annotations = inspection_result.inspection_to_annotations
+extracted_dag = inspector_result.dag
+inspection_to_annotations = inspector_result.inspection_to_annotations
+check_to_check_results = inspector_result.check_to_check_results
 ```
+
+## Detailed Example
+We prepared a [demo notebook](demo/healthcare/healthcare_demo.ipynb) to showcase mlinspect and its features.
     
 ## Notes
 * For debugging in PyCharm, set the pytest flag `--no-cov` ([Link](https://stackoverflow.com/questions/34870962/how-to-debug-py-test-in-pycharm-when-coverage-is-enabled))

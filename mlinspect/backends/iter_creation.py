@@ -15,6 +15,8 @@ def iter_input_data_source(inspection_count, output, operator_context):
     """
     Create an efficient iterator for the inspection input for operators with no parent: Data Source
     """
+    if inspection_count == 0:
+        return []
     output_columns, output_rows = get_df_row_iterator(output)
     duplicated_output_iterators = itertools.tee(output_rows, inspection_count)
     inspection_iterators = []
@@ -27,14 +29,18 @@ def iter_input_data_source(inspection_count, output, operator_context):
     return inspection_iterators
 
 
-def iter_input_annotation_output_map(inspection_count, input_data, input_annotations, output, operator_context):
+def iter_input_annotation_output_map(inspection_count, input_data, input_annotations, output, operator_context,
+                                     columns=None):
     """
     Create an efficient iterator for the inspection input for operators with one parent that do not
     change the row order.
     """
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals, too-many-arguments
+    if inspection_count == 0:
+        return []
+
     input_columns, input_rows = get_iterator_for_type(input_data, True)
-    output_columns, output_rows = get_iterator_for_type(output, False)
+    output_columns, output_rows = get_iterator_for_type(output, False, columns)
     duplicated_input_iterators = itertools.tee(input_rows, inspection_count)
     duplicated_output_iterators = itertools.tee(output_rows, inspection_count)
 
@@ -58,6 +64,9 @@ def iter_input_annotation_output_resampled(inspection_count, input_data, input_a
     row order or drop some rows, like selections.
     """
     # pylint: disable=too-many-locals, too-many-arguments
+    if inspection_count == 0:
+        return []
+
     data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
                                                 right_index=True)
     joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
@@ -96,6 +105,9 @@ def iter_input_annotation_output_join(inspection_count, x_data, x_annotations, y
     Create an efficient iterator for the inspection input for join operators.
     """
     # pylint: disable=too-many-locals, too-many-arguments
+    if inspection_count == 0:
+        return []
+
     x_before_with_annotations = pandas.merge(x_data, x_annotations, left_on="mlinspect_index_x",
                                              right_index=True, suffixes=["_x_data", "_x_annot"])
     y_before_with_annotations = pandas.merge(y_data, y_annotations, left_on="mlinspect_index_y",
@@ -159,6 +171,9 @@ def iter_input_annotation_output_nary_op(inspection_count, transformer_data_with
     not change the order of rows or remove rows: concatenations.
     """
     # pylint: disable=too-many-locals
+    if inspection_count == 0:
+        return []
+
     input_iterators = []
     inputs_columns = []
     for input_data, _ in transformer_data_with_annotations:
@@ -193,6 +208,9 @@ def iter_input_annotation_output_sink_op(inspection_count, data, target, operato
     Create an efficient iterator for the inspection input when there is no output, e.g., estimators.
     """
     # pylint: disable=too-many-locals
+    if inspection_count == 0:
+        return []
+
     input_data_columns, input_data_iterators = get_iterator_for_type(data, False)
     input_target_columns, input_target_iterators = get_iterator_for_type(target, True)
     inputs_columns = [input_data_columns, input_target_columns]

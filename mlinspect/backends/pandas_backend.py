@@ -5,6 +5,9 @@ import os
 from collections import namedtuple
 
 import networkx
+from pandas import DataFrame, Series
+from pandas.core.groupby import DataFrameGroupBy
+import numpy
 
 from .backend import Backend
 from .backend_utils import build_annotation_df_from_iters, \
@@ -105,7 +108,7 @@ class PandasBackend(Backend):
         description = None
         if function_info == ('pandas.io.parsers', 'read_csv'):
             filename = args_values[0].split(os.path.sep)[-1]
-            description = "{}".format(filename)  # TODO: Add loaded columns as well
+            description = "{}".format(filename)
         elif function_info == ('pandas.core.frame', 'dropna'):
             description = "dropna"
         elif function_info == ('pandas.core.frame', '__getitem__'):
@@ -321,4 +324,14 @@ def store_inspection_outputs(backend, annotation_iterators, code_reference, retu
         inspection_outputs[inspection] = inspection.get_operator_annotation_after_visit()
     backend.dag_node_identifier_to_inspection_output[dag_node_identifier] = inspection_outputs
     new_return_value = create_wrapper_with_annotations(annotations_df, return_value, backend)
+    if isinstance(return_value, DataFrame):
+        backend.dag_node_identifier_to_columns[dag_node_identifier] = list(new_return_value.columns.values)
+    elif isinstance(return_value, Series):
+        backend.dag_node_identifier_to_columns[dag_node_identifier] = [new_return_value.name]
+    elif isinstance(return_value, DataFrameGroupBy):
+        backend.dag_node_identifier_to_columns[dag_node_identifier] = None
+    elif isinstance(return_value, numpy.ndarray):
+        backend.dag_node_identifier_to_columns[dag_node_identifier] = ["array"]
+    else:
+        assert False
     return new_return_value

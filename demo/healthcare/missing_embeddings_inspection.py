@@ -1,10 +1,20 @@
 """
 A simple example inspection
 """
-from typing import Iterable
+import dataclasses
+from typing import Iterable, List
 
 from mlinspect.inspections.inspection import Inspection
 from mlinspect.inspections.inspection_input import InspectionInputUnaryOperator
+
+
+@dataclasses.dataclass(frozen=True, eq=True)
+class MissingEmbeddingsInfo:
+    """
+    Info about potentially missing embeddings
+    """
+    missing_embedding_count: int
+    missing_embeddings_examples: List[str]
 
 
 class MissingEmbeddingInspection(Inspection):
@@ -25,6 +35,7 @@ class MissingEmbeddingInspection(Inspection):
         # pylint: disable=too-many-branches, too-many-statements
         if isinstance(inspection_input, InspectionInputUnaryOperator) and \
                 inspection_input.operator_context.function_info == ('demo.healthcare.demo_utils', 'fit_transform'):
+            # TODO: Are there existing word embedding transformers for sklearn we can use this for?
             self._is_embedding_operator = True
             for row in inspection_input.row_iterator:
                 # Count missing embeddings
@@ -42,8 +53,7 @@ class MissingEmbeddingInspection(Inspection):
     def get_operator_annotation_after_visit(self) -> any:
         if self._is_embedding_operator:
             assert self._missing_embedding_count is not None  # May only be called after the operator visit is finished
-            result = {"missing_embedding_count": self._missing_embedding_count,
-                      "missing_embeddings_examples": self._missing_embeddings_examples}
+            result = MissingEmbeddingsInfo(self._missing_embedding_count, self._missing_embeddings_examples)
             self._missing_embedding_count = None
             self._is_embedding_operator = False
             self._missing_embeddings_examples = []
