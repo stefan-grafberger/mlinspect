@@ -34,6 +34,11 @@ class NoIllegalFeaturesConstraint(Constraint):
 
     required_inspection = []
 
+    @property
+    def constraint_id(self):
+        """The id of the Constraints"""
+        return tuple(self.additional_illegal_feature_names)
+
     def evaluate(self, inspection_result: InspectionResult) -> ConstraintResult:
         """Evaluate the constraint"""
         # TODO: Make this robust and add extensive testing
@@ -45,7 +50,7 @@ class NoIllegalFeaturesConstraint(Constraint):
         if used_illegal_columns:
             result = NoIllegalFeaturesConstraintResult(self, ConstraintStatus.FAILURE, used_illegal_columns)
         else:
-            result = ConstraintResult(self, ConstraintStatus.SUCCESS)
+            result = NoIllegalFeaturesConstraintResult(self, ConstraintStatus.SUCCESS, [])
         return result
 
     def get_used_columns(self, dag, current_node):
