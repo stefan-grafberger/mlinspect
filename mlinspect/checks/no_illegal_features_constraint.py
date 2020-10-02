@@ -3,11 +3,22 @@ The Interface for the Constraints
 """
 from __future__ import annotations
 
+import dataclasses
+from typing import List
+
 from mlinspect.checks.constraint import Constraint, ConstraintStatus, ConstraintResult
 from mlinspect.instrumentation.dag_node import OperatorType
 from mlinspect.instrumentation.inspection_result import InspectionResult
 
 ILLEGAL_FEATURES = {"race", "gender", "age"}
+
+
+@dataclasses.dataclass
+class NoIllegalFeaturesConstraintResult(ConstraintResult):
+    """
+    Does the pipeline use illegal features?
+    """
+    illegal_features: List[str]
 
 
 class NoIllegalFeaturesConstraint(Constraint):
@@ -30,8 +41,9 @@ class NoIllegalFeaturesConstraint(Constraint):
         train_data = [node for node in dag.nodes if node.operator_type == OperatorType.ESTIMATOR][0]
         used_columns = self.get_used_columns(dag, train_data)
         forbidden_columns = {*ILLEGAL_FEATURES, *self.additional_illegal_feature_names}
-        if set(used_columns).intersection(forbidden_columns):
-            result = ConstraintResult(self, ConstraintStatus.FAILURE)
+        used_illegal_columns = list(set(used_columns).intersection(forbidden_columns))
+        if used_illegal_columns:
+            result = NoIllegalFeaturesConstraintResult(self, ConstraintStatus.FAILURE, used_illegal_columns)
         else:
             result = ConstraintResult(self, ConstraintStatus.SUCCESS)
         return result

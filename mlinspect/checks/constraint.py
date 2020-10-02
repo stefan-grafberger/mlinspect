@@ -62,4 +62,4 @@ class Constraint(metaclass=abc.ABCMeta):
 
     def __repr__(self):
         """Constraints must have a str representation"""
-        return "{}({})".format(self.__class__.__name__, self.constraint_id)
+        return "{}({})".format(self.__class__.__name__, self.constraint_id or "")

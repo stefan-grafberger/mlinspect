@@ -16,9 +16,9 @@ from mlinspect.instrumentation.inspection_result import InspectionResult
 @dataclasses.dataclass(eq=True, frozen=True)
 class BiasDistributionChange:
     """
-    Did the histogram change too much for some operation?
+    Did the histogram change too much for one given operation?
     """
-    failed: bool
+    acceptable_change: bool
     max_relative_change: float
     before_map: Dict[str, int]
     after_map: Dict[str, int]
@@ -27,7 +27,7 @@ class BiasDistributionChange:
 @dataclasses.dataclass
 class NoBiasIntroducedForConstraintResult(ConstraintResult):
     """
-    Does this check cause an error or a warning if it fails?
+    Did the histogram change too much for some operations?
     """
     bias_distribution_change: Dict[DagNode, Dict[str, BiasDistributionChange]]
 
@@ -38,9 +38,14 @@ class NoBiasIntroducedForConstraint(Constraint):
     """
     # pylint: disable=unnecessary-pass, too-few-public-methods
 
-    def __init__(self, sensitive_columns, max_relative_change=-0.3):
+    def __init__(self, sensitive_columns, max_relative_change=0.3):
         self.sensitive_columns = sensitive_columns
         self.max_relative_change = max_relative_change
+
+    @property
+    def constraint_id(self):
+        """The id of the Constraints"""
+        return tuple(self.sensitive_columns), self.max_relative_change
 
     @property
     def required_inspection(self) -> Iterable[Inspection]:
@@ -54,11 +59,12 @@ class NoBiasIntroducedForConstraint(Constraint):
         histograms = inspection_result.inspection_to_annotations[HistogramInspection(self.sensitive_columns)]
         relevant_nodes = [node for node in dag.nodes if node.operator_type in {OperatorType.JOIN,
                                                                                OperatorType.SELECTION} or
-                          node.module == ('sklearn.impute._base', 'fit_transform')]
+                          (node.module == ('sklearn.impute._base', 'SimpleImputer', 'Pipeline') and
+                           node.columns[0] in self.sensitive_columns)]
         constraint_result = ConstraintStatus.SUCCESS
         bias_distribution_change = {}
         for node in relevant_nodes:
-            parents = dag.predecessors(node)
+            parents = list(dag.predecessors(node))
             column_results = {}
             for column in self.sensitive_columns:
                 after_map = histograms[node][column]
@@ -69,24 +75,24 @@ class NoBiasIntroducedForConstraint(Constraint):
                 removed_groups = [group_key for group_key in after_map.keys() if group_key not in before_map and
                                   group_key != "None"]
                 if removed_groups:
-                    max_negative_change = -1.0
+                    max_abs_change = 1.0
                 else:
                     before_count_all = sum(before_map.values())
                     after_count_all = sum(after_map.values())
-                    relative_changes = []
+                    abs_relative_changes = []
                     for group_key in after_map:
                         after_count = after_map[group_key]
                         after_ratio = after_count / after_count_all
-                        before_count = before_map[group_key]
-                        before_ratio = before_count / before_count_all
+                        before_count = before_map.get(group_key, 0)
+                        before_ratio = before_count / before_count_all or 0
                         relative_change = (after_ratio - before_ratio) / after_ratio
-                        relative_changes.append(relative_change)
-                    max_negative_change = min(relative_changes)
+                        abs_relative_changes.append(abs(relative_change))
+                    max_abs_change = max(abs_relative_changes)
 
-                all_changes_acceptable = max_negative_change <= self.max_relative_change
+                all_changes_acceptable = max_abs_change <= self.max_relative_change
                 if not all_changes_acceptable:
                     constraint_result = ConstraintStatus.FAILURE
-                column_results[column] = BiasDistributionChange(all_changes_acceptable, max_negative_change,
+                column_results[column] = BiasDistributionChange(all_changes_acceptable, max_abs_change,
                                                                 before_map, after_map)
             bias_distribution_change[node] = column_results
         return NoBiasIntroducedForConstraintResult(self, constraint_result, bias_distribution_change)

@@ -3,7 +3,7 @@ The check
 """
 import dataclasses
 from enum import Enum
-from typing import List
+from typing import List, Dict
 
 from mlinspect.checks.constraint import ConstraintResult, ConstraintStatus, Constraint
 from mlinspect.checks.no_bias_introduced_for_constraint import NoBiasIntroducedForConstraint
@@ -72,7 +72,7 @@ class CheckResult:
     """
     check: Check
     status: CheckStatus
-    constraint_results: List[ConstraintResult]
+    constraint_results: Dict[Constraint, ConstraintResult]
 
 
 def evaluate_check(check: Check, inspection_result: InspectionResult) -> CheckResult:
@@ -80,10 +80,10 @@ def evaluate_check(check: Check, inspection_result: InspectionResult) -> CheckRe
     Evaluate a check by evaluating all of the associated constraints
     """
     status = CheckStatus.SUCCESS
-    constraint_results = []
+    constraint_results = {}
     for constraint in check.constraints:
         constraint_result = constraint.evaluate(inspection_result)
-        constraint_results.append(constraint_result)
+        constraint_results[constraint] = constraint_result
         if constraint_result.status == ConstraintStatus.FAILURE:
             if check.level == CheckLevel.WARNING:
                 status = CheckStatus.WARNING
