@@ -27,6 +27,7 @@ class PandasBackend(Backend):
 
     operator_map = {
         ('pandas.io.parsers', 'read_csv'): OperatorType.DATA_SOURCE,
+        ('pandas.core.frame', 'DataFrame'): OperatorType.DATA_SOURCE,
         ('pandas.core.frame', 'dropna'): OperatorType.SELECTION,
         ('pandas.core.frame', '__getitem__'): OperatorType.PROJECTION,  # FIXME: Remove later
         ('pandas.core.frame', '__getitem__', 'Projection'): OperatorType.PROJECTION,
@@ -154,7 +155,7 @@ class PandasBackend(Backend):
         function_info = self.replace_wrapper_modules(function_info)
         self.code_reference_to_module[code_reference] = function_info
 
-        if function_info == ('pandas.io.parsers', 'read_csv'):
+        if function_info in {('pandas.io.parsers', 'read_csv'), ('pandas.core.frame', 'DataFrame')}:
             operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
             return_value = execute_inspection_visits_data_source(self, operator_context, code_reference,
                                                                  return_value)

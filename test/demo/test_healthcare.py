@@ -32,7 +32,7 @@ def test_py_pipeline_runs():
         exec(compile(parsed_ast, filename="<ast>", mode="exec"))
 
 
-def test_instrumented_y_pipeline_runs():
+def test_instrumented_py_pipeline_runs():
     """
     Tests whether the pipeline works with instrumentation
     """

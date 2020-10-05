@@ -215,7 +215,11 @@ class PipelineExecutor:
             function_string = PipelineExecutor.split_on_bracket(call_code)
             module_info = eval("inspect.getmodule(" + function_string + ")", PipelineExecutor.script_scope)
             function_name = PipelineExecutor.split_on_dot(function_string)
-            function_info = (module_info.__name__, function_name)
+            if module_info is not None:
+                function_info = (module_info.__name__, function_name)
+            else:
+                module_info = "builtin_function_or_method"  # TODO: Detect module/object path properly
+                function_info = (module_info, function_name)
         else:
             function_string = str(call_code.split("[", 1)[0])
             module_info = eval("inspect.getmodule(" + function_string + ")", PipelineExecutor.script_scope)
