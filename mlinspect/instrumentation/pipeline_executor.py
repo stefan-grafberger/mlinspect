@@ -28,7 +28,7 @@ class PipelineExecutor:
     backends = []
 
     def run(self, notebook_path: str or None, python_path: str or None, python_code: str or None,
-            inspections: List[Inspection], checks: List[Check]) -> InspectorResult:
+            inspections: List[Inspection], checks: List[Check], reset_state=True) -> InspectorResult:
         """
         Instrument and execute the pipeline and evaluate all checks
         """
@@ -38,16 +38,21 @@ class PipelineExecutor:
             for constraint in check.constraints:
                 check_inspections.update(constraint.required_inspection)
         all_inspections = list(set(inspections).union(check_inspections))
-        inspection_result = self.run_inspections(all_inspections, notebook_path, python_code, python_path)
+
+        if reset_state:
+            # reset_state=False should only be used internally for performance experiments etc!
+            # It does not ensure the same inspections are still used as args etc.
+            self.initialize_static_variables(all_inspections)
+
+        inspection_result = self.run_inspections(notebook_path, python_code, python_path)
         check_to_results = dict((check, evaluate_check(check, inspection_result)) for check in checks)
         return InspectorResult(inspection_result.dag, inspection_result.inspection_to_annotations, check_to_results)
 
-    def run_inspections(self, inspections, notebook_path, python_code, python_path) -> InspectionResult:
+    def run_inspections(self, notebook_path, python_code, python_path) -> InspectionResult:
         """
         Instrument and execute the pipeline
         """
         # pylint: disable=no-self-use, too-many-locals
-        self.initialize_static_variables(inspections)
         source_code = self.load_source_code(notebook_path, python_path, python_code)
         parsed_ast = ast.parse(source_code)
         original_parsed_ast = copy.deepcopy(parsed_ast)  # Some ast functions modify in-place
@@ -95,17 +100,19 @@ class PipelineExecutor:
             dag_node_identifier_to_columns = {**dag_node_identifier_to_columns,
                                               **backend.dag_node_identifier_to_columns}
         for dag_node_identifier, inspection_output_map in dag_node_identifier_to_columns.items():
-            dag_node = dag_node_identifiers_to_dag_nodes[dag_node_identifier]
-            dag_node_columns = dag_node_identifier_to_columns[dag_node_identifier]
-            dag_node.columns = dag_node_columns
+            if dag_node_identifier in dag_node_identifiers_to_dag_nodes:  # Always true if reset_state
+                dag_node = dag_node_identifiers_to_dag_nodes[dag_node_identifier]
+                dag_node_columns = dag_node_identifier_to_columns[dag_node_identifier]
+                dag_node.columns = dag_node_columns
 
         inspection_to_dag_node_to_annotation = {}
         for dag_node_identifier, inspection_output_map in dag_node_identifier_to_inspection_output.items():
             for inspection, annotation in inspection_output_map.items():
-                dag_node_to_annotation = inspection_to_dag_node_to_annotation.get(inspection, {})
-                dag_node = dag_node_identifiers_to_dag_nodes[dag_node_identifier]
-                dag_node_to_annotation[dag_node] = annotation
-                inspection_to_dag_node_to_annotation[inspection] = dag_node_to_annotation
+                if dag_node_identifier in dag_node_identifiers_to_dag_nodes:  # Always true if reset_state
+                    dag_node_to_annotation = inspection_to_dag_node_to_annotation.get(inspection, {})
+                    dag_node = dag_node_identifiers_to_dag_nodes[dag_node_identifier]
+                    dag_node_to_annotation[dag_node] = annotation
+                    inspection_to_dag_node_to_annotation[inspection] = dag_node_to_annotation
 
         return inspection_to_dag_node_to_annotation
 
