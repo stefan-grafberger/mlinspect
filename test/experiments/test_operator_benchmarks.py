@@ -6,7 +6,7 @@ import os
 import matplotlib
 from importnb import Notebook
 
-from experiments.benchmark_utils import do_projection_benchmark
+from experiments.benchmark_utils import do_projection_benchmarks
 from mlinspect.utils import get_project_root
 
 EXPERIMENT_NB_FILE = os.path.join(str(get_project_root()), "experiments", "operator_benchmarks.ipynb")
@@ -16,10 +16,13 @@ def test_benchmark_mechanism():
     """
     Tests whether the pipeline works with instrumentation
     """
-    benchmark_result_no_mlinspect, benchmark_result_one_inspection = do_projection_benchmark(data_frame_rows=10)
+    benchmark_results = do_projection_benchmarks(data_frame_rows=10000)
 
-    assert benchmark_result_no_mlinspect
-    assert benchmark_result_one_inspection
+    assert benchmark_results["no mlinspect"]
+    assert benchmark_results["no inspection"]
+    assert benchmark_results["one inspection"]
+    assert benchmark_results["two inspections"]
+    assert benchmark_results["three inspections"]
 
 
 def test_experiment_nb():
