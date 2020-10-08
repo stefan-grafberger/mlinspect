@@ -1,11 +1,97 @@
 """
-Tests whether the utils work
+Functions to benchmark mlinspect
 """
 import timeit
 from inspect import cleandoc
 
 
-def get_test_df_creation_str(data_frame_rows):
+def do_projection_benchmarks(data_frame_rows, repeats=5):
+    """
+    Do the projection benchmarks
+    """
+    benchmark_setup = get_single_df_creation_str(data_frame_rows)
+    benchmark_exec = get_test_projection_str()
+    benchmark_setup_func_str = "get_single_df_creation_str({})".format(data_frame_rows)
+    benchmark_exec_func_str = "get_test_projection_str()"
+
+    benchmark_results = exec_benchmarks(benchmark_exec, benchmark_exec_func_str, benchmark_setup,
+                                        benchmark_setup_func_str, repeats)
+
+    return benchmark_results
+
+
+def do_selection_benchmarks(data_frame_rows, repeats=5):
+    """
+    Do the selection benchmarks
+    """
+    benchmark_setup = get_single_df_creation_str(data_frame_rows)
+    benchmark_exec = get_test_selection_str()
+    benchmark_setup_func_str = "get_single_df_creation_str({})".format(data_frame_rows)
+    benchmark_exec_func_str = "get_test_selection_str()"
+
+    benchmark_results = exec_benchmarks(benchmark_exec, benchmark_exec_func_str, benchmark_setup,
+                                        benchmark_setup_func_str, repeats)
+
+    return benchmark_results
+
+
+def exec_benchmarks(benchmark_exec, benchmark_exec_func_str, benchmark_setup, benchmark_setup_func_str, repeats):
+    """
+    Benchmark some code without mlinspect and with mlinspect with varying numbers of inspections
+    """
+    benchmark_results = {
+        "no mlinspect": timeit.repeat(stmt=benchmark_exec, setup=benchmark_setup, repeat=repeats, number=1),
+        "no inspection": benchmark_code_str_with_inspections(benchmark_exec_func_str, benchmark_setup_func_str, "[]",
+                                                             repeats),
+        "one inspection": benchmark_code_str_with_inspections(benchmark_exec_func_str, benchmark_setup_func_str,
+                                                              "[EmptyInspection(0)]", repeats),
+        "two inspections": benchmark_code_str_with_inspections(benchmark_exec_func_str, benchmark_setup_func_str,
+                                                               "[EmptyInspection(0), EmptyInspection(1)]", repeats),
+        "three inspections": benchmark_code_str_with_inspections(benchmark_exec_func_str, benchmark_setup_func_str,
+                                                                 "[EmptyInspection(0), " +
+                                                                 "EmptyInspection(1), EmptyInspection(2)]", repeats)}
+
+    return benchmark_results
+
+
+def benchmark_code_str_with_inspections(benchmark_str, setup_str, inspections_str, repeats):
+    """
+    Execute one single benchmark
+    """
+    setup = prepare_benchmark_exec(benchmark_str, setup_str, inspections_str)
+    benchmark = trigger_benchmark_exec(inspections_str)
+    benchmark_result_one_inspection = timeit.repeat(stmt=benchmark, setup=setup, repeat=repeats, number=1)
+    return benchmark_result_one_inspection
+
+
+def prepare_benchmark_exec(benchmark_str, setup_str, inspections):
+    """
+    Get the setup str for timeit
+    """
+    setup = cleandoc("""
+    from experiments.empty_inspection import EmptyInspection
+    from mlinspect.instrumentation.pipeline_executor import singleton
+    from experiments.benchmark_utils import get_single_df_creation_str, get_test_projection_str, get_test_selection_str
+
+    test_code_setup = {}
+    inspector_result = singleton.run(None, None, test_code_setup, {}, [])
+    test_code_benchmark = {}
+    """.format(setup_str, inspections, benchmark_str))
+    return setup
+
+
+def trigger_benchmark_exec(inspections_str):
+    """
+    Get the benchmark str for timeit
+    """
+    benchmark = cleandoc("""
+    inspector_result_two = singleton.run(None, None, test_code_benchmark, {}, [], 
+                                         False)
+    """.format(inspections_str))
+    return benchmark
+
+
+def get_single_df_creation_str(data_frame_rows):
     """
     Get a complete code str that creates a DF with random value
     """
@@ -38,116 +124,3 @@ def get_test_selection_str():
         test = df[df['A'] > 50]
         """)
     return test_code
-
-
-def get_benchmark_code(inspections_str):
-    """
-    Get the benchmark str for timeit
-    """
-    benchmark = cleandoc("""
-    inspector_result_two = singleton.run(None, None, test_code_benchmark, {}, [], 
-                                         False)
-    """.format(inspections_str))
-    return benchmark
-
-
-def get_df_setup_code(data_frame_rows, benchmark_str, inspections):
-    """
-    Get the setup str for timeit
-    """
-    setup = cleandoc("""
-    from experiments.empty_inspection import EmptyInspection
-    from mlinspect.instrumentation.pipeline_executor import singleton
-    from experiments.benchmark_utils import get_test_df_creation_str, get_test_projection_str, get_test_selection_str
-
-    test_code_setup = get_test_df_creation_str({})
-    inspector_result = singleton.run(None, None, test_code_setup, {}, [])
-    test_code_benchmark = {}
-    """.format(data_frame_rows, inspections, benchmark_str))
-    return setup
-
-
-def do_projection_benchmarks(data_frame_rows, repeats=5):
-    """
-    Do the projection benchmarks
-    """
-    # no mlinspect
-    benchmark_results = {}
-
-    df_creation_str = get_test_df_creation_str(data_frame_rows)
-    df_projection = get_test_projection_str()
-    benchmark_result = timeit.repeat(stmt=df_projection, setup=df_creation_str, repeat=repeats, number=1)
-    benchmark_results["no mlinspect"] = benchmark_result
-
-    # no inspection
-    benchmark_result = benchmark_projection_with_inspections(data_frame_rows, "[]", repeats)
-    benchmark_results["no inspection"] = benchmark_result
-
-    # one inspection
-    benchmark_result = benchmark_projection_with_inspections(data_frame_rows, "[EmptyInspection(0)]", repeats)
-    benchmark_results["one inspection"] = benchmark_result
-
-    # two inspections
-    benchmark_result = benchmark_projection_with_inspections(data_frame_rows,
-                                                             "[EmptyInspection(0), EmptyInspection(1)]", repeats)
-    benchmark_results["two inspections"] = benchmark_result
-
-    # three inspections
-    benchmark_result = benchmark_projection_with_inspections(data_frame_rows, "[EmptyInspection(0), " +
-                                                             "EmptyInspection(1), EmptyInspection(2)]", repeats)
-    benchmark_results["three inspections"] = benchmark_result
-
-    return benchmark_results
-
-
-def do_selection_benchmarks(data_frame_rows, repeats=5):
-    """
-    Do the projection benchmarks
-    """
-    # no mlinspect
-    benchmark_results = {}
-
-    df_creation_str = get_test_df_creation_str(data_frame_rows)
-    df_selection = get_test_selection_str()
-    benchmark_result = timeit.repeat(stmt=df_selection, setup=df_creation_str, repeat=repeats, number=1)
-    benchmark_results["no mlinspect"] = benchmark_result
-
-    # no inspection
-    benchmark_result = benchmark_selection_with_inspections(data_frame_rows, "[]", repeats)
-    benchmark_results["no inspection"] = benchmark_result
-
-    # one inspection
-    benchmark_result = benchmark_selection_with_inspections(data_frame_rows, "[EmptyInspection(0)]", repeats)
-    benchmark_results["one inspection"] = benchmark_result
-
-    # two inspections
-    benchmark_result = benchmark_selection_with_inspections(data_frame_rows,
-                                                            "[EmptyInspection(0), EmptyInspection(1)]", repeats)
-    benchmark_results["two inspections"] = benchmark_result
-
-    # three inspections
-    benchmark_result = benchmark_selection_with_inspections(data_frame_rows, "[EmptyInspection(0), " +
-                                                            "EmptyInspection(1), EmptyInspection(2)]", repeats)
-    benchmark_results["three inspections"] = benchmark_result
-
-    return benchmark_results
-
-
-def benchmark_projection_with_inspections(data_frame_rows, inspections, repeats):
-    """
-    Execute one single projection benchmark
-    """
-    setup = get_df_setup_code(data_frame_rows, "get_test_projection_str()", inspections)
-    benchmark = get_benchmark_code(inspections)
-    benchmark_result_one_inspection = timeit.repeat(stmt=benchmark, setup=setup, repeat=repeats, number=1)
-    return benchmark_result_one_inspection
-
-
-def benchmark_selection_with_inspections(data_frame_rows, inspections, repeats):
-    """
-    Execute one single projection benchmark
-    """
-    setup = get_df_setup_code(data_frame_rows, "get_test_selection_str()", inspections)
-    benchmark = get_benchmark_code(inspections)
-    benchmark_result_one_inspection = timeit.repeat(stmt=benchmark, setup=setup, repeat=repeats, number=1)
-    return benchmark_result_one_inspection
