@@ -67,8 +67,7 @@ def iter_input_annotation_output_resampled(inspection_count, input_data, input_a
     if inspection_count == 0:
         return []
 
-    data_before_with_annotations = pandas.merge(input_data, input_annotations, left_on="mlinspect_index",
-                                                right_index=True)
+    data_before_with_annotations = pandas.concat([input_data.reset_index(drop=True), input_annotations], axis=1)
     joined_df = pandas.merge(data_before_with_annotations, output, left_on="mlinspect_index",
                              right_on="mlinspect_index")
 
@@ -108,10 +107,8 @@ def iter_input_annotation_output_join(inspection_count, x_data, x_annotations, y
     if inspection_count == 0:
         return []
 
-    x_before_with_annotations = pandas.merge(x_data, x_annotations, left_on="mlinspect_index_x",
-                                             right_index=True, suffixes=["_x_data", "_x_annot"])
-    y_before_with_annotations = pandas.merge(y_data, y_annotations, left_on="mlinspect_index_y",
-                                             right_index=True, suffixes=["_y_data", "_y_annot"])
+    x_before_with_annotations = pandas.concat([x_data.reset_index(drop=True), x_annotations], axis=1)
+    y_before_with_annotations = pandas.concat([y_data.reset_index(drop=True), y_annotations], axis=1)
     df_x_output = pandas.merge(x_before_with_annotations, output, left_on="mlinspect_index_x",
                                right_on="mlinspect_index_x", suffixes=["_x", "_output"])
     df_x_output_y = pandas.merge(df_x_output, y_before_with_annotations, left_on="mlinspect_index_y",
