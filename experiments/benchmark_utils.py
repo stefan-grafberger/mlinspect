@@ -5,14 +5,44 @@ import timeit
 from inspect import cleandoc
 
 
+def do_decision_tree_benchmarks(data_frame_rows, repeats=5):
+    """
+    Do the projection benchmarks
+    """
+    benchmark_setup = get_estimator_train_data_str(data_frame_rows)
+    benchmark_exec = get_decision_tree_str()
+    benchmark_setup_func_str = "get_estimator_train_data_str({})".format(data_frame_rows)
+    benchmark_exec_func_str = "get_decision_tree_str()"
+
+    benchmark_results = exec_benchmarks(benchmark_exec, benchmark_exec_func_str, benchmark_setup,
+                                        benchmark_setup_func_str, repeats)
+
+    return benchmark_results
+
+
 def do_one_hot_encoder_benchmarks(data_frame_rows, repeats=5):
     """
     Do the projection benchmarks
     """
-    benchmark_setup = get_np_array_str(data_frame_rows)
+    benchmark_setup = get_np_cat_array_str(data_frame_rows)
     benchmark_exec = get_test_one_hot_encoder_str()
-    benchmark_setup_func_str = "get_np_array_str({})".format(data_frame_rows)
+    benchmark_setup_func_str = "get_np_cat_array_str({})".format(data_frame_rows)
     benchmark_exec_func_str = "get_test_one_hot_encoder_str()"
+
+    benchmark_results = exec_benchmarks(benchmark_exec, benchmark_exec_func_str, benchmark_setup,
+                                        benchmark_setup_func_str, repeats)
+
+    return benchmark_results
+
+
+def do_standard_scaler_benchmarks(data_frame_rows, repeats=5):
+    """
+    Do the projection benchmarks
+    """
+    benchmark_setup = get_np_num_array_str(data_frame_rows)
+    benchmark_exec = get_test_standard_scaler_str()
+    benchmark_setup_func_str = "get_np_num_array_str({})".format(data_frame_rows)
+    benchmark_exec_func_str = "get_test_standard_scaler_str()"
 
     benchmark_results = exec_benchmarks(benchmark_exec, benchmark_exec_func_str, benchmark_setup,
                                         benchmark_setup_func_str, repeats)
@@ -102,8 +132,9 @@ def prepare_benchmark_exec(benchmark_str, setup_str, inspections):
     from experiments.empty_inspection import EmptyInspection
     from mlinspect.instrumentation.pipeline_executor import singleton
     from experiments.benchmark_utils import get_single_df_creation_str, get_multiple_dfs_creation_str, \
-        get_test_projection_str, get_test_selection_str, get_test_join_str, get_np_array_str, \
-        get_test_one_hot_encoder_str
+        get_test_projection_str, get_test_selection_str, get_test_join_str, get_np_cat_array_str, \
+        get_test_one_hot_encoder_str, get_np_num_array_str, get_test_standard_scaler_str, \
+        get_estimator_train_data_str, get_decision_tree_str
 
     test_code_setup = {}
     inspector_result = singleton.run(None, None, test_code_setup, {}, [])
@@ -200,7 +231,7 @@ def get_test_join_str():
     return test_code
 
 
-def get_np_array_str(data_frame_rows):
+def get_np_cat_array_str(data_frame_rows):
     """
     Get a complete code str that creates a np array with random values
     """
@@ -223,5 +254,63 @@ def get_test_one_hot_encoder_str():
     test_code = cleandoc("""
         one_hot_encoder = OneHotEncoder()
         encoded_data = one_hot_encoder.fit_transform(df)
+        """)
+    return test_code
+
+
+def get_np_num_array_str(data_frame_rows):
+    """
+    Get a complete code str that creates a np array with random values
+    """
+    test_code = cleandoc("""
+        from sklearn.preprocessing import StandardScaler
+        import pandas as pd
+        from numpy.random import randint
+
+        series = randint(0,100,size=({})) 
+        df = pd.DataFrame(series, columns=["num"])
+        """.format(data_frame_rows))
+    return test_code
+
+
+def get_test_standard_scaler_str():
+    """
+    Get a pandas projection code str
+    """
+    test_code = cleandoc("""
+        standard_scaler = StandardScaler()
+        encoded_data = standard_scaler.fit_transform(df)
+        """)
+    return test_code
+
+
+def get_estimator_train_data_str(data_frame_rows):
+    """
+    Get a complete code str that creates a np array with random values
+    """
+    test_code = cleandoc("""
+        from sklearn.preprocessing import StandardScaler
+        import pandas as pd
+        from numpy.random import randint
+        from sklearn import tree, datasets
+        
+        data, target = datasets.load_digits(return_X_y=True, as_frame=True)
+        
+        data = data.sample(n={data_frame_rows}, replace=True, random_state=2)
+        target = target.sample(n={data_frame_rows}, replace=True, random_state=2)
+
+        data_df = pd.DataFrame(data)
+        target_df = pd.DataFrame(target)
+        """.format(data_frame_rows=data_frame_rows))
+    return test_code
+
+
+def get_decision_tree_str():
+    """
+    Get a pandas projection code str
+    """
+    test_code = cleandoc("""
+        classifier = tree.DecisionTreeClassifier()
+        encoded_data = classifier.fit(data_df, target_df)
         """)
     return test_code

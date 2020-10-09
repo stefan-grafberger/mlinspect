@@ -328,8 +328,8 @@ def execute_inspection_visits_sink_op(operator_context, code_reference, data, ta
                                       inspections, code_reference_inspection_output_map, func_name):
     """Execute inspections"""
     # pylint: disable=too-many-arguments
-    assert isinstance(data, (MlinspectCsrMatrix, MlinspectNdarray))
-    assert isinstance(target, (MlinspectNdarray, MlinspectSeries))
+    assert isinstance(data, (MlinspectCsrMatrix, MlinspectNdarray, MlinspectDataFrame))
+    assert isinstance(target, (MlinspectNdarray, MlinspectSeries, MlinspectDataFrame))
     inspection_count = len(inspections)
     iterators_for_inspections = iter_input_annotation_output_sink_op(inspection_count, data, target, operator_context)
     annotation_iterators = execute_visits(inspections, iterators_for_inspections)
