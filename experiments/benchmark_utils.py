@@ -5,6 +5,21 @@ import timeit
 from inspect import cleandoc
 
 
+def do_one_hot_encoder_benchmarks(data_frame_rows, repeats=5):
+    """
+    Do the projection benchmarks
+    """
+    benchmark_setup = get_np_array_str(data_frame_rows)
+    benchmark_exec = get_test_one_hot_encoder_str()
+    benchmark_setup_func_str = "get_np_array_str({})".format(data_frame_rows)
+    benchmark_exec_func_str = "get_test_one_hot_encoder_str()"
+
+    benchmark_results = exec_benchmarks(benchmark_exec, benchmark_exec_func_str, benchmark_setup,
+                                        benchmark_setup_func_str, repeats)
+
+    return benchmark_results
+
+
 def do_projection_benchmarks(data_frame_rows, repeats=5):
     """
     Do the projection benchmarks
@@ -87,7 +102,8 @@ def prepare_benchmark_exec(benchmark_str, setup_str, inspections):
     from experiments.empty_inspection import EmptyInspection
     from mlinspect.instrumentation.pipeline_executor import singleton
     from experiments.benchmark_utils import get_single_df_creation_str, get_multiple_dfs_creation_str, \
-        get_test_projection_str, get_test_selection_str, get_test_join_str
+        get_test_projection_str, get_test_selection_str, get_test_join_str, get_np_array_str, \
+        get_test_one_hot_encoder_str
 
     test_code_setup = {}
     inspector_result = singleton.run(None, None, test_code_setup, {}, [])
@@ -180,5 +196,32 @@ def get_test_join_str():
     """
     test_code = cleandoc("""
         test = df_a.merge(df_b, on='id')
+        """)
+    return test_code
+
+
+def get_np_array_str(data_frame_rows):
+    """
+    Get a complete code str that creates a np array with random values
+    """
+    test_code = cleandoc("""
+        from sklearn.preprocessing import OneHotEncoder
+        import pandas as pd
+        import random
+
+        categories = ['cat_a', 'cat_b', 'cat_c']
+        series = pd.Series(random.choices(categories, k={}))
+        df = pd.DataFrame(series, columns=["cat"])
+        """.format(data_frame_rows))
+    return test_code
+
+
+def get_test_one_hot_encoder_str():
+    """
+    Get a pandas projection code str
+    """
+    test_code = cleandoc("""
+        one_hot_encoder = OneHotEncoder()
+        encoded_data = one_hot_encoder.fit_transform(df)
         """)
     return test_code

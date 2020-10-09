@@ -5,6 +5,7 @@ definition style
 import inspect
 
 import numpy
+from pandas import DataFrame
 from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator
 
@@ -132,6 +133,13 @@ class MlinspectEstimatorTransformer(BaseEstimator):
                 assert isinstance(X, MlinspectNdarray)
                 column_name, annotations = X.annotations[column_index]
                 input_data = X[:, column_index]
+            elif isinstance(X.annotations, DataFrame) and len(X.columns) == 1:
+                # Currently, this is only used when benchmarking single transformers
+                # TODO: Full support for calling fit_transform etc. on encoders directly instead of using
+                #  column transformers
+                column_name = X.columns[0]
+                annotations = X.annotations
+                input_data = X
             else:
                 assert False
 
