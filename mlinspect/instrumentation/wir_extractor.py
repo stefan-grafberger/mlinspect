@@ -241,7 +241,7 @@ class WirExtractor:
             object_with_that_func_ast = name_or_attribute_ast.children[0]
             object_with_that_func_wir = self.get_wir_node_for_ast(object_with_that_func_ast)
             # Still not done, example: import os, os.path.join: join children ast is not os, but path
-            while object_with_that_func_wir == WirExtractor.NOT_FOUND_WIR:
+            while object_with_that_func_wir == WirExtractor.NOT_FOUND_WIR and object_with_that_func_ast.children:
                 object_with_that_func_ast = object_with_that_func_ast.children[0]
                 object_with_that_func_wir = self.get_wir_node_for_ast(object_with_that_func_ast)
             caller_parent = object_with_that_func_wir

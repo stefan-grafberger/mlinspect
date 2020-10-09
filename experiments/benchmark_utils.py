@@ -35,6 +35,21 @@ def do_selection_benchmarks(data_frame_rows, repeats=5):
     return benchmark_results
 
 
+def do_join_benchmarks(data_frame_rows, repeats=5):
+    """
+    Do the selection benchmarks
+    """
+    benchmark_setup = get_multiple_dfs_creation_str(data_frame_rows)
+    benchmark_exec = get_test_join_str()
+    benchmark_setup_func_str = "get_multiple_dfs_creation_str({})".format(data_frame_rows)
+    benchmark_exec_func_str = "get_test_join_str()"
+
+    benchmark_results = exec_benchmarks(benchmark_exec, benchmark_exec_func_str, benchmark_setup,
+                                        benchmark_setup_func_str, repeats)
+
+    return benchmark_results
+
+
 def exec_benchmarks(benchmark_exec, benchmark_exec_func_str, benchmark_setup, benchmark_setup_func_str, repeats):
     """
     Benchmark some code without mlinspect and with mlinspect with varying numbers of inspections
@@ -71,7 +86,8 @@ def prepare_benchmark_exec(benchmark_str, setup_str, inspections):
     setup = cleandoc("""
     from experiments.empty_inspection import EmptyInspection
     from mlinspect.instrumentation.pipeline_executor import singleton
-    from experiments.benchmark_utils import get_single_df_creation_str, get_test_projection_str, get_test_selection_str
+    from experiments.benchmark_utils import get_single_df_creation_str, get_multiple_dfs_creation_str, \
+        get_test_projection_str, get_test_selection_str, get_test_join_str
 
     test_code_setup = {}
     inspector_result = singleton.run(None, None, test_code_setup, {}, [])
@@ -122,5 +138,47 @@ def get_test_selection_str():
     """
     test_code = cleandoc("""
         test = df[df['A'] > 50]
+        """)
+    return test_code
+
+
+def get_multiple_dfs_creation_str(data_frame_rows):
+    """
+    Get a complete code str that creates a DF with random value
+    """
+    sizes_before_join = int(data_frame_rows * 1.1)
+    start_with_offset = int(data_frame_rows * 0.1)
+    end_with_offset = start_with_offset + sizes_before_join
+    assert sizes_before_join - start_with_offset == data_frame_rows
+
+    # mlinspect does not support some ast nodes yet like *, /, and {}, so we need to avoid them
+    test_code = cleandoc("""
+        import pandas as pd
+        import numpy as np
+        from numpy.random import randint, shuffle
+
+        id_a = np.arange({sizes_before_join})
+        shuffle(id_a)
+        a = randint(0,100,size=({sizes_before_join}))
+        b = randint(0,100,size=({sizes_before_join}))
+        
+        id_b = np.arange({start_with_offset}, {end_with_offset})
+        shuffle(id_b)
+        c = randint(0,100,size=({sizes_before_join})) 
+        d = randint(0,100,size=({sizes_before_join}))
+        
+        df_a = pd.DataFrame(zip(id_a, a, b), columns=['id', 'A', 'B'])
+        df_b = pd.DataFrame(zip(id_b, c, d), columns=['id', 'C', 'D'])
+        """.format(sizes_before_join=sizes_before_join, start_with_offset=start_with_offset,
+                   end_with_offset=end_with_offset))
+    return test_code
+
+
+def get_test_join_str():
+    """
+    Get a pandas projection code str
+    """
+    test_code = cleandoc("""
+        test = df_a.merge(df_b, on='id')
         """)
     return test_code
