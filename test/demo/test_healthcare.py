@@ -14,9 +14,6 @@ from mlinspect.inspections.materialize_first_rows_inspection import MaterializeF
 from mlinspect.pipeline_inspector import PipelineInspector
 from mlinspect.utils import get_project_root
 
-ADULT_EASY_FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
-FILE_NB = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.ipynb")
-
 
 PIPELINE_FILE_PY = os.path.join(str(get_project_root()), "demo", "healthcare", "healthcare.py")
 DEMO_NB_FILE = os.path.join(str(get_project_root()), "demo", "healthcare", "healthcare_demo.ipynb")

@@ -10,6 +10,7 @@ from inspect import cleandoc
 from mlinspect.utils import get_project_root
 
 ADULT_EASY_FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
+HEALTHCARE_FILE_PY = os.path.join(str(get_project_root()), "demo", "healthcare", "healthcare.py")
 
 
 class OperatorBenchmarkType(Enum):
@@ -60,6 +61,19 @@ def do_adult_easy_benchmarks(repeats=5):
     benchmark_setup = "pass"
     benchmark_exec = get_adult_easy_py_str()
     benchmark_setup_func_str = "get_adult_easy_py_str()"
+    code_to_benchmark = CodeToBenchmark(benchmark_setup, benchmark_exec, benchmark_setup_func_str,
+                                        "")
+    benchmark_results = exec_pipeline_benchmarks_empty_inspection(code_to_benchmark, repeats)
+    return benchmark_results
+
+
+def do_healthcare_benchmarks(repeats=5):
+    """
+    Do the projection benchmarks
+    """
+    benchmark_setup = "pass"
+    benchmark_exec = get_healthcare_py_str()
+    benchmark_setup_func_str = "get_healthcare_py_str()"
     code_to_benchmark = CodeToBenchmark(benchmark_setup, benchmark_exec, benchmark_setup_func_str,
                                         "")
     benchmark_results = exec_pipeline_benchmarks_empty_inspection(code_to_benchmark, repeats)
@@ -234,7 +248,7 @@ def prepare_pipeline_benchmark_exec(test_code):
     Get the benchmark str for timeit
     """
     benchmark = cleandoc("""
-    from experiments.benchmark_utils import get_adult_easy_py_str
+    from experiments.benchmark_utils import get_adult_easy_py_str, get_healthcare_py_str
     
     code = {}
     """.format(test_code))
@@ -433,5 +447,14 @@ def get_adult_easy_py_str():
     Get the code str for the adult_easy pipeline
     """
     with open(ADULT_EASY_FILE_PY) as file:
+        test_code = file.read()
+    return test_code
+
+
+def get_healthcare_py_str():
+    """
+    Get the code str for the adult_easy pipeline
+    """
+    with open(HEALTHCARE_FILE_PY) as file:
         test_code = file.read()
     return test_code
