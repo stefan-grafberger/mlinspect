@@ -7,7 +7,7 @@ import matplotlib
 from importnb import Notebook
 
 from experiments.benchmark_utils import do_op_instrumentation_benchmarks, OperatorBenchmarkType, \
-    do_op_inspections_benchmarks
+    do_op_inspections_benchmarks, do_adult_easy_benchmarks
 from mlinspect.utils import get_project_root
 
 EXPERIMENT_NB_FILE = os.path.join(str(get_project_root()), "experiments", "operator_benchmarks.ipynb")
@@ -38,6 +38,19 @@ def test_inspection_benchmarks():
         assert benchmark_results["MaterializeFirstRowsInspection(10)"]
         assert benchmark_results["LineageInspection(10)"]
         assert benchmark_results["HistogramInspection(['group_col'])"]
+
+
+def test_pipeline_benchmarks():
+    """
+    Tests whether the pipeline works with instrumentation
+    """
+    benchmark_results = do_adult_easy_benchmarks(1)
+
+    assert benchmark_results["no mlinspect"]
+    assert benchmark_results["no inspection"]
+    assert benchmark_results["one inspection"]
+    assert benchmark_results["two inspections"]
+    assert benchmark_results["three inspections"]
 
 
 def test_experiment_nb():

@@ -1,10 +1,15 @@
 """
 Functions to benchmark mlinspect
 """
+import os
 from dataclasses import dataclass
 from enum import Enum
 import timeit
 from inspect import cleandoc
+
+from mlinspect.utils import get_project_root
+
+ADULT_EASY_FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 
 
 class OperatorBenchmarkType(Enum):
@@ -45,6 +50,19 @@ def do_op_inspections_benchmarks(data_frame_rows, operator_type: OperatorBenchma
     """
     code_to_benchmark = get_code_to_benchmark(data_frame_rows, operator_type)
     benchmark_results = exec_benchmarks_nonempty_inspection(code_to_benchmark, repeats)
+    return benchmark_results
+
+
+def do_adult_easy_benchmarks(repeats=5):
+    """
+    Do the projection benchmarks
+    """
+    benchmark_setup = "pass"
+    benchmark_exec = get_adult_easy_py_str()
+    benchmark_setup_func_str = "get_adult_easy_py_str()"
+    code_to_benchmark = CodeToBenchmark(benchmark_setup, benchmark_exec, benchmark_setup_func_str,
+                                        "")
+    benchmark_results = exec_pipeline_benchmarks_empty_inspection(code_to_benchmark, repeats)
     return benchmark_results
 
 
@@ -136,12 +154,44 @@ def exec_benchmarks_nonempty_inspection(code_to_benchmark, repeats):
     return benchmark_results
 
 
+def exec_pipeline_benchmarks_empty_inspection(code_to_benchmark, repeats):
+    """
+    Benchmark some code without mlinspect and with mlinspect with varying numbers of inspections
+    """
+    benchmark_results = {
+        "no mlinspect": timeit.repeat(stmt=code_to_benchmark.benchmark_exec, setup=code_to_benchmark.benchmark_setup,
+                                      repeat=repeats, number=1),
+        "no inspection": benchmark_pipeline_code_str_with_inspections(code_to_benchmark.benchmark_setup_func_str, "[]",
+                                                                      repeats),
+        "one inspection": benchmark_pipeline_code_str_with_inspections(code_to_benchmark.benchmark_setup_func_str,
+                                                                       "[EmptyInspection(0)]", repeats),
+        "two inspections": benchmark_pipeline_code_str_with_inspections(code_to_benchmark.benchmark_setup_func_str,
+                                                                        "[EmptyInspection(0), EmptyInspection(1)]",
+                                                                        repeats),
+        "three inspections": benchmark_pipeline_code_str_with_inspections(code_to_benchmark.benchmark_setup_func_str,
+                                                                          "[EmptyInspection(0), " +
+                                                                          "EmptyInspection(1), EmptyInspection(2)]",
+                                                                          repeats)}
+
+    return benchmark_results
+
+
 def benchmark_code_str_with_inspections(benchmark_str, setup_str, inspections_str, repeats):
     """
     Execute one single benchmark
     """
     setup = prepare_benchmark_exec(benchmark_str, setup_str, inspections_str)
     benchmark = trigger_benchmark_exec(inspections_str)
+    benchmark_result_one_inspection = timeit.repeat(stmt=benchmark, setup=setup, repeat=repeats, number=1)
+    return benchmark_result_one_inspection
+
+
+def benchmark_pipeline_code_str_with_inspections(setup_str, inspections_str, repeats):
+    """
+    Execute one single benchmark
+    """
+    setup = prepare_pipeline_benchmark_exec(setup_str)
+    benchmark = trigger_pipeline_benchmark_exec(inspections_str)
     benchmark_result_one_inspection = timeit.repeat(stmt=benchmark, setup=setup, repeat=repeats, number=1)
     return benchmark_result_one_inspection
 
@@ -175,6 +225,34 @@ def trigger_benchmark_exec(inspections_str):
     benchmark = cleandoc("""
     inspector_result_two = singleton.run(None, None, test_code_benchmark, {}, [], 
                                          False)
+    """.format(inspections_str))
+    return benchmark
+
+
+def prepare_pipeline_benchmark_exec(test_code):
+    """
+    Get the benchmark str for timeit
+    """
+    benchmark = cleandoc("""
+    from experiments.benchmark_utils import get_adult_easy_py_str
+    
+    code = {}
+    """.format(test_code))
+    return benchmark
+
+
+def trigger_pipeline_benchmark_exec(inspections_str):
+    """
+    Get the benchmark str for timeit
+    """
+    benchmark = cleandoc("""
+    from experiments.empty_inspection import EmptyInspection
+    from mlinspect.pipeline_inspector import PipelineInspector
+    
+    PipelineInspector\
+            .on_pipeline_from_string(code)\
+            .add_required_inspections({}) \
+            .execute()
     """.format(inspections_str))
     return benchmark
 
@@ -347,4 +425,13 @@ def get_decision_tree_str():
         classifier = tree.DecisionTreeClassifier()
         encoded_data = classifier.fit(data_df, target_df)
         """)
+    return test_code
+
+
+def get_adult_easy_py_str():
+    """
+    Get the code str for the adult_easy pipeline
+    """
+    with open(ADULT_EASY_FILE_PY) as file:
+        test_code = file.read()
     return test_code
