@@ -30,12 +30,21 @@ class CodeToBenchmark:
     benchmark_exec_func_str: str
 
 
-def do_operator_empty_inspections_benchmarks(data_frame_rows, operator_type: OperatorBenchmarkType, repeats=5):
+def do_op_instrumentation_benchmarks(data_frame_rows, operator_type: OperatorBenchmarkType, repeats=5):
     """
     Do the projection benchmarks
     """
     code_to_benchmark = get_code_to_benchmark(data_frame_rows, operator_type)
     benchmark_results = exec_benchmarks_empty_inspection(code_to_benchmark, repeats)
+    return benchmark_results
+
+
+def do_op_inspections_benchmarks(data_frame_rows, operator_type: OperatorBenchmarkType, repeats=5):
+    """
+    Do the projection benchmarks
+    """
+    code_to_benchmark = get_code_to_benchmark(data_frame_rows, operator_type)
+    benchmark_results = exec_benchmarks_nonempty_inspection(code_to_benchmark, repeats)
     return benchmark_results
 
 
@@ -104,6 +113,28 @@ def exec_benchmarks_empty_inspection(code_to_benchmark, repeats):
     return benchmark_results
 
 
+def exec_benchmarks_nonempty_inspection(code_to_benchmark, repeats):
+    """
+    Benchmark some code without mlinspect and with mlinspect with varying numbers of inspections
+    """
+    benchmark_results = {
+        "empty inspection": benchmark_code_str_with_inspections(code_to_benchmark.benchmark_exec_func_str,
+                                                                code_to_benchmark.benchmark_setup_func_str,
+                                                                "[EmptyInspection(0)]", repeats),
+        "MaterializeFirstRowsInspection(10)": benchmark_code_str_with_inspections(
+            code_to_benchmark.benchmark_exec_func_str,
+            code_to_benchmark.benchmark_setup_func_str,
+            "[MaterializeFirstRowsInspection(10)]", repeats),
+        "LineageInspection(10)": benchmark_code_str_with_inspections(code_to_benchmark.benchmark_exec_func_str,
+                                                                     code_to_benchmark.benchmark_setup_func_str,
+                                                                     "[LineageInspection(10)]", repeats),
+        "HistogramInspection(['cat'])": benchmark_code_str_with_inspections(code_to_benchmark.benchmark_exec_func_str,
+                                                                            code_to_benchmark.benchmark_setup_func_str,
+                                                                            "[HistogramInspection(['cat'])]", repeats)}
+
+    return benchmark_results
+
+
 def benchmark_code_str_with_inspections(benchmark_str, setup_str, inspections_str, repeats):
     """
     Execute one single benchmark
@@ -121,6 +152,9 @@ def prepare_benchmark_exec(benchmark_str, setup_str, inspections):
     setup = cleandoc("""
     from experiments.empty_inspection import EmptyInspection
     from mlinspect.instrumentation.pipeline_executor import singleton
+    from mlinspect.inspections.histogram_inspection import HistogramInspection
+    from mlinspect.inspections.lineage_inspection import LineageInspection
+    from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
     from experiments.benchmark_utils import get_single_df_creation_str, get_multiple_dfs_creation_str, \
         get_test_projection_str, get_test_selection_str, get_test_join_str, get_np_cat_array_str, \
         get_test_one_hot_encoder_str, get_np_num_array_str, get_test_standard_scaler_str, \
@@ -152,10 +186,16 @@ def get_single_df_creation_str(data_frame_rows):
         import pandas as pd
         import numpy as np
         from numpy.random import randint
+        import random
 
-        array = randint(0,100,size=({}, 4))
-        df = pd.DataFrame(array, columns=['A', 'B', 'C', 'D'])
-        """.format(data_frame_rows))
+        a = randint(0,100,size=({data_frame_rows}))
+        b = randint(0,100,size=({data_frame_rows}))
+        c = randint(0,100,size=({data_frame_rows}))
+        d = randint(0,100,size=({data_frame_rows}))
+        categories = ['cat_a', 'cat_b', 'cat_c']
+        cat = pd.Series(random.choices(categories, k={data_frame_rows}))
+        df = pd.DataFrame(zip(a, b, c, d, cat), columns=['A', 'B', 'C', 'D', "cat"])
+        """.format(data_frame_rows=data_frame_rows))
     return test_code
 
 
@@ -193,18 +233,21 @@ def get_multiple_dfs_creation_str(data_frame_rows):
         import pandas as pd
         import numpy as np
         from numpy.random import randint, shuffle
+        import random
 
         id_a = np.arange({sizes_before_join})
         shuffle(id_a)
         a = randint(0,100,size=({sizes_before_join}))
         b = randint(0,100,size=({sizes_before_join}))
+        categories = ['cat_a', 'cat_b', 'cat_c']
+        cat = pd.Series(random.choices(categories, k={sizes_before_join}))
         
         id_b = np.arange({start_with_offset}, {end_with_offset})
         shuffle(id_b)
         c = randint(0,100,size=({sizes_before_join})) 
         d = randint(0,100,size=({sizes_before_join}))
         
-        df_a = pd.DataFrame(zip(id_a, a, b), columns=['id', 'A', 'B'])
+        df_a = pd.DataFrame(zip(id_a, a, b, cat), columns=['id', 'A', 'B', 'cat'])
         df_b = pd.DataFrame(zip(id_b, c, d), columns=['id', 'C', 'D'])
         """.format(sizes_before_join=sizes_before_join, start_with_offset=start_with_offset,
                    end_with_offset=end_with_offset))
