@@ -1,113 +1,103 @@
 """
 Functions to benchmark mlinspect
 """
+from dataclasses import dataclass
+from enum import Enum
 import timeit
 from inspect import cleandoc
 
 
-def do_decision_tree_benchmarks(data_frame_rows, repeats=5):
+class OperatorBenchmarkType(Enum):
+    """
+    The different operators we benchmark
+    """
+    PROJECTION = "projection"
+    SELECTION = "selection"
+    JOIN = "join"
+    ONE_HOT_ENCODER = "one_hot_encoder"
+    STANDARD_SCALER = "standard_scaler"
+    DECISION_TREE = "decision_tree"
+
+
+@dataclass(frozen=True, eq=True)
+class CodeToBenchmark:
+    """
+    Simple data class to pass the code strings around.
+    """
+    benchmark_setup: str
+    benchmark_exec: str
+    benchmark_setup_func_str: str
+    benchmark_exec_func_str: str
+
+
+def do_operator_empty_inspections_benchmarks(data_frame_rows, operator_type: OperatorBenchmarkType, repeats=5):
     """
     Do the projection benchmarks
     """
-    benchmark_setup = get_estimator_train_data_str(data_frame_rows)
-    benchmark_exec = get_decision_tree_str()
-    benchmark_setup_func_str = "get_estimator_train_data_str({})".format(data_frame_rows)
-    benchmark_exec_func_str = "get_decision_tree_str()"
-
-    benchmark_results = exec_benchmarks(benchmark_exec, benchmark_exec_func_str, benchmark_setup,
-                                        benchmark_setup_func_str, repeats)
-
+    code_to_benchmark = get_code_to_benchmark(data_frame_rows, operator_type)
+    benchmark_results = exec_benchmarks_empty_inspection(code_to_benchmark, repeats)
     return benchmark_results
 
 
-def do_one_hot_encoder_benchmarks(data_frame_rows, repeats=5):
+def get_code_to_benchmark(data_frame_rows, operator_type):
     """
-    Do the projection benchmarks
+    Get the code to benchmark for the operator benchmark type
     """
-    benchmark_setup = get_np_cat_array_str(data_frame_rows)
-    benchmark_exec = get_test_one_hot_encoder_str()
-    benchmark_setup_func_str = "get_np_cat_array_str({})".format(data_frame_rows)
-    benchmark_exec_func_str = "get_test_one_hot_encoder_str()"
-
-    benchmark_results = exec_benchmarks(benchmark_exec, benchmark_exec_func_str, benchmark_setup,
-                                        benchmark_setup_func_str, repeats)
-
-    return benchmark_results
-
-
-def do_standard_scaler_benchmarks(data_frame_rows, repeats=5):
-    """
-    Do the projection benchmarks
-    """
-    benchmark_setup = get_np_num_array_str(data_frame_rows)
-    benchmark_exec = get_test_standard_scaler_str()
-    benchmark_setup_func_str = "get_np_num_array_str({})".format(data_frame_rows)
-    benchmark_exec_func_str = "get_test_standard_scaler_str()"
-
-    benchmark_results = exec_benchmarks(benchmark_exec, benchmark_exec_func_str, benchmark_setup,
-                                        benchmark_setup_func_str, repeats)
-
-    return benchmark_results
-
-
-def do_projection_benchmarks(data_frame_rows, repeats=5):
-    """
-    Do the projection benchmarks
-    """
-    benchmark_setup = get_single_df_creation_str(data_frame_rows)
-    benchmark_exec = get_test_projection_str()
-    benchmark_setup_func_str = "get_single_df_creation_str({})".format(data_frame_rows)
-    benchmark_exec_func_str = "get_test_projection_str()"
-
-    benchmark_results = exec_benchmarks(benchmark_exec, benchmark_exec_func_str, benchmark_setup,
-                                        benchmark_setup_func_str, repeats)
-
-    return benchmark_results
+    if operator_type == OperatorBenchmarkType.PROJECTION:
+        benchmark_setup = get_single_df_creation_str(data_frame_rows)
+        benchmark_exec = get_test_projection_str()
+        benchmark_setup_func_str = "get_single_df_creation_str({})".format(data_frame_rows)
+        benchmark_exec_func_str = "get_test_projection_str()"
+    elif operator_type == OperatorBenchmarkType.SELECTION:
+        benchmark_setup = get_single_df_creation_str(data_frame_rows)
+        benchmark_exec = get_test_selection_str()
+        benchmark_setup_func_str = "get_single_df_creation_str({})".format(data_frame_rows)
+        benchmark_exec_func_str = "get_test_selection_str()"
+    elif operator_type == OperatorBenchmarkType.JOIN:
+        benchmark_setup = get_multiple_dfs_creation_str(data_frame_rows)
+        benchmark_exec = get_test_join_str()
+        benchmark_setup_func_str = "get_multiple_dfs_creation_str({})".format(data_frame_rows)
+        benchmark_exec_func_str = "get_test_join_str()"
+    elif operator_type == OperatorBenchmarkType.ONE_HOT_ENCODER:
+        benchmark_setup = get_np_cat_array_str(data_frame_rows)
+        benchmark_exec = get_test_one_hot_encoder_str()
+        benchmark_setup_func_str = "get_np_cat_array_str({})".format(data_frame_rows)
+        benchmark_exec_func_str = "get_test_one_hot_encoder_str()"
+    elif operator_type == OperatorBenchmarkType.STANDARD_SCALER:
+        benchmark_setup = get_np_num_array_str(data_frame_rows)
+        benchmark_exec = get_test_standard_scaler_str()
+        benchmark_setup_func_str = "get_np_num_array_str({})".format(data_frame_rows)
+        benchmark_exec_func_str = "get_test_standard_scaler_str()"
+    elif operator_type == OperatorBenchmarkType.DECISION_TREE:
+        benchmark_setup = get_estimator_train_data_str(data_frame_rows)
+        benchmark_exec = get_decision_tree_str()
+        benchmark_setup_func_str = "get_estimator_train_data_str({})".format(data_frame_rows)
+        benchmark_exec_func_str = "get_decision_tree_str()"
+    else:
+        assert False
+    code_to_benchmark = CodeToBenchmark(benchmark_setup, benchmark_exec, benchmark_setup_func_str,
+                                        benchmark_exec_func_str)
+    return code_to_benchmark
 
 
-def do_selection_benchmarks(data_frame_rows, repeats=5):
-    """
-    Do the selection benchmarks
-    """
-    benchmark_setup = get_single_df_creation_str(data_frame_rows)
-    benchmark_exec = get_test_selection_str()
-    benchmark_setup_func_str = "get_single_df_creation_str({})".format(data_frame_rows)
-    benchmark_exec_func_str = "get_test_selection_str()"
-
-    benchmark_results = exec_benchmarks(benchmark_exec, benchmark_exec_func_str, benchmark_setup,
-                                        benchmark_setup_func_str, repeats)
-
-    return benchmark_results
-
-
-def do_join_benchmarks(data_frame_rows, repeats=5):
-    """
-    Do the selection benchmarks
-    """
-    benchmark_setup = get_multiple_dfs_creation_str(data_frame_rows)
-    benchmark_exec = get_test_join_str()
-    benchmark_setup_func_str = "get_multiple_dfs_creation_str({})".format(data_frame_rows)
-    benchmark_exec_func_str = "get_test_join_str()"
-
-    benchmark_results = exec_benchmarks(benchmark_exec, benchmark_exec_func_str, benchmark_setup,
-                                        benchmark_setup_func_str, repeats)
-
-    return benchmark_results
-
-
-def exec_benchmarks(benchmark_exec, benchmark_exec_func_str, benchmark_setup, benchmark_setup_func_str, repeats):
+def exec_benchmarks_empty_inspection(code_to_benchmark, repeats):
     """
     Benchmark some code without mlinspect and with mlinspect with varying numbers of inspections
     """
     benchmark_results = {
-        "no mlinspect": timeit.repeat(stmt=benchmark_exec, setup=benchmark_setup, repeat=repeats, number=1),
-        "no inspection": benchmark_code_str_with_inspections(benchmark_exec_func_str, benchmark_setup_func_str, "[]",
+        "no mlinspect": timeit.repeat(stmt=code_to_benchmark.benchmark_exec, setup=code_to_benchmark.benchmark_setup,
+                                      repeat=repeats, number=1),
+        "no inspection": benchmark_code_str_with_inspections(code_to_benchmark.benchmark_exec_func_str,
+                                                             code_to_benchmark.benchmark_setup_func_str, "[]",
                                                              repeats),
-        "one inspection": benchmark_code_str_with_inspections(benchmark_exec_func_str, benchmark_setup_func_str,
+        "one inspection": benchmark_code_str_with_inspections(code_to_benchmark.benchmark_exec_func_str,
+                                                              code_to_benchmark.benchmark_setup_func_str,
                                                               "[EmptyInspection(0)]", repeats),
-        "two inspections": benchmark_code_str_with_inspections(benchmark_exec_func_str, benchmark_setup_func_str,
+        "two inspections": benchmark_code_str_with_inspections(code_to_benchmark.benchmark_exec_func_str,
+                                                               code_to_benchmark.benchmark_setup_func_str,
                                                                "[EmptyInspection(0), EmptyInspection(1)]", repeats),
-        "three inspections": benchmark_code_str_with_inspections(benchmark_exec_func_str, benchmark_setup_func_str,
+        "three inspections": benchmark_code_str_with_inspections(code_to_benchmark.benchmark_exec_func_str,
+                                                                 code_to_benchmark.benchmark_setup_func_str,
                                                                  "[EmptyInspection(0), " +
                                                                  "EmptyInspection(1), EmptyInspection(2)]", repeats)}
 
