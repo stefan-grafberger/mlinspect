@@ -30,7 +30,7 @@ class CodeToBenchmark:
     benchmark_exec_func_str: str
 
 
-def do_op_instrumentation_benchmarks(data_frame_rows, operator_type: OperatorBenchmarkType, repeats=5):
+def do_op_instrumentation_benchmarks(data_frame_rows, operator_type: OperatorBenchmarkType, repeats=10):
     """
     Do the projection benchmarks
     """
@@ -128,9 +128,10 @@ def exec_benchmarks_nonempty_inspection(code_to_benchmark, repeats):
         "LineageInspection(10)": benchmark_code_str_with_inspections(code_to_benchmark.benchmark_exec_func_str,
                                                                      code_to_benchmark.benchmark_setup_func_str,
                                                                      "[LineageInspection(10)]", repeats),
-        "HistogramInspection(['cat'])": benchmark_code_str_with_inspections(code_to_benchmark.benchmark_exec_func_str,
-                                                                            code_to_benchmark.benchmark_setup_func_str,
-                                                                            "[HistogramInspection(['cat'])]", repeats)}
+        "HistogramInspection(['group_col'])": benchmark_code_str_with_inspections(
+            code_to_benchmark.benchmark_exec_func_str,
+            code_to_benchmark.benchmark_setup_func_str,
+            "[HistogramInspection(['group_col'])]", repeats)}
 
     return benchmark_results
 
@@ -193,8 +194,8 @@ def get_single_df_creation_str(data_frame_rows):
         c = randint(0,100,size=({data_frame_rows}))
         d = randint(0,100,size=({data_frame_rows}))
         categories = ['cat_a', 'cat_b', 'cat_c']
-        cat = pd.Series(random.choices(categories, k={data_frame_rows}))
-        df = pd.DataFrame(zip(a, b, c, d, cat), columns=['A', 'B', 'C', 'D', "cat"])
+        group_col = pd.Series(random.choices(categories, k={data_frame_rows}))
+        df = pd.DataFrame(zip(a, b, c, d, group_col), columns=['A', 'B', 'C', 'D', "group_col"])
         """.format(data_frame_rows=data_frame_rows))
     return test_code
 
@@ -240,14 +241,14 @@ def get_multiple_dfs_creation_str(data_frame_rows):
         a = randint(0,100,size=({sizes_before_join}))
         b = randint(0,100,size=({sizes_before_join}))
         categories = ['cat_a', 'cat_b', 'cat_c']
-        cat = pd.Series(random.choices(categories, k={sizes_before_join}))
+        group_col = pd.Series(random.choices(categories, k={sizes_before_join}))
         
         id_b = np.arange({start_with_offset}, {end_with_offset})
         shuffle(id_b)
         c = randint(0,100,size=({sizes_before_join})) 
         d = randint(0,100,size=({sizes_before_join}))
         
-        df_a = pd.DataFrame(zip(id_a, a, b, cat), columns=['id', 'A', 'B', 'cat'])
+        df_a = pd.DataFrame(zip(id_a, a, b, group_col), columns=['id', 'A', 'B', 'group_col'])
         df_b = pd.DataFrame(zip(id_b, c, d), columns=['id', 'C', 'D'])
         """.format(sizes_before_join=sizes_before_join, start_with_offset=start_with_offset,
                    end_with_offset=end_with_offset))
@@ -274,8 +275,8 @@ def get_np_cat_array_str(data_frame_rows):
         import random
 
         categories = ['cat_a', 'cat_b', 'cat_c']
-        series = pd.Series(random.choices(categories, k={}))
-        df = pd.DataFrame(series, columns=["cat"])
+        group_col = pd.Series(random.choices(categories, k={}))
+        df = pd.DataFrame(group_col, columns=["group_col"])
         """.format(data_frame_rows))
     return test_code
 

@@ -37,7 +37,7 @@ def test_inspection_benchmarks():
         assert benchmark_results["empty inspection"]
         assert benchmark_results["MaterializeFirstRowsInspection(10)"]
         assert benchmark_results["LineageInspection(10)"]
-        assert benchmark_results["HistogramInspection(['cat'])"]
+        assert benchmark_results["HistogramInspection(['group_col'])"]
 
 
 def test_experiment_nb():
