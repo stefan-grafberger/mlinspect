@@ -137,9 +137,6 @@ class SklearnBackend(Backend):
                                }:
             return_value = MlinspectEstimatorTransformer(return_value, code_reference, self.inspections,
                                                          self.wir_post_processing_map)
-        else:
-            print("Not yet supported: {}".format(function_info))
-            assert False
 
         self.input_data = None
 

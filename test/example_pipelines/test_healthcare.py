@@ -2,9 +2,8 @@
 Tests whether the healthcare demo works
 """
 import ast
-
-from example_pipelines.pipelines import HEALTHCARE_PY
 from test.utils import run_and_assert_all_op_outputs_inspected
+from example_pipelines.pipelines import HEALTHCARE_PY
 
 
 def test_py_pipeline_runs():
