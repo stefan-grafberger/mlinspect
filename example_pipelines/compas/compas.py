@@ -24,11 +24,11 @@ test_data = test_data[
     ['sex', 'dob', 'age', 'c_charge_degree', 'race', 'score_text', 'priors_count', 'days_b_screening_arrest',
      'decile_score', 'is_recid', 'two_year_recid', 'c_jail_in', 'c_jail_out']]
 
-train_data = train_data[(train_data['days_b_screening_arrest'] <= 30)]
-train_data = train_data[(train_data['days_b_screening_arrest'] >= -30)]
-train_data = train_data[(train_data['is_recid'] != -1)]
-train_data = train_data[(train_data['c_charge_degree'] != "O")]
-train_data = train_data[(train_data['score_text'] != 'N/A')]
+train_data = train_data[train_data['days_b_screening_arrest'] <= 30]
+train_data = train_data[train_data['days_b_screening_arrest'] >= -30]
+train_data = train_data[train_data['is_recid'] != -1]
+train_data = train_data[train_data['c_charge_degree'] != "O"]
+train_data = train_data[train_data['score_text'] != 'N/A']
 
 train_data = train_data.replace('Medium', "Low")
 test_data = test_data.replace('Medium', "Low")

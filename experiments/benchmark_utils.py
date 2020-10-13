@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from inspect import cleandoc
 
-from example_pipelines.pipelines import HEALTHCARE_PY, ADULT_EASY_PY, ADULT_NORMAL_PY
+from example_pipelines.pipelines import HEALTHCARE_PY, ADULT_EASY_PY, ADULT_NORMAL_PY, COMPAS_PY
 
 
 class OperatorBenchmarkType(Enum):
@@ -70,6 +70,19 @@ def do_adult_normal_benchmarks(repeats=5):
     benchmark_setup = "pass"
     benchmark_exec = get_adult_normal_py_str()
     benchmark_setup_func_str = "get_adult_normal_py_str()"
+    code_to_benchmark = CodeToBenchmark(benchmark_setup, benchmark_exec, benchmark_setup_func_str,
+                                        "")
+    benchmark_results = exec_pipeline_benchmarks_empty_inspection(code_to_benchmark, repeats)
+    return benchmark_results
+
+
+def do_compas_benchmarks(repeats=5):
+    """
+    Do the projection benchmarks
+    """
+    benchmark_setup = "pass"
+    benchmark_exec = get_compas_py_str()
+    benchmark_setup_func_str = "get_compas_py_str()"
     code_to_benchmark = CodeToBenchmark(benchmark_setup, benchmark_exec, benchmark_setup_func_str,
                                         "")
     benchmark_results = exec_pipeline_benchmarks_empty_inspection(code_to_benchmark, repeats)
@@ -257,7 +270,8 @@ def prepare_pipeline_benchmark_exec(test_code):
     Get the benchmark str for timeit
     """
     benchmark = cleandoc("""
-    from experiments.benchmark_utils import get_adult_easy_py_str, get_adult_normal_py_str, get_healthcare_py_str
+    from experiments.benchmark_utils import get_adult_easy_py_str, get_adult_normal_py_str, get_healthcare_py_str, \
+        get_compas_py_str
     
     code = {}
     """.format(test_code))
@@ -465,6 +479,15 @@ def get_adult_normal_py_str():
     Get the code str for the adult_easy pipeline
     """
     with open(ADULT_NORMAL_PY) as file:
+        test_code = file.read()
+    return test_code
+
+
+def get_compas_py_str():
+    """
+    Get the code str for the adult_easy pipeline
+    """
+    with open(COMPAS_PY) as file:
         test_code = file.read()
     return test_code
 
