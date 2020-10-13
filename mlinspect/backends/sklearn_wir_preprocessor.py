@@ -14,12 +14,14 @@ class SklearnWirPreprocessor:
     """
 
     KNOWN_SINGLE_STEPS = {
+        ('sklearn.preprocessing._discretization', 'KBinsDiscretizer'),
         ('sklearn.preprocessing._encoders', 'OneHotEncoder'),
         ('sklearn.preprocessing._data', 'StandardScaler'),
         ('sklearn.tree._classes', 'DecisionTreeClassifier'),
         ('sklearn.impute._base', 'SimpleImputer'),
         ('demo.healthcare.demo_utils', 'MyW2VTransformer'),
-        ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')
+        ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
+        ('sklearn.linear_model._logistic', 'LogisticRegression')
     }
 
     KNOWN_MULTI_STEPS = {

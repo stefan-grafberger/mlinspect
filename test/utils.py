@@ -6,8 +6,9 @@ from inspect import cleandoc
 
 from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
 import networkx
-
+from demo.healthcare.missing_embeddings_inspection import MissingEmbeddingInspection
 from example_pipelines.pipelines import ADULT_EASY_PY
+from mlinspect.checks.check import Check
 from mlinspect.inspections.lineage_inspection import LineageInspection
 from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
 from mlinspect.instrumentation.dag_node import DagNode, OperatorType, CodeReference
@@ -389,3 +390,23 @@ def run_multiple_test_analyzers(code):
         .execute()
     inspection_results = result.inspection_to_annotations
     return inspection_results, analyzers
+
+
+def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns):
+    """
+    Execute the pipeline with a few checks and inspections.
+    Assert that mlinspect properly lets inspections inspect all DAG nodes
+    """
+    check = Check() \
+        .no_bias_introduced_for(sensitive_columns) \
+        .no_illegal_features()
+
+    inspector_result = PipelineInspector \
+        .on_pipeline_from_py_file(py_file_path) \
+        .add_check(check) \
+        .add_required_inspection(MissingEmbeddingInspection(20)) \
+        .add_required_inspection(LineageInspection(5)) \
+        .add_required_inspection(MaterializeFirstRowsInspection(5)) \
+        .execute()
+    materialize_output = inspector_result.inspection_to_annotations[MaterializeFirstRowsInspection(5)]
+    assert len(materialize_output) == (len(inspector_result.dag.nodes) - 1)  # Estimator does not have output

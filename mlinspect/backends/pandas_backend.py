@@ -33,6 +33,7 @@ class PandasBackend(Backend):
         ('pandas.core.frame', '__getitem__', 'Projection'): OperatorType.PROJECTION,
         ('pandas.core.frame', '__getitem__', 'Selection'): OperatorType.SELECTION,
         ('pandas.core.frame', '__setitem__'): OperatorType.PROJECTION_MODIFY,
+        ('pandas.core.frame', 'replace'): OperatorType.PROJECTION_MODIFY,
         ('pandas.core.frame', 'merge'): OperatorType.JOIN,
         ('pandas.core.groupby.generic', 'agg'): OperatorType.GROUP_BY_AGG
     }
@@ -130,7 +131,8 @@ class PandasBackend(Backend):
             self.set_key_info = SetKeyInfo(code_reference, function_info, args_code)
         elif function_info == ('pandas.core.frame', 'groupby'):
             description = "Group by {}, ".format(args_values)
-            self.code_reference_to_description[code_reference] = description
+        elif function_info == ('pandas.core.frame', 'replace'):
+            description = "Replace {} with {}".format(args_values[0], args_values[1])
         if description:
             self.code_reference_to_description[code_reference] = description
 
@@ -199,7 +201,7 @@ class PandasBackend(Backend):
         elif function_info == ('pandas.core.frame', 'groupby'):
             description = self.code_reference_to_description[code_reference]
             return_value.name = description  # TODO: Do not use name here but something else to transport the value
-        if function_info == ('pandas.core.frame', 'merge'):
+        elif function_info == ('pandas.core.frame', 'merge'):
             operator_context = OperatorContext(OperatorType.JOIN, function_info)
             return_value = execute_inspection_visits_join(self, operator_context, code_reference,
                                                           self.input_data[-1],
@@ -209,6 +211,13 @@ class PandasBackend(Backend):
                                                           return_value)
             self.input_data[-1].drop("mlinspect_index_x", axis=1, inplace=True)
             self.df_arg.drop("mlinspect_index_y", axis=1, inplace=True)
+        elif function_info == ('pandas.core.frame', 'replace'):
+            operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
+            return_value = execute_inspection_visits_unary_operator(self, operator_context, code_reference,
+                                                                    self.input_data[-1],
+                                                                    self.input_data[-1].annotations,
+                                                                    return_value,
+                                                                    False)
 
         self.input_data.pop()
 

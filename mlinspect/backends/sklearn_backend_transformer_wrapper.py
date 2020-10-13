@@ -24,6 +24,8 @@ transformer_names = {
         ('sklearn.preprocessing._data', 'StandardScaler'): "Numerical Encoder (StandardScaler)",
         ('sklearn.impute._base', 'SimpleImputer'): "Imputer (SimpleImputer)",
         ('sklearn.tree._classes', 'DecisionTreeClassifier'): "Decision Tree",
+        ('sklearn.linear_model._logistic', 'LogisticRegression'): "Logistic Regression",
+        ('sklearn.preprocessing._discretization', 'KBinsDiscretizer'): "Numerical Encoder (KBinsDiscretizer)",
         # TODO: We  can remove this later by checking if subclass of transformer/estimator
         ('demo.healthcare.demo_utils', 'MyW2VTransformer'): "Word2Vec",
         ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'): "Neural Network"
@@ -64,7 +66,8 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             X_annotated, y_annotated = self.train_data_and_labels_visits(X, y)
             self.transformer = self.transformer.fit(X_annotated, y_annotated)
         elif self.call_function_info in {('sklearn.tree._classes', 'DecisionTreeClassifier'),
-                                         ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')}:
+                                         ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
+                                         ('sklearn.linear_model._logistic', 'LogisticRegression')}:
             self.estimator_visits(X, y)
             self.transformer.fit(X, y)
         else:
@@ -90,7 +93,8 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         elif self.call_function_info == ('sklearn.pipeline', 'Pipeline'):
             result = self.pipeline_visit(X, y)
         elif self.call_function_info in {('sklearn.preprocessing._data', 'StandardScaler'),
-                                         ('sklearn.impute._base', 'SimpleImputer')}:
+                                         ('sklearn.impute._base', 'SimpleImputer'),
+                                         ('sklearn.preprocessing._discretization', 'KBinsDiscretizer')}:
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [1 for _ in range(result.shape[1])]
             result = self.normal_transformer_visit(X, y, result)

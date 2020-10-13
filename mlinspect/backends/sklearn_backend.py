@@ -27,8 +27,10 @@ class SklearnBackend(Backend):
         ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'): OperatorType.TRANSFORMER,
         ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'): OperatorType.TRANSFORMER,
         ('sklearn.impute._base', 'SimpleImputer', 'Pipeline'): OperatorType.TRANSFORMER,
+        ('sklearn.preprocessing._discretization', 'KBinsDiscretizer', 'Pipeline'): OperatorType.TRANSFORMER,
         ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Concatenation'): OperatorType.CONCATENATION,
         ('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'): OperatorType.ESTIMATOR,
+        ('sklearn.linear_model._logistic', 'LogisticRegression'): OperatorType.ESTIMATOR,
         ('sklearn.pipeline', 'fit', 'Pipeline'): OperatorType.FIT,
         ('sklearn.pipeline', 'fit', 'Train Data'): OperatorType.TRAIN_DATA,
         ('sklearn.pipeline', 'fit', 'Train Labels'): OperatorType.TRAIN_LABELS,
@@ -129,9 +131,15 @@ class SklearnBackend(Backend):
                                ('demo.healthcare.demo_utils', 'MyW2VTransformer'),
                                ('sklearn.impute._base', 'SimpleImputer'),
                                ('sklearn.compose._column_transformer', 'ColumnTransformer'),
-                               ('sklearn.pipeline', 'Pipeline')}:
+                               ('sklearn.pipeline', 'Pipeline'),
+                               ('sklearn.preprocessing._discretization', 'KBinsDiscretizer'),
+                               ('sklearn.linear_model._logistic', 'LogisticRegression')
+                               }:
             return_value = MlinspectEstimatorTransformer(return_value, code_reference, self.inspections,
                                                          self.wir_post_processing_map)
+        else:
+            print("Not yet supported: {}".format(function_info))
+            assert False
 
         self.input_data = None
 

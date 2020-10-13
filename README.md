@@ -42,7 +42,7 @@ from mlinspect.checks.check import Check
 IPYNB_PATH = ...
 
 inspector_result = PipelineInspector\
-        .on_pipeline_from_py_file(ADULT_EASY_FILE_PY)\
+        .on_pipeline_from_ipynb_file(IPYNB_PATH)\
         .add_required_inspection(MaterializeFirstRowsInspection(5))\
         .add_check(Check().no_bias_introduced_for(['race']))\
         .execute()
