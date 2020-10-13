@@ -25,3 +25,10 @@ class MlinspectNdarray(numpy.ndarray):
         if obj is None:
             return
         self.info = getattr(obj, 'annotations', None)
+
+    def ravel(self, order='C'):
+        # pylint: disable=no-member
+        result = super().ravel(order)
+        assert isinstance(result, MlinspectNdarray)
+        result.annotations = self.annotations
+        return result

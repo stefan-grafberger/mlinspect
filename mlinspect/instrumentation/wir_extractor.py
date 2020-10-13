@@ -64,7 +64,8 @@ class WirExtractor:
         elif isinstance(ast_node, ast.Tuple):
             self.extract_wir_tuple(ast_node)
         elif isinstance(ast_node, (ast.Attribute, ast.Expr, ast.Index, ast.Load, ast.Module, ast.Name, ast.Store,
-                                   ast.alias, ast.Gt, ast.Mult, ast.BinOp, ast.Compare, ast.Sub)):
+                                   ast.alias, ast.Gt, ast.Lt, ast.LtE, ast.GtE, ast.Mult, ast.BinOp, ast.Compare,
+                                   ast.Sub, ast.USub, ast.UnaryOp, ast.NotEq)):
             pass  # TODO: Test if we really covered all necessary edge cases
         else:
             print("AST Node Type not supported yet: {}!".format(str(ast_node)))

@@ -30,7 +30,7 @@ class SklearnBackend(Backend):
         ('sklearn.preprocessing._discretization', 'KBinsDiscretizer', 'Pipeline'): OperatorType.TRANSFORMER,
         ('sklearn.compose._column_transformer', 'ColumnTransformer', 'Concatenation'): OperatorType.CONCATENATION,
         ('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'): OperatorType.ESTIMATOR,
-        ('sklearn.linear_model._logistic', 'LogisticRegression'): OperatorType.ESTIMATOR,
+        ('sklearn.linear_model._logistic', 'LogisticRegression', 'Pipeline'): OperatorType.ESTIMATOR,
         ('sklearn.pipeline', 'fit', 'Pipeline'): OperatorType.FIT,
         ('sklearn.pipeline', 'fit', 'Train Data'): OperatorType.TRAIN_DATA,
         ('sklearn.pipeline', 'fit', 'Train Labels'): OperatorType.TRAIN_LABELS,
