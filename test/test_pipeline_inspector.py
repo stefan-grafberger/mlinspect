@@ -1,20 +1,16 @@
 """
 Tests whether the fluent API works
 """
-import os
 
 import networkx
 from testfixtures import compare
 
+from example_pipelines.pipelines import ADULT_EASY_PY, ADULT_EASY_IPYNB
 from mlinspect.checks.check import Check, CheckStatus
 from mlinspect.inspections.histogram_inspection import HistogramInspection
 from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
-from mlinspect.utils import get_project_root
 from mlinspect.pipeline_inspector import PipelineInspector
 from .utils import get_expected_dag_adult_easy_ipynb, get_expected_dag_adult_easy_py
-
-ADULT_EASY_FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
-FILE_NB = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.ipynb")
 
 check = Check()\
         .no_bias_introduced_for(['race'])\
@@ -26,7 +22,7 @@ def test_inspector_adult_easy_py_pipeline():
     Tests whether the .py version of the inspector works
     """
     inspector_result = PipelineInspector\
-        .on_pipeline_from_py_file(ADULT_EASY_FILE_PY)\
+        .on_pipeline_from_py_file(ADULT_EASY_PY)\
         .add_required_inspection(MaterializeFirstRowsInspection(5))\
         .add_check(check)\
         .execute()
@@ -45,7 +41,7 @@ def test_inspector_adult_easy_py_pipeline_without_inspections():
     Tests whether the .py version of the inspector works
     """
     inspector_result = PipelineInspector\
-        .on_pipeline_from_py_file(ADULT_EASY_FILE_PY)\
+        .on_pipeline_from_py_file(ADULT_EASY_PY)\
         .execute()
     extracted_dag = inspector_result.dag
     expected_dag = get_expected_dag_adult_easy_py()
@@ -57,7 +53,7 @@ def test_inspector_adult_easy_ipynb_pipeline():
     Tests whether the .ipynb version of the inspector works
     """
     inspector_result = PipelineInspector\
-        .on_pipeline_from_ipynb_file(FILE_NB)\
+        .on_pipeline_from_ipynb_file(ADULT_EASY_IPYNB)\
         .add_required_inspection(MaterializeFirstRowsInspection(5)) \
         .add_check(check) \
         .execute()
@@ -75,7 +71,7 @@ def test_inspector_adult_easy_str_pipeline():
     """
     Tests whether the str version of the inspector works
     """
-    with open(ADULT_EASY_FILE_PY) as file:
+    with open(ADULT_EASY_PY) as file:
         code = file.read()
 
         inspector_result = PipelineInspector\

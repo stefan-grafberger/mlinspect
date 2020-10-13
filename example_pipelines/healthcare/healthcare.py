@@ -16,9 +16,10 @@ from mlinspect.utils import get_project_root
 COUNTIES_OF_INTEREST = ['county2', 'county3']
 
 # load input data sources (data generated with https://www.mockaroo.com as a single file and then split into two)
-patients = pd.read_csv(os.path.join(str(get_project_root()), "demo", "healthcare", "healthcare_patients.csv"), na_values='?')
-histories = pd.read_csv(os.path.join(str(get_project_root()), "demo", "healthcare", "healthcare_histories.csv"),
-                        na_values='?')
+patients = pd.read_csv(os.path.join(str(get_project_root()), "example_pipelines", "healthcare",
+                                    "healthcare_patients.csv"), na_values='?')
+histories = pd.read_csv(os.path.join(str(get_project_root()), "example_pipelines", "healthcare",
+                                     "healthcare_histories.csv"), na_values='?')
 
 # combine input data into a single table
 data = patients.merge(histories, on=['ssn'])

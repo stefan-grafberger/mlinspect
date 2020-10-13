@@ -1,23 +1,18 @@
 """
 Some util functions used in other tests
 """
-import os
 import ast
 from inspect import cleandoc
 
 from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
 import networkx
 
+from example_pipelines.pipelines import ADULT_EASY_PY
 from mlinspect.inspections.lineage_inspection import LineageInspection
-
 from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
 from mlinspect.instrumentation.dag_node import DagNode, OperatorType, CodeReference
 from mlinspect.instrumentation.wir_extractor import WirExtractor
 from mlinspect.pipeline_inspector import PipelineInspector
-from mlinspect.utils import get_project_root
-
-FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
-FILE_NB = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.ipynb")
 
 
 def get_expected_dag_adult_easy_py_without_columns():
@@ -263,7 +258,7 @@ def get_module_info():
                    ('mlinspect.utils', 'get_project_root'),
                    CodeReference(lineno=11, col_offset=26, end_lineno=11, end_col_offset=49):
                    ('builtins', 'str'),
-                   CodeReference(lineno=11, col_offset=13, end_lineno=11, end_col_offset=85):
+                   CodeReference(lineno=11, col_offset=13, end_lineno=11, end_col_offset=104):
                    ('posixpath', 'join'),
                    CodeReference(lineno=12, col_offset=11, end_lineno=12, end_col_offset=62):
                    ('pandas.io.parsers', 'read_csv'),
@@ -317,7 +312,7 @@ def get_adult_easy_py_ast():
     """
     Get the parsed AST for the adult_easy pipeline
     """
-    with open(FILE_PY) as file:
+    with open(ADULT_EASY_PY) as file:
         test_code = file.read()
 
         test_ast = ast.parse(test_code)
@@ -345,7 +340,7 @@ def get_pandas_read_csv_and_dropna_code():
             import pandas as pd
             from mlinspect.utils import get_project_root
 
-            train_file = os.path.join(str(get_project_root()), "test", "data", "adult_train.csv")
+            train_file = os.path.join(str(get_project_root()), "example_pipelines", "adult_easy", "adult_train.csv")
             raw_data = pd.read_csv(train_file)
             data = raw_data.dropna()
             relevant_data = data[['age', 'workclass', 'education']]

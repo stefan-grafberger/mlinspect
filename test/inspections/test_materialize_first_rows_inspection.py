@@ -2,19 +2,15 @@
 Tests whether the MaterializeFirstRowsInspection works
 """
 
-import os
-
+from numpy.ma import array
 from pandas import DataFrame
 from pandas._testing import assert_frame_equal
 from testfixtures import compare, RangeComparison
-from numpy.ma import array
 
+from example_pipelines.pipelines import ADULT_EASY_PY
 from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
 from mlinspect.instrumentation.dag_node import DagNode, OperatorType, CodeReference
 from mlinspect.pipeline_inspector import PipelineInspector
-from mlinspect.utils import get_project_root
-
-FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 
 
 def test_materialize_first_rows_inspection():
@@ -22,7 +18,7 @@ def test_materialize_first_rows_inspection():
     Tests whether the MaterializeFirstRowsInspection works
     """
     inspector_result = PipelineInspector \
-        .on_pipeline_from_py_file(FILE_PY) \
+        .on_pipeline_from_py_file(ADULT_EASY_PY) \
         .add_required_inspection(MaterializeFirstRowsInspection(2)) \
         .execute()
     inspection_result = inspector_result.inspection_to_annotations

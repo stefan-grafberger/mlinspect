@@ -1,16 +1,12 @@
 """
 Functions to benchmark mlinspect
 """
-import os
+import timeit
 from dataclasses import dataclass
 from enum import Enum
-import timeit
 from inspect import cleandoc
 
-from mlinspect.utils import get_project_root
-
-ADULT_EASY_FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
-HEALTHCARE_FILE_PY = os.path.join(str(get_project_root()), "demo", "healthcare", "healthcare.py")
+from example_pipelines.pipelines import HEALTHCARE_PY, ADULT_EASY_PY
 
 
 class OperatorBenchmarkType(Enum):
@@ -446,7 +442,7 @@ def get_adult_easy_py_str():
     """
     Get the code str for the adult_easy pipeline
     """
-    with open(ADULT_EASY_FILE_PY) as file:
+    with open(ADULT_EASY_PY) as file:
         test_code = file.read()
     return test_code
 
@@ -455,6 +451,6 @@ def get_healthcare_py_str():
     """
     Get the code str for the adult_easy pipeline
     """
-    with open(HEALTHCARE_FILE_PY) as file:
+    with open(HEALTHCARE_PY) as file:
         test_code = file.read()
     return test_code

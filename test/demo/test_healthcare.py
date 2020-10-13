@@ -1,13 +1,13 @@
 """
 Tests whether the healthcare demo works
 """
-import ast
 import os
 
 from importnb import Notebook
 import matplotlib
 
 from demo.healthcare.missing_embeddings_inspection import MissingEmbeddingInspection
+from example_pipelines.pipelines import HEALTHCARE_PY
 from mlinspect.checks.check import Check
 from mlinspect.inspections.lineage_inspection import LineageInspection
 from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
@@ -15,18 +15,7 @@ from mlinspect.pipeline_inspector import PipelineInspector
 from mlinspect.utils import get_project_root
 
 
-PIPELINE_FILE_PY = os.path.join(str(get_project_root()), "demo", "healthcare", "healthcare.py")
 DEMO_NB_FILE = os.path.join(str(get_project_root()), "demo", "healthcare", "healthcare_demo.ipynb")
-
-
-def test_py_pipeline_runs():
-    """
-    Tests whether the pipeline works without instrumentation
-    """
-    with open(PIPELINE_FILE_PY) as file:
-        healthcare_code = file.read()
-        parsed_ast = ast.parse(healthcare_code)
-        exec(compile(parsed_ast, filename="<ast>", mode="exec"))
 
 
 def test_instrumented_py_pipeline_runs():
@@ -38,7 +27,7 @@ def test_instrumented_py_pipeline_runs():
         .no_illegal_features()
 
     PipelineInspector\
-        .on_pipeline_from_py_file(PIPELINE_FILE_PY) \
+        .on_pipeline_from_py_file(HEALTHCARE_PY) \
         .add_check(check) \
         .add_required_inspection(MissingEmbeddingInspection(20)) \
         .add_required_inspection(LineageInspection(5)) \

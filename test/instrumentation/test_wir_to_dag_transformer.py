@@ -61,7 +61,7 @@ def get_expected_cleaned_wir_adult_easy():
     expected_str = WirNode(8, "str", "Call", CodeReference(11, 26, 11, 49), ('builtins', 'str'))
     expected_graph.add_edge(expected_get_project_root, expected_str)
 
-    expected_join = WirNode(12, "join", "Call", CodeReference(11, 13, 11, 85), ('posixpath', 'join'))
+    expected_join = WirNode(12, "join", "Call", CodeReference(11, 13, 11, 104), ('posixpath', 'join'))
     expected_graph.add_edge(expected_str, expected_join)
 
     expected_read_csv = WirNode(18, "read_csv", "Call", CodeReference(12, 11, 12, 62),

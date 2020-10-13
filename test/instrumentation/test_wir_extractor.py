@@ -2,18 +2,16 @@
 Tests whether the WIR extraction works
 """
 import ast
-import os
 from inspect import cleandoc
+
 import networkx
 import pytest
 from testfixtures import compare
 
+from example_pipelines.pipelines import ADULT_EASY_PY
 from mlinspect.instrumentation.dag_node import CodeReference
-from mlinspect.utils import get_project_root
 from mlinspect.instrumentation.wir_extractor import WirExtractor
 from mlinspect.instrumentation.wir_node import WirNode
-
-FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
 
 
 def test_print_stmt():
@@ -405,7 +403,7 @@ def test_adult_easy_pipeline():
     """
     Tests whether the WIR Extraction works for the adult_easy pipeline
     """
-    with open(FILE_PY) as file:
+    with open(ADULT_EASY_PY) as file:
         test_code = file.read()
 
         test_ast = ast.parse(test_code)
