@@ -37,7 +37,8 @@ def test_inspection_benchmarks():
         assert benchmark_results["empty inspection"]
         assert benchmark_results["MaterializeFirstRowsInspection(10)"]
         assert benchmark_results["LineageInspection(10)"]
-        assert benchmark_results["HistogramInspection(['group_col'])"]
+        assert benchmark_results["HistogramInspection(['group_col_1'])"]
+        assert benchmark_results["HistogramInspection(['group_col_1', 'group_col_2', 'group_col_3'])"]
 
 
 def test_full_pipeline_benchmarks():
