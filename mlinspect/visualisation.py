@@ -14,9 +14,9 @@ def save_fig_to_path(extracted_dag, filename):
 
     def get_new_node_label(node):
         label = cleandoc("""
+                {} (L{})
                 {}
-                {}
-                """.format(node.operator_type.value, node.description or ""))
+                """.format(node.operator_type.value, node.code_reference.lineno, node.description or ""))
         return label
 
     # noinspection PyTypeChecker

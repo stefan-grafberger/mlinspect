@@ -5,11 +5,11 @@ import ast
 import os
 from inspect import cleandoc
 
-from mlinspect.visualisation import save_fig_to_path
 from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
 import networkx
 from demo.healthcare.missing_embeddings_inspection import MissingEmbeddingInspection
 from example_pipelines.pipelines import ADULT_EASY_PY
+from mlinspect.visualisation import save_fig_to_path
 from mlinspect.checks.check import Check
 from mlinspect.inspections.lineage_inspection import LineageInspection
 from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection

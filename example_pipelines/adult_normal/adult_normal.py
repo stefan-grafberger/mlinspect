@@ -17,7 +17,7 @@ from mlinspect.utils import get_project_root
 train_file = os.path.join(str(get_project_root()), "example_pipelines", "adult_easy", "adult_train.csv")
 train_data = pd.read_csv(train_file, na_values='?', index_col=0)
 test_file = os.path.join(str(get_project_root()), "example_pipelines", "adult_easy", "adult_test.csv")
-test_data = pd.read_csv(train_file, na_values='?', index_col=0)
+test_data = pd.read_csv(test_file, na_values='?', index_col=0)
 
 train_labels = preprocessing.label_binarize(train_data['income-per-year'], classes=['>50K', '<=50K'])
 test_labels = preprocessing.label_binarize(test_data['income-per-year'], classes=['>50K', '<=50K'])
