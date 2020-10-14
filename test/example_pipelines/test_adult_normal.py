@@ -3,7 +3,7 @@ Tests whether the adult_easy test pipeline works
 """
 import ast
 from test.utils import run_and_assert_all_op_outputs_inspected
-from example_pipelines.pipelines import ADULT_NORMAL_PY
+from example_pipelines.pipelines import ADULT_NORMAL_PY, ADULT_NORMAL_PNG
 
 
 def test_py_pipeline_runs():
@@ -20,4 +20,4 @@ def test_instrumented_py_pipeline_runs():
     """
     Tests whether the pipeline works with instrumentation
     """
-    run_and_assert_all_op_outputs_inspected(ADULT_NORMAL_PY, ["race"])
+    run_and_assert_all_op_outputs_inspected(ADULT_NORMAL_PY, ["race"], ADULT_NORMAL_PNG)

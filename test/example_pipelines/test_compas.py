@@ -3,7 +3,7 @@ Tests whether the adult_easy test pipeline works
 """
 import ast
 from test.utils import run_and_assert_all_op_outputs_inspected
-from example_pipelines.pipelines import COMPAS_PY
+from example_pipelines.pipelines import COMPAS_PY, COMPAS_PNG
 
 
 def test_py_pipeline_runs():
@@ -20,4 +20,4 @@ def test_instrumented_py_pipeline_runs():
     """
     Tests whether the pipeline works with instrumentation
     """
-    run_and_assert_all_op_outputs_inspected(COMPAS_PY, ['sex', 'race'])
+    run_and_assert_all_op_outputs_inspected(COMPAS_PY, ['sex', 'race'], COMPAS_PNG)

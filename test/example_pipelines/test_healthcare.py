@@ -3,7 +3,7 @@ Tests whether the healthcare demo works
 """
 import ast
 from test.utils import run_and_assert_all_op_outputs_inspected
-from example_pipelines.pipelines import HEALTHCARE_PY
+from example_pipelines.pipelines import HEALTHCARE_PY, HEALTHCARE_PNG
 
 
 def test_py_pipeline_runs():
@@ -20,4 +20,4 @@ def test_instrumented_py_pipeline_runs():
     """
     Tests whether the pipeline works with instrumentation
     """
-    run_and_assert_all_op_outputs_inspected(HEALTHCARE_PY, ["age_group", "race"])
+    run_and_assert_all_op_outputs_inspected(HEALTHCARE_PY, ["age_group", "race"], HEALTHCARE_PNG)

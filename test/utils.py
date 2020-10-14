@@ -2,8 +2,10 @@
 Some util functions used in other tests
 """
 import ast
+import os
 from inspect import cleandoc
 
+from mlinspect.visualisation import save_fig_to_path
 from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
 import networkx
 from demo.healthcare.missing_embeddings_inspection import MissingEmbeddingInspection
@@ -392,7 +394,7 @@ def run_multiple_test_analyzers(code):
     return inspection_results, analyzers
 
 
-def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns):
+def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag_png_path):
     """
     Execute the pipeline with a few checks and inspections.
     Assert that mlinspect properly lets inspections inspect all DAG nodes
@@ -410,3 +412,6 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns):
         .execute()
     materialize_output = inspector_result.inspection_to_annotations[MaterializeFirstRowsInspection(5)]
     assert len(materialize_output) == (len(inspector_result.dag.nodes) - 1)  # Estimator does not have output
+
+    save_fig_to_path(inspector_result.dag, dag_png_path)
+    assert os.path.isfile(dag_png_path)
