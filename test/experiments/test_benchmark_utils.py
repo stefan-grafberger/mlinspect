@@ -1,16 +1,9 @@
 """
-Tests whether the healthcare demo works
+Tests whether the benchmark utils work
 """
-import os
-
-import matplotlib
-from importnb import Notebook
 
 from experiments.benchmark_utils import do_op_instrumentation_benchmarks, OperatorBenchmarkType, \
     do_op_inspections_benchmarks, do_full_pipeline_benchmarks, PipelineBenchmarkType
-from mlinspect.utils import get_project_root
-
-EXPERIMENT_NB_FILE = os.path.join(str(get_project_root()), "experiments", "operator_benchmarks.ipynb")
 
 
 def test_instrumentation_benchmarks():
@@ -53,11 +46,3 @@ def test_full_pipeline_benchmarks():
         assert benchmark_results["one inspection"]
         assert benchmark_results["two inspections"]
         assert benchmark_results["three inspections"]
-
-
-def test_experiment_nb():
-    """
-    Tests whether the experiment notebook works
-    """
-    matplotlib.use("template")  # Disable plt.show when executing nb as part of this test
-    Notebook.load(EXPERIMENT_NB_FILE)

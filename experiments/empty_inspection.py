@@ -1,5 +1,5 @@
 """
-A simple example analyzer
+A simple empty inspection
 """
 from typing import Iterable
 
