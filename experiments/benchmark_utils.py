@@ -21,6 +21,16 @@ class OperatorBenchmarkType(Enum):
     DECISION_TREE = "decision_tree"
 
 
+class PipelineBenchmarkType(Enum):
+    """
+    The different operators we benchmark
+    """
+    HEALTHCARE = "healthcare (1000 rows)"
+    COMPAS = "compas (train: 5050 rows, test: 2166)"
+    ADULT_EASY = "adult_easy (22793 rows)"
+    ADULT_NORMAL = "adult_normal (train: 22793 rows, test: 9770 rows)"
+
+
 @dataclass(frozen=True, eq=True)
 class CodeToBenchmark:
     """
@@ -32,77 +42,34 @@ class CodeToBenchmark:
     benchmark_exec_func_str: str
 
 
-def do_op_instrumentation_benchmarks(data_frame_rows, operator_type: OperatorBenchmarkType, repeats=10):
+def do_op_instrumentation_benchmarks(data_frame_rows, operator_type: OperatorBenchmarkType, repeats=1):
     """
     Do the projection benchmarks
     """
-    code_to_benchmark = get_code_to_benchmark(data_frame_rows, operator_type)
+    code_to_benchmark = get_code_for_op_benchmark(data_frame_rows, operator_type)
     benchmark_results = exec_benchmarks_empty_inspection(code_to_benchmark, repeats)
     return benchmark_results
 
 
-def do_op_inspections_benchmarks(data_frame_rows, operator_type: OperatorBenchmarkType, repeats=5):
+def do_op_inspections_benchmarks(data_frame_rows, operator_type: OperatorBenchmarkType, repeats=1):
     """
     Do the projection benchmarks
     """
-    code_to_benchmark = get_code_to_benchmark(data_frame_rows, operator_type)
+    code_to_benchmark = get_code_for_op_benchmark(data_frame_rows, operator_type)
     benchmark_results = exec_benchmarks_nonempty_inspection(code_to_benchmark, repeats)
     return benchmark_results
 
 
-def do_adult_easy_benchmarks(repeats=5):
+def do_full_pipeline_benchmarks(pipeline: PipelineBenchmarkType, repeats=1):
     """
     Do the projection benchmarks
     """
-    benchmark_setup = "pass"
-    benchmark_exec = get_adult_easy_py_str()
-    benchmark_setup_func_str = "get_adult_easy_py_str()"
-    code_to_benchmark = CodeToBenchmark(benchmark_setup, benchmark_exec, benchmark_setup_func_str,
-                                        "")
+    code_to_benchmark = get_code_for_pipeline_benchmark(pipeline)
     benchmark_results = exec_pipeline_benchmarks_empty_inspection(code_to_benchmark, repeats)
     return benchmark_results
 
 
-def do_adult_normal_benchmarks(repeats=5):
-    """
-    Do the projection benchmarks
-    """
-    benchmark_setup = "pass"
-    benchmark_exec = get_adult_normal_py_str()
-    benchmark_setup_func_str = "get_adult_normal_py_str()"
-    code_to_benchmark = CodeToBenchmark(benchmark_setup, benchmark_exec, benchmark_setup_func_str,
-                                        "")
-    benchmark_results = exec_pipeline_benchmarks_empty_inspection(code_to_benchmark, repeats)
-    return benchmark_results
-
-
-def do_compas_benchmarks(repeats=5):
-    """
-    Do the projection benchmarks
-    """
-    benchmark_setup = "pass"
-    benchmark_exec = get_compas_py_str()
-    benchmark_setup_func_str = "get_compas_py_str()"
-    code_to_benchmark = CodeToBenchmark(benchmark_setup, benchmark_exec, benchmark_setup_func_str,
-                                        "")
-    benchmark_results = exec_pipeline_benchmarks_empty_inspection(code_to_benchmark, repeats)
-    return benchmark_results
-
-
-def do_healthcare_benchmarks(repeats=5):
-    """
-    Do the projection benchmarks
-    """
-    benchmark_setup = "pass"
-    benchmark_exec = get_healthcare_py_str()
-    benchmark_setup_func_str = "get_healthcare_py_str()"
-    code_to_benchmark = CodeToBenchmark(benchmark_setup, benchmark_exec, benchmark_setup_func_str,
-                                        "")
-    benchmark_results = exec_pipeline_benchmarks_empty_inspection(code_to_benchmark, repeats)
-    return benchmark_results
-
-
-def get_code_to_benchmark(data_frame_rows, operator_type):
+def get_code_for_op_benchmark(data_frame_rows, operator_type):
     """
     Get the code to benchmark for the operator benchmark type
     """
@@ -140,6 +107,28 @@ def get_code_to_benchmark(data_frame_rows, operator_type):
         assert False
     code_to_benchmark = CodeToBenchmark(benchmark_setup, benchmark_exec, benchmark_setup_func_str,
                                         benchmark_exec_func_str)
+    return code_to_benchmark
+
+
+def get_code_for_pipeline_benchmark(pipeline_type):
+    """
+    Get the code to benchmark for the operator benchmark type
+    """
+    if pipeline_type == PipelineBenchmarkType.HEALTHCARE:
+        benchmark_exec = get_healthcare_py_str()
+        benchmark_setup_func_str = "get_healthcare_py_str()"
+    elif pipeline_type == PipelineBenchmarkType.COMPAS:
+        benchmark_exec = get_compas_py_str()
+        benchmark_setup_func_str = "get_compas_py_str()"
+    elif pipeline_type == PipelineBenchmarkType.ADULT_EASY:
+        benchmark_exec = get_adult_easy_py_str()
+        benchmark_setup_func_str = "get_adult_easy_py_str()"
+    elif pipeline_type == PipelineBenchmarkType.ADULT_NORMAL:
+        benchmark_exec = get_adult_normal_py_str()
+        benchmark_setup_func_str = "get_adult_normal_py_str()"
+    else:
+        assert False
+    code_to_benchmark = CodeToBenchmark("pass", benchmark_exec, benchmark_setup_func_str, "")
     return code_to_benchmark
 
 
