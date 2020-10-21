@@ -4,13 +4,13 @@ Some util functions used in other tests
 import ast
 import os
 from inspect import cleandoc
-
 from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
 import networkx
 from demo.healthcare.missing_embeddings_inspection import MissingEmbeddingInspection
 from example_pipelines.pipelines import ADULT_EASY_PY
+from mlinspect.checks.no_bias_introduced_for import NoBiasIntroducedFor
+from mlinspect.checks.no_illegal_features import NoIllegalFeatures
 from mlinspect.visualisation import save_fig_to_path
-from mlinspect.checks.check import Check
 from mlinspect.inspections.lineage_inspection import LineageInspection
 from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
 from mlinspect.instrumentation.dag_node import DagNode, OperatorType, CodeReference
@@ -399,13 +399,11 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
     Execute the pipeline with a few checks and inspections.
     Assert that mlinspect properly lets inspections inspect all DAG nodes
     """
-    check = Check() \
-        .no_bias_introduced_for(sensitive_columns) \
-        .no_illegal_features()
 
     inspector_result = PipelineInspector \
         .on_pipeline_from_py_file(py_file_path) \
-        .add_check(check) \
+        .add_check(NoBiasIntroducedFor(sensitive_columns)) \
+        .add_check(NoIllegalFeatures()) \
         .add_required_inspection(MissingEmbeddingInspection(20)) \
         .add_required_inspection(LineageInspection(5)) \
         .add_required_inspection(MaterializeFirstRowsInspection(5)) \

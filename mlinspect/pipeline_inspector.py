@@ -49,7 +49,7 @@ class PipelineInspectorBuilder:
         """
         Add a list of inspections
         """
-        self.inspections.extend(checks)
+        self.checks.extend(checks)
         return self
 
     def execute(self) -> InspectorResult:

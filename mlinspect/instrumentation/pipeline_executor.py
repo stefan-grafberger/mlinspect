@@ -3,12 +3,12 @@ Instrument and executes the pipeline
 """
 import ast
 import copy
-from typing import List
+from typing import Iterable
 
 import nbformat
 from nbconvert import PythonExporter
 
-from ..checks.check import Check, evaluate_check
+from ..checks.check import Check
 from ..inspections.inspection import Inspection
 from ..backends.all_backends import get_all_backends
 from .call_capture_transformer import CallCaptureTransformer
@@ -28,15 +28,14 @@ class PipelineExecutor:
     backends = []
 
     def run(self, notebook_path: str or None, python_path: str or None, python_code: str or None,
-            inspections: List[Inspection], checks: List[Check], reset_state=True) -> InspectorResult:
+            inspections: Iterable[Inspection], checks: Iterable[Check], reset_state=True) -> InspectorResult:
         """
         Instrument and execute the pipeline and evaluate all checks
         """
         # pylint: disable=too-many-arguments
         check_inspections = set()
         for check in checks:
-            for constraint in check.constraints:
-                check_inspections.update(constraint.required_inspection)
+            check_inspections.update(check.required_inspections)
         all_inspections = list(set(inspections).union(check_inspections))
 
         if reset_state:
@@ -45,7 +44,7 @@ class PipelineExecutor:
             self.initialize_static_variables(all_inspections)
 
         inspection_result = self.run_inspections(notebook_path, python_code, python_path)
-        check_to_results = dict((check, evaluate_check(check, inspection_result)) for check in checks)
+        check_to_results = dict((check, check.evaluate(inspection_result)) for check in checks)
         return InspectorResult(inspection_result.dag, inspection_result.inspection_to_annotations, check_to_results)
 
     def run_inspections(self, notebook_path, python_code, python_path) -> InspectionResult:

@@ -6,7 +6,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Iterable, Dict
 
-from mlinspect.checks.constraint import Constraint, ConstraintStatus, ConstraintResult
+from mlinspect.checks.check import Check, CheckStatus, CheckResult
 from mlinspect.inspections.histogram_inspection import HistogramInspection
 from mlinspect.inspections.inspection import Inspection
 from mlinspect.instrumentation.dag_node import OperatorType, DagNode
@@ -25,14 +25,14 @@ class BiasDistributionChange:
 
 
 @dataclasses.dataclass
-class NoBiasIntroducedForConstraintResult(ConstraintResult):
+class NoBiasIntroducedForResult(CheckResult):
     """
     Did the histogram change too much for some operations?
     """
     bias_distribution_change: Dict[DagNode, Dict[str, BiasDistributionChange]]
 
 
-class NoBiasIntroducedForConstraint(Constraint):
+class NoBiasIntroducedFor(Check):
     """
     Does the user pipeline introduce bias because of operators like joins and selects?
     """
@@ -43,24 +43,24 @@ class NoBiasIntroducedForConstraint(Constraint):
         self.max_relative_change = max_relative_change
 
     @property
-    def constraint_id(self):
-        """The id of the Constraints"""
+    def check_id(self):
+        """The id of the Check"""
         return tuple(self.sensitive_columns), self.max_relative_change
 
     @property
-    def required_inspection(self) -> Iterable[Inspection]:
-        """The id of the constraint"""
+    def required_inspections(self) -> Iterable[Inspection]:
+        """The inspections required for the check"""
         return [HistogramInspection(self.sensitive_columns)]
 
-    def evaluate(self, inspection_result: InspectionResult) -> ConstraintResult:
-        """Evaluate the constraint"""
+    def evaluate(self, inspection_result: InspectionResult) -> CheckResult:
+        """Evaluate the check"""
         dag = inspection_result.dag
         histograms = inspection_result.inspection_to_annotations[HistogramInspection(self.sensitive_columns)]
         relevant_nodes = [node for node in dag.nodes if node.operator_type in {OperatorType.JOIN,
                                                                                OperatorType.SELECTION} or
                           (node.module == ('sklearn.impute._base', 'SimpleImputer', 'Pipeline') and
                            node.columns[0] in self.sensitive_columns)]
-        constraint_result = ConstraintStatus.SUCCESS
+        constraint_result = CheckStatus.SUCCESS
         bias_distribution_change = {}
         for node in relevant_nodes:
             parents = list(dag.predecessors(node))
@@ -69,7 +69,7 @@ class NoBiasIntroducedForConstraint(Constraint):
                 constraint_result = self.get_histograms_for_node_and_column(column, column_results, constraint_result,
                                                                             histograms, node, parents)
             bias_distribution_change[node] = column_results
-        return NoBiasIntroducedForConstraintResult(self, constraint_result, bias_distribution_change)
+        return NoBiasIntroducedForResult(self, constraint_result, bias_distribution_change)
 
     def get_histograms_for_node_and_column(self, column, column_results, constraint_result, histograms, node, parents):
         """
@@ -99,7 +99,7 @@ class NoBiasIntroducedForConstraint(Constraint):
             max_abs_change = max(abs_relative_changes)
         all_changes_acceptable = max_abs_change <= self.max_relative_change
         if not all_changes_acceptable:
-            constraint_result = ConstraintStatus.FAILURE
+            constraint_result = CheckStatus.FAILURE
         column_results[column] = BiasDistributionChange(all_changes_acceptable, max_abs_change,
                                                         before_map, after_map)
         return constraint_result

@@ -4,9 +4,10 @@ The Interface for the Constraints
 from __future__ import annotations
 
 import dataclasses
-from typing import List
+from typing import List, Iterable
 
-from mlinspect.checks.constraint import Constraint, ConstraintStatus, ConstraintResult
+from mlinspect.checks.check import Check, CheckStatus, CheckResult
+from mlinspect.inspections.inspection import Inspection
 from mlinspect.instrumentation.dag_node import OperatorType
 from mlinspect.instrumentation.inspection_result import InspectionResult
 
@@ -14,14 +15,14 @@ ILLEGAL_FEATURES = {"race", "gender", "age"}
 
 
 @dataclasses.dataclass
-class NoIllegalFeaturesConstraintResult(ConstraintResult):
+class NoIllegalFeaturesResult(CheckResult):
     """
     Does the pipeline use illegal features?
     """
     illegal_features: List[str]
 
 
-class NoIllegalFeaturesConstraint(Constraint):
+class NoIllegalFeatures(Check):
     """
     Does the model get sensitive attributes like race as feature?
     """
@@ -32,15 +33,18 @@ class NoIllegalFeaturesConstraint(Constraint):
             additional_illegal_feature_names = []
         self.additional_illegal_feature_names = additional_illegal_feature_names
 
-    required_inspection = []
+    @property
+    def required_inspections(self) -> Iterable[Inspection]:
+        """The inspections required for the check"""
+        return []
 
     @property
-    def constraint_id(self):
+    def check_id(self):
         """The id of the Constraints"""
         return tuple(self.additional_illegal_feature_names)
 
-    def evaluate(self, inspection_result: InspectionResult) -> ConstraintResult:
-        """Evaluate the constraint"""
+    def evaluate(self, inspection_result: InspectionResult) -> CheckResult:
+        """Evaluate the check"""
         # TODO: Make this robust and add extensive testing
         dag = inspection_result.dag
         train_data = [node for node in dag.nodes if node.operator_type == OperatorType.ESTIMATOR][0]
@@ -48,9 +52,9 @@ class NoIllegalFeaturesConstraint(Constraint):
         forbidden_columns = {*ILLEGAL_FEATURES, *self.additional_illegal_feature_names}
         used_illegal_columns = list(set(used_columns).intersection(forbidden_columns))
         if used_illegal_columns:
-            result = NoIllegalFeaturesConstraintResult(self, ConstraintStatus.FAILURE, used_illegal_columns)
+            result = NoIllegalFeaturesResult(self, CheckStatus.FAILURE, used_illegal_columns)
         else:
-            result = NoIllegalFeaturesConstraintResult(self, ConstraintStatus.SUCCESS, [])
+            result = NoIllegalFeaturesResult(self, CheckStatus.SUCCESS, [])
         return result
 
     def get_used_columns(self, dag, current_node):
