@@ -9,8 +9,8 @@ from typing import Iterable, Dict
 from demo.healthcare.missing_embeddings_inspection import MissingEmbeddingInspection, MissingEmbeddingsInfo
 from mlinspect.checks._check import Check, CheckStatus, CheckResult
 from mlinspect.inspections._inspection import Inspection
-from mlinspect.instrumentation.dag_node import DagNode
-from mlinspect.instrumentation.inspection_result import InspectionResult
+from mlinspect.instrumentation._dag_node import DagNode
+from mlinspect.instrumentation._inspection_result import InspectionResult
 
 ILLEGAL_FEATURES = {"race", "gender", "age"}
 

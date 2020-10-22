@@ -3,7 +3,7 @@ Tests whether the healthcare demo works
 """
 import ast
 from test.utils import run_and_assert_all_op_outputs_inspected
-from example_pipelines.pipelines import HEALTHCARE_PY, HEALTHCARE_PNG
+from example_pipelines._pipelines import HEALTHCARE_PY, HEALTHCARE_PNG
 
 
 def test_py_pipeline_runs():

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from inspect import cleandoc
 
-from example_pipelines.pipelines import HEALTHCARE_PY, ADULT_EASY_PY, ADULT_NORMAL_PY, COMPAS_PY
+from example_pipelines._pipelines import HEALTHCARE_PY, ADULT_EASY_PY, ADULT_NORMAL_PY, COMPAS_PY
 
 
 class OperatorBenchmarkType(Enum):
@@ -231,12 +231,10 @@ def prepare_benchmark_exec(benchmark_str, setup_str, inspections):
     Get the setup str for timeit
     """
     setup = cleandoc("""
-    from experiments.empty_inspection import EmptyInspection
-    from mlinspect.instrumentation.pipeline_executor import singleton
-    from mlinspect.inspections.histogram_inspection import HistogramInspection
-    from mlinspect.inspections.lineage_inspection import LineageInspection
-    from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
-    from experiments.benchmark_utils import get_single_df_creation_str, get_multiple_dfs_creation_str, \
+    from experiments._empty_inspection import EmptyInspection
+    from mlinspect.instrumentation._pipeline_executor import singleton
+    from mlinspect.inspections import HistogramInspection, LineageInspection, MaterializeFirstRowsInspection
+    from experiments._benchmark_utils import get_single_df_creation_str, get_multiple_dfs_creation_str, \
         get_test_projection_str, get_test_selection_str, get_test_join_str, get_np_cat_array_str, \
         get_test_one_hot_encoder_str, get_np_num_array_str, get_test_standard_scaler_str, \
         get_estimator_train_data_str, get_decision_tree_str
@@ -277,8 +275,8 @@ def trigger_pipeline_benchmark_exec(inspections_str):
     Get the benchmark str for timeit
     """
     benchmark = cleandoc("""
-    from experiments.empty_inspection import EmptyInspection
-    from mlinspect.pipeline_inspector import PipelineInspector
+    from experiments._empty_inspection import EmptyInspection
+    from mlinspect import PipelineInspector
     
     PipelineInspector\
             .on_pipeline_from_string(code)\

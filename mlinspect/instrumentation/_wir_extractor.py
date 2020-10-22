@@ -5,8 +5,8 @@ import ast
 from astmonkey import transformers
 import networkx
 
-from ..instrumentation.dag_node import CodeReference
-from ..instrumentation.wir_node import WirNode
+from ..instrumentation._dag_node import CodeReference
+from ..instrumentation._wir_node import WirNode
 
 
 class WirExtractor:

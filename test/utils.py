@@ -7,15 +7,15 @@ from inspect import cleandoc
 from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
 import networkx
 from demo.healthcare.missing_embeddings_inspection import MissingEmbeddingInspection
-from example_pipelines.pipelines import ADULT_EASY_PY
+from example_pipelines._pipelines import ADULT_EASY_PY
 from mlinspect.checks._no_bias_introduced_for import NoBiasIntroducedFor
 from mlinspect.checks._no_illegal_features import NoIllegalFeatures
-from mlinspect.visualisation import save_fig_to_path
+from mlinspect._visualisation import save_fig_to_path
 from mlinspect.inspections._lineage_inspection import LineageInspection
 from mlinspect.inspections._materialize_first_rows_inspection import MaterializeFirstRowsInspection
-from mlinspect.instrumentation.dag_node import DagNode, OperatorType, CodeReference
-from mlinspect.instrumentation.wir_extractor import WirExtractor
-from mlinspect.pipeline_inspector import PipelineInspector
+from mlinspect.instrumentation._dag_node import DagNode, OperatorType, CodeReference
+from mlinspect.instrumentation._wir_extractor import WirExtractor
+from mlinspect._pipeline_inspector import PipelineInspector
 
 
 def get_expected_dag_adult_easy_py_without_columns():

@@ -6,7 +6,7 @@ from typing import Iterable
 from mlinspect.inspections._inspection import Inspection
 from mlinspect.inspections._inspection_input import InspectionInputDataSource, \
     InspectionInputUnaryOperator, InspectionInputNAryOperator
-from mlinspect.instrumentation.dag_node import OperatorType
+from mlinspect.instrumentation._dag_node import OperatorType
 
 
 class HistogramInspection(Inspection):

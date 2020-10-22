@@ -2,8 +2,8 @@
 Preprocess pandas WIR nodes to enable DAG extraction
 """
 
-from ..instrumentation.wir_node import WirNode
-from mlinspect.utils._utils import traverse_graph_and_process_nodes, get_sorted_node_parents
+from ..instrumentation._wir_node import WirNode
+from ..utils._utils import traverse_graph_and_process_nodes, get_sorted_node_parents
 
 
 class PandasWirPreprocessor:

@@ -4,7 +4,7 @@ Data classes used as input for the inspections
 import dataclasses
 from typing import Tuple, List, Iterable
 
-from ..instrumentation.dag_node import OperatorType
+from ..instrumentation._dag_node import OperatorType
 
 
 @dataclasses.dataclass(frozen=True)

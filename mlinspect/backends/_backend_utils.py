@@ -7,9 +7,9 @@ import numpy
 from pandas import DataFrame, Series
 from scipy.sparse import csr_matrix
 
-from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
-from .sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
-from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
+from ._pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
+from ._sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
+from ._sklearn_backend_ndarray_wrapper import MlinspectNdarray
 from ..inspections._inspection_input import ColumnInfo
 
 

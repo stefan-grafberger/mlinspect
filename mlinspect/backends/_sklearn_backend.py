@@ -6,14 +6,14 @@ import networkx
 from sklearn.base import BaseEstimator
 from tensorflow.python.keras.wrappers.scikit_learn import BaseWrapper
 
-from .backend import Backend
-from .pandas_backend import execute_inspection_visits_unary_operator
-from .pandas_backend_frame_wrapper import MlinspectSeries, MlinspectDataFrame
-from .sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer, transformer_names
-from .sklearn_dag_postprocessor import SklearnDagPostprocessor
-from .sklearn_wir_preprocessor import SklearnWirPreprocessor
+from ._backend import Backend
+from ._pandas_backend import execute_inspection_visits_unary_operator
+from ._pandas_backend_frame_wrapper import MlinspectSeries, MlinspectDataFrame
+from ._sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer, transformer_names
+from ._sklearn_dag_postprocessor import SklearnDagPostprocessor
+from ._sklearn_wir_preprocessor import SklearnWirPreprocessor
 from ..inspections._inspection_input import OperatorContext
-from ..instrumentation.dag_node import OperatorType
+from ..instrumentation._dag_node import OperatorType
 
 
 class SklearnBackend(Backend):
@@ -145,7 +145,7 @@ class SklearnBackend(Backend):
     def save_call_module_and_description(self, code_reference, function_info, maybe_wrapper_transformer):
         """Replace the module of mlinspect transformer wrappers with the original modules"""
         if maybe_wrapper_transformer is not None and \
-                function_info[0] == 'mlinspect.backends.sklearn_backend_transformer_wrapper' and \
+                function_info[0] == 'mlinspect.backends._sklearn_backend_transformer_wrapper' and \
                 function_info[1] != "score":
             function_info = (maybe_wrapper_transformer.module_name, function_info[1])
 

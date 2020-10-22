@@ -9,15 +9,15 @@ from pandas import DataFrame
 from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator
 
-from .backend_utils import create_wrapper_with_annotations, \
+from ._backend_utils import create_wrapper_with_annotations, \
     build_annotation_list_from_iters
-from .iter_creation import iter_input_annotation_output_sink_op, iter_input_annotation_output_nary_op, \
+from ._iter_creation import iter_input_annotation_output_sink_op, iter_input_annotation_output_nary_op, \
     iter_input_annotation_output_map
-from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
-from .sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
-from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
+from ._pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
+from ._sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
+from ._sklearn_backend_ndarray_wrapper import MlinspectNdarray
 from ..inspections._inspection_input import OperatorContext
-from ..instrumentation.dag_node import CodeReference, OperatorType
+from ..instrumentation._dag_node import CodeReference, OperatorType
 
 transformer_names = {
         ('sklearn.preprocessing._encoders', 'OneHotEncoder'): "Categorical Encoder (OneHotEncoder)",

@@ -8,10 +8,10 @@ import networkx
 import pytest
 from testfixtures import compare
 
-from example_pipelines.pipelines import ADULT_EASY_PY
-from mlinspect.instrumentation.dag_node import CodeReference
-from mlinspect.instrumentation.wir_extractor import WirExtractor
-from mlinspect.instrumentation.wir_node import WirNode
+from example_pipelines._pipelines import ADULT_EASY_PY
+from mlinspect.instrumentation._dag_node import CodeReference
+from mlinspect.instrumentation._wir_extractor import WirExtractor
+from mlinspect.instrumentation._wir_node import WirNode
 
 
 def test_print_stmt():

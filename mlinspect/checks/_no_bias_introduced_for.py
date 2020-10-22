@@ -9,8 +9,8 @@ from typing import Iterable, Dict
 from mlinspect.checks._check import Check, CheckStatus, CheckResult
 from mlinspect.inspections._histogram_inspection import HistogramInspection
 from mlinspect.inspections._inspection import Inspection
-from mlinspect.instrumentation.dag_node import OperatorType, DagNode
-from mlinspect.instrumentation.inspection_result import InspectionResult
+from mlinspect.instrumentation._dag_node import OperatorType, DagNode
+from mlinspect.instrumentation._inspection_result import InspectionResult
 
 
 @dataclasses.dataclass(eq=True, frozen=True)

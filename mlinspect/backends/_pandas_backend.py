@@ -9,15 +9,15 @@ from pandas import DataFrame, Series
 from pandas.core.groupby import DataFrameGroupBy
 import numpy
 
-from .backend import Backend
-from .backend_utils import build_annotation_df_from_iters, \
+from ._backend import Backend
+from ._backend_utils import build_annotation_df_from_iters, \
     create_wrapper_with_annotations
-from .iter_creation import iter_input_data_source, iter_input_annotation_output_resampled, \
+from ._iter_creation import iter_input_data_source, iter_input_annotation_output_resampled, \
     iter_input_annotation_output_map, iter_input_annotation_output_join
-from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
-from .pandas_wir_preprocessor import PandasWirPreprocessor
+from ._pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
+from ._pandas_wir_preprocessor import PandasWirPreprocessor
 from ..inspections._inspection_input import OperatorContext
-from ..instrumentation.dag_node import OperatorType, DagNodeIdentifier
+from ..instrumentation._dag_node import OperatorType, DagNodeIdentifier
 
 
 class PandasBackend(Backend):
@@ -39,7 +39,7 @@ class PandasBackend(Backend):
     }
 
     replacement_type_map = {
-        'mlinspect.backends.pandas_backend_frame_wrapper': 'pandas.core.frame'
+        'mlinspect.backends._pandas_backend_frame_wrapper': 'pandas.core.frame'
     }
 
     def postprocess_dag(self, dag: networkx.DiGraph) -> networkx.DiGraph:

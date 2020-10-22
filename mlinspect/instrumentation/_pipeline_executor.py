@@ -10,13 +10,13 @@ from nbconvert import PythonExporter
 
 from ..checks._check import Check
 from ..inspections._inspection import Inspection
-from ..backends.all_backends import get_all_backends
-from .call_capture_transformer import CallCaptureTransformer
-from .dag_node import CodeReference, DagNodeIdentifier
-from .inspection_result import InspectionResult
-from .wir_extractor import WirExtractor
-from .wir_to_dag_transformer import WirToDagTransformer
-from ..inspector_result import InspectorResult
+from ..backends._all_backends import get_all_backends
+from ._call_capture_transformer import CallCaptureTransformer
+from ._dag_node import CodeReference, DagNodeIdentifier
+from ._inspection_result import InspectionResult
+from ._wir_extractor import WirExtractor
+from ._wir_to_dag_transformer import WirToDagTransformer
+from .._inspector_result import InspectorResult
 
 
 class PipelineExecutor:
@@ -123,7 +123,7 @@ class PipelineExecutor:
         call_capture_transformer = CallCaptureTransformer()
         parsed_modified_ast = call_capture_transformer.visit(parsed_ast)
         parsed_modified_ast = ast.fix_missing_locations(parsed_modified_ast)
-        func_import_node = ast.ImportFrom(module='mlinspect.instrumentation.pipeline_executor',
+        func_import_node = ast.ImportFrom(module='mlinspect.instrumentation._pipeline_executor',
                                           names=[ast.alias(name='before_call_used_value', asname=None),
                                                  ast.alias(name='before_call_used_args', asname=None),
                                                  ast.alias(name='before_call_used_kwargs', asname=None),

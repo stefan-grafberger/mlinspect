@@ -6,8 +6,8 @@ import os
 import networkx
 from testfixtures import compare
 
-from mlinspect.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
-from mlinspect.instrumentation.wir_to_dag_transformer import WirToDagTransformer
+from mlinspect.backends._sklearn_wir_preprocessor import SklearnWirPreprocessor
+from mlinspect.instrumentation._wir_to_dag_transformer import WirToDagTransformer
 from mlinspect.utils._utils import get_project_root
 from ..utils import get_test_wir, get_expected_dag_adult_easy_py_without_columns
 

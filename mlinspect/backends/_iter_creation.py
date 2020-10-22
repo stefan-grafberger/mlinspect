@@ -5,7 +5,7 @@ import itertools
 
 import pandas
 
-from mlinspect.backends.backend_utils import get_df_row_iterator, get_iterator_for_type, get_annotation_rows
+from mlinspect.backends._backend_utils import get_df_row_iterator, get_iterator_for_type, get_annotation_rows
 from mlinspect.inspections._inspection_input import InspectionInputDataSource, InspectionInputUnaryOperator, \
     InspectionInputNAryOperator, InspectionInputSinkOperator, InspectionRowDataSource, InspectionRowUnaryOperator, \
     InspectionRowNAryOperator, ColumnInfo, InspectionRowSinkOperator

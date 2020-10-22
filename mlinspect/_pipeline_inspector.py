@@ -5,8 +5,8 @@ from typing import Iterable
 
 from mlinspect.inspections._inspection import Inspection
 from .checks._check import Check
-from .inspector_result import InspectorResult
-from .instrumentation.pipeline_executor import singleton
+from ._inspector_result import InspectorResult
+from .instrumentation._pipeline_executor import singleton
 
 
 class PipelineInspectorBuilder:

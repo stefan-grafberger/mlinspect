@@ -7,7 +7,7 @@ from pandas import DataFrame
 
 from ._inspection import Inspection
 from ._inspection_input import InspectionInputSinkOperator
-from ..instrumentation.dag_node import OperatorType
+from ..instrumentation._dag_node import OperatorType
 
 
 class MaterializeFirstRowsInspection(Inspection):

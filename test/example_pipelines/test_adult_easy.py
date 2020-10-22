@@ -7,7 +7,7 @@ from test.utils import run_and_assert_all_op_outputs_inspected
 import nbformat
 from nbconvert import PythonExporter
 
-from example_pipelines.pipelines import ADULT_EASY_PY, ADULT_EASY_IPYNB, ADULT_EASY_PNG
+from example_pipelines._pipelines import ADULT_EASY_PY, ADULT_EASY_IPYNB, ADULT_EASY_PNG
 
 
 def test_py_pipeline_runs():
