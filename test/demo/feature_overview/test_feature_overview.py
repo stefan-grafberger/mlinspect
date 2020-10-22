@@ -6,10 +6,10 @@ import os
 from importnb import Notebook
 import matplotlib
 
-from mlinspect.utils._utils import get_project_root
+from mlinspect.utils import get_project_root
 
 
-DEMO_NB_FILE = os.path.join(str(get_project_root()), "demo", "healthcare", "healthcare_demo.ipynb")
+DEMO_NB_FILE = os.path.join(str(get_project_root()), "demo", "feature_overview", "feature_overview.ipynb")
 
 
 def test_demo_nb():

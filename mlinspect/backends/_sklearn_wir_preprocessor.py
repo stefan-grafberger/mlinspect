@@ -19,7 +19,7 @@ class SklearnWirPreprocessor:
         ('sklearn.preprocessing._data', 'StandardScaler'),
         ('sklearn.tree._classes', 'DecisionTreeClassifier'),
         ('sklearn.impute._base', 'SimpleImputer'),
-        ('demo.healthcare.demo_utils', 'MyW2VTransformer'),
+        ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer'),
         ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
         ('sklearn.linear_model._logistic', 'LogisticRegression')
     }

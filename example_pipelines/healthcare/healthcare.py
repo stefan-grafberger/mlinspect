@@ -2,6 +2,7 @@
 An example pipeline
 """
 import os
+import warnings
 
 import pandas as pd
 from sklearn.compose import ColumnTransformer
@@ -10,8 +11,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
-from demo.healthcare.demo_utils import MyW2VTransformer, create_model
-from mlinspect.utils._utils import get_project_root
+from example_pipelines.healthcare.healthcare_utils import MyW2VTransformer, create_model
+from mlinspect.utils import get_project_root
+
+# FutureWarning: Given feature/column names or counts do not match the ones for the data given during fit
+warnings.filterwarnings('ignore')
 
 COUNTIES_OF_INTEREST = ['county2', 'county3']
 

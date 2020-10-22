@@ -6,7 +6,7 @@ import os
 from inspect import cleandoc
 from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
 import networkx
-from demo.healthcare.missing_embeddings_inspection import MissingEmbeddingInspection
+from demo.feature_overview.missing_embeddings_inspection import MissingEmbeddingInspection
 from example_pipelines._pipelines import ADULT_EASY_PY
 from mlinspect.checks._no_bias_introduced_for import NoBiasIntroducedFor
 from mlinspect.checks._no_illegal_features import NoIllegalFeatures

@@ -27,7 +27,7 @@ transformer_names = {
         ('sklearn.linear_model._logistic', 'LogisticRegression'): "Logistic Regression",
         ('sklearn.preprocessing._discretization', 'KBinsDiscretizer'): "Numerical Encoder (KBinsDiscretizer)",
         # TODO: We  can remove this later by checking if subclass of transformer/estimator
-        ('demo.healthcare.demo_utils', 'MyW2VTransformer'): "Word2Vec",
+        ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer'): "Word2Vec",
         ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'): "Neural Network"
     }
 
@@ -98,7 +98,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [1 for _ in range(result.shape[1])]
             result = self.normal_transformer_visit(X, y, result)
-        elif self.call_function_info == ('demo.healthcare.demo_utils', 'MyW2VTransformer'):
+        elif self.call_function_info == ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer'):
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [result.shape[1]]
             result = self.normal_transformer_visit(X, y, result)

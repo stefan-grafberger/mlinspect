@@ -25,7 +25,7 @@ class SklearnDagPostprocessor:
             if node.module in {('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'),
                                ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'),
                                ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'),
-                               ('demo.healthcare.demo_utils', 'MyW2VTransformer', 'Pipeline'),
+                               ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer', 'Pipeline'),
                                ('sklearn.impute._base', 'SimpleImputer', 'Pipeline'),
                                ('sklearn.preprocessing._discretization', 'KBinsDiscretizer', 'Pipeline'),
                                }:

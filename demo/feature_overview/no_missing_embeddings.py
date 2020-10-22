@@ -6,7 +6,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Iterable, Dict
 
-from demo.healthcare.missing_embeddings_inspection import MissingEmbeddingInspection, MissingEmbeddingsInfo
+from demo.feature_overview.missing_embeddings_inspection import MissingEmbeddingInspection, MissingEmbeddingsInfo
 from mlinspect.checks._check import Check, CheckStatus, CheckResult
 from mlinspect.inspections._inspection import Inspection
 from mlinspect.instrumentation._dag_node import DagNode

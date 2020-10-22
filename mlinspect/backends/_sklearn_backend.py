@@ -36,7 +36,7 @@ class SklearnBackend(Backend):
         ('sklearn.pipeline', 'fit', 'Train Labels'): OperatorType.TRAIN_LABELS,
         ('sklearn.model_selection._split', 'train_test_split'): OperatorType.TRAIN_TEST_SPLIT,
         # TODO: We  can remove this later by checking if subclass of transformer/estimator
-        ('demo.healthcare.demo_utils', 'MyW2VTransformer', 'Pipeline'): OperatorType.TRANSFORMER,
+        ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer', 'Pipeline'): OperatorType.TRANSFORMER,
         ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier', 'Pipeline'): OperatorType.ESTIMATOR
     }
 
@@ -128,7 +128,7 @@ class SklearnBackend(Backend):
                                ('sklearn.preprocessing._data', 'StandardScaler'),
                                ('sklearn.tree._classes', 'DecisionTreeClassifier'),
                                ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
-                               ('demo.healthcare.demo_utils', 'MyW2VTransformer'),
+                               ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer'),
                                ('sklearn.impute._base', 'SimpleImputer'),
                                ('sklearn.compose._column_transformer', 'ColumnTransformer'),
                                ('sklearn.pipeline', 'Pipeline'),
