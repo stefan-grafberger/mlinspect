@@ -35,16 +35,16 @@ Prerequisite: python >=  3.8
 ## Vision
 Make it easy to analyze your pipeline and automatically check for common issues.
 ```python
-from mlinspect._pipeline_inspector import PipelineInspector
-from mlinspect.inspections._materialize_first_rows_inspection import MaterializeFirstRowsInspection
-from mlinspect.checks._check import Check
+from mlinspect import PipelineInspector
+from mlinspect.inspections import MaterializeFirstRowsInspection
+from mlinspect.checks import NoBiasIntroducedFor
 
 IPYNB_PATH = ...
 
 inspector_result = PipelineInspector\
         .on_pipeline_from_ipynb_file(IPYNB_PATH)\
         .add_required_inspection(MaterializeFirstRowsInspection(5))\
-        .add_check(Check().no_bias_introduced_for(['race']))\
+        .add_check(NoBiasIntroducedFor(['race']))\
         .execute()
 
 extracted_dag = inspector_result.dag
