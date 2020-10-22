@@ -6,12 +6,12 @@ import os
 from importnb import Notebook
 import matplotlib
 
-from mlinspect.utils._utils import get_project_root
+from mlinspect.utils import get_project_root
 
 
-ADULT_EASY_TASK_NB = os.path.join(str(get_project_root()), "demo", "adult_easy", "adult_easy_task.ipynb")
-COMPAS_TASK_NB = os.path.join(str(get_project_root()), "demo", "compas", "compas_task.ipynb")
-HEALTHCARE_TASK_NB = os.path.join(str(get_project_root()), "demo", "healthcare", "healthcare_task.ipynb")
+ADULT_EASY_TASK_NB = os.path.join(str(get_project_root()), "experiments", "user_study", "adult_easy_task.ipynb")
+COMPAS_TASK_NB = os.path.join(str(get_project_root()), "experiments", "user_study", "compas_task.ipynb")
+HEALTHCARE_TASK_NB = os.path.join(str(get_project_root()), "experiments", "user_study", "healthcare_task.ipynb")
 
 
 def test_adult_easy_task_nb():

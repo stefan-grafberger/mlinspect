@@ -231,10 +231,10 @@ def prepare_benchmark_exec(benchmark_str, setup_str, inspections):
     Get the setup str for timeit
     """
     setup = cleandoc("""
-    from experiments._empty_inspection import EmptyInspection
+    from experiments.performance._empty_inspection import EmptyInspection
     from mlinspect.instrumentation._pipeline_executor import singleton
     from mlinspect.inspections import HistogramInspection, LineageInspection, MaterializeFirstRowsInspection
-    from experiments._benchmark_utils import get_single_df_creation_str, get_multiple_dfs_creation_str, \
+    from experiments.performance._benchmark_utils import get_single_df_creation_str, get_multiple_dfs_creation_str, \
         get_test_projection_str, get_test_selection_str, get_test_join_str, get_np_cat_array_str, \
         get_test_one_hot_encoder_str, get_np_num_array_str, get_test_standard_scaler_str, \
         get_estimator_train_data_str, get_decision_tree_str
@@ -262,8 +262,8 @@ def prepare_pipeline_benchmark_exec(test_code):
     Get the benchmark str for timeit
     """
     benchmark = cleandoc("""
-    from experiments._benchmark_utils import get_adult_easy_py_str, get_adult_normal_py_str, get_healthcare_py_str, \
-        get_compas_py_str
+    from experiments.performance._benchmark_utils import get_adult_easy_py_str, get_adult_normal_py_str, \
+        get_healthcare_py_str, get_compas_py_str
     
     code = {}
     """.format(test_code))
@@ -275,7 +275,7 @@ def trigger_pipeline_benchmark_exec(inspections_str):
     Get the benchmark str for timeit
     """
     benchmark = cleandoc("""
-    from experiments._empty_inspection import EmptyInspection
+    from experiments.performance._empty_inspection import EmptyInspection
     from mlinspect import PipelineInspector
     
     PipelineInspector\

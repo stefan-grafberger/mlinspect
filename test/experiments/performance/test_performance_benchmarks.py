@@ -8,7 +8,7 @@ from importnb import Notebook
 
 from mlinspect.utils import get_project_root
 
-EXPERIMENT_NB_FILE = os.path.join(str(get_project_root()), "experiments", "performance_benchmarks.ipynb")
+EXPERIMENT_NB_FILE = os.path.join(str(get_project_root()), "experiments", "performance", "performance_benchmarks.ipynb")
 
 
 def test_experiment_nb():

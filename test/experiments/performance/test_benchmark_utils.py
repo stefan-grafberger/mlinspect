@@ -2,7 +2,7 @@
 Tests whether the benchmark utils work
 """
 
-from experiments._benchmark_utils import do_op_instrumentation_benchmarks, OperatorBenchmarkType, \
+from experiments.performance._benchmark_utils import do_op_instrumentation_benchmarks, OperatorBenchmarkType, \
     do_op_inspections_benchmarks, do_full_pipeline_benchmarks, PipelineBenchmarkType
 
 
