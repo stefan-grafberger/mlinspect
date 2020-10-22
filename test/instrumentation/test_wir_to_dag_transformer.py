@@ -9,7 +9,7 @@ from mlinspect.instrumentation._dag_node import CodeReference
 from mlinspect.instrumentation._wir_extractor import WirExtractor
 from mlinspect.instrumentation._wir_node import WirNode
 from mlinspect.instrumentation._wir_to_dag_transformer import WirToDagTransformer
-from ..testing_helper_utils import get_module_info, get_adult_easy_py_ast, get_test_wir, \
+from ..testing_helper_utils import get_module_info, get_adult_simple_py_ast, get_test_wir, \
     get_expected_dag_adult_easy_py_without_columns
 
 
@@ -17,7 +17,7 @@ def test_remove_all_nodes_but_calls_and_subscripts():
     """
     Tests whether the WIR Extraction works for the adult_easy pipeline
     """
-    test_ast = get_adult_easy_py_ast()
+    test_ast = get_adult_simple_py_ast()
     extractor = WirExtractor(test_ast)
     extractor.extract_wir()
     extracted_wir_with_module_info = extractor.add_runtime_info(get_module_info(), {})
@@ -61,7 +61,7 @@ def get_expected_cleaned_wir_adult_easy():
     expected_str = WirNode(8, "str", "Call", CodeReference(11, 26, 11, 49), ('builtins', 'str'))
     expected_graph.add_edge(expected_get_project_root, expected_str)
 
-    expected_join = WirNode(12, "join", "Call", CodeReference(11, 13, 11, 104), ('posixpath', 'join'))
+    expected_join = WirNode(12, "join", "Call", CodeReference(11, 13, 11, 107), ('posixpath', 'join'))
     expected_graph.add_edge(expected_str, expected_join)
 
     expected_read_csv = WirNode(18, "read_csv", "Call", CodeReference(12, 11, 12, 62),

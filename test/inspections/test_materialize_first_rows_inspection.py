@@ -7,7 +7,7 @@ from pandas import DataFrame
 from pandas._testing import assert_frame_equal
 from testfixtures import compare, RangeComparison
 
-from example_pipelines._pipelines import ADULT_EASY_PY
+from example_pipelines import ADULT_SIMPLE_PY
 from mlinspect.inspections._materialize_first_rows_inspection import MaterializeFirstRowsInspection
 from mlinspect.instrumentation._dag_node import DagNode, OperatorType, CodeReference
 from mlinspect._pipeline_inspector import PipelineInspector
@@ -18,7 +18,7 @@ def test_materialize_first_rows_inspection():
     Tests whether the MaterializeFirstRowsInspection works
     """
     inspector_result = PipelineInspector \
-        .on_pipeline_from_py_file(ADULT_EASY_PY) \
+        .on_pipeline_from_py_file(ADULT_SIMPLE_PY) \
         .add_required_inspection(MaterializeFirstRowsInspection(2)) \
         .execute()
     inspection_result = inspector_result.inspection_to_annotations

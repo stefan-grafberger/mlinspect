@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from inspect import cleandoc
 
-from example_pipelines._pipelines import HEALTHCARE_PY, ADULT_EASY_PY, ADULT_NORMAL_PY, COMPAS_PY
+from example_pipelines import HEALTHCARE_PY, ADULT_SIMPLE_PY, ADULT_COMPLEX_PY, COMPAS_PY
 
 
 class OperatorBenchmarkType(Enum):
@@ -27,8 +27,8 @@ class PipelineBenchmarkType(Enum):
     """
     HEALTHCARE = "healthcare (1000 rows)"
     COMPAS = "compas (train: 5050 rows, test: 2166)"
-    ADULT_EASY = "adult_easy (22793 rows)"
-    ADULT_NORMAL = "adult_normal (train: 22793 rows, test: 9770 rows)"
+    ADULT_SIMPLE = "adult_simple (22793 rows)"
+    ADULT_COMPLEX = "adult_complex (train: 22793 rows, test: 9770 rows)"
 
 
 @dataclass(frozen=True, eq=True)
@@ -120,12 +120,12 @@ def get_code_for_pipeline_benchmark(pipeline_type):
     elif pipeline_type == PipelineBenchmarkType.COMPAS:
         benchmark_exec = get_compas_py_str()
         benchmark_setup_func_str = "get_compas_py_str()"
-    elif pipeline_type == PipelineBenchmarkType.ADULT_EASY:
-        benchmark_exec = get_adult_easy_py_str()
-        benchmark_setup_func_str = "get_adult_easy_py_str()"
-    elif pipeline_type == PipelineBenchmarkType.ADULT_NORMAL:
-        benchmark_exec = get_adult_normal_py_str()
-        benchmark_setup_func_str = "get_adult_normal_py_str()"
+    elif pipeline_type == PipelineBenchmarkType.ADULT_SIMPLE:
+        benchmark_exec = get_adult_simple_py_str()
+        benchmark_setup_func_str = "get_adult_simple_py_str()"
+    elif pipeline_type == PipelineBenchmarkType.ADULT_COMPLEX:
+        benchmark_exec = get_adult_complex_py_str()
+        benchmark_setup_func_str = "get_adult_complex_py_str()"
     else:
         assert False
     code_to_benchmark = CodeToBenchmark("pass", benchmark_exec, benchmark_setup_func_str, "")
@@ -262,7 +262,7 @@ def prepare_pipeline_benchmark_exec(test_code):
     Get the benchmark str for timeit
     """
     benchmark = cleandoc("""
-    from experiments.performance._benchmark_utils import get_adult_easy_py_str, get_adult_normal_py_str, \
+    from experiments.performance._benchmark_utils import get_adult_simple_py_str, get_adult_complex_py_str, \
         get_healthcare_py_str, get_compas_py_str
     
     code = {}
@@ -463,20 +463,20 @@ def get_decision_tree_str():
     return test_code
 
 
-def get_adult_easy_py_str():
+def get_adult_simple_py_str():
     """
     Get the code str for the adult_easy pipeline
     """
-    with open(ADULT_EASY_PY) as file:
+    with open(ADULT_SIMPLE_PY) as file:
         test_code = file.read()
     return test_code
 
 
-def get_adult_normal_py_str():
+def get_adult_complex_py_str():
     """
     Get the code str for the adult_easy pipeline
     """
-    with open(ADULT_NORMAL_PY) as file:
+    with open(ADULT_COMPLEX_PY) as file:
         test_code = file.read()
     return test_code
 

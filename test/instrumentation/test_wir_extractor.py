@@ -8,7 +8,7 @@ import networkx
 import pytest
 from testfixtures import compare
 
-from example_pipelines._pipelines import ADULT_EASY_PY
+from example_pipelines import ADULT_SIMPLE_PY
 from mlinspect.instrumentation._dag_node import CodeReference
 from mlinspect.instrumentation._wir_extractor import WirExtractor
 from mlinspect.instrumentation._wir_node import WirNode
@@ -403,7 +403,7 @@ def test_adult_easy_pipeline():
     """
     Tests whether the WIR Extraction works for the adult_easy pipeline
     """
-    with open(ADULT_EASY_PY) as file:
+    with open(ADULT_SIMPLE_PY) as file:
         test_code = file.read()
 
         test_ast = ast.parse(test_code)

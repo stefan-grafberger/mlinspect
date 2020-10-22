@@ -13,7 +13,7 @@ def test_get_project_root():
     """
     Tests whether get_project_root works
     """
-    assert get_project_root() == Path(__file__).parent.parent
+    assert get_project_root() == Path(__file__).parent.parent.parent
 
 
 def test_simplify_ast_call_nodes_throws_if_not_call():

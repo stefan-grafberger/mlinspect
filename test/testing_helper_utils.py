@@ -7,7 +7,7 @@ from inspect import cleandoc
 from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
 import networkx
 from demo.feature_overview.missing_embeddings_inspection import MissingEmbeddingInspection
-from example_pipelines._pipelines import ADULT_EASY_PY
+from example_pipelines._pipelines import ADULT_SIMPLE_PY
 from mlinspect.checks._no_bias_introduced_for import NoBiasIntroducedFor
 from mlinspect.checks._no_illegal_features import NoIllegalFeatures
 from mlinspect.visualisation._visualisation import save_fig_to_path
@@ -261,7 +261,7 @@ def get_module_info():
                    ('mlinspect.utils', 'get_project_root'),
                    CodeReference(lineno=11, col_offset=26, end_lineno=11, end_col_offset=49):
                    ('builtins', 'str'),
-                   CodeReference(lineno=11, col_offset=13, end_lineno=11, end_col_offset=104):
+                   CodeReference(lineno=11, col_offset=13, end_lineno=11, end_col_offset=107):
                    ('posixpath', 'join'),
                    CodeReference(lineno=12, col_offset=11, end_lineno=12, end_col_offset=62):
                    ('pandas.io.parsers', 'read_csv'),
@@ -311,11 +311,11 @@ def get_call_description_info():
     return call_description_info
 
 
-def get_adult_easy_py_ast():
+def get_adult_simple_py_ast():
     """
     Get the parsed AST for the adult_easy pipeline
     """
-    with open(ADULT_EASY_PY) as file:
+    with open(ADULT_SIMPLE_PY) as file:
         test_code = file.read()
 
         test_ast = ast.parse(test_code)
@@ -326,7 +326,7 @@ def get_test_wir():
     """
     Get the extracted WIR for the adult_easy pipeline with runtime info
     """
-    test_ast = get_adult_easy_py_ast()
+    test_ast = get_adult_simple_py_ast()
     extractor = WirExtractor(test_ast)
     extractor.extract_wir()
     wir = extractor.add_runtime_info(get_module_info(), get_call_description_info())
@@ -343,7 +343,7 @@ def get_pandas_read_csv_and_dropna_code():
             import pandas as pd
             from mlinspect.utils import get_project_root
 
-            train_file = os.path.join(str(get_project_root()), "example_pipelines", "adult_easy", "adult_train.csv")
+            train_file = os.path.join(str(get_project_root()), "example_pipelines", "adult_complex", "adult_train.csv")
             raw_data = pd.read_csv(train_file)
             data = raw_data.dropna()
             relevant_data = data[['age', 'workclass', 'education']]

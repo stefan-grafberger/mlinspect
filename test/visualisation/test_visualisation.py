@@ -3,9 +3,9 @@ Tests whether the visualisation of the resulting DAG works
 """
 import os
 
-from ..testing_helper_utils import get_expected_dag_adult_easy_py
 from mlinspect.utils import get_project_root
 from mlinspect.visualisation import save_fig_to_path, get_dag_as_pretty_string
+from ..testing_helper_utils import get_expected_dag_adult_easy_py
 
 
 def test_save_fig_to_path():
@@ -14,7 +14,7 @@ def test_save_fig_to_path():
     """
     extracted_dag = get_expected_dag_adult_easy_py()
 
-    filename = os.path.join(str(get_project_root()), "example_pipelines", "adult_easy", "adult_easy.png")
+    filename = os.path.join(str(get_project_root()), "example_pipelines", "adult_simple", "adult_simple.png")
     save_fig_to_path(extracted_dag, filename)
 
     assert os.path.isfile(filename)
