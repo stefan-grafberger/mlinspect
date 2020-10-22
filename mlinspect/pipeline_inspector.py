@@ -3,8 +3,8 @@ User-facing API for inspecting the pipeline
 """
 from typing import Iterable
 
-from mlinspect.inspections.inspection import Inspection
-from .checks.check import Check
+from mlinspect.inspections._inspection import Inspection
+from .checks._check import Check
 from .inspector_result import InspectorResult
 from .instrumentation.pipeline_executor import singleton
 

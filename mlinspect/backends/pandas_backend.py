@@ -16,7 +16,7 @@ from .iter_creation import iter_input_data_source, iter_input_annotation_output_
     iter_input_annotation_output_map, iter_input_annotation_output_join
 from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from .pandas_wir_preprocessor import PandasWirPreprocessor
-from ..inspections.inspection_input import OperatorContext
+from ..inspections._inspection_input import OperatorContext
 from ..instrumentation.dag_node import OperatorType, DagNodeIdentifier
 
 

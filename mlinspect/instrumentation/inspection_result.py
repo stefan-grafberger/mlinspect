@@ -6,7 +6,7 @@ from typing import Dict, Tuple
 
 import networkx
 
-from ..inspections.inspection import Inspection
+from ..inspections._inspection import Inspection
 
 
 @dataclasses.dataclass

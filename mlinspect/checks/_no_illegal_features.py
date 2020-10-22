@@ -6,8 +6,8 @@ from __future__ import annotations
 import dataclasses
 from typing import List, Iterable
 
-from mlinspect.checks.check import Check, CheckStatus, CheckResult
-from mlinspect.inspections.inspection import Inspection
+from mlinspect.checks._check import Check, CheckStatus, CheckResult
+from mlinspect.inspections._inspection import Inspection
 from mlinspect.instrumentation.dag_node import OperatorType
 from mlinspect.instrumentation.inspection_result import InspectionResult
 

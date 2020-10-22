@@ -5,13 +5,10 @@ Tests whether the fluent API works
 import networkx
 from testfixtures import compare
 
+from mlinspect import PipelineInspector
+from mlinspect.checks import CheckStatus, NoBiasIntroducedFor, NoIllegalFeatures
+from mlinspect.inspections import HistogramInspection, MaterializeFirstRowsInspection
 from example_pipelines.pipelines import ADULT_EASY_PY, ADULT_EASY_IPYNB
-from mlinspect.checks.check import CheckStatus
-from mlinspect.checks.no_bias_introduced_for import NoBiasIntroducedFor
-from mlinspect.checks.no_illegal_features import NoIllegalFeatures
-from mlinspect.inspections.histogram_inspection import HistogramInspection
-from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
-from mlinspect.pipeline_inspector import PipelineInspector
 from .utils import get_expected_dag_adult_easy_ipynb, get_expected_dag_adult_easy_py
 
 

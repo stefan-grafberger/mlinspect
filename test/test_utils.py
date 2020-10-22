@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from mlinspect.utils import get_project_root, simplify_ast_call_nodes
+from mlinspect.utils._utils import get_project_root, simplify_ast_call_nodes
 
 
 def test_get_project_root():

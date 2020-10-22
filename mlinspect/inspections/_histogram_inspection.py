@@ -3,8 +3,8 @@ A simple example inspection
 """
 from typing import Iterable
 
-from mlinspect.inspections.inspection import Inspection
-from mlinspect.inspections.inspection_input import InspectionInputDataSource, \
+from mlinspect.inspections._inspection import Inspection
+from mlinspect.inspections._inspection_input import InspectionInputDataSource, \
     InspectionInputUnaryOperator, InspectionInputNAryOperator
 from mlinspect.instrumentation.dag_node import OperatorType
 

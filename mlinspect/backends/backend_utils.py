@@ -10,7 +10,7 @@ from scipy.sparse import csr_matrix
 from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from .sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
 from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
-from ..inspections.inspection_input import ColumnInfo
+from ..inspections._inspection_input import ColumnInfo
 
 
 def get_annotation_rows(input_annotations, inspection_index):

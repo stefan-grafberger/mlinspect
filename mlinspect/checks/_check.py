@@ -8,7 +8,7 @@ import dataclasses
 from enum import Enum
 from typing import Iterable
 
-from mlinspect.inspections.inspection import Inspection
+from mlinspect.inspections._inspection import Inspection
 from mlinspect.instrumentation.inspection_result import InspectionResult
 
 

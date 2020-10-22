@@ -5,7 +5,7 @@ import networkx
 from more_itertools import pairwise
 
 from ..instrumentation.wir_node import WirNode
-from ..utils import traverse_graph_and_process_nodes, get_sorted_node_parents
+from mlinspect.utils._utils import traverse_graph_and_process_nodes, get_sorted_node_parents
 
 
 class SklearnWirPreprocessor:

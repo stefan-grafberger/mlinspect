@@ -6,7 +6,7 @@ import os
 from importnb import Notebook
 import matplotlib
 
-from mlinspect.utils import get_project_root
+from mlinspect.utils._utils import get_project_root
 
 
 ADULT_EASY_TASK_NB = os.path.join(str(get_project_root()), "demo", "adult_easy", "adult_easy_task.ipynb")

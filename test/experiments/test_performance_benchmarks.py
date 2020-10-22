@@ -6,7 +6,7 @@ import os
 import matplotlib
 from importnb import Notebook
 
-from mlinspect.utils import get_project_root
+from mlinspect.utils._utils import get_project_root
 
 EXPERIMENT_NB_FILE = os.path.join(str(get_project_root()), "experiments", "performance_benchmarks.ipynb")
 

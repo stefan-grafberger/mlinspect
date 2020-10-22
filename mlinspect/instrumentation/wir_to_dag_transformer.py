@@ -6,7 +6,7 @@ import networkx
 from ..backends.all_backends import get_all_backends
 from ..instrumentation.dag_node import DagNode
 from ..instrumentation.wir_extractor import WirExtractor
-from ..utils import traverse_graph_and_process_nodes
+from mlinspect.utils._utils import traverse_graph_and_process_nodes
 
 
 class WirToDagTransformer:

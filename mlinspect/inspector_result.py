@@ -6,8 +6,8 @@ from typing import Dict, Tuple
 
 import networkx
 
-from mlinspect.checks.check import Check, CheckResult
-from mlinspect.inspections.inspection import Inspection
+from mlinspect.checks._check import Check, CheckResult
+from mlinspect.inspections._inspection import Inspection
 
 
 @dataclasses.dataclass

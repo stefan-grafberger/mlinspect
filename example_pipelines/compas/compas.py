@@ -10,7 +10,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, KBinsDiscretizer, label_binarize
 
-from mlinspect.utils import get_project_root
+from mlinspect.utils._utils import get_project_root
 
 train_file = os.path.join(str(get_project_root()), "example_pipelines", "compas", "compas_train.csv")
 train_data = pd.read_csv(train_file, na_values='?', index_col=0)

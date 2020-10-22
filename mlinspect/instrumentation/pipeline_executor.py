@@ -8,8 +8,8 @@ from typing import Iterable
 import nbformat
 from nbconvert import PythonExporter
 
-from ..checks.check import Check
-from ..inspections.inspection import Inspection
+from ..checks._check import Check
+from ..inspections._inspection import Inspection
 from ..backends.all_backends import get_all_backends
 from .call_capture_transformer import CallCaptureTransformer
 from .dag_node import CodeReference, DagNodeIdentifier

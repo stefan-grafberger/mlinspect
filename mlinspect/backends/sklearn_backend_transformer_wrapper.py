@@ -16,7 +16,7 @@ from .iter_creation import iter_input_annotation_output_sink_op, iter_input_anno
 from .pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
 from .sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
 from .sklearn_backend_ndarray_wrapper import MlinspectNdarray
-from ..inspections.inspection_input import OperatorContext
+from ..inspections._inspection_input import OperatorContext
 from ..instrumentation.dag_node import CodeReference, OperatorType
 
 transformer_names = {

@@ -12,7 +12,7 @@ from .pandas_backend_frame_wrapper import MlinspectSeries, MlinspectDataFrame
 from .sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer, transformer_names
 from .sklearn_dag_postprocessor import SklearnDagPostprocessor
 from .sklearn_wir_preprocessor import SklearnWirPreprocessor
-from ..inspections.inspection_input import OperatorContext
+from ..inspections._inspection_input import OperatorContext
 from ..instrumentation.dag_node import OperatorType
 
 

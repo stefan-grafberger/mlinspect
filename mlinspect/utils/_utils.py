@@ -9,7 +9,7 @@ import networkx
 
 def get_project_root() -> Path:
     """Returns the project root folder."""
-    return Path(__file__).parent.parent
+    return Path(__file__).parent.parent.parent
 
 
 # Apparently python AST nodes have no equals, so we need some workarounds to identify ast nodes

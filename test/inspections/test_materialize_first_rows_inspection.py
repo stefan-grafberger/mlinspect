@@ -8,7 +8,7 @@ from pandas._testing import assert_frame_equal
 from testfixtures import compare, RangeComparison
 
 from example_pipelines.pipelines import ADULT_EASY_PY
-from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
+from mlinspect.inspections._materialize_first_rows_inspection import MaterializeFirstRowsInspection
 from mlinspect.instrumentation.dag_node import DagNode, OperatorType, CodeReference
 from mlinspect.pipeline_inspector import PipelineInspector
 

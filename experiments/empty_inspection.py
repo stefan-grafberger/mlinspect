@@ -3,7 +3,7 @@ A simple empty inspection
 """
 from typing import Iterable
 
-from mlinspect.inspections.inspection import Inspection
+from mlinspect.inspections._inspection import Inspection
 
 
 class EmptyInspection(Inspection):

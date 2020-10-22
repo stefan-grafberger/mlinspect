@@ -5,8 +5,8 @@ from typing import Iterable
 
 from pandas import DataFrame
 
-from .inspection import Inspection
-from .inspection_input import InspectionInputSinkOperator
+from ._inspection import Inspection
+from ._inspection_input import InspectionInputSinkOperator
 from ..instrumentation.dag_node import OperatorType
 
 

@@ -8,11 +8,11 @@ from test.backends.random_annotation_testing_inspection import RandomAnnotationT
 import networkx
 from demo.healthcare.missing_embeddings_inspection import MissingEmbeddingInspection
 from example_pipelines.pipelines import ADULT_EASY_PY
-from mlinspect.checks.no_bias_introduced_for import NoBiasIntroducedFor
-from mlinspect.checks.no_illegal_features import NoIllegalFeatures
+from mlinspect.checks._no_bias_introduced_for import NoBiasIntroducedFor
+from mlinspect.checks._no_illegal_features import NoIllegalFeatures
 from mlinspect.visualisation import save_fig_to_path
-from mlinspect.inspections.lineage_inspection import LineageInspection
-from mlinspect.inspections.materialize_first_rows_inspection import MaterializeFirstRowsInspection
+from mlinspect.inspections._lineage_inspection import LineageInspection
+from mlinspect.inspections._materialize_first_rows_inspection import MaterializeFirstRowsInspection
 from mlinspect.instrumentation.dag_node import DagNode, OperatorType, CodeReference
 from mlinspect.instrumentation.wir_extractor import WirExtractor
 from mlinspect.pipeline_inspector import PipelineInspector
