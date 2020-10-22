@@ -2,8 +2,8 @@
 Tests whether the adult_easy test pipeline works
 """
 import ast
-from test.utils import run_and_assert_all_op_outputs_inspected
-from example_pipelines._pipelines import ADULT_NORMAL_PY, ADULT_NORMAL_PNG
+from test.testing_helper_utils import run_and_assert_all_op_outputs_inspected
+from example_pipelines import ADULT_NORMAL_PY, ADULT_NORMAL_PNG
 
 
 def test_py_pipeline_runs():

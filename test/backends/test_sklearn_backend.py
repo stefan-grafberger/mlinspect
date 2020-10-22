@@ -2,9 +2,9 @@
 Tests whether the PipelineExecutor works
 """
 
-from test.utils import run_random_annotation_testing_analyzer, run_row_index_annotation_testing_analyzer, \
-    run_multiple_test_analyzers
-from example_pipelines._pipelines import ADULT_EASY_PY
+from test.testing_helper_utils import run_random_annotation_testing_analyzer, \
+    run_row_index_annotation_testing_analyzer, run_multiple_test_analyzers
+from example_pipelines import ADULT_EASY_PY
 
 
 def test_sklearn_backend_random_annotation_propagation():

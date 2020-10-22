@@ -6,11 +6,11 @@ from inspect import cleandoc
 import networkx
 from testfixtures import compare
 
-from example_pipelines._pipelines import ADULT_EASY_PY, ADULT_EASY_IPYNB
+from example_pipelines import ADULT_EASY_PY, ADULT_EASY_IPYNB
 from mlinspect.backends._pandas_backend import PandasBackend
 from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import CodeReference
-from ..utils import get_pandas_read_csv_and_dropna_code, get_expected_dag_adult_easy_py, \
+from ..testing_helper_utils import get_pandas_read_csv_and_dropna_code, get_expected_dag_adult_easy_py, \
     get_expected_dag_adult_easy_ipynb
 
 

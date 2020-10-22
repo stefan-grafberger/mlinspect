@@ -9,7 +9,7 @@ from mlinspect.instrumentation._dag_node import CodeReference
 from mlinspect.instrumentation._wir_extractor import WirExtractor
 from mlinspect.instrumentation._wir_node import WirNode
 from mlinspect.instrumentation._wir_to_dag_transformer import WirToDagTransformer
-from ..utils import get_module_info, get_adult_easy_py_ast, get_test_wir, \
+from ..testing_helper_utils import get_module_info, get_adult_easy_py_ast, get_test_wir, \
     get_expected_dag_adult_easy_py_without_columns
 
 
