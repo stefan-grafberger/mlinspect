@@ -10,7 +10,7 @@ from demo.healthcare.missing_embeddings_inspection import MissingEmbeddingInspec
 from example_pipelines._pipelines import ADULT_EASY_PY
 from mlinspect.checks._no_bias_introduced_for import NoBiasIntroducedFor
 from mlinspect.checks._no_illegal_features import NoIllegalFeatures
-from mlinspect._visualisation import save_fig_to_path
+from mlinspect.visualisation._visualisation import save_fig_to_path
 from mlinspect.inspections._lineage_inspection import LineageInspection
 from mlinspect.inspections._materialize_first_rows_inspection import MaterializeFirstRowsInspection
 from mlinspect.instrumentation._dag_node import DagNode, OperatorType, CodeReference

@@ -262,7 +262,7 @@ def prepare_pipeline_benchmark_exec(test_code):
     Get the benchmark str for timeit
     """
     benchmark = cleandoc("""
-    from experiments.benchmark_utils import get_adult_easy_py_str, get_adult_normal_py_str, get_healthcare_py_str, \
+    from experiments._benchmark_utils import get_adult_easy_py_str, get_adult_normal_py_str, get_healthcare_py_str, \
         get_compas_py_str
     
     code = {}
