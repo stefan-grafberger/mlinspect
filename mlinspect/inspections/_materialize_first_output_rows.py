@@ -10,7 +10,7 @@ from ._inspection_input import InspectionInputSinkOperator
 from ..instrumentation._dag_node import OperatorType
 
 
-class MaterializeFirstRowsInspection(Inspection):
+class MaterializeFirstOutputRows(Inspection):
     """
     A simple example analyzer
     """

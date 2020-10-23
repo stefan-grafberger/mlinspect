@@ -1,10 +1,10 @@
 """
-The Interface for the Constraints
+The NoMissingEmbeddings Check
 """
 import dataclasses
 from typing import Iterable, Dict
 
-from demo.feature_overview.missing_embeddings_inspection import MissingEmbeddingInspection, MissingEmbeddingsInfo
+from demo.feature_overview.missing_embeddings_inspection import MissingEmbeddings, MissingEmbeddingsInfo
 from mlinspect import DagNode
 from mlinspect.checks import Check, CheckStatus, CheckResult
 from mlinspect.inspections import Inspection, InspectionResult
@@ -38,13 +38,13 @@ class NoMissingEmbeddings(Check):
     @property
     def required_inspections(self) -> Iterable[Inspection]:
         """The id of the check"""
-        return [MissingEmbeddingInspection(self.example_threshold)]
+        return [MissingEmbeddings(self.example_threshold)]
 
     def evaluate(self, inspection_result: InspectionResult) -> CheckResult:
         """Evaluate the check"""
         dag = inspection_result.dag
         embedding_inspection_result = inspection_result.inspection_to_annotations[
-            MissingEmbeddingInspection(self.example_threshold)]
+            MissingEmbeddings(self.example_threshold)]
         dag_node_to_missing_embeddings = {}
         for dag_node in dag.nodes:
             if dag_node in embedding_inspection_result and embedding_inspection_result[dag_node] is not None:

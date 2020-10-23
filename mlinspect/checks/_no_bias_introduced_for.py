@@ -8,7 +8,7 @@ from typing import Iterable, OrderedDict
 import collections
 
 from mlinspect.checks._check import Check, CheckStatus, CheckResult
-from mlinspect.inspections._histogram_inspection import HistogramInspection
+from mlinspect.inspections._histogram_for_columns import HistogramForColumns
 from mlinspect.inspections._inspection import Inspection
 from mlinspect.instrumentation._dag_node import OperatorType, DagNode
 from mlinspect.inspections._inspection_result import InspectionResult
@@ -53,12 +53,12 @@ class NoBiasIntroducedFor(Check):
     @property
     def required_inspections(self) -> Iterable[Inspection]:
         """The inspections required for the check"""
-        return [HistogramInspection(self.sensitive_columns)]
+        return [HistogramForColumns(self.sensitive_columns)]
 
     def evaluate(self, inspection_result: InspectionResult) -> CheckResult:
         """Evaluate the check"""
         dag = inspection_result.dag
-        histograms = inspection_result.inspection_to_annotations[HistogramInspection(self.sensitive_columns)]
+        histograms = inspection_result.inspection_to_annotations[HistogramForColumns(self.sensitive_columns)]
         relevant_nodes = [node for node in dag.nodes if node.operator_type in {OperatorType.JOIN,
                                                                                OperatorType.SELECTION} or
                           (node.module == ('sklearn.impute._base', 'SimpleImputer', 'Pipeline') and

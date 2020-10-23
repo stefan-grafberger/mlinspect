@@ -1,5 +1,5 @@
 """
-A simple example inspection
+The MissingEmbedding Inspection
 """
 import dataclasses
 from typing import Iterable, List
@@ -16,7 +16,7 @@ class MissingEmbeddingsInfo:
     missing_embeddings_examples: List[str]
 
 
-class MissingEmbeddingInspection(Inspection):
+class MissingEmbeddings(Inspection):
     """
     A simple example inspection
     """

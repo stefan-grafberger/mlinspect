@@ -164,21 +164,21 @@ def exec_benchmarks_nonempty_inspection(code_to_benchmark, repeats):
         "empty inspection": benchmark_code_str_with_inspections(code_to_benchmark.benchmark_exec_func_str,
                                                                 code_to_benchmark.benchmark_setup_func_str,
                                                                 "[EmptyInspection(0)]", repeats),
-        "MaterializeFirstRowsInspection(10)": benchmark_code_str_with_inspections(
+        "MaterializeFirstOutputRows(10)": benchmark_code_str_with_inspections(
             code_to_benchmark.benchmark_exec_func_str,
             code_to_benchmark.benchmark_setup_func_str,
-            "[MaterializeFirstRowsInspection(10)]", repeats),
+            "[MaterializeFirstOutputRows(10)]", repeats),
         "LineageInspection(10)": benchmark_code_str_with_inspections(code_to_benchmark.benchmark_exec_func_str,
                                                                      code_to_benchmark.benchmark_setup_func_str,
                                                                      "[LineageInspection(10)]", repeats),
-        "HistogramInspection(['group_col_1'])": benchmark_code_str_with_inspections(
+        "HistogramForColumns(['group_col_1'])": benchmark_code_str_with_inspections(
             code_to_benchmark.benchmark_exec_func_str,
             code_to_benchmark.benchmark_setup_func_str,
-            "[HistogramInspection(['group_col'])]", repeats),
-        "HistogramInspection(['group_col_1', 'group_col_2', 'group_col_3'])": benchmark_code_str_with_inspections(
+            "[HistogramForColumns(['group_col'])]", repeats),
+        "HistogramForColumns(['group_col_1', 'group_col_2', 'group_col_3'])": benchmark_code_str_with_inspections(
             code_to_benchmark.benchmark_exec_func_str,
             code_to_benchmark.benchmark_setup_func_str,
-            "[HistogramInspection(['group_col_1', 'group_col_2', 'group_col_3'])]", repeats)
+            "[HistogramForColumns(['group_col_1', 'group_col_2', 'group_col_3'])]", repeats)
     }
 
     return benchmark_results
@@ -233,7 +233,7 @@ def prepare_benchmark_exec(benchmark_str, setup_str, inspections):
     setup = cleandoc("""
     from experiments.performance._empty_inspection import EmptyInspection
     from mlinspect.instrumentation._pipeline_executor import singleton
-    from mlinspect.inspections import HistogramInspection, LineageInspection, MaterializeFirstRowsInspection
+    from mlinspect.inspections import HistogramForColumns, LineageInspection, MaterializeFirstOutputRows
     from experiments.performance._benchmark_utils import get_single_df_creation_str, get_multiple_dfs_creation_str, \
         get_test_projection_str, get_test_selection_str, get_test_join_str, get_np_cat_array_str, \
         get_test_one_hot_encoder_str, get_np_num_array_str, get_test_standard_scaler_str, \

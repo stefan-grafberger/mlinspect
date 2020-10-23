@@ -1,5 +1,5 @@
 """
-Tests whether the MaterializeFirstRowsInspection works
+Tests whether the MaterializeFirstOutputRows works
 """
 
 from numpy.ma import array
@@ -8,22 +8,22 @@ from pandas._testing import assert_frame_equal
 from testfixtures import compare, RangeComparison
 
 from example_pipelines import ADULT_SIMPLE_PY
-from mlinspect.inspections._materialize_first_rows_inspection import MaterializeFirstRowsInspection
+from mlinspect.inspections._materialize_first_output_rows import MaterializeFirstOutputRows
 from mlinspect.instrumentation._dag_node import DagNode, OperatorType, CodeReference
 from mlinspect._pipeline_inspector import PipelineInspector
 
 
 def test_materialize_first_rows_inspection():
     """
-    Tests whether the MaterializeFirstRowsInspection works
+    Tests whether the MaterializeFirstOutputRows works
     """
     inspector_result = PipelineInspector \
         .on_pipeline_from_py_file(ADULT_SIMPLE_PY) \
-        .add_required_inspection(MaterializeFirstRowsInspection(2)) \
+        .add_required_inspection(MaterializeFirstOutputRows(2)) \
         .execute()
     inspection_result = inspector_result.inspection_to_annotations
-    assert MaterializeFirstRowsInspection(2) in inspection_result
-    result = inspection_result[MaterializeFirstRowsInspection(2)]
+    assert MaterializeFirstOutputRows(2) in inspection_result
+    result = inspection_result[MaterializeFirstOutputRows(2)]
 
     assert_df_dicts_equal(result, get_expected_result())
 

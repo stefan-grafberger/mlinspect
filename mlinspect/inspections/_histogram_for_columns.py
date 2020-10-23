@@ -9,7 +9,7 @@ from mlinspect.inspections._inspection_input import InspectionInputDataSource, \
 from mlinspect.instrumentation._dag_node import OperatorType
 
 
-class HistogramInspection(Inspection):
+class HistogramForColumns(Inspection):
     """
     A simple example inspection
     """

@@ -6,13 +6,13 @@ import os
 from inspect import cleandoc
 from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
 import networkx
-from demo.feature_overview.missing_embeddings_inspection import MissingEmbeddingInspection
+from demo.feature_overview.missing_embeddings_inspection import MissingEmbeddings
 from example_pipelines._pipelines import ADULT_SIMPLE_PY
 from mlinspect.checks._no_bias_introduced_for import NoBiasIntroducedFor
 from mlinspect.checks._no_illegal_features import NoIllegalFeatures
 from mlinspect.visualisation._visualisation import save_fig_to_path
-from mlinspect.inspections._lineage_inspection import LineageInspection
-from mlinspect.inspections._materialize_first_rows_inspection import MaterializeFirstRowsInspection
+from mlinspect.inspections._lineage import LineageInspection
+from mlinspect.inspections._materialize_first_output_rows import MaterializeFirstOutputRows
 from mlinspect.instrumentation._dag_node import DagNode, OperatorType, CodeReference
 from mlinspect.instrumentation._wir_extractor import WirExtractor
 from mlinspect._pipeline_inspector import PipelineInspector
@@ -384,7 +384,7 @@ def run_multiple_test_analyzers(code):
    An utility function to test backends.
    Also useful to debug annotation propagation.
    """
-    analyzers = [RandomAnnotationTestingInspection(2), MaterializeFirstRowsInspection(5),
+    analyzers = [RandomAnnotationTestingInspection(2), MaterializeFirstOutputRows(5),
                  LineageInspection(2)]
     result = PipelineInspector \
         .on_pipeline_from_string(code) \
@@ -404,11 +404,11 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
         .on_pipeline_from_py_file(py_file_path) \
         .add_check(NoBiasIntroducedFor(sensitive_columns)) \
         .add_check(NoIllegalFeatures()) \
-        .add_required_inspection(MissingEmbeddingInspection(20)) \
+        .add_required_inspection(MissingEmbeddings(20)) \
         .add_required_inspection(LineageInspection(5)) \
-        .add_required_inspection(MaterializeFirstRowsInspection(5)) \
+        .add_required_inspection(MaterializeFirstOutputRows(5)) \
         .execute()
-    materialize_output = inspector_result.inspection_to_annotations[MaterializeFirstRowsInspection(5)]
+    materialize_output = inspector_result.inspection_to_annotations[MaterializeFirstOutputRows(5)]
     assert len(materialize_output) == (len(inspector_result.dag.nodes) - 1)  # Estimator does not have output
 
     save_fig_to_path(inspector_result.dag, dag_png_path)
