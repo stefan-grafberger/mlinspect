@@ -2,7 +2,7 @@
 Data class used as result of the PipelineExecutor
 """
 import dataclasses
-from typing import Dict, Tuple
+from typing import Tuple, OrderedDict
 
 import networkx
 
@@ -16,5 +16,5 @@ class InspectorResult:
     The class the PipelineExecutor returns
     """
     dag: networkx.DiGraph
-    inspection_to_annotations: Dict[Inspection, Dict[Tuple[int, int], any]]
-    check_to_check_results: Dict[Check, CheckResult]
+    inspection_to_annotations: OrderedDict[Inspection, OrderedDict[Tuple[int, int], any]]
+    check_to_check_results: OrderedDict[Check, CheckResult]

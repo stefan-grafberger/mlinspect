@@ -1,5 +1,5 @@
 """
-The Interface for the Constraints
+The Interface for the Checks
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ class CheckResult:
     """
     Does this check cause an error or a warning if it fails?
     """
-    constraint: Check
+    check: Check
     status: CheckStatus
 
 
@@ -52,7 +52,7 @@ class Check(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def __eq__(self, other):
-        """Constraints must implement equals"""
+        """Checks must implement equals"""
         return (isinstance(other, self.__class__) and
                 self.check_id == other.check_id)
 

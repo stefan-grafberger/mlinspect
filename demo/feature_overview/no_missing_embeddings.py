@@ -39,11 +39,11 @@ class NoMissingEmbeddings(Check):
 
     @property
     def required_inspections(self) -> Iterable[Inspection]:
-        """The id of the constraint"""
+        """The id of the check"""
         return [MissingEmbeddingInspection(self.example_threshold)]
 
     def evaluate(self, inspection_result: InspectionResult) -> CheckResult:
-        """Evaluate the constraint"""
+        """Evaluate the check"""
         dag = inspection_result.dag
         embedding_inspection_result = inspection_result.inspection_to_annotations[
             MissingEmbeddingInspection(self.example_threshold)]

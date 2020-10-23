@@ -116,7 +116,10 @@ class PandasBackend(Backend):
         elif function_info == ('pandas.core.frame', '__getitem__'):
             if isinstance(args_values, MlinspectSeries):
                 self.code_reference_to_set_item_op[code_reference] = 'Selection'
-                description = "Select by series (indirectly using '{}')".format(args_values.name)
+                if args_values.name:
+                    description = "Select by series (indirectly using '{}')".format(args_values.name)
+                else:
+                    description = "Select by series"
             elif isinstance(args_values, str):
                 self.code_reference_to_set_item_op[code_reference] = 'Projection'
                 key_arg = args_values

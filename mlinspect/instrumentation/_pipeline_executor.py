@@ -3,6 +3,7 @@ Instrument and executes the pipeline
 """
 import ast
 import copy
+from collections import OrderedDict
 from typing import Iterable
 
 import nbformat
@@ -44,7 +45,7 @@ class PipelineExecutor:
             self.initialize_static_variables(all_inspections)
 
         inspection_result = self.run_inspections(notebook_path, python_code, python_path)
-        check_to_results = dict((check, check.evaluate(inspection_result)) for check in checks)
+        check_to_results = OrderedDict((check, check.evaluate(inspection_result)) for check in checks)
         return InspectorResult(inspection_result.dag, inspection_result.inspection_to_annotations, check_to_results)
 
     def run_inspections(self, notebook_path, python_code, python_path) -> InspectionResult:
@@ -104,11 +105,11 @@ class PipelineExecutor:
                 dag_node_columns = dag_node_identifier_to_columns[dag_node_identifier]
                 dag_node.columns = dag_node_columns
 
-        inspection_to_dag_node_to_annotation = {}
+        inspection_to_dag_node_to_annotation = OrderedDict()
         for dag_node_identifier, inspection_output_map in dag_node_identifier_to_inspection_output.items():
             for inspection, annotation in inspection_output_map.items():
                 if dag_node_identifier in dag_node_identifiers_to_dag_nodes:  # Always true if reset_state
-                    dag_node_to_annotation = inspection_to_dag_node_to_annotation.get(inspection, {})
+                    dag_node_to_annotation = inspection_to_dag_node_to_annotation.get(inspection, OrderedDict())
                     dag_node = dag_node_identifiers_to_dag_nodes[dag_node_identifier]
                     dag_node_to_annotation[dag_node] = annotation
                     inspection_to_dag_node_to_annotation[inspection] = dag_node_to_annotation

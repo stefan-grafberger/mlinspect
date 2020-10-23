@@ -1,10 +1,11 @@
 """
-The Interface for the Constraints
+The NoBiasIntroducedFor check
 """
 from __future__ import annotations
 
 import dataclasses
-from typing import Iterable, Dict
+from typing import Iterable, OrderedDict
+import collections
 
 from mlinspect.checks._check import Check, CheckStatus, CheckResult
 from mlinspect.inspections._histogram_inspection import HistogramInspection
@@ -18,10 +19,11 @@ class BiasDistributionChange:
     """
     Did the histogram change too much for one given operation?
     """
+    dag_node: DagNode
     acceptable_change: bool
     max_relative_change: float
-    before_map: Dict[str, int]
-    after_map: Dict[str, int]
+    before_map: OrderedDict[str, int]
+    after_map: OrderedDict[str, int]
 
 
 @dataclasses.dataclass
@@ -29,13 +31,14 @@ class NoBiasIntroducedForResult(CheckResult):
     """
     Did the histogram change too much for some operations?
     """
-    bias_distribution_change: Dict[DagNode, Dict[str, BiasDistributionChange]]
+    bias_distribution_change: OrderedDict[DagNode, OrderedDict[str, BiasDistributionChange]]
 
 
 class NoBiasIntroducedFor(Check):
     """
     Does the user pipeline introduce bias because of operators like joins and selects?
     """
+
     # pylint: disable=unnecessary-pass, too-few-public-methods
 
     def __init__(self, sensitive_columns, max_relative_change=0.3):
@@ -60,24 +63,24 @@ class NoBiasIntroducedFor(Check):
                                                                                OperatorType.SELECTION} or
                           (node.module == ('sklearn.impute._base', 'SimpleImputer', 'Pipeline') and
                            node.columns[0] in self.sensitive_columns)]
-        constraint_result = CheckStatus.SUCCESS
-        bias_distribution_change = {}
+        check_status = CheckStatus.SUCCESS
+        bias_distribution_change = collections.OrderedDict()
         for node in relevant_nodes:
             parents = list(dag.predecessors(node))
-            column_results = {}
+            column_results = collections.OrderedDict()
             for column in self.sensitive_columns:
-                constraint_result = self.get_histograms_for_node_and_column(column, column_results, constraint_result,
-                                                                            histograms, node, parents)
+                check_status = self.get_histograms_for_node_and_column(column, column_results, check_status,
+                                                                       histograms, node, parents)
             bias_distribution_change[node] = column_results
-        return NoBiasIntroducedForResult(self, constraint_result, bias_distribution_change)
+        return NoBiasIntroducedForResult(self, check_status, bias_distribution_change)
 
-    def get_histograms_for_node_and_column(self, column, column_results, constraint_result, histograms, node, parents):
+    def get_histograms_for_node_and_column(self, column, column_results, check_result, histograms, node, parents):
         """
         Compute histograms for a dag node like a join and a concrete sensitive column like race
         """
         # pylint: disable=too-many-locals, too-many-arguments
         after_map = histograms[node][column]
-        before_map = {}
+        before_map = collections.OrderedDict()
         for parent in parents:
             parent_histogram = histograms[parent][column]
             before_map = {**before_map, **parent_histogram}
@@ -99,7 +102,7 @@ class NoBiasIntroducedFor(Check):
             max_abs_change = max(abs_relative_changes)
         all_changes_acceptable = max_abs_change <= self.max_relative_change
         if not all_changes_acceptable:
-            constraint_result = CheckStatus.FAILURE
-        column_results[column] = BiasDistributionChange(all_changes_acceptable, max_abs_change,
+            check_result = CheckStatus.FAILURE
+        column_results[column] = BiasDistributionChange(node, all_changes_acceptable, max_abs_change,
                                                         before_map, after_map)
-        return constraint_result
+        return check_result
