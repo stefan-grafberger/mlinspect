@@ -1,8 +1,8 @@
 """
 Packages and classes we want to expose to users
 """
-from ._no_bias_introduced_for import NoBiasIntroducedFor
-from ._no_illegal_features import NoIllegalFeatures
+from ._no_bias_introduced_for import NoBiasIntroducedFor, NoBiasIntroducedForResult
+from ._no_illegal_features import NoIllegalFeatures, NoIllegalFeaturesResult
 from ._check import Check, CheckResult, CheckStatus
 
 __all__ = [
@@ -11,6 +11,6 @@ __all__ = [
     'CheckResult',
     'CheckStatus',
     # Native checks
-    'NoBiasIntroducedFor',
-    'NoIllegalFeatures',
+    'NoBiasIntroducedFor', 'NoBiasIntroducedForResult',
+    'NoIllegalFeatures', 'NoIllegalFeaturesResult',
 ]
