@@ -6,7 +6,7 @@ pytest-cov==2.10.0
 pytest-pycharm==0.6.0
 pytest-mock==3.2.0
 gensim==3.8.3
-tensorflow==2.3.0
+tensorflow==2.3.1
 keras==2.4.3
 jupyter==1.0.0
 importnb==0.6.2
