@@ -3,14 +3,14 @@ Packages and classes we want to expose to users
 """
 from ._no_bias_introduced_for import NoBiasIntroducedFor
 from ._no_illegal_features import NoIllegalFeatures
-from ._check import CheckStatus, Check
+from ._check import Check, CheckResult, CheckStatus
 
 __all__ = [
-    # For defining custom checks
+    # General classes
     'Check',
+    'CheckResult',
+    'CheckStatus',
     # Native checks
     'NoBiasIntroducedFor',
     'NoIllegalFeatures',
-    # Both
-    'CheckStatus'
 ]
