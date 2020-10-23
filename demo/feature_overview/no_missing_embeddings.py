@@ -1,16 +1,14 @@
 """
 The Interface for the Constraints
 """
-from __future__ import annotations
-
 import dataclasses
 from typing import Iterable, Dict
 
 from demo.feature_overview.missing_embeddings_inspection import MissingEmbeddingInspection, MissingEmbeddingsInfo
-from mlinspect.checks._check import Check, CheckStatus, CheckResult
-from mlinspect.inspections._inspection import Inspection
-from mlinspect.instrumentation._dag_node import DagNode
-from mlinspect.instrumentation._inspection_result import InspectionResult
+from mlinspect import DagNode
+from mlinspect.checks import Check, CheckStatus, CheckResult
+from mlinspect.inspections import Inspection, InspectionResult
+
 
 ILLEGAL_FEATURES = {"race", "gender", "age"}
 

@@ -4,8 +4,7 @@ A simple example inspection
 import dataclasses
 from typing import Iterable, List
 
-from mlinspect.inspections._inspection import Inspection
-from mlinspect.inspections._inspection_input import InspectionInputUnaryOperator
+from mlinspect.inspections import Inspection, InspectionInputUnaryOperator
 
 
 @dataclasses.dataclass(frozen=True, eq=True)

@@ -14,7 +14,7 @@ from ..inspections._inspection import Inspection
 from ..backends._all_backends import get_all_backends
 from ._call_capture_transformer import CallCaptureTransformer
 from ._dag_node import CodeReference, DagNodeIdentifier
-from ._inspection_result import InspectionResult
+from mlinspect.inspections._inspection_result import InspectionResult
 from ._wir_extractor import WirExtractor
 from ._wir_to_dag_transformer import WirToDagTransformer
 from .._inspector_result import InspectorResult

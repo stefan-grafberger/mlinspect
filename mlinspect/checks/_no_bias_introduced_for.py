@@ -11,7 +11,7 @@ from mlinspect.checks._check import Check, CheckStatus, CheckResult
 from mlinspect.inspections._histogram_inspection import HistogramInspection
 from mlinspect.inspections._inspection import Inspection
 from mlinspect.instrumentation._dag_node import OperatorType, DagNode
-from mlinspect.instrumentation._inspection_result import InspectionResult
+from mlinspect.inspections._inspection_result import InspectionResult
 
 
 @dataclasses.dataclass(eq=True, frozen=True)

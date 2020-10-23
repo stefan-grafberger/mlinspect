@@ -9,7 +9,7 @@ from enum import Enum
 from typing import Iterable
 
 from mlinspect.inspections._inspection import Inspection
-from mlinspect.instrumentation._inspection_result import InspectionResult
+from mlinspect.inspections._inspection_result import InspectionResult
 
 
 class CheckStatus(Enum):

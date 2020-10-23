@@ -6,7 +6,7 @@ from typing import Tuple, OrderedDict
 
 import networkx
 
-from ..inspections._inspection import Inspection
+from mlinspect.inspections import Inspection
 
 
 @dataclasses.dataclass
