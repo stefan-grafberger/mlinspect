@@ -11,7 +11,7 @@ from example_pipelines._pipelines import ADULT_SIMPLE_PY
 from mlinspect.checks._no_bias_introduced_for import NoBiasIntroducedFor
 from mlinspect.checks._no_illegal_features import NoIllegalFeatures
 from mlinspect.visualisation._visualisation import save_fig_to_path
-from mlinspect.inspections._lineage import LineageInspection
+from mlinspect.inspections._lineage import RowLineage
 from mlinspect.inspections._materialize_first_output_rows import MaterializeFirstOutputRows
 from mlinspect.instrumentation._dag_node import DagNode, OperatorType, CodeReference
 from mlinspect.instrumentation._wir_extractor import WirExtractor
@@ -371,11 +371,11 @@ def run_row_index_annotation_testing_analyzer(code):
     """
     result = PipelineInspector \
         .on_pipeline_from_string(code) \
-        .add_required_inspection(LineageInspection(10)) \
+        .add_required_inspection(RowLineage(10)) \
         .execute()
     inspection_results = result.inspection_to_annotations
-    assert LineageInspection(10) in inspection_results
-    result = inspection_results[LineageInspection(10)]
+    assert RowLineage(10) in inspection_results
+    result = inspection_results[RowLineage(10)]
     return result
 
 
@@ -385,7 +385,7 @@ def run_multiple_test_analyzers(code):
    Also useful to debug annotation propagation.
    """
     analyzers = [RandomAnnotationTestingInspection(2), MaterializeFirstOutputRows(5),
-                 LineageInspection(2)]
+                 RowLineage(2)]
     result = PipelineInspector \
         .on_pipeline_from_string(code) \
         .add_required_inspections(analyzers) \
@@ -405,7 +405,7 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
         .add_check(NoBiasIntroducedFor(sensitive_columns)) \
         .add_check(NoIllegalFeatures()) \
         .add_required_inspection(MissingEmbeddings(20)) \
-        .add_required_inspection(LineageInspection(5)) \
+        .add_required_inspection(RowLineage(5)) \
         .add_required_inspection(MaterializeFirstOutputRows(5)) \
         .execute()
     materialize_output = inspector_result.inspection_to_annotations[MaterializeFirstOutputRows(5)]

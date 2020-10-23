@@ -168,9 +168,9 @@ def exec_benchmarks_nonempty_inspection(code_to_benchmark, repeats):
             code_to_benchmark.benchmark_exec_func_str,
             code_to_benchmark.benchmark_setup_func_str,
             "[MaterializeFirstOutputRows(10)]", repeats),
-        "LineageInspection(10)": benchmark_code_str_with_inspections(code_to_benchmark.benchmark_exec_func_str,
-                                                                     code_to_benchmark.benchmark_setup_func_str,
-                                                                     "[LineageInspection(10)]", repeats),
+        "RowLineage(10)": benchmark_code_str_with_inspections(code_to_benchmark.benchmark_exec_func_str,
+                                                              code_to_benchmark.benchmark_setup_func_str,
+                                                              "[RowLineage(10)]", repeats),
         "HistogramForColumns(['group_col_1'])": benchmark_code_str_with_inspections(
             code_to_benchmark.benchmark_exec_func_str,
             code_to_benchmark.benchmark_setup_func_str,
@@ -233,7 +233,7 @@ def prepare_benchmark_exec(benchmark_str, setup_str, inspections):
     setup = cleandoc("""
     from experiments.performance._empty_inspection import EmptyInspection
     from mlinspect.instrumentation._pipeline_executor import singleton
-    from mlinspect.inspections import HistogramForColumns, LineageInspection, MaterializeFirstOutputRows
+    from mlinspect.inspections import HistogramForColumns, RowLineage, MaterializeFirstOutputRows
     from experiments.performance._benchmark_utils import get_single_df_creation_str, get_multiple_dfs_creation_str, \
         get_test_projection_str, get_test_selection_str, get_test_join_str, get_np_cat_array_str, \
         get_test_one_hot_encoder_str, get_np_num_array_str, get_test_standard_scaler_str, \

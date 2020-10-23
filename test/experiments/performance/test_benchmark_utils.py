@@ -29,7 +29,7 @@ def test_inspection_benchmarks():
 
         assert benchmark_results["empty inspection"]
         assert benchmark_results["MaterializeFirstOutputRows(10)"]
-        assert benchmark_results["LineageInspection(10)"]
+        assert benchmark_results["RowLineage(10)"]
         assert benchmark_results["HistogramForColumns(['group_col_1'])"]
         assert benchmark_results["HistogramForColumns(['group_col_1', 'group_col_2', 'group_col_3'])"]
 
