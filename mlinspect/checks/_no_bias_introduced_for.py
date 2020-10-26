@@ -103,7 +103,7 @@ class NoBiasIntroducedFor(Check):
         before_df = DataFrame(before_map.items(), columns=["sensitive_column_value", "count_before"])
 
         joined_df = before_df.merge(after_df, on="sensitive_column_value", how="outer")
-        joined_df = joined_df.sort_values(by=['sensitive_column_value'])
+        joined_df = joined_df.sort_values(by=['sensitive_column_value']).reset_index(drop=True)
         joined_df["count_before"] = joined_df["count_before"].fillna(0)
         joined_df["count_after"] = joined_df["count_after"].fillna(0)
 
