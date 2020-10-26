@@ -52,9 +52,10 @@ class NoIllegalFeatures(Check):
         forbidden_columns = {*ILLEGAL_FEATURES, *self.additional_illegal_feature_names}
         used_illegal_columns = list(set(used_columns).intersection(forbidden_columns))
         if used_illegal_columns:
-            result = NoIllegalFeaturesResult(self, CheckStatus.FAILURE, used_illegal_columns)
+            description = "Used illegal columns: {}".format(used_illegal_columns)
+            result = NoIllegalFeaturesResult(self, CheckStatus.FAILURE, description, used_illegal_columns)
         else:
-            result = NoIllegalFeaturesResult(self, CheckStatus.SUCCESS, [])
+            result = NoIllegalFeaturesResult(self, CheckStatus.SUCCESS, None, [])
         return result
 
     def get_used_columns(self, dag, current_node):

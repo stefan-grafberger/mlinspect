@@ -27,6 +27,7 @@ class CheckResult:
     """
     check: Check
     status: CheckStatus
+    description: str or None
 
 
 class Check(metaclass=abc.ABCMeta):

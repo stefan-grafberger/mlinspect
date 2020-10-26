@@ -1,10 +1,12 @@
 """
 User-facing API for inspecting the pipeline
 """
-from typing import Iterable
+from typing import Iterable, Dict
+
+from pandas import DataFrame
 
 from mlinspect.inspections._inspection import Inspection
-from .checks._check import Check
+from .checks._check import Check, CheckResult
 from ._inspector_result import InspectorResult
 from .instrumentation._pipeline_executor import singleton
 
@@ -77,3 +79,17 @@ class PipelineInspector:
     def on_pipeline_from_string(code: str) -> PipelineInspectorBuilder:
         """Inspect a pipeline from a string."""
         return PipelineInspectorBuilder(python_code=code)
+
+    @staticmethod
+    def check_results_as_data_frame(check_to_check_results: Dict[Check, CheckResult]) -> DataFrame:
+        """
+        Get a pandas DataFrame with an overview of the CheckResults
+        """
+        check_names = []
+        status = []
+        descriptions = []
+        for check_result in check_to_check_results.values():
+            check_names.append(check_result.check)
+            status.append(check_result.status)
+            descriptions.append(check_result.description)
+        return DataFrame(zip(check_names, status, descriptions), columns=["check_name", "status", "description"])
