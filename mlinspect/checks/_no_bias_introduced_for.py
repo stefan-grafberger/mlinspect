@@ -23,9 +23,8 @@ class BiasDistributionChange:
     """
     dag_node: DagNode
     acceptable_change: bool
-    max_relative_change: float
-    before_map: OrderedDict[str, int]
-    after_map: OrderedDict[str, int]
+    min_relative_ratio_change: float
+    before_and_after_df: DataFrame
 
 
 @dataclasses.dataclass
@@ -43,14 +42,14 @@ class NoBiasIntroducedFor(Check):
 
     # pylint: disable=unnecessary-pass, too-few-public-methods
 
-    def __init__(self, sensitive_columns, max_relative_change=0.3):
+    def __init__(self, sensitive_columns, min_allowed_relative_ratio_change=-0.3):
         self.sensitive_columns = sensitive_columns
-        self.max_relative_change = max_relative_change
+        self.min_allowed_relative_ratio_change = min_allowed_relative_ratio_change
 
     @property
     def check_id(self):
         """The id of the Check"""
-        return tuple(self.sensitive_columns), self.max_relative_change
+        return tuple(self.sensitive_columns), self.min_allowed_relative_ratio_change
 
     @property
     def required_inspections(self) -> Iterable[Inspection]:
@@ -72,10 +71,13 @@ class NoBiasIntroducedFor(Check):
             parents = list(dag.predecessors(node))
             column_results = collections.OrderedDict()
             for column in self.sensitive_columns:
-                node_result = self.get_histograms_for_node_and_column(column, column_results, histograms, node,
-                                                                      parents)
-                if node_result == CheckStatus.FAILURE:
-                    issue = "A {} significantly changes the '{}' distribution!".format(node.operator_type.value, column)
+                column_result = self.get_histograms_for_node_and_column(column, histograms, node, parents)
+                column_results[column] = column_result
+                if not column_result.acceptable_change:
+                    issue = "A {} causes a min_relative_ratio_change of '{}' by {}, a value below the " \
+                            "configured minimum threshold {}!" \
+                        .format(node.operator_type.value, column, column_result.min_relative_ratio_change,
+                                self.min_allowed_relative_ratio_change)
                     issue_list.append(issue)
                     check_status = CheckStatus.FAILURE
 
@@ -86,56 +88,52 @@ class NoBiasIntroducedFor(Check):
             description = None
         return NoBiasIntroducedForResult(self, check_status, description, bias_distribution_change)
 
-    def get_histograms_for_node_and_column(self, column, column_results, histograms, node, parents):
+    def get_histograms_for_node_and_column(self, column, histograms, node, parents):
         """
         Compute histograms for a dag node like a join and a concrete sensitive column like race
         """
         # pylint: disable=too-many-locals, too-many-arguments
         after_map = histograms[node][column]
-        before_map = collections.OrderedDict()
+        after_map_str_keys = {str(key): value for (key, value) in after_map.items()}
+        sorted_after_items = sorted(after_map_str_keys.items())
+        after_df = DataFrame(sorted_after_items, columns=["sensitive_column", "count_after"])
+
+        before_map = {}
         for parent in parents:
             parent_histogram = histograms[parent][column]
             before_map = {**before_map, **parent_histogram}
-        removed_groups = [group_key for group_key in after_map.keys() if group_key not in before_map and
-                          group_key != "None"]
-        if removed_groups:
-            max_abs_change = 1.0
-        else:
-            before_count_all = sum(before_map.values())
-            after_count_all = sum(after_map.values())
-            abs_relative_changes = []
-            for group_key in after_map:
-                after_count = after_map[group_key]
-                after_ratio = after_count / after_count_all
-                before_count = before_map.get(group_key, 0)
-                before_ratio = before_count / before_count_all or 0
-                relative_change = (after_ratio - before_ratio) / after_ratio
-                abs_relative_changes.append(abs(relative_change))
-            max_abs_change = max(abs_relative_changes)
-        all_changes_acceptable = max_abs_change <= self.max_relative_change
-        if not all_changes_acceptable:
-            node_column_result = CheckStatus.FAILURE
-        else:
-            node_column_result = CheckStatus.SUCCESS
-        column_results[column] = BiasDistributionChange(node, all_changes_acceptable, max_abs_change,
-                                                        before_map, after_map)
-        return node_column_result
+        before_map_str_keys = {str(key): value for (key, value) in before_map.items()}
+        sorted_before_items = sorted(before_map_str_keys.items())
+        before_df = DataFrame(sorted_before_items, columns=["sensitive_column", "count_before"])
+
+        joined_df = before_df.merge(after_df, on="sensitive_column", how="outer")
+        joined_df.fillna(0)
+        # TODO: What information is useful/what is confusing?
+        # joined_df["absolute_change"] = joined_df["count_after"] - joined_df["count_before"]
+        # joined_df["relative_change"] = joined_df["absolute_change"] / joined_df["count_before"]
+        joined_df["ratio_before"] = joined_df["count_before"] / joined_df["count_before"].sum()
+        joined_df["ratio_after"] = joined_df["count_after"] / joined_df["count_after"].sum()
+        # joined_df["absolute_ratio_change"] = joined_df["ratio_after"] - joined_df["ratio_before"]
+        absolute_ratio_change = joined_df["ratio_after"] - joined_df["ratio_before"]
+        joined_df["relative_ratio_change"] = absolute_ratio_change / joined_df["ratio_before"]
+
+        min_relative_ratio_change = joined_df["relative_ratio_change"].min()
+        all_changes_acceptable = min_relative_ratio_change >= self.min_allowed_relative_ratio_change
+        return BiasDistributionChange(node, all_changes_acceptable, min_relative_ratio_change, joined_df)
 
     @staticmethod
-    def plot_distribution_change_histograms(distribution_change, filename=None, save_to_file=False):
+    def plot_distribution_change_histograms(distribution_change: BiasDistributionChange, filename=None,
+                                            save_to_file=False):
         """
         Plot before and after histograms visualising a DistributionChange
         """
         pyplot.subplot(1, 2, 1)
-        before_output_race_group = distribution_change.before_map
+        keys = distribution_change.before_and_after_df["sensitive_column"]
+        before_values = distribution_change.before_and_after_df["count_before"]
+        after_values = distribution_change.before_and_after_df["count_after"]
 
-        # TODO: Move this into check
-        dict_with_str_keys = {str(key): value for (key, value) in before_output_race_group.items()}
-        sorted_items = sorted(dict_with_str_keys.items())
-        before_output_race_group = collections.OrderedDict(sorted_items)
-
-        keys = [str(key) for key in before_output_race_group.keys()]
-        pyplot.bar(keys, before_output_race_group.values())
+        keys = [str(key) for key in keys]
+        pyplot.bar(keys, before_values)
         pyplot.gca().set_title("before")
         pyplot.xticks(
             rotation=45,
@@ -143,15 +141,9 @@ class NoBiasIntroducedFor(Check):
         )
 
         pyplot.subplot(1, 2, 2)
-        after_output_race_group = distribution_change.after_map
 
-        # TODO: Move this into check
-        dict_with_str_keys = {str(key): value for (key, value) in after_output_race_group.items()}
-        sorted_items = sorted(dict_with_str_keys.items())
-        after_output_race_group = collections.OrderedDict(sorted_items)
-
-        keys = [str(key) for key in after_output_race_group.keys()]
-        pyplot.bar(keys, after_output_race_group.values())
+        keys = [str(key) for key in keys]
+        pyplot.bar(keys, after_values)
         pyplot.gca().set_title("after")
         pyplot.xticks(
             rotation=45,
@@ -167,26 +159,6 @@ class NoBiasIntroducedFor(Check):
 
         pyplot.show()
         pyplot.close()
-
-    @staticmethod
-    def get_distribution_change_as_df(distribution_change) -> DataFrame:
-        """
-        Get a pandas DataFrame with an overview of a DistributionChange
-        """
-        before_dict_with_str_keys = {str(key): value for (key, value) in distribution_change.before_map.items()}
-        sorted_items = sorted(before_dict_with_str_keys.items())
-        before_df = DataFrame(sorted_items, columns=["sensitive_column", "count_before"])
-
-        after_dict_with_str_keys = {str(key): value for (key, value) in distribution_change.after_map.items()}
-        sorted_items = sorted(after_dict_with_str_keys.items())
-        after_df = DataFrame(sorted_items, columns=["sensitive_column", "count_after"])
-
-        joined_df = before_df.merge(after_df, on="sensitive_column", how="outer")
-        joined_df["absolute_change"] = joined_df["count_after"] - joined_df["count_before"]
-        joined_df["relative_change"] = joined_df["count_after"] - joined_df["count_before"]  # TODO
-        joined_df["acceptable_change"] = False  # TODO
-
-        return joined_df
 
     @staticmethod
     def get_distribution_changes_overview_as_df(no_bias_check_result: NoBiasIntroducedForResult) -> DataFrame:
@@ -214,7 +186,7 @@ class NoBiasIntroducedFor(Check):
         return DataFrame(zip(operator_types, code_references, modules, descriptions, *sensitive_columns), columns=[
             "DagNode OperatorType",
             "DagNode CodeReference",
-            "DagNode Monule",
+            "DagNode Module",
             "DagNode Description",
             *sensitive_column_names
         ])

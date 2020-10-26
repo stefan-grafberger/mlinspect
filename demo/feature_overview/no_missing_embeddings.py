@@ -5,7 +5,7 @@ import collections
 import dataclasses
 from typing import Iterable, OrderedDict
 
-from demo.feature_overview.missing_embeddings_inspection import MissingEmbeddings, MissingEmbeddingsInfo
+from demo.feature_overview.missing_embeddings import MissingEmbeddings, MissingEmbeddingsInfo
 from mlinspect import DagNode
 from mlinspect.checks import Check, CheckStatus, CheckResult
 from mlinspect.inspections import Inspection, InspectionResult
