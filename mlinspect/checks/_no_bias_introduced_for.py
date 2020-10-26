@@ -94,20 +94,19 @@ class NoBiasIntroducedFor(Check):
         """
         # pylint: disable=too-many-locals, too-many-arguments
         after_map = histograms[node][column]
-        after_map_str_keys = {str(key): value for (key, value) in after_map.items()}
-        sorted_after_items = sorted(after_map_str_keys.items())
-        after_df = DataFrame(sorted_after_items, columns=["sensitive_column", "count_after"])
+        after_df = DataFrame(after_map.items(), columns=["sensitive_column_value", "count_after"])
 
         before_map = {}
         for parent in parents:
             parent_histogram = histograms[parent][column]
             before_map = {**before_map, **parent_histogram}
-        before_map_str_keys = {str(key): value for (key, value) in before_map.items()}
-        sorted_before_items = sorted(before_map_str_keys.items())
-        before_df = DataFrame(sorted_before_items, columns=["sensitive_column", "count_before"])
+        before_df = DataFrame(before_map.items(), columns=["sensitive_column_value", "count_before"])
 
-        joined_df = before_df.merge(after_df, on="sensitive_column", how="outer")
-        joined_df.fillna(0)
+        joined_df = before_df.merge(after_df, on="sensitive_column_value", how="outer")
+        joined_df = joined_df.sort_values(by=['sensitive_column_value'])
+        joined_df["count_before"] = joined_df["count_before"].fillna(0)
+        joined_df["count_after"] = joined_df["count_after"].fillna(0)
+
         # TODO: What information is useful/what is confusing?
         # joined_df["absolute_change"] = joined_df["count_after"] - joined_df["count_before"]
         # joined_df["relative_change"] = joined_df["absolute_change"] / joined_df["count_before"]
@@ -117,7 +116,10 @@ class NoBiasIntroducedFor(Check):
         absolute_ratio_change = joined_df["ratio_after"] - joined_df["ratio_before"]
         joined_df["relative_ratio_change"] = absolute_ratio_change / joined_df["ratio_before"]
 
-        min_relative_ratio_change = joined_df["relative_ratio_change"].min()
+        # Dropping nan values (e.g., missing value imputation) is a distribution change we consider okay
+        not_nan = joined_df["sensitive_column_value"].notnull()
+        min_relative_ratio_change = joined_df[not_nan]["relative_ratio_change"].min()
+
         all_changes_acceptable = min_relative_ratio_change >= self.min_allowed_relative_ratio_change
         return BiasDistributionChange(node, all_changes_acceptable, min_relative_ratio_change, joined_df)
 
@@ -128,8 +130,8 @@ class NoBiasIntroducedFor(Check):
         Plot before and after histograms visualising a DistributionChange
         """
         pyplot.subplot(1, 2, 1)
-        keys = distribution_change.before_and_after_df["sensitive_column"]
-        keys = [str(key) for key in keys]
+        keys = distribution_change.before_and_after_df["sensitive_column_value"]
+        keys = [str(key) for key in keys]  # Necessary because of null values
         before_values = distribution_change.before_and_after_df["count_before"]
         after_values = distribution_change.before_and_after_df["count_after"]
 
