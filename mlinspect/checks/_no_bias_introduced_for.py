@@ -129,10 +129,10 @@ class NoBiasIntroducedFor(Check):
         """
         pyplot.subplot(1, 2, 1)
         keys = distribution_change.before_and_after_df["sensitive_column"]
+        keys = [str(key) for key in keys]
         before_values = distribution_change.before_and_after_df["count_before"]
         after_values = distribution_change.before_and_after_df["count_after"]
 
-        keys = [str(key) for key in keys]
         pyplot.bar(keys, before_values)
         pyplot.gca().set_title("before")
         pyplot.xticks(
@@ -142,7 +142,6 @@ class NoBiasIntroducedFor(Check):
 
         pyplot.subplot(1, 2, 2)
 
-        keys = [str(key) for key in keys]
         pyplot.bar(keys, after_values)
         pyplot.gca().set_title("after")
         pyplot.xticks(
