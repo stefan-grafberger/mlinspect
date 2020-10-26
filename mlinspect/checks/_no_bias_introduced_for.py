@@ -172,8 +172,8 @@ class NoBiasIntroducedFor(Check):
         descriptions = []
         assert isinstance(no_bias_check_result.check, NoBiasIntroducedFor)
         sensitive_column_names = no_bias_check_result.check.sensitive_columns
-        sensitive_column_names = ["'{}' distribution change above test threshold".format(name) for name in
-                                  sensitive_column_names]
+        sensitive_column_names = ["'{}' distribution change below the configured minimum test threshold".format(name)
+                                  for name in sensitive_column_names]
         sensitive_columns = []
         for _ in range(len(sensitive_column_names)):
             sensitive_columns.append([])
