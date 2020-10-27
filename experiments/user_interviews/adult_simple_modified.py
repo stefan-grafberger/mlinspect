@@ -1,5 +1,5 @@
 """
-An example pipeline
+Adult income pipeline
 """
 import os
 import pandas as pd
@@ -25,8 +25,6 @@ column_transformer = compose.ColumnTransformer(transformers=[
     ('categorical', preprocessing.OneHotEncoder(handle_unknown='ignore'), ['education', 'workclass']),
     ('numeric', preprocessing.StandardScaler(), ['age', 'hours-per-week'])
 ])
-
-
 adult_income_pipeline = pipeline.Pipeline([
     ('features', column_transformer),
     ('classifier', tree.DecisionTreeClassifier())])
