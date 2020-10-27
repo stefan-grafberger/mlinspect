@@ -1,8 +1,8 @@
 """
 An example pipeline
 """
-import pandas as pd
 import os
+import pandas as pd
 from sklearn import compose, preprocessing, tree, pipeline
 
 from mlinspect.utils import get_project_root
