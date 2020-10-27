@@ -1,10 +1,10 @@
 """
 An example pipeline
 """
-import os
 import pandas as pd
-
+import os
 from sklearn import compose, preprocessing, tree, pipeline
+
 from mlinspect.utils import get_project_root
 
 print('pipeline start')
