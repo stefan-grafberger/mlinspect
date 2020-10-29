@@ -6,7 +6,7 @@ import os
 import networkx
 from testfixtures import compare
 
-from mlinspect.backends._sklearn_wir_preprocessor import SklearnWirPreprocessor
+from mlinspect.backends._sklearn_wir_processor import SklearnWirPreprocessor
 from mlinspect.instrumentation._wir_to_dag_transformer import WirToDagTransformer
 from mlinspect.utils._utils import get_project_root
 from ..testing_helper_utils import get_test_wir, get_expected_dag_adult_easy_py_without_columns
@@ -18,7 +18,7 @@ def test_sklearn_wir_preprocessing():
     """
     Tests whether the WIR Extraction works for the adult_easy pipeline
     """
-    preprocessed_wir = SklearnWirPreprocessor().preprocess_wir(get_test_wir())
+    preprocessed_wir = SklearnWirPreprocessor().process_wir(get_test_wir())
     cleaned_wir = WirToDagTransformer.remove_all_nodes_but_calls_and_subscripts(preprocessed_wir)
     dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
 

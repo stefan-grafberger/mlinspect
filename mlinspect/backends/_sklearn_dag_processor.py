@@ -13,7 +13,7 @@ class SklearnDagPostprocessor:
     # pylint: disable=too-few-public-methods
 
     @staticmethod
-    def postprocess_dag(graph, annotation_post_processing_map):
+    def process_dag(graph, annotation_post_processing_map):
         """Associate DAG nodes with the correct inspection output from sklearn pipelines"""
         new_code_references_to_inspection_result = {}
         new_code_references_to_columns = {}

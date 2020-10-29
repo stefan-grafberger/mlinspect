@@ -6,14 +6,14 @@ from ..instrumentation._wir_node import WirNode
 from ..utils._utils import traverse_graph_and_process_nodes, get_sorted_node_parents
 
 
-class PandasWirPreprocessor:
+class PandasWirProcessor:
     """
     Preprocess Pandas WIR nodes to enable DAG extraction
     """
     # pylint: disable=too-few-public-methods
 
     @staticmethod
-    def preprocess_wir(graph, wir_post_processing_map):
+    def process_wir(graph, wir_post_processing_map):
         """Associate DAG nodes with the correct inspection output from sklearn pipelines"""
         def process_node(node, _):
             if node.module == ('pandas.core.frame', '__getitem__'):

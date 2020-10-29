@@ -30,13 +30,13 @@ class Backend(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def preprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
-        """Preprocess the wir if necessary"""
+    def process_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
+        """Preprocess the WIR if necessary before extracting the DAG"""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def postprocess_dag(self, dag: networkx.DiGraph) -> networkx.DiGraph:
-        """Postprocess the dag if necessary"""
+    def process_dag(self, dag: networkx.DiGraph) -> networkx.DiGraph:
+        """Postprocess the DAG if necessary"""
         raise NotImplementedError
 
     @abc.abstractmethod

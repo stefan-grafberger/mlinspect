@@ -15,7 +15,7 @@ from ._backend_utils import build_annotation_df_from_iters, \
 from ._iter_creation import iter_input_data_source, iter_input_annotation_output_resampled, \
     iter_input_annotation_output_map, iter_input_annotation_output_join
 from ._pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
-from ._pandas_wir_preprocessor import PandasWirPreprocessor
+from ._pandas_wir_processor import PandasWirProcessor
 from ..inspections._inspection_input import OperatorContext
 from ..instrumentation._dag_node import OperatorType, DagNodeIdentifier
 
@@ -42,7 +42,7 @@ class PandasBackend(Backend):
         'mlinspect.backends._pandas_backend_frame_wrapper': 'pandas.core.frame'
     }
 
-    def postprocess_dag(self, dag: networkx.DiGraph) -> networkx.DiGraph:
+    def process_dag(self, dag: networkx.DiGraph) -> networkx.DiGraph:
         """
         Nothing to do here
         """
@@ -61,11 +61,11 @@ class PandasBackend(Backend):
         function_info = self.replace_wrapper_modules(function_info)
         return function_info in self.operator_map or function_prefix == "pandas"
 
-    def preprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
+    def process_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
         """
         Special handling to differentiate projections and selections
         """
-        PandasWirPreprocessor().preprocess_wir(wir, self.code_reference_to_set_item_op)
+        PandasWirProcessor().process_wir(wir, self.code_reference_to_set_item_op)
         return wir
 
     def before_call_used_value(self, function_info, subscript, call_code, value_code, value_value,

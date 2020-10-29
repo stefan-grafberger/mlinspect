@@ -10,8 +10,8 @@ from ._backend import Backend
 from ._pandas_backend import execute_inspection_visits_unary_operator
 from ._pandas_backend_frame_wrapper import MlinspectSeries, MlinspectDataFrame
 from ._sklearn_backend_transformer_wrapper import MlinspectEstimatorTransformer, transformer_names
-from ._sklearn_dag_postprocessor import SklearnDagPostprocessor
-from ._sklearn_wir_preprocessor import SklearnWirPreprocessor
+from ._sklearn_dag_processor import SklearnDagPostprocessor
+from ._sklearn_wir_processor import SklearnWirPreprocessor
 from ..inspections._inspection_input import OperatorContext
 from ..instrumentation._dag_node import OperatorType
 
@@ -44,20 +44,20 @@ class SklearnBackend(Backend):
         """Checks whether the backend is responsible for the current method call"""
         return function_prefix == "sklearn" or isinstance(value, (BaseEstimator, BaseWrapper))
 
-    def preprocess_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
+    def process_wir(self, wir: networkx.DiGraph) -> networkx.DiGraph:
         """
         Preprocess scikit-learn pipeline operations to hide the special pipeline
         declaration style from other parts of the library
         """
-        return SklearnWirPreprocessor().preprocess_wir(wir)
+        return SklearnWirPreprocessor().process_wir(wir)
 
-    def postprocess_dag(self, dag: networkx.DiGraph) -> networkx.DiGraph:
+    def process_dag(self, dag: networkx.DiGraph) -> networkx.DiGraph:
         """
         Preprocess scikit-learn pipeline operations to hide the special pipeline
         declaration style from other parts of the library
         """
         post_processor_result = SklearnDagPostprocessor() \
-            .postprocess_dag(dag, self.wir_post_processing_map)
+            .process_dag(dag, self.wir_post_processing_map)
         new_dag_node_identifier_to_inspection_output = post_processor_result[0]
         new_dag_node_identifier_to_columns = post_processor_result[1]
 

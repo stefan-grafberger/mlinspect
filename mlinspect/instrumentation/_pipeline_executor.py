@@ -67,10 +67,10 @@ class PipelineExecutor:
             code_reference_to_module = {**code_reference_to_module, **backend.code_reference_to_module}
         wir = wir_extractor.add_runtime_info(code_reference_to_module, code_reference_to_description)
         for backend in self.backends:
-            wir = backend.preprocess_wir(wir)
+            wir = backend.process_wir(wir)
         dag = WirToDagTransformer.extract_dag(wir)
         for backend in self.backends:
-            dag = backend.postprocess_dag(dag)
+            dag = backend.process_dag(dag)
         inspection_to_call_to_annotation = self.build_inspection_result_map(dag)
         return InspectionResult(dag, inspection_to_call_to_annotation)
 
