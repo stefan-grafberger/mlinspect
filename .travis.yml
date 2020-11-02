@@ -7,7 +7,7 @@ addons:
 
 python:
   - '3.8'
-  - '3.9'
+  # - '3.9'  # sklearn does not support 3.9 yet it seems
 install: pip install .[dev]
 
 script: python -m pytest
