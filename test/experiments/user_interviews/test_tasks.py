@@ -10,9 +10,9 @@ from mlinspect.utils import get_project_root
 
 
 ADULT_SIMPLE_TASK_NB = os.path.join(str(get_project_root()), "experiments", "user_interviews",
-                                    "adult_simple_task.ipynb")
-COMPAS_TASK_NB = os.path.join(str(get_project_root()), "experiments", "user_interviews", "compas_task.ipynb")
-HEALTHCARE_TASK_NB = os.path.join(str(get_project_root()), "experiments", "user_interviews", "healthcare_task.ipynb")
+                                    "example-task-with-solution.ipynb")
+COMPAS_TASK_NB = os.path.join(str(get_project_root()), "experiments", "user_interviews", "task-1-solution.ipynb")
+HEALTHCARE_TASK_NB = os.path.join(str(get_project_root()), "experiments", "user_interviews", "task-2-solution.ipynb")
 
 
 def test_adult_simple_task_nb():
