@@ -5,7 +5,9 @@ addons:
     packages:
       - graphviz
 
-python: '3.8'
+python:
+  - '3.8'
+  - '3.9'
 install: pip install .[dev]
 
 script: python -m pytest
