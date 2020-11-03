@@ -7,7 +7,7 @@
 * `docker push`
 
 ## Running the Docker Container
-* docker run -t --rm -p 8899:8899 stefangrafberger/mlinspect
+* `docker run -t --rm -p 8899:8899 stefangrafberger/mlinspect`
 
 ## Links to the task files
 * `http://localhost:8899/notebooks/experiments/user_interviews/example-task-with-solution.ipynb`
