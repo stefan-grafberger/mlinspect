@@ -56,7 +56,7 @@ class PipelineExecutor:
         source_code = self.load_source_code(notebook_path, python_path, python_code)
         parsed_ast = ast.parse(source_code)
         original_parsed_ast = copy.deepcopy(parsed_ast)  # Some ast functions modify in-place
-        parsed_modified_ast = self.instrument_pipeline(parsed_ast)
+        parsed_modified_ast = self.instrument_pipeline(parsed_ast, source_code)
         exec(compile(parsed_modified_ast, filename="<ast>", mode="exec"), PipelineExecutor.script_scope)
         wir_extractor = WirExtractor(original_parsed_ast)
         wir_extractor.extract_wir()
@@ -117,11 +117,11 @@ class PipelineExecutor:
         return inspection_to_dag_node_to_annotation
 
     @staticmethod
-    def instrument_pipeline(parsed_ast):
+    def instrument_pipeline(parsed_ast, source_code):
         """
         Instrument the pipeline AST to instrument function calls
         """
-        call_capture_transformer = CallCaptureTransformer()
+        call_capture_transformer = CallCaptureTransformer(source_code)
         parsed_modified_ast = call_capture_transformer.visit(parsed_ast)
         parsed_modified_ast = ast.fix_missing_locations(parsed_modified_ast)
         func_import_node = ast.ImportFrom(module='mlinspect.instrumentation._pipeline_executor',

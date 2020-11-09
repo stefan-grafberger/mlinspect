@@ -17,7 +17,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="mlinspect",
-    version="0.0.1",
+    version="0.0.1.dev",
     description="Inspect ML Pipelines in the form of a DAG",
     author='Stefan Grafberger',
     author_email='stefangrafberger@gmail.com',

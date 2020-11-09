@@ -3,7 +3,6 @@ pandas==1.1.4
 nbformat==5.0.8
 nbconvert==6.0.7
 ipython==7.19.0
-astunparse==1.6.3
 astpretty==2.0.0
 astmonkey==0.3.6
 networkx==2.5
