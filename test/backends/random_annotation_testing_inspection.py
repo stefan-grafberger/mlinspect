@@ -4,8 +4,8 @@ A simple analyzer for testing annotation propagation
 import random
 from typing import Iterable
 
-from mlinspect.inspections.inspection import Inspection
-from mlinspect.inspections.inspection_input import InspectionRowUnaryOperator, InspectionRowNAryOperator, \
+from mlinspect.inspections._inspection import Inspection
+from mlinspect.inspections._inspection_input import InspectionRowUnaryOperator, InspectionRowNAryOperator, \
     InspectionRowSinkOperator
 
 

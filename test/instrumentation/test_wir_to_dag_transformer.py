@@ -4,12 +4,12 @@ Tests whether the DAG extraction works
 import networkx
 from testfixtures import compare
 
-from mlinspect.backends.sklearn_wir_preprocessor import SklearnWirPreprocessor
-from mlinspect.instrumentation.dag_node import CodeReference
-from mlinspect.instrumentation.wir_extractor import WirExtractor
-from mlinspect.instrumentation.wir_node import WirNode
-from mlinspect.instrumentation.wir_to_dag_transformer import WirToDagTransformer
-from ..utils import get_module_info, get_adult_easy_py_ast, get_test_wir, \
+from mlinspect.backends._sklearn_wir_processor import SklearnWirPreprocessor
+from mlinspect.instrumentation._dag_node import CodeReference
+from mlinspect.instrumentation._wir_extractor import WirExtractor
+from mlinspect.instrumentation._wir_node import WirNode
+from mlinspect.instrumentation._wir_to_dag_transformer import WirToDagTransformer
+from ..testing_helper_utils import get_module_info, get_adult_simple_py_ast, get_test_wir, \
     get_expected_dag_adult_easy_py_without_columns
 
 
@@ -17,10 +17,10 @@ def test_remove_all_nodes_but_calls_and_subscripts():
     """
     Tests whether the WIR Extraction works for the adult_easy pipeline
     """
-    test_ast = get_adult_easy_py_ast()
+    test_ast = get_adult_simple_py_ast()
     extractor = WirExtractor(test_ast)
     extractor.extract_wir()
-    extracted_wir_with_module_info = extractor.add_runtime_info(get_module_info(), {})
+    extracted_wir_with_module_info = extractor.add_runtime_info(get_module_info(), {}, {})
 
     cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(extracted_wir_with_module_info)
 
@@ -35,7 +35,7 @@ def test_remove_all_non_operators_and_update_names():
     """
     Tests whether the WIR Extraction works for the adult_easy pipeline
     """
-    preprocessed_wir = SklearnWirPreprocessor().preprocess_wir(get_test_wir())
+    preprocessed_wir = SklearnWirPreprocessor().process_wir(get_test_wir())
     cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(preprocessed_wir)
     dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
 
@@ -61,7 +61,7 @@ def get_expected_cleaned_wir_adult_easy():
     expected_str = WirNode(8, "str", "Call", CodeReference(11, 26, 11, 49), ('builtins', 'str'))
     expected_graph.add_edge(expected_get_project_root, expected_str)
 
-    expected_join = WirNode(12, "join", "Call", CodeReference(11, 13, 11, 85), ('posixpath', 'join'))
+    expected_join = WirNode(12, "join", "Call", CodeReference(11, 13, 11, 107), ('posixpath', 'join'))
     expected_graph.add_edge(expected_str, expected_join)
 
     expected_read_csv = WirNode(18, "read_csv", "Call", CodeReference(12, 11, 12, 62),

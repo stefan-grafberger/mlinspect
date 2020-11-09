@@ -2,18 +2,16 @@
 Tests whether the WIR extraction works
 """
 import ast
-import os
 from inspect import cleandoc
+
 import networkx
 import pytest
 from testfixtures import compare
 
-from mlinspect.instrumentation.dag_node import CodeReference
-from mlinspect.utils import get_project_root
-from mlinspect.instrumentation.wir_extractor import WirExtractor
-from mlinspect.instrumentation.wir_node import WirNode
-
-FILE_PY = os.path.join(str(get_project_root()), "test", "pipelines", "adult_easy.py")
+from example_pipelines import ADULT_SIMPLE_PY
+from mlinspect.instrumentation._dag_node import CodeReference
+from mlinspect.instrumentation._wir_extractor import WirExtractor
+from mlinspect.instrumentation._wir_node import WirNode
 
 
 def test_print_stmt():
@@ -405,7 +403,7 @@ def test_adult_easy_pipeline():
     """
     Tests whether the WIR Extraction works for the adult_easy pipeline
     """
-    with open(FILE_PY) as file:
+    with open(ADULT_SIMPLE_PY) as file:
         test_code = file.read()
 
         test_ast = ast.parse(test_code)
@@ -432,7 +430,7 @@ def test_index_subscript_with_module_information():
         CodeReference(4, 0, 4, 23): ('pandas.core.frame', '__getitem__')
     }
     extracted_wir = extractor.extract_wir()
-    extractor.add_runtime_info(module_info, {})
+    extractor.add_runtime_info(module_info, {}, {})
     expected_graph = networkx.DiGraph()
 
     expected_import = WirNode(0, "pandas", "Import", CodeReference(1, 0, 1, 19))
