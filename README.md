@@ -10,7 +10,7 @@ Inspect ML Pipelines in Python in the form of a DAG
 
 ## Run mlinspect locally
 
-Prerequisite: python ==  3.8 (current blocker: sklearn does not support 3.9 yet it seems)
+Prerequisite: Python 3.8
 
 1. Clone this repository
 2. Set up the environment
@@ -28,7 +28,7 @@ Prerequisite: python ==  3.8 (current blocker: sklearn does not support 3.9 yet 
     `Linux: ` `apt-get install graphviz` <br>
     `MAC OS: ` `brew install graphviz` <br>
 
-5. Run the tests
+5. To ensure everything works, you can run the tests (without graphviz, the visualisation test will fail)
 
     `python setup.py test` <br>
     
