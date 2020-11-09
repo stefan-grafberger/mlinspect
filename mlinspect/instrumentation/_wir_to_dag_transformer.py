@@ -67,7 +67,8 @@ class WirToDagTransformer:
             children = list(graph.successors(node))
             if node.module in WirToDagTransformer.OPERATOR_MAP:
                 new_dag_vertex = DagNode(node.node_id, WirToDagTransformer.OPERATOR_MAP[node.module],
-                                         node.code_reference, node.module, node.dag_operator_description)
+                                         node.code_reference, node.module, node.dag_operator_description,
+                                         source_code=node.source_code)
                 graph.remove_node(node)
                 graph.add_node(new_dag_vertex)
                 for parent in parents:

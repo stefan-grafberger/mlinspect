@@ -106,7 +106,7 @@ class SklearnBackend(Backend):
     def after_call_used(self, function_info, subscript, call_code, return_value, code_reference):
         """The return value of some function"""
         # pylint: disable=too-many-arguments, unused-argument, no-self-use
-        self.save_call_module_and_description(code_reference, function_info, self.input_data)
+        self.save_call_module_and_description(code_reference, call_code, function_info, self.input_data)
 
         if function_info == ('sklearn.preprocessing._label', 'label_binarize'):
             operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
@@ -142,7 +142,7 @@ class SklearnBackend(Backend):
 
         return return_value
 
-    def save_call_module_and_description(self, code_reference, function_info, maybe_wrapper_transformer):
+    def save_call_module_and_description(self, code_reference, call_code, function_info, maybe_wrapper_transformer):
         """Replace the module of mlinspect transformer wrappers with the original modules"""
         if maybe_wrapper_transformer is not None and \
                 function_info[0] == 'mlinspect.backends._sklearn_backend_transformer_wrapper' and \
@@ -154,3 +154,4 @@ class SklearnBackend(Backend):
             self.code_reference_to_description[code_reference] = description
 
         self.code_reference_to_module[code_reference] = function_info
+        self.code_reference_to_code[code_reference] = call_code

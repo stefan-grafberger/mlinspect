@@ -430,7 +430,7 @@ def test_index_subscript_with_module_information():
         CodeReference(4, 0, 4, 23): ('pandas.core.frame', '__getitem__')
     }
     extracted_wir = extractor.extract_wir()
-    extractor.add_runtime_info(module_info, {})
+    extractor.add_runtime_info(module_info, {}, {})
     expected_graph = networkx.DiGraph()
 
     expected_import = WirNode(0, "pandas", "Import", CodeReference(1, 0, 1, 19))

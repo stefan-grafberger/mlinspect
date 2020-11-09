@@ -69,7 +69,7 @@ class SklearnWirPreprocessor:
 
         concat_module = (node.module[0], node.module[1], "Concatenation")
         concatenation_wir = WirNode(node.node_id, "Concatenation", "Call",
-                                    node.code_reference, concat_module)
+                                    node.code_reference, concat_module, source_code=node.source_code)
 
         self.wir_node_to_sub_pipeline_start[node] = []
         for transformer_tuple in transformers_arg:
@@ -112,11 +112,13 @@ class SklearnWirPreprocessor:
 
         new_fit_module = (node.module[0], node.module[1], "Pipeline")
         new_pipeline_fit_node = WirNode(node.node_id, node.name, node.operation,
-                                        actual_pipeline_node.code_reference, new_fit_module)
+                                        actual_pipeline_node.code_reference, new_fit_module,
+                                        source_code=node.source_code)
 
         new_train_data_module = (node.module[0], node.module[1], "Train Data")
         new_pipeline_train_data_node = WirNode(node.node_id, "Train Data", node.operation,
-                                               actual_pipeline_node.code_reference, new_train_data_module)
+                                               actual_pipeline_node.code_reference, new_train_data_module,
+                                               source_code=node.source_code)
         graph.add_edge(data_node, new_pipeline_train_data_node)
         for start_node in pipeline_start:
             graph.add_edge(new_pipeline_train_data_node, start_node)
@@ -126,7 +128,8 @@ class SklearnWirPreprocessor:
         if target_node_or_none:
             new_train_data_module = (node.module[0], node.module[1], "Train Labels")
             new_pipeline_train_labels_node = WirNode(node.node_id, "Train Labels", node.operation,
-                                                     actual_pipeline_node.code_reference, new_train_data_module)
+                                                     actual_pipeline_node.code_reference, new_train_data_module,
+                                                     source_code=node.source_code)
             graph.add_edge(target_node_or_none, new_pipeline_train_labels_node)
             graph.add_edge(new_pipeline_train_labels_node, new_pipeline_fit_node)
 
@@ -173,7 +176,7 @@ class SklearnWirPreprocessor:
 
                 new_transformer = WirNode(transformer.node_id, transformer.name, transformer.operation,
                                           transformer.code_reference, new_transformer_module,
-                                          transformer.dag_operator_description)
+                                          transformer.dag_operator_description, transformer.source_code)
 
                 parents = list(graph.predecessors(transformer))
                 for parent in parents:
@@ -235,7 +238,8 @@ class SklearnWirPreprocessor:
             projection_module = (node.module[0], node.module[1], "Projection")
             projection_description = "to {} (ColumnTransformer)".format([column_node.name])
             projection_wir = WirNode(column_node.node_id, column_node.name, node.operation,
-                                     node.code_reference, projection_module, projection_description)
+                                     node.code_reference, projection_module, projection_description,
+                                     node.source_code)
             projection_wirs.append(projection_wir)
 
             start_transformers, end_transformer = self.preprocess_column_transformer_copy_transformer_per_column(
@@ -272,7 +276,7 @@ class SklearnWirPreprocessor:
             new_module = (current_node.module[0], current_node.module[1], "Pipeline")
             new_description = "{}, Column: '{}'".format(current_node.dag_operator_description, description)
             copied_wir = WirNode(new_node_id, current_node.name, current_node.operation,
-                                 current_node.code_reference, new_module, new_description)
+                                 current_node.code_reference, new_module, new_description, current_node.source_code)
 
             if current_node in start_copy:
                 start_transformers.append(copied_wir)

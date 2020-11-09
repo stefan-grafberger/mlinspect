@@ -21,7 +21,7 @@ class PandasWirProcessor:
                 new_module = (node.module[0], node.module[1], operator_type)
 
                 new_node = WirNode(node.node_id, node.name, node.operation, node.code_reference, new_module,
-                                   node.dag_operator_description)
+                                   node.dag_operator_description, node.source_code)
 
                 parents = get_sorted_node_parents(graph, node)
                 graph.add_edge(parents[0], new_node)

@@ -20,7 +20,7 @@ def test_remove_all_nodes_but_calls_and_subscripts():
     test_ast = get_adult_simple_py_ast()
     extractor = WirExtractor(test_ast)
     extractor.extract_wir()
-    extracted_wir_with_module_info = extractor.add_runtime_info(get_module_info(), {})
+    extracted_wir_with_module_info = extractor.add_runtime_info(get_module_info(), {}, {})
 
     cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(extracted_wir_with_module_info)
 

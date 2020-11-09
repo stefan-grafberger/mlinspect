@@ -62,10 +62,13 @@ class PipelineExecutor:
         wir_extractor.extract_wir()
         code_reference_to_description = {}
         code_reference_to_module = {}
+        code_reference_to_code = {}
         for backend in self.backends:
             code_reference_to_description = {**code_reference_to_description, **backend.code_reference_to_description}
             code_reference_to_module = {**code_reference_to_module, **backend.code_reference_to_module}
-        wir = wir_extractor.add_runtime_info(code_reference_to_module, code_reference_to_description)
+            code_reference_to_code = {**code_reference_to_code, **backend.code_reference_to_code}
+        wir = wir_extractor.add_runtime_info(code_reference_to_module, code_reference_to_description,
+                                             code_reference_to_code)
         for backend in self.backends:
             wir = backend.process_wir(wir)
         dag = WirToDagTransformer.extract_dag(wir)

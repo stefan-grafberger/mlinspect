@@ -259,7 +259,7 @@ class WirExtractor:
             self.graph.add_edge(parent, new_wir_node, type="input", arg_index=parent_index)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
-    def add_runtime_info(self, code_reference_to_module, code_reference_to_description):
+    def add_runtime_info(self, code_reference_to_module, code_reference_to_description, code_reference_to_code):
         """
         After executing the pipeline, annotate call nodes with the captured module info
         """
@@ -268,6 +268,8 @@ class WirExtractor:
                     or node.operation == "Subscript-Assign") and \
                     node.code_reference in code_reference_to_module:
                 node.module = code_reference_to_module[node.code_reference]
+                if node.code_reference in code_reference_to_code:
+                    node.source_code = code_reference_to_code[node.code_reference]
                 if node.code_reference in code_reference_to_description:
                     node.dag_operator_description = code_reference_to_description[node.code_reference]
         return self.graph

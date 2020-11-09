@@ -50,66 +50,78 @@ def get_expected_dag_adult_easy_py():
                                    "adult_train.csv",
                                    ['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status',
                                     'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
-                                    'hours-per-week', 'native-country', 'income-per-year'])
+                                    'hours-per-week', 'native-country', 'income-per-year'],
+                                   "pd.read_csv(train_file, na_values='?', index_col=0)")
     expected_graph.add_node(expected_data_source)
 
     expected_select = DagNode(20, OperatorType.SELECTION, CodeReference(14, 7, 14, 24), ('pandas.core.frame', 'dropna'),
                               "dropna", ['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status',
                                          'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
-                                         'hours-per-week', 'native-country', 'income-per-year'])
+                                         'hours-per-week', 'native-country', 'income-per-year'],
+                              'raw_data.dropna()')
     expected_graph.add_edge(expected_data_source, expected_select)
 
     expected_train_data = DagNode(56, OperatorType.TRAIN_DATA, CodeReference(24, 18, 26, 51),
                                   ('sklearn.pipeline', 'fit', 'Train Data'), None,
                                   ['age', 'workclass', 'fnlwgt', 'education', 'education-num',
                                    'marital-status', 'occupation', 'relationship', 'race', 'sex', 'capital-gain',
-                                   'capital-loss', 'hours-per-week', 'native-country', 'income-per-year'])
+                                   'capital-loss', 'hours-per-week', 'native-country', 'income-per-year'],
+                                  'income_pipeline.fit(data, labels)'
+                                  )
     expected_graph.add_edge(expected_select, expected_train_data)
 
+    pipeline_str = "compose.ColumnTransformer(transformers=[\n" \
+                   "    ('categorical', preprocessing.OneHotEncoder(handle_unknown='ignore'), " \
+                   "['education', 'workclass']),\n" \
+                   "    ('numeric', preprocessing.StandardScaler(), ['age', 'hours-per-week'])\n" \
+                   "])"
     expected_pipeline_project_one = DagNode(34, OperatorType.PROJECTION, CodeReference(18, 25, 21, 2),
                                             ('sklearn.compose._column_transformer', 'ColumnTransformer',
                                              'Projection'),
-                                            "to ['education'] (ColumnTransformer)", ['education'])
+                                            "to ['education'] (ColumnTransformer)", ['education'], pipeline_str)
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_one)
     expected_pipeline_project_two = DagNode(35, OperatorType.PROJECTION, CodeReference(18, 25, 21, 2),
                                             ('sklearn.compose._column_transformer', 'ColumnTransformer',
                                              'Projection'),
-                                            "to ['workclass'] (ColumnTransformer)", ['workclass'])
+                                            "to ['workclass'] (ColumnTransformer)", ['workclass'], pipeline_str)
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_two)
     expected_pipeline_project_three = DagNode(40, OperatorType.PROJECTION, CodeReference(18, 25, 21, 2),
                                               ('sklearn.compose._column_transformer', 'ColumnTransformer',
                                                'Projection'),
-                                              "to ['age'] (ColumnTransformer)", ['age'])
+                                              "to ['age'] (ColumnTransformer)", ['age'], pipeline_str)
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_three)
     expected_pipeline_project_four = DagNode(41, OperatorType.PROJECTION, CodeReference(18, 25, 21, 2),
                                              ('sklearn.compose._column_transformer', 'ColumnTransformer',
                                               'Projection'),
-                                             "to ['hours-per-week'] (ColumnTransformer)", ['hours-per-week'])
+                                             "to ['hours-per-week'] (ColumnTransformer)", ['hours-per-week'],
+                                             pipeline_str)
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_four)
 
     expected_pipeline_transformer_one = DagNode(34, OperatorType.TRANSFORMER, CodeReference(19, 20, 19, 72),
                                                 ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'),
                                                 "Categorical Encoder (OneHotEncoder), Column: 'education'",
-                                                ['education'])
+                                                ['education'],
+                                                "preprocessing.OneHotEncoder(handle_unknown='ignore')")
     expected_graph.add_edge(expected_pipeline_project_one, expected_pipeline_transformer_one)
     expected_pipeline_transformer_two = DagNode(35, OperatorType.TRANSFORMER, CodeReference(19, 20, 19, 72),
                                                 ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'),
                                                 "Categorical Encoder (OneHotEncoder), Column: 'workclass'",
-                                                ['workclass'])
+                                                ['workclass'], "preprocessing.OneHotEncoder(handle_unknown='ignore')")
     expected_graph.add_edge(expected_pipeline_project_two, expected_pipeline_transformer_two)
     expected_pipeline_transformer_three = DagNode(40, OperatorType.TRANSFORMER, CodeReference(20, 16, 20, 46),
                                                   ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'),
-                                                  "Numerical Encoder (StandardScaler), Column: 'age'", ['age'])
+                                                  "Numerical Encoder (StandardScaler), Column: 'age'", ['age'],
+                                                  'preprocessing.StandardScaler()')
     expected_graph.add_edge(expected_pipeline_project_three, expected_pipeline_transformer_three)
     expected_pipeline_transformer_four = DagNode(41, OperatorType.TRANSFORMER, CodeReference(20, 16, 20, 46),
                                                  ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'),
                                                  "Numerical Encoder (StandardScaler), Column: 'hours-per-week'",
-                                                 ['hours-per-week'])
+                                                 ['hours-per-week'], 'preprocessing.StandardScaler()')
     expected_graph.add_edge(expected_pipeline_project_four, expected_pipeline_transformer_four)
 
     expected_pipeline_concatenation = DagNode(46, OperatorType.CONCATENATION, CodeReference(18, 25, 21, 2),
                                               ('sklearn.compose._column_transformer', 'ColumnTransformer',
-                                               'Concatenation'), None, ['array'])
+                                               'Concatenation'), None, ['array'], pipeline_str)
     expected_graph.add_edge(expected_pipeline_transformer_one, expected_pipeline_concatenation)
     expected_graph.add_edge(expected_pipeline_transformer_two, expected_pipeline_concatenation)
     expected_graph.add_edge(expected_pipeline_transformer_three, expected_pipeline_concatenation)
@@ -117,25 +129,29 @@ def get_expected_dag_adult_easy_py():
 
     expected_estimator = DagNode(51, OperatorType.ESTIMATOR, CodeReference(26, 19, 26, 48),
                                  ('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'),
-                                 "Decision Tree")
+                                 "Decision Tree", source_code='tree.DecisionTreeClassifier()')
     expected_graph.add_edge(expected_pipeline_concatenation, expected_estimator)
 
     expected_pipeline_fit = DagNode(56, OperatorType.FIT, CodeReference(24, 18, 26, 51),
-                                    ('sklearn.pipeline', 'fit', 'Pipeline'))
+                                    ('sklearn.pipeline', 'fit', 'Pipeline'),
+                                    source_code='income_pipeline.fit(data, labels)')
     expected_graph.add_edge(expected_estimator, expected_pipeline_fit)
 
     expected_project = DagNode(23, OperatorType.PROJECTION, CodeReference(16, 38, 16, 61),
                                ('pandas.core.frame', '__getitem__', 'Projection'), "to ['income-per-year']",
-                               ['income-per-year'])
+                               ['income-per-year'], "data['income-per-year']")
     expected_graph.add_edge(expected_select, expected_project)
 
     expected_project_modify = DagNode(28, OperatorType.PROJECTION_MODIFY, CodeReference(16, 9, 16, 89),
                                       ('sklearn.preprocessing._label', 'label_binarize'),
-                                      "label_binarize, classes: ['>50K', '<=50K']", ['array'])
+                                      "label_binarize, classes: ['>50K', '<=50K']", ['array'],
+                                      "preprocessing.label_binarize(data['income-per-year'], "
+                                      "classes=['>50K', '<=50K'])")
     expected_graph.add_edge(expected_project, expected_project_modify)
 
     expected_train_labels = DagNode(56, OperatorType.TRAIN_LABELS, CodeReference(24, 18, 26, 51),
-                                    ('sklearn.pipeline', 'fit', 'Train Labels'), None, ['array'])
+                                    ('sklearn.pipeline', 'fit', 'Train Labels'), None, ['array'],
+                                    'income_pipeline.fit(data, labels)')
     expected_graph.add_edge(expected_project_modify, expected_train_labels)
     expected_graph.add_edge(expected_train_labels, expected_pipeline_fit)
 
@@ -154,97 +170,113 @@ def get_expected_dag_adult_easy_ipynb():
                                    "adult_train.csv",
                                    ['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status',
                                     'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
-                                    'hours-per-week', 'native-country', 'income-per-year'])
+                                    'hours-per-week', 'native-country', 'income-per-year'],
+                                   "pd.read_csv(train_file, na_values='?', index_col=0)")
     expected_graph.add_node(expected_data_source)
 
     expected_select = DagNode(20, OperatorType.SELECTION, CodeReference(20, 7, 20, 24), ('pandas.core.frame', 'dropna'),
                               "dropna", ['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status',
                                          'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
-                                         'hours-per-week', 'native-country', 'income-per-year'])
+                                         'hours-per-week', 'native-country', 'income-per-year'],
+                              'raw_data.dropna()')
     expected_graph.add_edge(expected_data_source, expected_select)
 
     expected_train_data = DagNode(56, OperatorType.TRAIN_DATA, CodeReference(30, 18, 32, 51),
                                   ('sklearn.pipeline', 'fit', 'Train Data'), None,
                                   ['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status',
                                    'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
-                                   'hours-per-week', 'native-country', 'income-per-year'])
+                                   'hours-per-week', 'native-country', 'income-per-year'],
+                                  'income_pipeline.fit(data, labels)')
     expected_graph.add_edge(expected_select, expected_train_data)
 
+    pipeline_str = "compose.ColumnTransformer(transformers=[\n" \
+                   "    ('categorical', preprocessing.OneHotEncoder(handle_unknown='ignore'), " \
+                   "['education', 'workclass']),\n" \
+                   "    ('numeric', preprocessing.StandardScaler(), ['age', 'hours-per-week'])\n" \
+                   "])"
     expected_pipeline_project_one = DagNode(34, OperatorType.PROJECTION, CodeReference(24, 25, 27, 2),
                                             ('sklearn.compose._column_transformer', 'ColumnTransformer',
                                              'Projection'),
-                                            "to ['education'] (ColumnTransformer)", ['education'])
+                                            "to ['education'] (ColumnTransformer)", ['education'], pipeline_str)
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_one)
     expected_pipeline_project_two = DagNode(35, OperatorType.PROJECTION, CodeReference(24, 25, 27, 2),
                                             ('sklearn.compose._column_transformer', 'ColumnTransformer',
                                              'Projection'),
-                                            "to ['workclass'] (ColumnTransformer)", ['workclass'])
+                                            "to ['workclass'] (ColumnTransformer)", ['workclass'], pipeline_str)
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_two)
     expected_pipeline_project_three = DagNode(40, OperatorType.PROJECTION, CodeReference(24, 25, 27, 2),
                                               ('sklearn.compose._column_transformer',
                                                'ColumnTransformer', 'Projection'),
-                                              "to ['age'] (ColumnTransformer)", ['age'])
+                                              "to ['age'] (ColumnTransformer)", ['age'], pipeline_str)
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_three)
     expected_pipeline_project_four = DagNode(41, OperatorType.PROJECTION, CodeReference(24, 25, 27, 2),
                                              ('sklearn.compose._column_transformer',
                                               'ColumnTransformer', 'Projection'),
-                                             "to ['hours-per-week'] (ColumnTransformer)", ['hours-per-week'])
+                                             "to ['hours-per-week'] (ColumnTransformer)", ['hours-per-week'],
+                                             pipeline_str)
     expected_graph.add_edge(expected_train_data, expected_pipeline_project_four)
 
     expected_pipeline_transformer_one = DagNode(34, OperatorType.TRANSFORMER, CodeReference(25, 20, 25, 72),
                                                 ('sklearn.preprocessing._encoders',
                                                  'OneHotEncoder', 'Pipeline'),
                                                 "Categorical Encoder (OneHotEncoder), Column: 'education'",
-                                                ['education'])
+                                                ['education'],
+                                                "preprocessing.OneHotEncoder(handle_unknown='ignore')")
     expected_graph.add_edge(expected_pipeline_project_one, expected_pipeline_transformer_one)
     expected_pipeline_transformer_two = DagNode(35, OperatorType.TRANSFORMER, CodeReference(25, 20, 25, 72),
                                                 ('sklearn.preprocessing._encoders',
                                                  'OneHotEncoder', 'Pipeline'),
                                                 "Categorical Encoder (OneHotEncoder), Column: 'workclass'",
-                                                ['workclass'])
+                                                ['workclass'],
+                                                "preprocessing.OneHotEncoder(handle_unknown='ignore')")
     expected_graph.add_edge(expected_pipeline_project_two, expected_pipeline_transformer_two)
     expected_pipeline_transformer_three = DagNode(40, OperatorType.TRANSFORMER, CodeReference(26, 16, 26, 46),
                                                   ('sklearn.preprocessing._data',
                                                    'StandardScaler', 'Pipeline'),
-                                                  "Numerical Encoder (StandardScaler), Column: 'age'", ['age'])
+                                                  "Numerical Encoder (StandardScaler), Column: 'age'", ['age'],
+                                                  'preprocessing.StandardScaler()')
     expected_graph.add_edge(expected_pipeline_project_three, expected_pipeline_transformer_three)
     expected_pipeline_transformer_four = DagNode(41, OperatorType.TRANSFORMER, CodeReference(26, 16, 26, 46),
                                                  ('sklearn.preprocessing._data',
                                                   'StandardScaler', 'Pipeline'),
                                                  "Numerical Encoder (StandardScaler), Column: 'hours-per-week'",
-                                                 ['hours-per-week'])
+                                                 ['hours-per-week'],
+                                                 'preprocessing.StandardScaler()')
     expected_graph.add_edge(expected_pipeline_project_four, expected_pipeline_transformer_four)
 
     expected_pipeline_concatenation = DagNode(46, OperatorType.CONCATENATION, CodeReference(24, 25, 27, 2),
                                               ('sklearn.compose._column_transformer',
-                                               'ColumnTransformer', 'Concatenation'), None, ["array"])
+                                               'ColumnTransformer', 'Concatenation'), None, ["array"], pipeline_str)
     expected_graph.add_edge(expected_pipeline_transformer_one, expected_pipeline_concatenation)
     expected_graph.add_edge(expected_pipeline_transformer_two, expected_pipeline_concatenation)
     expected_graph.add_edge(expected_pipeline_transformer_three, expected_pipeline_concatenation)
     expected_graph.add_edge(expected_pipeline_transformer_four, expected_pipeline_concatenation)
 
     expected_estimator = DagNode(51, OperatorType.ESTIMATOR, CodeReference(32, 19, 32, 48),
-                                 ('sklearn.tree._classes', 'DecisionTreeClassifier',
-                                  'Pipeline'),
-                                 "Decision Tree")
+                                 ('sklearn.tree._classes', 'DecisionTreeClassifier', 'Pipeline'),
+                                 "Decision Tree", source_code='tree.DecisionTreeClassifier()')
     expected_graph.add_edge(expected_pipeline_concatenation, expected_estimator)
 
-    expected_pipeline_fit = DagNode(56, OperatorType.FIT, CodeReference(30, 18, 32, 51), ('sklearn.pipeline', 'fit',
-                                                                                          'Pipeline'))
+    expected_pipeline_fit = DagNode(56, OperatorType.FIT, CodeReference(30, 18, 32, 51),
+                                    ('sklearn.pipeline', 'fit', 'Pipeline'),
+                                    source_code='income_pipeline.fit(data, labels)')
     expected_graph.add_edge(expected_estimator, expected_pipeline_fit)
 
     expected_project = DagNode(23, OperatorType.PROJECTION, CodeReference(22, 38, 22, 61),
                                ('pandas.core.frame', '__getitem__', 'Projection'),
-                               "to ['income-per-year']", ['income-per-year'])
+                               "to ['income-per-year']", ['income-per-year'], "data['income-per-year']")
     expected_graph.add_edge(expected_select, expected_project)
 
     expected_project_modify = DagNode(28, OperatorType.PROJECTION_MODIFY, CodeReference(22, 9, 22, 89),
                                       ('sklearn.preprocessing._label', 'label_binarize'),
-                                      "label_binarize, classes: ['>50K', '<=50K']", ["array"])
+                                      "label_binarize, classes: ['>50K', '<=50K']", ["array"],
+                                      "preprocessing.label_binarize(data['income-per-year'], "
+                                      "classes=['>50K', '<=50K'])")
     expected_graph.add_edge(expected_project, expected_project_modify)
 
     expected_train_labels = DagNode(56, OperatorType.TRAIN_LABELS, CodeReference(30, 18, 32, 51),
-                                    ('sklearn.pipeline', 'fit', 'Train Labels'), None, ['array'])
+                                    ('sklearn.pipeline', 'fit', 'Train Labels'), None, ['array'],
+                                    'income_pipeline.fit(data, labels)')
     expected_graph.add_edge(expected_project_modify, expected_train_labels)
     expected_graph.add_edge(expected_train_labels, expected_pipeline_fit)
 
@@ -289,6 +321,36 @@ def get_module_info():
     return module_info
 
 
+def get_call_source_code_info():
+    """
+    Get the source code info for the adult_easy pipeline
+    """
+    call_source_code_info = {
+        CodeReference(lineno=12, col_offset=11, end_lineno=12, end_col_offset=62):
+            "pd.read_csv(train_file, na_values='?', index_col=0)",
+        CodeReference(lineno=14, col_offset=7, end_lineno=14, end_col_offset=24):
+            'raw_data.dropna()',
+        CodeReference(lineno=16, col_offset=38, end_lineno=16, end_col_offset=61): "data['income-per-year']",
+        CodeReference(lineno=16, col_offset=9, end_lineno=16, end_col_offset=89):
+            "preprocessing.label_binarize(data['income-per-year'], classes=['>50K', '<=50K'])",
+        CodeReference(lineno=19, col_offset=20, end_lineno=19, end_col_offset=72):
+            "preprocessing.OneHotEncoder(handle_unknown='ignore')",
+        CodeReference(lineno=20, col_offset=16, end_lineno=20, end_col_offset=46):
+            'preprocessing.StandardScaler()',
+        CodeReference(lineno=18, col_offset=25, end_lineno=21, end_col_offset=2):
+            "compose.ColumnTransformer(transformers=[\n"
+            "    ('categorical', preprocessing.OneHotEncoder(handle_unknown='ignore'), ['education', 'workclass']),\n"
+            "    ('numeric', preprocessing.StandardScaler(), ['age', 'hours-per-week'])\n])",
+        CodeReference(lineno=26, col_offset=19, end_lineno=26, end_col_offset=48): 'tree.DecisionTreeClassifier()',
+        CodeReference(lineno=24, col_offset=18, end_lineno=26, end_col_offset=51):
+            "pipeline.Pipeline([\n"
+            "    ('features', feature_transformation),\n"
+            "    ('classifier', tree.DecisionTreeClassifier())])",
+        CodeReference(lineno=28, col_offset=0, end_lineno=28, end_col_offset=33): 'income_pipeline.fit(data, labels)'}
+
+    return call_source_code_info
+
+
 def get_call_description_info():
     """
     Get the module info for the adult_easy pipeline
@@ -329,7 +391,7 @@ def get_test_wir():
     test_ast = get_adult_simple_py_ast()
     extractor = WirExtractor(test_ast)
     extractor.extract_wir()
-    wir = extractor.add_runtime_info(get_module_info(), get_call_description_info())
+    wir = extractor.add_runtime_info(get_module_info(), get_call_description_info(), get_call_source_code_info())
 
     return wir
 

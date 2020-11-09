@@ -48,6 +48,7 @@ class DagNode:
     module: Tuple or None = None
     description: str or None = None
     columns: List[str] = None
+    source_code: str or None = None
 
     def __hash__(self):
         return hash(self.node_id)

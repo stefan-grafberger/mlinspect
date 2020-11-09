@@ -93,6 +93,7 @@ class PandasBackend(Backend):
         function_info = self.replace_wrapper_modules(function_info)
         if store:
             self.code_reference_to_module[code_reference] = function_info
+            self.code_reference_to_code[code_reference] = call_code
 
         if function_info == ('pandas.core.frame', 'merge'):
             assert isinstance(args_values[0], MlinspectDataFrame)
@@ -116,7 +117,7 @@ class PandasBackend(Backend):
         elif function_info == ('pandas.core.frame', '__getitem__'):
             if isinstance(args_values, MlinspectSeries):
                 self.code_reference_to_set_item_op[code_reference] = 'Selection'
-                description = "Select by series"
+                description = "Select by series: \"{}\"".format(args_code[0])
             elif isinstance(args_values, str):
                 self.code_reference_to_set_item_op[code_reference] = 'Projection'
                 key_arg = args_values
@@ -156,6 +157,7 @@ class PandasBackend(Backend):
         # pylint: disable=too-many-arguments
         function_info = self.replace_wrapper_modules(function_info)
         self.code_reference_to_module[code_reference] = function_info
+        self.code_reference_to_code[code_reference] = call_code
 
         if function_info in {('pandas.io.parsers', 'read_csv'), ('pandas.core.frame', 'DataFrame')}:
             operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)

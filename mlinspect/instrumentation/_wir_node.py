@@ -18,6 +18,7 @@ class WirNode:
     code_reference: CodeReference or None = None
     module: Tuple or None = None
     dag_operator_description: str or None = None
+    source_code: str or None = None
 
     def __hash__(self):
         return hash(self.node_id)
