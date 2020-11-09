@@ -169,6 +169,7 @@ class NoBiasIntroducedFor(Check):
         operator_types = []
         code_references = []
         modules = []
+        code_snippets = []
         descriptions = []
         assert isinstance(no_bias_check_result.check, NoBiasIntroducedFor)
         sensitive_column_names = no_bias_check_result.check.sensitive_columns
@@ -181,13 +182,15 @@ class NoBiasIntroducedFor(Check):
             operator_types.append(dag_node.operator_type)
             code_references.append(dag_node.code_reference)
             modules.append(dag_node.module)
+            code_snippets.append(dag_node.source_code)
             descriptions.append(dag_node.description)
             for index, change_info in enumerate(distribution_change.values()):
                 sensitive_columns[index].append(not change_info.acceptable_change)
-        return DataFrame(zip(operator_types, code_references, modules, descriptions, *sensitive_columns), columns=[
-            "DagNode OperatorType",
-            "DagNode CodeReference",
-            "DagNode Module",
-            "DagNode Description",
-            *sensitive_column_names
-        ])
+        return DataFrame(zip(operator_types, descriptions, code_references, code_snippets, modules, *sensitive_columns),
+                         columns=[
+                             "operator_type",
+                             "description",
+                             "code_reference",
+                             "source_code",
+                             "module",
+                             *sensitive_column_names])
