@@ -6,6 +6,8 @@ from inspect import cleandoc
 
 import networkx
 import pytest
+from astmonkey import transformers, visitors
+from networkx.drawing.nx_agraph import to_agraph
 from testfixtures import compare
 
 from example_pipelines import ADULT_SIMPLE_PY
@@ -300,12 +302,41 @@ def test_index_subscript():
     test_code = cleandoc("""
             import pandas as pd
             
-            data = pd.read_csv('test_path')
-            data['income-per-year']
+            data = pd.read_csv('test.csv')
+            income_col = data['income-per-year']
             """)
     test_ast = ast.parse(test_code)
     extractor = WirExtractor(test_ast)
+
+    # generate ast img
+    node = transformers.ParentChildNodeTransformer().visit(test_ast)
+    visitor = visitors.GraphNodeVisitor()
+    visitor.visit(node)
+
+    visitor.graph.write_png('ast-graph.png')
+    # end generate ast img
+
     extracted_wir = extractor.extract_wir()
+
+    # generate ir img
+    fixme_nodes = [node for node in extracted_wir.nodes if node.name == "FIXME" or node.name is None]
+    extracted_wir.remove_nodes_from(fixme_nodes)
+    def get_new_node_label(node):
+        label = cleandoc("""
+                {}: {}
+                {}
+                """.format(node.operation, node.name, node.source_code or ""))
+        return label
+
+    # noinspection PyTypeChecker
+    extracted_dag = networkx.relabel_nodes(extracted_wir, get_new_node_label)
+
+    agraph = to_agraph(extracted_dag)
+    agraph.layout('dot')
+    agraph.draw("ir-graph.png")
+    # end generate ir img
+
+
     expected_graph = networkx.DiGraph()
 
     expected_import = WirNode(0, "pandas", "Import", CodeReference(1, 0, 1, 19))
