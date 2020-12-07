@@ -14,6 +14,7 @@ from example_pipelines import ADULT_SIMPLE_PY
 from mlinspect.instrumentation._dag_node import CodeReference
 from mlinspect.instrumentation._wir_extractor import WirExtractor
 from mlinspect.instrumentation._wir_node import WirNode
+from mlinspect.instrumentation._wir_to_dag_transformer import WirToDagTransformer
 
 
 def test_print_stmt():
@@ -336,6 +337,37 @@ def test_index_subscript():
     agraph.draw("ir-graph.png")
     # end generate ir img
 
+    # generate dag 1 img
+    module_info = {CodeReference(lineno=3, col_offset=7, end_lineno=3, end_col_offset=30):
+                       ('pandas.io.parsers', 'read_csv'),
+                   CodeReference(lineno=4, col_offset=13, end_lineno=4, end_col_offset=36):
+                       ('pandas.core.frame', '__getitem__', 'Projection')}
+
+    extracted_wir_with_module_info = extractor.add_runtime_info(module_info, {}, {})
+
+    cleaned_wir = WirToDagTransformer().remove_all_nodes_but_calls_and_subscripts(extracted_wir_with_module_info)
+
+    # noinspection PyTypeChecker
+    cleaned_relabeled_wir = networkx.relabel_nodes(cleaned_wir, get_new_node_label)
+
+    agraph = to_agraph(cleaned_relabeled_wir)
+    agraph.layout('dot')
+    agraph.draw("dag-1-graph.png")
+    # end generate dag 1 img
+
+    # generate dag 2 img
+    def get_new_dag_node_label(node):
+        label = cleandoc("""
+                {} {}
+                """.format(node.operator_type, node.description or ""))
+        return label
+    dag = WirToDagTransformer.remove_all_non_operators_and_update_names(cleaned_wir)
+    # noinspection PyTypeChecker
+    relabeled_dag = networkx.relabel_nodes(dag, get_new_dag_node_label)
+    agraph = to_agraph(relabeled_dag)
+    agraph.layout('dot')
+    agraph.draw("dag-2-graph.png")
+    # end generate dag 2 img
 
     expected_graph = networkx.DiGraph()
 
