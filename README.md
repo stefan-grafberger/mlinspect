@@ -37,20 +37,8 @@ Prerequisite: Python 3.8
 
 ### Docker Development Environment
 
-	docker run -ti --rm --name mlinspect-demo -v $PWD:/workspace -w /workspace -p 8050:8050 python:3.8 bash
-
-Then inside the Docker container:
-
-	# install dependencies
-	apt-get update
-	apt-get install graphviz libgraphviz-dev
-	pip install -e .
-
-	# additional requirements for demo
-	pip install dash dash-bootstrap-components
-
-	# run demo app
-	TF_CPP_MIN_LOG_LEVEL="3" python app.py
+	docker build . -t mlinspect
+	docker run -ti --rm --name mlinspect-demo -v $PWD:/mlinspect -w /mlinspect -p 8050:8050 mlinspect
 
 Vision
 ---
