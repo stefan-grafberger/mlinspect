@@ -87,7 +87,13 @@ app.layout = dbc.Container([
         dbc.Col([
             # Display DAG
             dbc.Label("Extracted DAG:", html_for="dag"),
-            dcc.Graph(id="dag"),
+            dcc.Graph(id="dag", figure=go.Figure(
+                layout_width=650,
+                layout_height=650,
+                layout_showlegend=False,
+                layout_xaxis={'visible': False},
+                layout_yaxis={'visible': False},
+            )),
         ], width=6),
     ]),
 ])
@@ -165,30 +171,37 @@ def get_new_node_label(node):
 def _get_pos(G):
     pos_dict = nx.nx_agraph.graphviz_layout(G, 'dot')
 
-    V = G.nodes()
-    E = G.edges()
+    nodes = G.nodes()
+    edges = G.edges()
 
     Xn = []
     Yn = []
-    for v in V:
-        x, y = pos_dict[v]
+    for node in nodes:
+        x, y = pos_dict[node]
         Xn += [x]
         Yn += [y]
 
     Xe = []
     Ye = []
-    for e0, e1 in E:
-        x0, y0 = pos_dict[e0]
-        x1, y1 = pos_dict[e1]
-        Xe += [x0, x1]
-        Ye += [y0, y1]
+    from addEdge import addEdge
+    # Source: https://github.com/redransil/plotly-dirgraph
+    for edge0, edge1 in edges:
+        # x0, y0 = pos_dict[edge0]
+        # x1, y1 = pos_dict[edge1]
+        # Xe += [x0, x1]
+        # Ye += [y0, y1]
+        Xe, Ye = addEdge(pos_dict[edge0], pos_dict[edge1], Xe, Ye)#, .8, 'end', .04, 30, 15)
 
     labels = []
     annotations = []
     for node, pos in pos_dict.items():
-        l = get_new_node_label(node)
-        labels += [l]
-        annotations += [{'x': pos[0], 'y': pos[1], 'text': node.operator_type.short_value, 'showarrow': False}]
+        labels += [get_new_node_label(node)]
+        annotations += [{
+            'x': pos[0],
+            'y': pos[1],
+            'text': node.operator_type.short_value,
+            'showarrow': False,
+        }]
 
     return Xn, Yn, Xe, Ye, labels, annotations
 
@@ -199,6 +212,8 @@ def nx2go(G):
 
     Adapted from: https://chart-studio.plotly.com/~empet/14007/graphviz-networks-plotted-with-plotly/#/
     """
+    global FIGURE_LAYOUT
+
     Xn, Yn, Xe, Ye, labels, annotations = _get_pos(G)
 
     edges = go.Scatter(x=Xe, y=Ye, mode='lines', hoverinfo='none',
@@ -220,8 +235,9 @@ def nx2go(G):
                 showlegend=False,
                 xaxis={'visible': False},
                 yaxis={'visible': False},
-                margin={'t': 100},
-                hovermode='closest')
+                # margin={'t': 100},
+                hovermode='closest',
+    )
     layout.annotations = annotations
 
     fig = go.Figure(data=[edges, nodes], layout=layout)
