@@ -88,21 +88,17 @@ app.layout = dbc.Container([
             # Display DAG
             dbc.Label("Extracted DAG:", html_for="dag"),
             dcc.Graph(id="dag"),
-            # html.Img(id="dag", hidden=True, className="mb-3", style={"width": "450px"}),
         ], width=6),
     ]),
 ])
+
 
 # Flask server (for gunicorn)
 server = app.server
 
 
 @app.callback(
-    # [
-        Output("dag", "figure"),
-        # Output("dag", "src"),
-        # Output("dag", "hidden"),
-    # ],
+    Output("dag", "figure"),
     [
         Input("execute", "n_clicks"),
     ],
@@ -157,47 +153,20 @@ def nx2agraph(extracted_dag):
     return agraph
 
 
-def _plotly_graph(E, pos):
-    """
-    E is the list of tuples representing the graph edges.
-    pos is the list of node coordinates.
-
-    Source: https://chart-studio.plotly.com/~empet/14007/graphviz-networks-plotted-with-plotly/#/
-    """
-    N = len(pos)
-    Xn = [pos[k][0] for k in range(N)]  # x-coordinates of nodes
-    Yn = [pos[k][1] for k in range(N)]  # y-coordnates of nodes
-
-    Xe = []
-    Ye = []
-    for e0, e1 in E:
-        Xe += [pos[e0][0],pos[e1][0], None]  # x coordinates of the nodes defining the edge e
-        Ye += [pos[e0][1],pos[e1][1], None]  # y - " -
-
-    return Xn, Yn, Xe, Ye
-
-
-def _set_annotation(x, y, anno_text,  textangle, fontsize=11, color='rgb(10,10,10)'): 
-    """
-    Source: https://chart-studio.plotly.com/~empet/14007/graphviz-networks-plotted-with-plotly/#/
-    """
-    return dict(x=x,
-                y=y,
-                text=anno_text,
-                textangle=textangle,  # angle with horizontal line through (x,y), in degrees;
-                                      # + =clockwise, -=anti-clockwise
-                font={'size': fontsize, 'color': color},
-                showarrow=False)
+def get_new_node_label(node):
+    """From mlinspect.visualisation._visualisation."""
+    label = cleandoc("""
+            {} (L{})
+            {}
+            """.format(node.operator_type.value, node.code_reference.lineno, node.description or ""))
+    return label
 
 
 def _get_pos(G):
     pos_dict = nx.nx_agraph.graphviz_layout(G, 'dot')
 
-    # Define the tree  as a networkx graph
     V = G.nodes()
     E = G.edges()
-
-    labels = [f"{node.operator_type.value} (L{node.code_reference.lineno})\n{node.description}" for node in pos_dict.keys()]
 
     Xn = []
     Yn = []
@@ -214,47 +183,29 @@ def _get_pos(G):
         Xe += [x0, x1]
         Ye += [y0, y1]
 
-    return Xn, Yn, Xe, Ye, labels
+    labels = []
+    annotations = []
+    for node, pos in pos_dict.items():
+        l = get_new_node_label(node)
+        labels += [l]
+        annotations += [{'x': pos[0], 'y': pos[1], 'text': node.operator_type.short_value, 'showarrow': False}]
+
+    return Xn, Yn, Xe, Ye, labels, annotations
 
 
 def nx2go(G):
     """
     Convert networkx.DiGraph to a plotly.graph_objects.Figure.
 
-    Source: https://chart-studio.plotly.com/~empet/14007/graphviz-networks-plotted-with-plotly/#/
+    Adapted from: https://chart-studio.plotly.com/~empet/14007/graphviz-networks-plotted-with-plotly/#/
     """
-    # pos_dict = nx.nx_agraph.graphviz_layout(G, 'dot')
-
-    # # Define the tree  as a networkx graph
-    # V = G.nodes()
-    # E = G.edges()
-
-    # # pygraphviz tree H and its layout
-    # H = pgv.AGraph(strict=True, directed=False)
-    # H.add_nodes_from(V)
-    # H.add_edges_from(E)
-    # H.layout(prog='dot')
-    # # H.layout(prog='twopi')
-
-    # # Get node positions in the tree H:
-    # # pos = np.array([literal_eval(n.attr['pos']) for n in V])
-    # # pos = np.array([literal_eval(H.get_node(k).attr['pos']) for  k in range(N)])
-    # # Rotate node positions with pi/2 counter-clockwise
-    # # pos[:, [0, 1]] = pos[:, [1, 0]]
-    # # pos[:, 0] =- pos[:,0]
-
-    # pos_values = list(pos_dict.values())
-    # labels = [f"{k.operator_type.value} (L{k.code_reference.lineno})\n{k.description}" for k in pos_dict.keys()]
-
-    # # Define the Plotly objects that represent the tree
-    # Xn, Yn, Xe, Ye = _plotly_graph(E, pos_values)
-    Xn, Yn, Xe, Ye, labels = _get_pos(G)
+    Xn, Yn, Xe, Ye, labels, annotations = _get_pos(G)
 
     edges = go.Scatter(x=Xe, y=Ye, mode='lines', hoverinfo='none',
                        line={'color': 'rgb(160,160,160)', 'width': 0.75})
     nodes = go.Scatter(x=Xn, y=Yn, mode='markers', name='', hoverinfo='text', text=labels,
                        marker={
-                           'size': 8,
+                           'size': 15,
                            'color': '#85b6b6',
                            'line': {
                                'color': 'rgb(100,100,100)',
@@ -262,8 +213,8 @@ def nx2go(G):
                             },
                         })
     layout = go.Layout(
-                title="Pipeline execution DAG",
-                font={'family': 'Balto'},
+                # title="Pipeline execution DAG",
+                # font={'family': 'Balto'},
                 width=650,
                 height=650,
                 showlegend=False,
@@ -271,7 +222,7 @@ def nx2go(G):
                 yaxis={'visible': False},
                 margin={'t': 100},
                 hovermode='closest')
-    # layout.annotations = annotations
+    layout.annotations = annotations
 
     fig = go.Figure(data=[edges, nodes], layout=layout)
 

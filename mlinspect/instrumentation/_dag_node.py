@@ -24,6 +24,10 @@ class OperatorType(Enum):
     GROUP_BY_AGG = "Groupby and Aggregate"
     TRAIN_TEST_SPLIT = "Train Test Split"
 
+    @property
+    def short_value(self):
+        return self.value[:1]
+
 
 @dataclasses.dataclass(frozen=True)
 class CodeReference:
