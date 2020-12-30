@@ -183,14 +183,23 @@ def _get_pos(G):
 
     Xe = []
     Ye = []
-    from addEdge import addEdge
-    # Source: https://github.com/redransil/plotly-dirgraph
+    from addEdge import add_edge
     for edge0, edge1 in edges:
         # x0, y0 = pos_dict[edge0]
         # x1, y1 = pos_dict[edge1]
-        # Xe += [x0, x1]
-        # Ye += [y0, y1]
-        Xe, Ye = addEdge(pos_dict[edge0], pos_dict[edge1], Xe, Ye)#, .8, 'end', .04, 30, 15)
+        # Xe += [x0, x1, None]
+        # Ye += [y0, y1, None]
+        Xe, Ye = add_edge(
+            pos_dict[edge0],
+            pos_dict[edge1],
+            Xe,
+            Ye,
+            length_frac=0.8,
+            arrow_pos='end',
+            arrow_length=100,
+            arrow_angle=5,
+            # dot_size=15,
+        )
 
     labels = []
     annotations = []
@@ -212,12 +221,13 @@ def nx2go(G):
 
     Adapted from: https://chart-studio.plotly.com/~empet/14007/graphviz-networks-plotted-with-plotly/#/
     """
-    global FIGURE_LAYOUT
-
     Xn, Yn, Xe, Ye, labels, annotations = _get_pos(G)
 
     edges = go.Scatter(x=Xe, y=Ye, mode='lines', hoverinfo='none',
-                       line={'color': 'rgb(160,160,160)', 'width': 0.75})
+                       line={
+                           'color': 'rgb(160,160,160)',
+                           'width': 0.75,
+                        })
     nodes = go.Scatter(x=Xn, y=Yn, mode='markers', name='', hoverinfo='text', text=labels,
                        marker={
                            'size': 15,
