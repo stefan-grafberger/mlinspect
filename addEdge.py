@@ -7,7 +7,6 @@ Created on Fri May 15 11:45:07 2020
 """
 
 import math
-import numpy as np
 
 
 def add_edge(start, end, edge_x, edge_y, length_frac=1, arrow_pos=None, arrow_length=0.025, arrow_angle=30, dot_size=20):
@@ -29,11 +28,11 @@ def add_edge(start, end, edge_x, edge_y, length_frac=1, arrow_pos=None, arrow_le
     x1, y1 = end
 
     # Incorporate the fraction of this segment covered by a dot into total reduction
-    # length = math.sqrt( (x1-x0)**2 + (y1-y0)**2 )
+    length = math.sqrt( (x1-x0)**2 + (y1-y0)**2 )
     dot_size_conversion = .0565/20  # length units per dot size
     converted_dot_diameter = dot_size * dot_size_conversion
-    # length_frac_reduction = converted_dot_diameter / length
-    length_frac -= converted_dot_diameter
+    length_frac_reduction = converted_dot_diameter / length
+    length_frac -= length_frac_reduction
 
     # If the line segment should not cover the entire distance, get actual start and end coords
     skipX = (x1-x0)*(1-length_frac)
@@ -50,36 +49,33 @@ def add_edge(start, end, edge_x, edge_y, length_frac=1, arrow_pos=None, arrow_le
 
     # Draw arrow
     if arrow_pos:
-        print("---> Drawing an arrow!")
+
         # Find the point of the arrow; assume is at end unless told middle
         pointx = x1
         pointy = y1
-        eta = math.degrees(math.atan((x1-x0)/(y1-y0)))
+        eta = math.degrees(math.atan((x1-x0)/(y1-y0))) if y1 != y0 else 90.0
 
         if arrow_pos in ['middle', 'mid']:
             pointx = x0 + (x1-x0)/2
             pointy = y0 + (y1-y0)/2
 
         # Find the directions the arrows are pointing
-        signx = np.sign(x1-x0)
-        if signx == 0:
-            print("signx == 0!")
-            signx = 0.000001
-        signy = np.sign(y1-y0)
+        signx = (x1-x0)/abs(x1-x0) if x1 != x0 else 1
+        signy = (y1-y0)/abs(y1-y0) if y1 != y0 else 1
         multiplier = signx**2 * signy
 
         # Append first arrowhead
-        dx = arrow_length * math.sin(math.radians(eta + arrow_angle))
-        dy = arrow_length * math.cos(math.radians(eta + arrow_angle))
-        print(f"-> First dx and dy: {dx} and {dy}")
-        edge_x += [pointx, pointx + dx, None]
-        edge_y += [pointy, pointy + dy, None]
+        angle1_radians = math.radians(eta + arrow_angle)
+        dx = arrow_length * math.sin(angle1_radians)
+        dy = arrow_length * math.cos(angle1_radians)
+        edge_x += [pointx, pointx - multiplier * dx, None]
+        edge_y += [pointy, pointy - multiplier * dy, None]
 
         # And second arrowhead
-        dx = arrow_length * math.sin(math.radians(eta - arrow_angle))
-        dy = arrow_length * math.cos(math.radians(eta - arrow_angle))
-        print(f"-> Second dx and dy: {dx} and {dy}")
-        edge_x += [pointx, pointx + dx, None]
-        edge_y += [pointy, pointy + dy, None]
+        angle2_radians = math.radians(eta - arrow_angle)
+        dx = arrow_length * math.sin(angle2_radians)
+        dy = arrow_length * math.cos(angle2_radians)
+        edge_x += [pointx, pointx - multiplier * dx, None]
+        edge_y += [pointy, pointy - multiplier * dy, None]
 
     return edge_x, edge_y
