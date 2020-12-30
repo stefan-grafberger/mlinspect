@@ -39,6 +39,8 @@ app.config.suppress_callback_exceptions = True
 # Create HTML layout
 CODE_FONT = {"font-family": "'Courier New', monospace"}
 app.title = "mlinspect"
+with open("example_pipelines/healthcare/healthcare.py") as f:
+    default_pipeline = f.read()
 app.layout = dbc.Container([
     # Header and description
     html.H1("mlinspect", style=CODE_FONT),
@@ -51,7 +53,8 @@ app.layout = dbc.Container([
                 dbc.FormGroup([
                     # Pipeline definition
                     dbc.Label("Pipeline definition:", html_for="pipeline"),
-                    dbc.Textarea(id="pipeline", className="mb-3", style={"width": "450px", "height": "500px", **CODE_FONT}),
+                    dbc.Textarea(id="pipeline", className="mb-3", style={"width": "450px", "height": "500px", **CODE_FONT},
+                                 value=default_pipeline),
                 ]),
                 dbc.FormGroup([
                     # Add checks
