@@ -17,6 +17,7 @@ from networkx.drawing.nx_agraph import to_agraph
 import plotly.graph_objects as go
 import pygraphviz as pgv
 
+from demo.feature_overview.no_missing_embeddings import NoMissingEmbeddings
 from mlinspect import PipelineInspector
 from mlinspect.checks import NoBiasIntroducedFor, NoIllegalFeatures
 from mlinspect.inspections import HistogramForColumns, RowLineage, MaterializeFirstOutputRows
@@ -41,6 +42,15 @@ CODE_FONT = {"font-family": "'Courier New', monospace"}
 app.title = "mlinspect"
 with open("example_pipelines/healthcare/healthcare.py") as f:
     default_pipeline = f.read()
+inspection_switcher = {
+    "RowLineage": lambda: RowLineage(5),
+    "MaterializeFirstOutputRows": lambda: MaterializeFirstOutputRows(5),
+}
+check_switcher = {
+    "NoBiasIntroducedFor": lambda: NoBiasIntroducedFor(["age_group", "race"]),
+    "NoIllegalFeatures": NoIllegalFeatures,
+    "NoMissingEmbeddings": NoMissingEmbeddings,
+}
 app.layout = dbc.Container([
     # Header and description
     html.H1("mlinspect", style=CODE_FONT),
@@ -57,19 +67,6 @@ app.layout = dbc.Container([
                                  value=default_pipeline),
                 ]),
                 dbc.FormGroup([
-                    # Add checks
-                    dbc.Label("Add checks:", html_for="checks"),
-                    dbc.Checklist(
-                        id="checks",
-                        options=[
-                            {"label": "No Bias Introduced For", "value": "NoBiasIntroducedFor"},
-                            {"label": "No Illegal Features", "value": "NoIllegalFeatures"},
-                        ],
-                        switch=True,
-                        value=[],
-                    ),
-                ]),
-                dbc.FormGroup([
                     # Add inspections
                     dbc.Label("Add required inspections:", html_for="inspections"),
                     dbc.Checklist(
@@ -78,6 +75,19 @@ app.layout = dbc.Container([
                             {"label": "Histogram For Columns", "value": "HistogramForColumns"},
                             {"label": "Row Lineage", "value": "RowLineage"},
                             {"label": "Materialize First Output Rows", "value": "MaterializeFirstOutputRows"},
+                        ],
+                        switch=True,
+                        value=[],
+                    ),
+                ]),
+                dbc.FormGroup([
+                    # Add checks
+                    dbc.Label("Add checks:", html_for="checks"),
+                    dbc.Checklist(
+                        id="checks",
+                        options=[
+                            {"label": "No Bias Introduced For", "value": "NoBiasIntroducedFor"},
+                            {"label": "No Illegal Features", "value": "NoIllegalFeatures"},
                         ],
                         switch=True,
                         value=[],
@@ -130,10 +140,10 @@ def extract_dag(pipeline, checks=None, inspections=None):
     """Extract DAG the original way, i.e. by creating a PipelineInspectorBuilder."""
     start = time.time()
     builder = PipelineInspector.on_pipeline_from_string(pipeline)
-    if checks:
-        builder = builder.add_checks(checks)
-    if inspections:
-        builder = builder.add_required_inspections(inspections)
+    for inspection in inspections:
+        builder = builder.add_required_inspection(inspection_switcher[inspection]())
+    for check in checks:
+        builder = builder.add_check(check_switcher[check]())
     inspector_result = builder.execute()
     print(f"Total time in seconds: {time.time() - start}")
 
