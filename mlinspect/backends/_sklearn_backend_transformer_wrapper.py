@@ -28,7 +28,8 @@ transformer_names = {
         ('sklearn.preprocessing._discretization', 'KBinsDiscretizer'): "Numerical Encoder (KBinsDiscretizer)",
         # TODO: We  can remove this later by checking if subclass of transformer/estimator
         ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer'): "Word2Vec",
-        ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'): "Neural Network"
+        ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'): "Neural Network",
+        ('example_pipelines.healthcare.healthcare_utils', 'MyKerasClassifier'): "Neural Network"
     }
 
 
@@ -67,7 +68,8 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             self.transformer = self.transformer.fit(X_annotated, y_annotated)
         elif self.call_function_info in {('sklearn.tree._classes', 'DecisionTreeClassifier'),
                                          ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
-                                         ('sklearn.linear_model._logistic', 'LogisticRegression')}:
+                                         ('sklearn.linear_model._logistic', 'LogisticRegression'),
+                                         ('example_pipelines.healthcare.healthcare_utils', 'MyKerasClassifier')}:
             self.estimator_visits(X, y)
             self.transformer.fit(X, y)
         else:

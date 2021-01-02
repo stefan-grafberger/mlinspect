@@ -21,6 +21,7 @@ class SklearnWirPreprocessor:
         ('sklearn.impute._base', 'SimpleImputer'),
         ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer'),
         ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
+        ('example_pipelines.healthcare.healthcare_utils', 'MyKerasClassifier'),
         ('sklearn.linear_model._logistic', 'LogisticRegression')
     }
 
