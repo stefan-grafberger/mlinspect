@@ -55,4 +55,3 @@ def create_model(input_dim=10):
     clf.add(Dense(2, activation='softmax'))
     clf.compile(loss='categorical_crossentropy', optimizer=SGD(), metrics=["accuracy"])
     return clf
-
