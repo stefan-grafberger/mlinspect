@@ -7,6 +7,7 @@ from gensim.sklearn_api import W2VTransformer
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import Sequential
 from tensorflow.python.keras.optimizer_v2.gradient_descent import SGD
+from tensorflow.python.keras.wrappers.scikit_learn import KerasClassifier
 
 
 class MyW2VTransformer(W2VTransformer):
@@ -37,7 +38,16 @@ class MyW2VTransformer(W2VTransformer):
         return numpy.reshape(numpy.array(vectors), (len(words), self.size))
 
 
-def create_model(input_dim):
+class MyKerasClassifier(KerasClassifier):
+    """A Keras Wrapper that sets input_dim on fit"""
+
+    def fit(self, x, y, **kwargs):
+        """Create and fit a simple neural network"""
+        self.sk_params['input_dim'] = x.shape[1]
+        super().fit(x, y, **kwargs)
+
+
+def create_model(input_dim=10):
     """Create a simple neural network"""
     clf = Sequential()
     clf.add(Dense(9, activation='relu', input_dim=input_dim))
@@ -45,3 +55,4 @@ def create_model(input_dim):
     clf.add(Dense(2, activation='softmax'))
     clf.compile(loss='categorical_crossentropy', optimizer=SGD(), metrics=["accuracy"])
     return clf
+

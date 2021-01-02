@@ -10,8 +10,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
-from example_pipelines.healthcare.healthcare_utils import MyW2VTransformer, create_model
+from example_pipelines.healthcare.healthcare_utils import MyW2VTransformer, MyKerasClassifier, create_model
 from mlinspect.utils import get_project_root
 
 # FutureWarning: Given feature/column names or counts do not match the ones for the data given during fit
@@ -55,7 +54,7 @@ featurisation = ColumnTransformer(transformers=[
 ])
 
 # define the training pipeline for the model
-neural_net = KerasClassifier(build_fn=create_model, epochs=10, batch_size=1, verbose=0, input_dim=109)
+neural_net = MyKerasClassifier(build_fn=create_model, epochs=10, batch_size=1, verbose=0)
 pipeline = Pipeline([
     ('features', featurisation),
     ('learner', neural_net)])
