@@ -16,7 +16,7 @@ from mlinspect.utils import get_project_root
 # FutureWarning: Given feature/column names or counts do not match the ones for the data given during fit
 warnings.filterwarnings('ignore')
 
-COUNTIES_OF_INTEREST = ['county2', 'county3']
+COUNTIES_OF_INTEREST = ['county1', 'county2']
 
 # load input data sources (data generated with https://www.mockaroo.com as a single file and then split into two)
 patients = pd.read_csv(os.path.join(str(get_project_root()), "example_pipelines", "healthcare",
@@ -39,7 +39,8 @@ data['label'] = data['complications'] > 1.2 * data['mean_complications']
 data = data[['smoker', 'last_name', 'county', 'num_children', 'race', 'income', 'label']]
 
 # filter data
-data = data[data['county'].isin(COUNTIES_OF_INTEREST)]
+data = data[data['county'] == "county2"]
+# data = data[data['county'].isin(COUNTIES_OF_INTEREST)]  # Replacement fixes NoBiasIntroducedFor issue in line above
 
 # define the feature encoding of the data
 impute_and_one_hot_encode = Pipeline([
