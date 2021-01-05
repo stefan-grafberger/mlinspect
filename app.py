@@ -129,7 +129,7 @@ app.layout = dbc.Container([
                     # dbc.Label("Extracted DAG:", html_for="dag"),
                     dcc.Graph(id="dag", figure=go.Figure(
                         # layout_width=650,
-                        # layout_height=650,
+                        layout_height=650,
                         layout_showlegend=False,
                         layout_xaxis={'visible': False},
                         layout_yaxis={'visible': False},
@@ -238,7 +238,7 @@ def update_figure(n_clicks, pipeline, checks, inspections):
     fig = nx2go(extracted_dag)
 
     # print("fig attributes: type(fig.data[0]) =", type(fig.data[0]))
-    fig_dict = fig.to_dict()
+    # fig_dict = fig.to_dict()
     # --- write to file ---
     # with open('dag2.json', 'w') as f:
     #     json.dump(fig_dict, f, indent="\t", ensure_ascii=True)
@@ -250,7 +250,7 @@ def update_figure(n_clicks, pipeline, checks, inspections):
     # TODO: Add another scatter graph to figure, with problem nodes in red
     fig = add_inspection_annotations(fig, extracted_dag, inspection_results)
 
-    return fig_dict, "results-tab"
+    return fig, "results-tab"
 
 
 def extract_dag(pipeline, checks=None, inspections=None):
@@ -375,7 +375,7 @@ def nx2go(G):
                 # font={'family': 'Balto'},
                 font={'family': "'Courier New', monospace"},
                 # width=650,
-                # height=650,
+                height=650,
                 showlegend=False,
                 xaxis={'visible': False},
                 yaxis={'visible': False},
