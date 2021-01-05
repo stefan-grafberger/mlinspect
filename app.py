@@ -57,7 +57,7 @@ check_switcher = {
 }
 app.layout = dbc.Container([
     # Header and description
-    html.H1("mlinspect", style=CODE_FONT),
+    html.H1("mlinspect", style={"font-size": "24px", **CODE_FONT}),
     html.P("Inspect ML Pipelines in Python in the form of a DAG."),
 
     dcc.Tabs([
@@ -121,7 +121,7 @@ app.layout = dbc.Container([
                     html.P(
                         id="pipeline-output",
                         className="mb-3",
-                        style={**CODE_FONT},
+                        style={**CODE_FONT, "font-size": "12px", "white-space": "pre-line"},
                         children=default_pipeline,
                     ),
                 ], width=6),
@@ -136,10 +136,10 @@ app.layout = dbc.Container([
                     )),
                     html.Div(id="results-detail"),
                 ], width=6),
-            ], style={"margin": "auto", "padding": "20px"}),
+            ], style={"margin": "auto", "padding": "20px", "font-size": "12px"}),
         ], label="INSPECTION RESULTS", value="results-tab"),
     ], id="tabs", style={"display": "none"}),
-])
+], style={"font-size": "14px"})
 
 
 # Flask server (for gunicorn)
@@ -191,7 +191,7 @@ def update_figure(n_clicks, pipeline, checks, inspections):
 
     # Display first output rows (results of MaterializeFirstOutputRows(5) inspection)
     details = []
-    for idx, (node, df) in enumerate(output_rows_results):
+    for node, df in output_rows_results:
         description = html.Div(
             "\n\033{} ({})\033\n{}\n{}".format(
                 node.operator_type,
@@ -202,12 +202,14 @@ def update_figure(n_clicks, pipeline, checks, inspections):
             style=CODE_FONT,
         )
         table = dash_table.DataTable(
-            id=f"table-{idx}",
             columns=[{"name": i, "id": i} for i in df.columns],
             data=df.to_dict('records'),
-            style_cell={
-                'width': '{}%'.format(len(df.columns)),
-            },
+            # style_cell={
+            #     'width': '{}%'.format(len(df.columns)),
+            #     'textOverflow': 'ellipsis',
+            #     'overflow': 'hidden'
+            # },
+            # css=[{'selector': 'table', 'rule': 'table-layout: fixed'}],
         )
         details += [description, table]
 
@@ -351,7 +353,7 @@ def materialize_first_output_rows(figure, extracted_dag, inspection_results):
     try:
         first_rows_inspection_result = inspection_results[MaterializeFirstOutputRows(5)]
     except KeyError:
-        return figure
+        return figure, []
 
     relevant_nodes = [node for node in extracted_dag.nodes if node.description in {
         "Imputer (SimpleImputer), Column: 'county'", "Categorical Encoder (OneHotEncoder), Column: 'county'"}]
@@ -360,14 +362,16 @@ def materialize_first_output_rows(figure, extracted_dag, inspection_results):
     pos_dict = nx.nx_agraph.graphviz_layout(extracted_dag, 'dot')  # TODO: Reuse from before rather than rerunning
     Xn = []
     Yn = []
+    labels = []
     output_rows_results = []
     for dag_node in relevant_nodes:
         if dag_node in first_rows_inspection_result and first_rows_inspection_result[dag_node] is not None:
             x, y = pos_dict[dag_node]
             Xn += [x]
             Yn += [y]
+            labels += [get_new_node_label(dag_node)]
             output_rows_results += [(dag_node, first_rows_inspection_result[dag_node])]
-    nodes = go.Scatter(x=Xn, y=Yn, mode='markers', #name='', hoverinfo='text', text=labels,
+    nodes = go.Scatter(x=Xn, y=Yn, mode='markers', name='', hoverinfo='text', text=labels,
                        marker={
                            'size': 15,
                            'color': 'red',
