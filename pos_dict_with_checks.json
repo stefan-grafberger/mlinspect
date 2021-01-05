@@ -1,0 +1,651 @@
+{
+	"26": {
+		"pos": [
+			9864.0,
+			1279.0
+		],
+		"node": {
+			"node_id": 26,
+			"operator_type": "Data Source",
+			"code_reference": {
+				"lineno": 23,
+				"col_offset": 11,
+				"end_lineno": 24,
+				"end_col_offset": 78
+			},
+			"module": [
+				"pandas.io.parsers",
+				"read_csv"
+			],
+			"description": "healthcare_patients.csv",
+			"columns": [
+				"id",
+				"first_name",
+				"last_name",
+				"race",
+				"county",
+				"num_children",
+				"income",
+				"age_group",
+				"ssn"
+			],
+			"source_code": "pd.read_csv(os.path.join(str(get_project_root()), \"example_pipelines\", \"healthcare\",\n                                    \"healthcare_patients.csv\"), na_values='?')"
+		}
+	},
+	"36": {
+		"pos": [
+			14327.0,
+			1279.0
+		],
+		"node": {
+			"node_id": 36,
+			"operator_type": "Data Source",
+			"code_reference": {
+				"lineno": 25,
+				"col_offset": 12,
+				"end_lineno": 26,
+				"end_col_offset": 80
+			},
+			"module": [
+				"pandas.io.parsers",
+				"read_csv"
+			],
+			"description": "healthcare_histories.csv",
+			"columns": [
+				"smoker",
+				"complications",
+				"ssn"
+			],
+			"source_code": "pd.read_csv(os.path.join(str(get_project_root()), \"example_pipelines\", \"healthcare\",\n                                     \"healthcare_histories.csv\"), na_values='?')"
+		}
+	},
+	"41": {
+		"pos": [
+			12095.0,
+			1198.1
+		],
+		"node": {
+			"node_id": 41,
+			"operator_type": "Join",
+			"code_reference": {
+				"lineno": 29,
+				"col_offset": 7,
+				"end_lineno": 29,
+				"end_col_offset": 44
+			},
+			"module": [
+				"pandas.core.frame",
+				"merge"
+			],
+			"description": "on ['ssn']",
+			"columns": [
+				"id",
+				"first_name",
+				"last_name",
+				"race",
+				"county",
+				"num_children",
+				"income",
+				"age_group",
+				"ssn",
+				"smoker",
+				"complications"
+			],
+			"source_code": "patients.merge(histories, on=['ssn'])"
+		}
+	},
+	"49": {
+		"pos": [
+			11003.0,
+			1126.1
+		],
+		"node": {
+			"node_id": 49,
+			"operator_type": "Groupby and Aggregate",
+			"code_reference": {
+				"lineno": 32,
+				"col_offset": 16,
+				"end_lineno": 32,
+				"end_col_offset": 91
+			},
+			"module": [
+				"pandas.core.groupby.generic",
+				"agg"
+			],
+			"description": "Group by ['age_group'],  Aggregate: mean_complications",
+			"columns": [
+				"age_group",
+				"mean_complications"
+			],
+			"source_code": "data.groupby('age_group').agg(mean_complications=('complications', 'mean'))"
+		}
+	},
+	"54": {
+		"pos": [
+			12095.0,
+			1054.1
+		],
+		"node": {
+			"node_id": 54,
+			"operator_type": "Join",
+			"code_reference": {
+				"lineno": 34,
+				"col_offset": 7,
+				"end_lineno": 34,
+				"end_col_offset": 50
+			},
+			"module": [
+				"pandas.core.frame",
+				"merge"
+			],
+			"description": "on ['age_group']",
+			"columns": [
+				"id",
+				"first_name",
+				"last_name",
+				"race",
+				"county",
+				"num_children",
+				"income",
+				"age_group",
+				"ssn",
+				"smoker",
+				"complications",
+				"mean_complications"
+			],
+			"source_code": "data.merge(complications, on=['age_group'])"
+		}
+	},
+	"62": {
+		"pos": [
+			8300.0,
+			982.14
+		],
+		"node": {
+			"node_id": 62,
+			"operator_type": "Projection (Modify)",
+			"code_reference": {
+				"lineno": 37,
+				"col_offset": 0,
+				"end_lineno": 37,
+				"end_col_offset": 13
+			},
+			"module": [
+				"pandas.core.frame",
+				"__setitem__"
+			],
+			"description": "Sets columns ['label']",
+			"columns": [
+				"id",
+				"first_name",
+				"last_name",
+				"race",
+				"county",
+				"num_children",
+				"income",
+				"age_group",
+				"ssn",
+				"smoker",
+				"complications",
+				"mean_complications",
+				"label"
+			],
+			"source_code": "data['label']"
+		}
+	},
+	"58": {
+		"pos": [
+			12095.0,
+			982.14
+		],
+		"node": {
+			"node_id": 58,
+			"operator_type": "Projection",
+			"code_reference": {
+				"lineno": 37,
+				"col_offset": 16,
+				"end_lineno": 37,
+				"end_col_offset": 37
+			},
+			"module": [
+				"pandas.core.frame",
+				"__getitem__",
+				"Projection"
+			],
+			"description": "to ['complications']",
+			"columns": [
+				"complications"
+			],
+			"source_code": "data['complications']"
+		}
+	},
+	"61": {
+		"pos": [
+			15390.0,
+			982.14
+		],
+		"node": {
+			"node_id": 61,
+			"operator_type": "Projection",
+			"code_reference": {
+				"lineno": 37,
+				"col_offset": 46,
+				"end_lineno": 37,
+				"end_col_offset": 72
+			},
+			"module": [
+				"pandas.core.frame",
+				"__getitem__",
+				"Projection"
+			],
+			"description": "to ['mean_complications']",
+			"columns": [
+				"mean_complications"
+			],
+			"source_code": "data['mean_complications']"
+		}
+	},
+	"71": {
+		"pos": [
+			8300.0,
+			910.14
+		],
+		"node": {
+			"node_id": 71,
+			"operator_type": "Projection",
+			"code_reference": {
+				"lineno": 40,
+				"col_offset": 7,
+				"end_lineno": 40,
+				"end_col_offset": 89
+			},
+			"module": [
+				"pandas.core.frame",
+				"__getitem__",
+				"Projection"
+			],
+			"description": "to ['smoker', 'last_name', 'county', 'num_children', 'race', 'income', 'label']",
+			"columns": [
+				"smoker",
+				"last_name",
+				"county",
+				"num_children",
+				"race",
+				"income",
+				"label"
+			],
+			"source_code": "data[['smoker', 'last_name', 'county', 'num_children', 'race', 'income', 'label']]"
+		}
+	},
+	"74": {
+		"pos": [
+			6448.0,
+			838.14
+		],
+		"node": {
+			"node_id": 74,
+			"operator_type": "Projection",
+			"code_reference": {
+				"lineno": 43,
+				"col_offset": 12,
+				"end_lineno": 43,
+				"end_col_offset": 26
+			},
+			"module": [
+				"pandas.core.frame",
+				"__getitem__",
+				"Projection"
+			],
+			"description": "to ['county']",
+			"columns": [
+				"county"
+			],
+			"source_code": "data['county']"
+		}
+	},
+	"76": {
+		"pos": [
+			10153.0,
+			838.14
+		],
+		"node": {
+			"node_id": 76,
+			"operator_type": "Selection",
+			"code_reference": {
+				"lineno": 43,
+				"col_offset": 7,
+				"end_lineno": 43,
+				"end_col_offset": 54
+			},
+			"module": [
+				"pandas.core.frame",
+				"__getitem__",
+				"Selection"
+			],
+			"description": "Select by series: \"data['county'].isin(COUNTIES_OF_INTEREST)\"",
+			"columns": [
+				"smoker",
+				"last_name",
+				"county",
+				"num_children",
+				"race",
+				"income",
+				"label"
+			],
+			"source_code": "data[data['county'].isin(COUNTIES_OF_INTEREST)]"
+		}
+	},
+	"137": {
+		"pos": [
+			10153.0,
+			766.14
+		],
+		"node": {
+			"node_id": 137,
+			"operator_type": "Train Test Split",
+			"code_reference": {
+				"lineno": 64,
+				"col_offset": 24,
+				"end_lineno": 64,
+				"end_col_offset": 62
+			},
+			"module": [
+				"sklearn.model_selection._split",
+				"train_test_split"
+			],
+			"description": "(Train Data)",
+			"columns": [
+				"smoker",
+				"last_name",
+				"county",
+				"num_children",
+				"race",
+				"income",
+				"label"
+			],
+			"source_code": "train_test_split(data, random_state=0)"
+		}
+	},
+	"141": {
+		"pos": [
+			3425.0,
+			694.14
+		],
+		"node": {
+			"node_id": 141,
+			"operator_type": "Projection",
+			"code_reference": {
+				"lineno": 66,
+				"col_offset": 33,
+				"end_lineno": 66,
+				"end_col_offset": 52
+			},
+			"module": [
+				"pandas.core.frame",
+				"__getitem__",
+				"Projection"
+			],
+			"description": "to ['label']",
+			"columns": [
+				"label"
+			],
+			"source_code": "train_data['label']"
+		}
+	},
+	"142": {
+		"pos": [
+			5093.0,
+			18.0
+		],
+		"node": {
+			"node_id": 142,
+			"operator_type": "Fit Transformers and Estimators",
+			"code_reference": {
+				"lineno": 59,
+				"col_offset": 11,
+				"end_lineno": 61,
+				"end_col_offset": 29
+			},
+			"module": [
+				"sklearn.pipeline",
+				"fit",
+				"Pipeline"
+			],
+			"description": null,
+			"columns": null,
+			"source_code": "pipeline.fit(train_data, train_data['label'])"
+		}
+	},
+	"145": {
+		"pos": [
+			13486.0,
+			694.14
+		],
+		"node": {
+			"node_id": 145,
+			"operator_type": "Projection",
+			"code_reference": {
+				"lineno": 68,
+				"col_offset": 29,
+				"end_lineno": 68,
+				"end_col_offset": 47
+			},
+			"module": [
+				"pandas.core.frame",
+				"__getitem__",
+				"Projection"
+			],
+			"description": "to ['label']",
+			"columns": [
+				"label"
+			],
+			"source_code": "test_data['label']"
+		}
+	},
+	"94": {
+		"pos": [
+			2080.0,
+			315.38
+		],
+		"node": {
+			"node_id": 94,
+			"operator_type": "Transformer",
+			"code_reference": {
+				"lineno": 48,
+				"col_offset": 19,
+				"end_lineno": 48,
+				"end_col_offset": 71
+			},
+			"module": [
+				"sklearn.preprocessing._encoders",
+				"OneHotEncoder",
+				"Pipeline"
+			],
+			"description": "Categorical Encoder (OneHotEncoder), Column: 'smoker'",
+			"columns": [
+				"smoker"
+			],
+			"source_code": "OneHotEncoder(sparse=False, handle_unknown='ignore')"
+		}
+	},
+	"95": {
+		"pos": [
+			6131.0,
+			315.38
+		],
+		"node": {
+			"node_id": 95,
+			"operator_type": "Transformer",
+			"code_reference": {
+				"lineno": 48,
+				"col_offset": 19,
+				"end_lineno": 48,
+				"end_col_offset": 71
+			},
+			"module": [
+				"sklearn.preprocessing._encoders",
+				"OneHotEncoder",
+				"Pipeline"
+			],
+			"description": "Categorical Encoder (OneHotEncoder), Column: 'county'",
+			"columns": [
+				"county"
+			],
+			"source_code": "OneHotEncoder(sparse=False, handle_unknown='ignore')"
+		}
+	},
+	"96": {
+		"pos": [
+			10153.0,
+			315.38
+		],
+		"node": {
+			"node_id": 96,
+			"operator_type": "Transformer",
+			"code_reference": {
+				"lineno": 48,
+				"col_offset": 19,
+				"end_lineno": 48,
+				"end_col_offset": 71
+			},
+			"module": [
+				"sklearn.preprocessing._encoders",
+				"OneHotEncoder",
+				"Pipeline"
+			],
+			"description": "Categorical Encoder (OneHotEncoder), Column: 'race'",
+			"columns": [
+				"race"
+			],
+			"source_code": "OneHotEncoder(sparse=False, handle_unknown='ignore')"
+		}
+	},
+	"103": {
+		"pos": [
+			14049.0,
+			315.38
+		],
+		"node": {
+			"node_id": 103,
+			"operator_type": "Transformer",
+			"code_reference": {
+				"lineno": 53,
+				"col_offset": 17,
+				"end_lineno": 53,
+				"end_col_offset": 46
+			},
+			"module": [
+				"example_pipelines.healthcare.healthcare_utils",
+				"MyW2VTransformer",
+				"Pipeline"
+			],
+			"description": "Word2Vec, Column: 'last_name'",
+			"columns": [
+				"last_name"
+			],
+			"source_code": "MyW2VTransformer(min_count=2)"
+		}
+	},
+	"108": {
+		"pos": [
+			17809.0,
+			315.38
+		],
+		"node": {
+			"node_id": 108,
+			"operator_type": "Transformer",
+			"code_reference": {
+				"lineno": 54,
+				"col_offset": 16,
+				"end_lineno": 54,
+				"end_col_offset": 32
+			},
+			"module": [
+				"sklearn.preprocessing._data",
+				"StandardScaler",
+				"Pipeline"
+			],
+			"description": "Numerical Encoder (StandardScaler), Column: 'num_children'",
+			"columns": [
+				"num_children"
+			],
+			"source_code": "StandardScaler()"
+		}
+	},
+	"109": {
+		"pos": [
+			19577.0,
+			428.07
+		],
+		"node": {
+			"node_id": 109,
+			"operator_type": "Transformer",
+			"code_reference": {
+				"lineno": 54,
+				"col_offset": 16,
+				"end_lineno": 54,
+				"end_col_offset": 32
+			},
+			"module": [
+				"sklearn.preprocessing._data",
+				"StandardScaler",
+				"Pipeline"
+			],
+			"description": "Numerical Encoder (StandardScaler), Column: 'income'",
+			"columns": [
+				"income"
+			],
+			"source_code": "StandardScaler()"
+		}
+	},
+	"114": {
+		"pos": [
+			10153.0,
+			202.69
+		],
+		"node": {
+			"node_id": 114,
+			"operator_type": "Concatenation",
+			"code_reference": {
+				"lineno": 51,
+				"col_offset": 16,
+				"end_lineno": 55,
+				"end_col_offset": 2
+			},
+			"module": [
+				"sklearn.compose._column_transformer",
+				"ColumnTransformer",
+				"Concatenation"
+			],
+			"description": null,
+			"columns": [
+				"array"
+			],
+			"source_code": "ColumnTransformer(transformers=[\n    (\"impute_and_one_hot_encode\", impute_and_one_hot_encode, ['smoker', 'county', 'race']),\n    ('word2vec', MyW2VTransformer(min_count=2), ['last_name']),\n    ('numeric', StandardScaler(), ['num_children', 'income'])\n])"
+		}
+	},
+	"125": {
+		"pos": [
+			8132.0,
+			90.0
+		],
+		"node": {
+			"node_id": 125,
+			"operator_type": "Estimator",
+			"code_reference": {
+				"lineno": 58,
+				"col_offset": 13,
+				"end_lineno": 58,
+				"end_col_offset": 102
+			},
+			"module": [
+				"tensorflow.python.keras.wrappers.scikit_learn",
+				"KerasClassifier",
+				"Pipeline"
+			],
+			"description": "Neural Network",
+			"columns": null,
+			"source_code": "KerasClassifier(build_fn=create_model, epochs=10, batch_size=1, verbose=0, input_dim=109)"
+		}
+	}
+}

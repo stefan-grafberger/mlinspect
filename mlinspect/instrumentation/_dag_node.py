@@ -57,6 +57,22 @@ class DagNode:
     def __hash__(self):
         return hash(self.node_id)
 
+    def to_dict(self):
+        return {
+            'node_id': self.node_id,
+            'operator_type': self.operator_type.value,
+            'code_reference': {
+                'lineno': self.code_reference.lineno,
+                'col_offset': self.code_reference.col_offset,
+                'end_lineno': self.code_reference.end_lineno,
+                'end_col_offset': self.code_reference.end_col_offset,
+            },
+            'module': self.module,
+            'description': self.description,
+            'columns': self.columns,
+            'source_code': self.source_code,
+        }
+
 
 @dataclasses.dataclass(frozen=True)
 class DagNodeIdentifier:
