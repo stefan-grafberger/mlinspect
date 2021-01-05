@@ -9,6 +9,7 @@ from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_table
 
 from inspect import cleandoc
 
@@ -126,7 +127,6 @@ app.layout = dbc.Container([
                 ], width=6),
                 dbc.Col([
                     # Display DAG
-                    # dbc.Label("Extracted DAG:", html_for="dag"),
                     dcc.Graph(id="dag", figure=go.Figure(
                         # layout_width=650,
                         layout_height=650,
@@ -134,65 +134,11 @@ app.layout = dbc.Container([
                         layout_xaxis={'visible': False},
                         layout_yaxis={'visible': False},
                     )),
+                    html.Div(id="results-detail"),
                 ], width=6),
             ], style={"margin": "auto", "padding": "20px"}),
         ], label="INSPECTION RESULTS", value="results-tab"),
-    ], id="tabs"),
-
-    # Body
-    # dbc.Row([  # Grid only works with dbc.themes in external_stylesheets.
-    #     dbc.Col([
-    #         dbc.Form([
-    #             dbc.FormGroup([
-    #                 # Pipeline definition
-    #                 dbc.Label("Pipeline definition:", html_for="pipeline"),
-    #                 dbc.Textarea(id="pipeline", className="mb-3", style={"width": "450px", "height": "500px", **CODE_FONT},
-    #                              value=default_pipeline),
-    #             ]),
-    #             dbc.FormGroup([
-    #                 # Add inspections
-    #                 dbc.Label("Add required inspections:", html_for="inspections"),
-    #                 dbc.Checklist(
-    #                     id="inspections",
-    #                     options=[
-    #                         {"label": "Histogram For Columns", "value": "HistogramForColumns"},
-    #                         {"label": "Row Lineage", "value": "RowLineage"},
-    #                         {"label": "Materialize First Output Rows", "value": "MaterializeFirstOutputRows"},
-    #                     ],
-    #                     switch=True,
-    #                     value=[],
-    #                 ),
-    #             ]),
-    #             dbc.FormGroup([
-    #                 # Add checks
-    #                 dbc.Label("Add checks:", html_for="checks"),
-    #                 dbc.Checklist(
-    #                     id="checks",
-    #                     options=[
-    #                         {"label": "No Bias Introduced For", "value": "NoBiasIntroducedFor"},
-    #                         {"label": "No Illegal Features", "value": "NoIllegalFeatures"},
-    #                         {"label": "No Missing Embeddings", "value": "NoMissingEmbeddings"},
-    #                     ],
-    #                     switch=True,
-    #                     value=[],
-    #                 ),
-    #             ]),
-    #         ]),
-    #         # Execute inspection
-    #         dbc.Button("Inspect pipeline", id="execute", color="primary", size="lg", className="mr-1"),
-    #     ], width=6),
-    #     dbc.Col([
-    #         # Display DAG
-    #         dbc.Label("Extracted DAG:", html_for="dag"),
-    #         dcc.Graph(id="dag", figure=go.Figure(
-    #             layout_width=650,
-    #             layout_height=650,
-    #             layout_showlegend=False,
-    #             layout_xaxis={'visible': False},
-    #             layout_yaxis={'visible': False},
-    #         )),
-    #     ], width=6),
-    # ]),
+    ], id="tabs", style={"display": "none"}),
 ])
 
 
@@ -218,6 +164,7 @@ def update_pipeline_output(n_clicks, pipeline):
 @app.callback([
         Output("dag", "figure"),
         Output("tabs", "value"),
+        Output("results-detail", "children"),
     ],
     [
         Input("execute", "n_clicks"),
@@ -230,27 +177,41 @@ def update_pipeline_output(n_clicks, pipeline):
 def update_figure(n_clicks, pipeline, checks, inspections):
     """Dash callback function to show extracted DAG of ML pipeline."""
     if n_clicks is None:
-        return dash.no_update, "definition-tab"
+        return dash.no_update, "definition-tab", None
 
-    extracted_dag, inspection_results, check_results = extract_dag(pipeline, checks, inspections)
+    extracted_dag, inspection_results, _ = extract_dag(pipeline, checks, inspections)
+
+    active_tab = "results-tab"
 
     # === DAG figure ===
     fig = nx2go(extracted_dag)
 
-    # print("fig attributes: type(fig.data[0]) =", type(fig.data[0]))
-    # fig_dict = fig.to_dict()
-    # --- write to file ---
-    # with open('dag2.json', 'w') as f:
-    #     json.dump(fig_dict, f, indent="\t", ensure_ascii=True)
-    # --- read from file ---
-    # with open('dag2.json', 'r') as f:
-    #     fig_dict = json.load(f)
-
     # === Inspection results ===
-    # TODO: Add another scatter graph to figure, with problem nodes in red
-    fig = add_inspection_annotations(fig, extracted_dag, inspection_results)
+    fig, output_rows_results = materialize_first_output_rows(fig, extracted_dag, inspection_results)
 
-    return fig, "results-tab"
+    # Display first output rows (results of MaterializeFirstOutputRows(5) inspection)
+    details = []
+    for idx, (node, df) in enumerate(output_rows_results):
+        description = html.Div(
+            "\n\033{} ({})\033\n{}\n{}".format(
+                node.operator_type,
+                node.description,
+                node.source_code,
+                node.code_reference,
+            ),
+            style=CODE_FONT,
+        )
+        table = dash_table.DataTable(
+            id=f"table-{idx}",
+            columns=[{"name": i, "id": i} for i in df.columns],
+            data=df.to_dict('records'),
+            style_cell={
+                'width': '{}%'.format(len(df.columns)),
+            },
+        )
+        details += [description, table]
+
+    return fig, active_tab, details
 
 
 def extract_dag(pipeline, checks=None, inspections=None):
@@ -318,10 +279,6 @@ def _get_pos(G):
     Ye = []
     from addEdge import add_edge
     for edge0, edge1 in edges:
-        # x0, y0 = pos_dict[edge0]
-        # x1, y1 = pos_dict[edge1]
-        # Xe += [x0, x1, None]
-        # Ye += [y0, y1, None]
         Xe, Ye = add_edge(
             pos_dict[edge0],
             pos_dict[edge1],
@@ -373,7 +330,8 @@ def nx2go(G):
     layout = go.Layout(
                 title="Pipeline execution DAG",
                 # font={'family': 'Balto'},
-                font={'family': "'Courier New', monospace"},
+                # font={'family': "'Courier New', monospace"},
+                font={'family': "Courier New"},
                 # width=650,
                 height=650,
                 showlegend=False,
@@ -389,8 +347,11 @@ def nx2go(G):
     return fig
 
 
-def add_inspection_annotations(figure, extracted_dag, inspection_results):
-    first_rows_inspection_result = inspection_results[MaterializeFirstOutputRows(5)]
+def materialize_first_output_rows(figure, extracted_dag, inspection_results):
+    try:
+        first_rows_inspection_result = inspection_results[MaterializeFirstOutputRows(5)]
+    except KeyError:
+        return figure
 
     relevant_nodes = [node for node in extracted_dag.nodes if node.description in {
         "Imputer (SimpleImputer), Column: 'county'", "Categorical Encoder (OneHotEncoder), Column: 'county'"}]
@@ -399,10 +360,13 @@ def add_inspection_annotations(figure, extracted_dag, inspection_results):
     pos_dict = nx.nx_agraph.graphviz_layout(extracted_dag, 'dot')  # TODO: Reuse from before rather than rerunning
     Xn = []
     Yn = []
-    for node in relevant_nodes:
-        x, y = pos_dict[node]
-        Xn += [x]
-        Yn += [y]
+    output_rows_results = []
+    for dag_node in relevant_nodes:
+        if dag_node in first_rows_inspection_result and first_rows_inspection_result[dag_node] is not None:
+            x, y = pos_dict[dag_node]
+            Xn += [x]
+            Yn += [y]
+            output_rows_results += [(dag_node, first_rows_inspection_result[dag_node])]
     nodes = go.Scatter(x=Xn, y=Yn, mode='markers', #name='', hoverinfo='text', text=labels,
                        marker={
                            'size': 15,
@@ -414,17 +378,9 @@ def add_inspection_annotations(figure, extracted_dag, inspection_results):
                         })
 
     # Append scatter plot to figure
-    # new_figure = go.Figure(data=figure.data + [nodes], layout=figure.layout)
     figure.add_trace(nodes)
 
-    # for dag_node in relevant_nodes:
-    #     if dag_node in first_rows_inspection_result and first_rows_inspection_result[dag_node] is not None:
-    #         print("\n\033[1m{} ({})\033[0m\n{}\n{}".format(
-    #             dag_node.operator_type, dag_node.description, dag_node.source_code, dag_node.code_reference))
-    #         display(first_rows_inspection_result[dag_node])
-
-    # return new_figure
-    return figure
+    return figure, output_rows_results
 
 
 if __name__ == "__main__":
