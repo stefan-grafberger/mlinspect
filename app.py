@@ -127,6 +127,7 @@ app.layout = dbc.Container([
                 ], width=6),
                 dbc.Col([
                     # Display DAG
+                    dbc.Label("Extracted DAG:", html_for="dag"),
                     dcc.Graph(id="dag", figure=go.Figure(
                         # layout_width=650,
                         layout_height=650,
@@ -330,7 +331,7 @@ def nx2go(G):
                             },
                         })
     layout = go.Layout(
-                title="Pipeline execution DAG",
+                # title="Pipeline execution DAG",
                 # font={'family': 'Balto'},
                 # font={'family': "'Courier New', monospace"},
                 font={'family': "Courier New"},
@@ -339,7 +340,14 @@ def nx2go(G):
                 showlegend=False,
                 xaxis={'visible': False},
                 yaxis={'visible': False},
-                # margin={'t': 100},
+                # margin={'t': 1},
+                margin= {
+                    'l': 1,
+                    'r': 1,
+                    'b': 1,
+                    't': 1,
+                    'pad': 1,
+                },
                 hovermode='closest',
     )
     layout.annotations = annotations
