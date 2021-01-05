@@ -230,7 +230,7 @@ def update_pipeline_output(n_clicks, pipeline):
 def update_figure(n_clicks, pipeline, checks, inspections):
     """Dash callback function to show extracted DAG of ML pipeline."""
     if n_clicks is None:
-        return dash.no_update
+        return dash.no_update, "definition-tab"
 
     extracted_dag, inspection_results, check_results = extract_dag(pipeline, checks, inspections)
 
