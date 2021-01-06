@@ -37,6 +37,7 @@ app = dash.Dash(__name__, external_stylesheets=[
     # dbc.themes.GRID,  # pro: grid layouts, large enough font size; con: no other dbc elements or CSS classes
 ])
 app.config.suppress_callback_exceptions = True
+INSPECTOR_RESULT, POS_DICT = None, None
 
 
 # Create HTML layout
@@ -118,10 +119,15 @@ app.layout = dbc.Container([
             dbc.Row([
                 dbc.Col([
                     # Display code
+                    # TODO: Add button "EDIT PIPELINE" to go back to invisible first tab?
                     html.P(
                         id="pipeline-output",
                         className="mb-3",
-                        style={**CODE_FONT, "font-size": "12px", "white-space": "pre-line"},
+                        style={
+                            **CODE_FONT,
+                            "font-size": "12px",
+                            "white-space": "pre-line",
+                        },
                         children=default_pipeline,
                     ),
                 ], width=6),
@@ -135,6 +141,8 @@ app.layout = dbc.Container([
                         layout_xaxis={'visible': False},
                         layout_yaxis={'visible': False},
                     )),
+                    dbc.Button("Show details", id="show-details", color="primary", size="lg", className="mr-1"),
+                    # TODO: Maybe even tabs for different details, first output rows vs. histograms, instead of one button
                     html.Div(id="results-detail"),
                 ], width=6),
             ], style={"margin": "auto", "padding": "20px", "font-size": "12px"}),
@@ -147,110 +155,158 @@ app.layout = dbc.Container([
 server = app.server
 
 
+# @app.callback(
+#     Output("pipeline-output", "children"),
+#     Input("execute", "n_clicks"),
+#     state=[
+#         State("pipeline", "value"),
+#     ]
+# )
+# def update_pipeline_output(n_clicks, pipeline):
+#     if n_clicks is None:
+#         return dash.no_update
+
+#     return pipeline
+
+
 @app.callback(
-    Output("pipeline-output", "children"),
-    Input("execute", "n_clicks"),
-    state=[
-        State("pipeline", "value")
-    ])
-def update_pipeline_output(n_clicks, pipeline):
-    if n_clicks is None:
-        return dash.no_update
-
-    # TODO: Add formatting, e.g. red text color for problem lines
-
-    return pipeline
-
-
-@app.callback([
-        Output("dag", "figure"),
+    [
         Output("tabs", "value"),
+        Output("pipeline-output", "children"),
+        Output("dag", "figure"),
         Output("results-detail", "children"),
     ],
     [
         Input("execute", "n_clicks"),
+        Input("show-details", "n_clicks"),
     ],
     state=[
         State("pipeline", "value"),
         State("checks", "value"),
         State("inspections", "value"),
-    ])
-def update_figure(n_clicks, pipeline, checks, inspections):
+        State("dag", "figure"),
+    ]
+)
+def update_outputs(execute_clicks, details_clicks, pipeline, checks, inspections, figure):
     """Dash callback function to show extracted DAG of ML pipeline."""
-    if n_clicks is None:
-        return dash.no_update, "definition-tab", None
+    user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
 
-    extracted_dag, inspection_results, _ = extract_dag(pipeline, checks, inspections)
+    # callback_states = dash.callback_context.states.values()
+    # callback_inputs = dash.callback_context.inputs.values()
+
+    if not user_click:
+        return "definition-tab", dash.no_update, dash.no_update, dash.no_update
 
     active_tab = "results-tab"
 
-    # === DAG figure ===
-    fig = nx2go(extracted_dag)
+    if user_click == "execute":
+        execute_inspector_builder(pipeline, checks, inspections)
+        figure = nx2go(INSPECTOR_RESULT.dag)
+        details = []
+        return active_tab, pipeline, figure, details
 
-    # === Inspection results ===
-    fig, output_rows_results = materialize_first_output_rows(fig, extracted_dag, inspection_results)
+    elif user_click == "show-details":
+        # Update figure with highlighted (red) nodes
+        figure, output_rows_results = materialize_first_output_rows(figure)
 
-    # Display first output rows (results of MaterializeFirstOutputRows(5) inspection)
-    details = []
-    for node, df in output_rows_results:
-        description = html.Div(
-            "\n\033{} ({})\033\n{}\n{}".format(
-                node.operator_type,
-                node.description,
-                node.source_code,
-                node.code_reference,
-            ),
-            style=CODE_FONT,
-        )
-        table = dash_table.DataTable(
-            columns=[{"name": i, "id": i} for i in df.columns],
-            data=df.to_dict('records'),
-            # style_cell={
-            #     'width': '{}%'.format(len(df.columns)),
-            #     'textOverflow': 'ellipsis',
-            #     'overflow': 'hidden'
-            # },
-            # css=[{'selector': 'table', 'rule': 'table-layout: fixed'}],
-        )
-        details += [description, table]
+        # Display first output rows (results of MaterializeFirstOutputRows(5) inspection)
+        details, code_linenos = [], []
+        for node, df in output_rows_results:
+            description = html.Div(
+                "\n\033{} ({})\033\n{}\n{}".format(
+                    node.operator_type,
+                    node.description,
+                    node.source_code,
+                    node.code_reference,
+                ),
+                style=CODE_FONT,
+            )
+            table = dash_table.DataTable(
+                columns=[{"name": i, "id": i} for i in df.columns],
+                data=df.to_dict('records'),
+            )
+            details += [html.Br(), description, table]
+            code_linenos += [node.code_reference.lineno]
 
-    return fig, active_tab, details
+        # Add code formatting, e.g. red text color for problem lines
+        lines = []
+        for idx, line in enumerate(pipeline.splitlines()):
+            if idx + 1 in code_linenos:
+                line = html.P(line, style={"color": "red"})
+            else:
+                line = html.P(line)
+            lines += [line]
+
+        return active_tab, lines, figure, details
 
 
-def extract_dag(pipeline, checks=None, inspections=None):
+# @app.callback(
+#     [
+#         Output("pipeline-output", "children"),
+#         Output("results-detail", "children"),
+#         Output("dag", "figure"),
+#     ],
+#     Input("show-details", "n_clicks"),
+#     state=[
+#         State("pipeline", "value"),
+#         State("dag", "figure"),
+#     ]
+# )
+# def show_details(n_clicks, pipeline, figure):
+#     if n_clicks is None:
+#         return dash.no_update, dash.no_update, dash.no_update
+
+#     # Update figure with highlighted (red) nodes
+#     figure, output_rows_results = materialize_first_output_rows(figure)
+
+#     # Display first output rows (results of MaterializeFirstOutputRows(5) inspection)
+#     details, code_linenos = [], []
+#     for node, df in output_rows_results:
+#         description = html.Div(
+#             "\n\033{} ({})\033\n{}\n{}".format(
+#                 node.operator_type,
+#                 node.description,
+#                 node.source_code,
+#                 node.code_reference,
+#             ),
+#             style=CODE_FONT,
+#         )
+#         table = dash_table.DataTable(
+#             columns=[{"name": i, "id": i} for i in df.columns],
+#             data=df.to_dict('records'),
+#         )
+#         details += [html.Br(), description, table]
+#         code_linenos += [node.code_reference.lineno]
+
+#     # Add code formatting, e.g. red text color for problem lines
+#     lines = []
+#     for idx, line in enumerate(pipeline.splitlines()):
+#         if idx + 1 in code_linenos:
+#             line = html.P(line, style={"color": "red"})
+#         else:
+#             line = html.P(line)
+#         lines += [line]
+
+#     return lines, details, figure
+
+
+def execute_inspector_builder(pipeline, checks=None, inspections=None):
     """Extract DAG the original way, i.e. by creating a PipelineInspectorBuilder."""
+    global INSPECTOR_RESULT
+
     start = time.time()
     builder = PipelineInspector.on_pipeline_from_string(pipeline)
     for inspection in inspections:
         builder = builder.add_required_inspection(inspection_switcher[inspection]())
     for check in checks:
         builder = builder.add_check(check_switcher[check]())
-    inspector_result = builder.execute()
+    INSPECTOR_RESULT = builder.execute()
     print(f"Total time in seconds: {time.time() - start}")
 
-    extracted_dag = inspector_result.dag
-    inspection_results = inspector_result.inspection_to_annotations
-    check_results = inspector_result.check_to_check_results
-    return extracted_dag, inspection_results, check_results
-
-
-def nx2png(extracted_dag):
-    """Convert networkx.DiGraph to a pygraphviz.agraph.AGraph, save to file, and return filename.
-    Also return boolean of whether HTML Image element is hidden."""
-    filename = os.path.join(os.getcwd(), app.get_asset_url("image.png"))
-    save_fig_to_path(extracted_dag, filename)
-    return filename, False
-
-
-def nx2agraph(extracted_dag):
-    """Convert networkx.DiGraph to a pygraphviz.agraph.AGraph."""
-    extracted_dag = nx.relabel_nodes(extracted_dag, lambda node: cleandoc("""
-        {} (L{})
-        {}
-        """.format(node.operator_type.value, node.code_reference.lineno, node.description or "")))
-    agraph = to_agraph(extracted_dag)
-    agraph.layout('dot')
-    return agraph
+    # extracted_dag = INSPECTOR_RESULT.dag
+    # inspection_results = INSPECTOR_RESULT.inspection_to_annotations
+    # check_results = INSPECTOR_RESULT.check_to_check_results
+    # return extracted_dag, inspection_results, check_results
 
 
 def get_new_node_label(node):
@@ -263,28 +319,27 @@ def get_new_node_label(node):
 
 
 def _get_pos(G):
-    pos_dict = nx.nx_agraph.graphviz_layout(G, 'dot')
-    # pos_json = {k.node_id: {'pos': v, 'node': k.to_dict()} for k, v in pos_dict.items()}
+    global POS_DICT
+    POS_DICT = nx.nx_agraph.graphviz_layout(G, 'dot')
+    # pos_json = {k.node_id: {'pos': v, 'node': k.to_dict()} for k, v in POS_DICT.items()}
     # with open('pos_dict_with_checks.json', 'w') as f:
     #     json.dump(pos_json, f, indent="\t", ensure_ascii=True)
 
     nodes = G.nodes()
     edges = G.edges()
 
-    Xn = []
-    Yn = []
+    Xn, Yn = [], []
     for node in nodes:
-        x, y = pos_dict[node]
+        x, y = POS_DICT[node]
         Xn += [x]
         Yn += [y]
 
-    Xe = []
-    Ye = []
+    Xe, Ye = [], []
     from addEdge import add_edge
     for edge0, edge1 in edges:
         Xe, Ye = add_edge(
-            pos_dict[edge0],
-            pos_dict[edge1],
+            POS_DICT[edge0],
+            POS_DICT[edge1],
             Xe,
             Ye,
             length_frac=0.8,
@@ -296,7 +351,7 @@ def _get_pos(G):
 
     labels = []
     annotations = []
-    for node, pos in pos_dict.items():
+    for node, pos in POS_DICT.items():
         labels += [get_new_node_label(node)]
         annotations += [{
             'x': pos[0],
@@ -316,39 +371,42 @@ def nx2go(G):
     """
     Xn, Yn, Xe, Ye, labels, annotations = _get_pos(G)
 
-    edges = go.Scatter(x=Xe, y=Ye, mode='lines', hoverinfo='none',
-                       line={
-                           'color': 'rgb(160,160,160)',
-                           'width': 0.75,
-                        })
-    nodes = go.Scatter(x=Xn, y=Yn, mode='markers', name='', hoverinfo='text', text=labels,
-                       marker={
-                           'size': 15,
-                           'color': '#85b6b6',
-                           'line': {
-                               'color': 'rgb(100,100,100)',
-                               'width': 0.5,
-                            },
-                        })
+    edges = go.Scatter(
+        x=Xe, y=Ye, mode='lines', hoverinfo='none',
+        line={
+            'color': 'rgb(160,160,160)',
+            'width': 0.75,
+        },
+    )
+    nodes = go.Scatter(
+        x=Xn, y=Yn, mode='markers', name='', hoverinfo='text', text=labels,
+        marker={
+            'size': 15,
+            'color': '#85b6b6',
+            'line': {
+                'color': 'rgb(100,100,100)',
+                'width': 0.5,
+            },
+        },
+    )
     layout = go.Layout(
-                # title="Pipeline execution DAG",
-                # font={'family': 'Balto'},
-                # font={'family': "'Courier New', monospace"},
-                font={'family': "Courier New"},
-                # width=650,
-                height=650,
-                showlegend=False,
-                xaxis={'visible': False},
-                yaxis={'visible': False},
-                # margin={'t': 1},
-                margin= {
-                    'l': 1,
-                    'r': 1,
-                    'b': 1,
-                    't': 1,
-                    'pad': 1,
-                },
-                hovermode='closest',
+        # title="Pipeline execution DAG",
+        # font={'family': 'Balto'},
+        # font={'family': "'Courier New', monospace"},
+        font={'family': "Courier New"},
+        # width=650,
+        height=650,
+        showlegend=False,
+        xaxis={'visible': False},
+        yaxis={'visible': False},
+        margin= {
+            'l': 1,
+            'r': 1,
+            'b': 1,
+            't': 1,
+            'pad': 1,
+        },
+        hovermode='closest',
     )
     layout.annotations = annotations
 
@@ -357,42 +415,40 @@ def nx2go(G):
     return fig
 
 
-def materialize_first_output_rows(figure, extracted_dag, inspection_results):
+def materialize_first_output_rows(figure):
     try:
-        first_rows_inspection_result = inspection_results[MaterializeFirstOutputRows(5)]
+        first_rows_inspection_result = INSPECTOR_RESULT.inspection_to_annotations[MaterializeFirstOutputRows(5)]
     except KeyError:
         return figure, []
 
-    relevant_nodes = [node for node in extracted_dag.nodes if node.description in {
+    relevant_nodes = [node for node in INSPECTOR_RESULT.dag.nodes if node.description in {
         "Imputer (SimpleImputer), Column: 'county'", "Categorical Encoder (OneHotEncoder), Column: 'county'"}]
 
     # Create scatter plot of these nodes
-    pos_dict = nx.nx_agraph.graphviz_layout(extracted_dag, 'dot')  # TODO: Reuse from before rather than rerunning
-    Xn = []
-    Yn = []
-    labels = []
-    output_rows_results = []
+    Xn, Yn, labels, results = [], [], [], []
     for dag_node in relevant_nodes:
         if dag_node in first_rows_inspection_result and first_rows_inspection_result[dag_node] is not None:
-            x, y = pos_dict[dag_node]
+            x, y = POS_DICT[dag_node]
             Xn += [x]
             Yn += [y]
             labels += [get_new_node_label(dag_node)]
-            output_rows_results += [(dag_node, first_rows_inspection_result[dag_node])]
-    nodes = go.Scatter(x=Xn, y=Yn, mode='markers', name='', hoverinfo='text', text=labels,
-                       marker={
-                           'size': 15,
-                           'color': 'red',
-                           'line': {
-                               'color': 'red',
-                               'width': 0.5,
-                            },
-                        })
+            results += [(dag_node, first_rows_inspection_result[dag_node])]
+    nodes = go.Scatter(
+        x=Xn, y=Yn, mode='markers', name='', hoverinfo='text', text=labels,
+        marker={
+            'size': 15,
+            'color': 'red',
+            'line': {
+                'color': 'red',
+                'width': 0.5,
+            },
+        },
+    )
 
     # Append scatter plot to figure
-    figure.add_trace(nodes)
+    figure['data'].append(nodes)
 
-    return figure, output_rows_results
+    return figure, results
 
 
 if __name__ == "__main__":
