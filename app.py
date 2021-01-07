@@ -17,7 +17,7 @@ import networkx as nx
 from networkx.drawing.nx_agraph import to_agraph
 
 import plotly.graph_objects as go
-import pygraphviz as pgv
+from plotly.subplots import make_subplots
 
 from demo.feature_overview.no_missing_embeddings import NoMissingEmbeddings
 from mlinspect import PipelineInspector
@@ -141,7 +141,9 @@ app.layout = dbc.Container([
                         layout_xaxis={'visible': False},
                         layout_yaxis={'visible': False},
                     )),
-                    dbc.Button("Show details", id="show-details", color="primary", size="lg", className="mr-1"),
+                    html.Br(),
+                    dbc.Button("Show first output rows", id="show-outputs", color="primary", size="lg", className="mr-1"),
+                    dbc.Button("Show histograms", id="show-histograms", color="primary", size="lg", className="mr-1"),
                     # TODO: Maybe even tabs for different details, first output rows vs. histograms, instead of one button
                     html.Div(id="results-detail"),
                 ], width=6),
@@ -155,20 +157,6 @@ app.layout = dbc.Container([
 server = app.server
 
 
-# @app.callback(
-#     Output("pipeline-output", "children"),
-#     Input("execute", "n_clicks"),
-#     state=[
-#         State("pipeline", "value"),
-#     ]
-# )
-# def update_pipeline_output(n_clicks, pipeline):
-#     if n_clicks is None:
-#         return dash.no_update
-
-#     return pipeline
-
-
 @app.callback(
     [
         Output("tabs", "value"),
@@ -178,7 +166,8 @@ server = app.server
     ],
     [
         Input("execute", "n_clicks"),
-        Input("show-details", "n_clicks"),
+        Input("show-outputs", "n_clicks"),
+        Input("show-histograms", "n_clicks"),
     ],
     state=[
         State("pipeline", "value"),
@@ -187,12 +176,9 @@ server = app.server
         State("dag", "figure"),
     ]
 )
-def update_outputs(execute_clicks, details_clicks, pipeline, checks, inspections, figure):
+def update_outputs(execute_clicks, details_clicks, histograms_click, pipeline, checks, inspections, figure):
     """Dash callback function to show extracted DAG of ML pipeline."""
     user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
-
-    # callback_states = dash.callback_context.states.values()
-    # callback_inputs = dash.callback_context.inputs.values()
 
     if not user_click:
         return "definition-tab", dash.no_update, dash.no_update, dash.no_update
@@ -205,7 +191,7 @@ def update_outputs(execute_clicks, details_clicks, pipeline, checks, inspections
         details = []
         return active_tab, pipeline, figure, details
 
-    elif user_click == "show-details":
+    elif user_click == "show-outputs":
         # Update figure with highlighted (red) nodes
         figure, output_rows_results = materialize_first_output_rows(figure)
 
@@ -239,55 +225,9 @@ def update_outputs(execute_clicks, details_clicks, pipeline, checks, inspections
 
         return active_tab, lines, figure, details
 
-
-# @app.callback(
-#     [
-#         Output("pipeline-output", "children"),
-#         Output("results-detail", "children"),
-#         Output("dag", "figure"),
-#     ],
-#     Input("show-details", "n_clicks"),
-#     state=[
-#         State("pipeline", "value"),
-#         State("dag", "figure"),
-#     ]
-# )
-# def show_details(n_clicks, pipeline, figure):
-#     if n_clicks is None:
-#         return dash.no_update, dash.no_update, dash.no_update
-
-#     # Update figure with highlighted (red) nodes
-#     figure, output_rows_results = materialize_first_output_rows(figure)
-
-#     # Display first output rows (results of MaterializeFirstOutputRows(5) inspection)
-#     details, code_linenos = [], []
-#     for node, df in output_rows_results:
-#         description = html.Div(
-#             "\n\033{} ({})\033\n{}\n{}".format(
-#                 node.operator_type,
-#                 node.description,
-#                 node.source_code,
-#                 node.code_reference,
-#             ),
-#             style=CODE_FONT,
-#         )
-#         table = dash_table.DataTable(
-#             columns=[{"name": i, "id": i} for i in df.columns],
-#             data=df.to_dict('records'),
-#         )
-#         details += [html.Br(), description, table]
-#         code_linenos += [node.code_reference.lineno]
-
-#     # Add code formatting, e.g. red text color for problem lines
-#     lines = []
-#     for idx, line in enumerate(pipeline.splitlines()):
-#         if idx + 1 in code_linenos:
-#             line = html.P(line, style={"color": "red"})
-#         else:
-#             line = html.P(line)
-#         lines += [line]
-
-#     return lines, details, figure
+    elif user_click == "show-histograms":
+        details = show_distribution_changes()
+        return active_tab, pipeline, figure, details
 
 
 def execute_inspector_builder(pipeline, checks=None, inspections=None):
@@ -449,6 +389,31 @@ def materialize_first_output_rows(figure):
     figure['data'].append(nodes)
 
     return figure, results
+
+
+def show_distribution_changes():
+    """From mlinspect.checks._no_bias_introduced_for:NoBiasIntroducedFor.plot_distribution_change_histograms."""
+    # --- distribution changes
+    no_bias_check_result = INSPECTOR_RESULT.check_to_check_results[NoBiasIntroducedFor(["age_group", "race"])]
+    dag_node_distribution_changes_list = list(no_bias_check_result.bias_distribution_change.items())
+
+    # --- histograms
+    _, join_distribution_changes = dag_node_distribution_changes_list[0]
+    graphs = []
+    for column, distribution_change in join_distribution_changes.items():
+        keys = distribution_change.before_and_after_df["sensitive_column_value"]
+        keys = [str(key) for key in keys]  # Necessary because of null values
+        before_values = distribution_change.before_and_after_df["count_before"]
+        after_values = distribution_change.before_and_after_df["count_after"]
+
+        # plotly figure with subplots
+        figure = make_subplots(rows=1, cols=2, subplot_titles=["before", "after"])
+        figure.append_trace(go.Bar(x=keys, y=before_values), 1, 1)
+        figure.append_trace(go.Bar(x=keys, y=after_values), 1, 2)
+        figure.update_layout(title_text=f"Column '{column}'")
+        graphs += [dcc.Graph(figure=figure)]
+
+    return graphs
 
 
 if __name__ == "__main__":
