@@ -406,12 +406,16 @@ def show_distribution_changes():
         before_values = distribution_change.before_and_after_df["count_before"]
         after_values = distribution_change.before_and_after_df["count_after"]
 
-        # plotly figure with subplots
-        figure = make_subplots(rows=1, cols=2, subplot_titles=["before", "after"])
-        figure.append_trace(go.Bar(x=keys, y=before_values), 1, 1)
-        figure.append_trace(go.Bar(x=keys, y=after_values), 1, 2)
-        figure.update_layout(title_text=f"Column '{column}'")
-        graphs += [dcc.Graph(figure=figure)]
+        # --- plotly figure
+        # --- (with subplots)
+        # figure = make_subplots(rows=1, cols=2, subplot_titles=["before", "after"])
+        # figure.append_trace(go.Bar(x=keys, y=before_values), 1, 1)
+        # figure.append_trace(go.Bar(x=keys, y=after_values), 1, 1)
+        # figure.update_layout(title_text=f"Column '{column}'")
+        # --- (without subplots)
+        trace1 = go.Bar(x=keys, y=before_values, name="Before")
+        trace2 = go.Bar(x=keys, y=after_values, name="After")
+        graphs += [dcc.Graph(figure=go.Figure(data=[trace1, trace2], layout=go.Layout(title_text=f"Column '{column}'")))]
 
     return graphs
 
