@@ -168,6 +168,7 @@ def toggle_editable(textarea_blur, code_clicks, pipeline):
     When user clicks on code, hide code and show textarea instead.
     """
     # user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
+
     if textarea_blur:
         return pipeline, False, True
 
@@ -187,7 +188,7 @@ def toggle_editable(textarea_blur, code_clicks, pipeline):
         Input("show-outputs", "n_clicks"),
     ],
     state=[
-        State("pipeline-code", "children"),
+        State("pipeline-textarea", "value"),
         State("checks", "value"),
         State("inspections", "value"),
         State("dag", "figure"),
@@ -208,11 +209,14 @@ def update_outputs(execute_clicks, outputs_clicks, pipeline, checks, inspections
 
     elif user_click == "show-outputs":
         # Update figure with highlighted (red) nodes
-        figure, output_rows_results = materialize_first_output_rows(figure)
+        figure, first_rows_inspection_result = show_one_hot_encoder_details(figure)
 
         # Display first output rows (results of MaterializeFirstOutputRows(5) inspection)
         details = []
-        for node, df in output_rows_results:
+        node_list = list(INSPECTOR_RESULT.dag.nodes)
+        for idx in [23, 29]:
+            node = node_list[idx]
+            df = first_rows_inspection_result[node]
             description = html.Div(
                 "\n\033{} ({})\033\n{}\n{}".format(
                     node.operator_type,
@@ -222,6 +226,7 @@ def update_outputs(execute_clicks, outputs_clicks, pipeline, checks, inspections
                 ),
                 style=CODE_FONT,
             )
+            print("data:", data)
             table = dash_table.DataTable(
                 columns=[{"name": i, "id": i} for i in df.columns],
                 data=df.to_dict('records'),
@@ -323,19 +328,16 @@ def nx2go(G):
         x=Xn, y=Yn, mode='markers', name='', hoverinfo='text', text=labels,
         marker={
             'size': 15,
-            'color': '#a3a7e4',
+            'color': 'rgb(200,200,200)',
             'line': {
-                'color': 'rgb(100,100,100)',
+                'color': 'black',
                 'width': 0.5,
             },
         },
     )
     layout = go.Layout(
-        # title="Pipeline execution DAG",
-        # font={'family': 'Balto'},
-        # font={'family': "'Courier New', monospace"},
         font={'family': "Courier New"},
-        # width=650,
+        font_color='black',
         height=650,
         showlegend=False,
         xaxis={'visible': False},
@@ -348,7 +350,7 @@ def nx2go(G):
             'pad': 1,
         },
         hovermode='closest',
-        plot_bgcolor='rgb(255,255,255)',
+        plot_bgcolor='white',
     )
     layout.annotations = annotations
 
@@ -359,7 +361,7 @@ def nx2go(G):
         c = list(nodes.marker.color)
         s = list(nodes.marker.size)
         for i in points.point_inds:
-            c[i] = '#bae2be'
+            c[i] = 'red'
             s[i] = 20
             with fig.batch_update():
                 nodes.marker.color = c
@@ -370,26 +372,19 @@ def nx2go(G):
     return fig
 
 
-def materialize_first_output_rows(figure):
+def show_one_hot_encoder_details(figure):
     try:
         first_rows_inspection_result = INSPECTOR_RESULT.inspection_to_annotations[MaterializeFirstOutputRows(5)]
     except KeyError:
         return figure, []
 
-    relevant_nodes = [node for node in INSPECTOR_RESULT.dag.nodes if node.description in {
-        "Imputer (SimpleImputer), Column: 'county'", "Categorical Encoder (OneHotEncoder), Column: 'county'"}]
+    dag_node = list(INSPECTOR_RESULT.dag.nodes)[29]
 
-    # Create scatter plot of these nodes
-    Xn, Yn, labels, results = [], [], [], []
-    for dag_node in relevant_nodes:
-        if dag_node in first_rows_inspection_result and first_rows_inspection_result[dag_node] is not None:
-            x, y = POS_DICT[dag_node]
-            Xn += [x]
-            Yn += [y]
-            labels += [get_new_node_label(dag_node)]
-            results += [(dag_node, first_rows_inspection_result[dag_node])]
+    # Create scatter plot of this node
+    Xn, Yn = POS_DICT[dag_node]
+    label = get_new_node_label(dag_node)
     nodes = go.Scatter(
-        x=Xn, y=Yn, mode='markers', name='', hoverinfo='text', text=labels,
+        x=[Xn], y=[Yn], mode='markers', name='', hoverinfo='text', text=[label],
         marker={
             'size': 15,
             'color': 'red',
@@ -403,7 +398,9 @@ def materialize_first_output_rows(figure):
     # Append scatter plot to figure
     figure['data'].append(nodes)
 
-    return figure, results
+    # print("first_rows_inspection_result:", first_rows_inspection_result)
+
+    return figure, first_rows_inspection_result
 
 
 def show_distribution_changes():
