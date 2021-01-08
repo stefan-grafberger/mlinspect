@@ -218,21 +218,18 @@ def update_outputs(execute_clicks, outputs_clicks, pipeline, checks, inspections
         for idx in [23, 29]:
             node = node_list[idx]
             df = first_rows_inspection_result[node]
-            description = html.Div(
-                "\n\033{} ({})\033\n{}\n{}".format(
-                    node.operator_type,
-                    node.description,
-                    node.source_code,
-                    node.code_reference,
-                ),
-                style=CODE_FONT,
-            )
+            operator = html.Div(f"{node.operator_type}", style=CODE_FONT)
+            description = html.Div(f"{node.description}", style=CODE_FONT)
+            data = df.to_dict('records')
+            if idx == 29:
+                for record in data:
+                    record['county'] = np.array2string(record['county'])
             print("data:", data)
             table = dash_table.DataTable(
                 columns=[{"name": i, "id": i} for i in df.columns],
-                data=df.to_dict('records'),
+                data=data,
             )
-            details += [html.Br(), description, table]
+            details += [html.Br(), operator, description, table]
 
         return figure, details
 
