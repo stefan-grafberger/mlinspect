@@ -155,12 +155,13 @@ server = app.server
     [
         Input("pipeline-textarea", "n_blur"),
         Input("pipeline-code", "n_clicks"),
+        Input("execute", "n_clicks"),
     ],
     state=[
         State("pipeline-textarea", "value"),
     ],
 )
-def toggle_editable(textarea_blur, code_clicks, pipeline):
+def toggle_editable(textarea_blur, code_clicks, execute_clicks, pipeline):
     """
     When textarea loses focus, hide textarea and show code instead
     (with children updated with textarea value).
@@ -169,7 +170,7 @@ def toggle_editable(textarea_blur, code_clicks, pipeline):
     """
     # user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
 
-    if textarea_blur:
+    if textarea_blur or execute_clicks:
         return pipeline, False, True
 
     if code_clicks:  # Doesn't work :/
