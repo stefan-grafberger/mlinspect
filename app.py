@@ -143,20 +143,21 @@ app.layout = dbc.Container([
                         """.format(default_pipeline), id="pipeline-output",
                         dangerously_allow_html=True,
                         style={
-                            "pre": {
-                                ".line-number": {
-                                    "display": "block",
-                                    "float": "left",
-                                    "margin": "0 1em 0 -1em",
-                                    "border-right": "1px solid #ddd",
-                                    "text-align": "right",
-                                    "span": {
-                                        "display": "block",
-                                        "padding": "0 .5em 0 1em",
-                                        "color": "#ccc",
-                                    },
-                                },
-                            },
+                            "background": "white",
+                            # "pre": {
+                            #     ".line-number": {
+                            #         "display": "block",
+                            #         "float": "left",
+                            #         "margin": "0 1em 0 -1em",
+                            #         "border-right": "1px solid #ddd",
+                            #         "text-align": "right",
+                            #         "span": {
+                            #             "display": "block",
+                            #             "padding": "0 .5em 0 1em",
+                            #             "color": "#ccc",
+                            #         },
+                            #     },
+                            # },
                         }),
                 ], width=6),
                 dbc.Col([
