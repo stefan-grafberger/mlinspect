@@ -16,6 +16,8 @@ from inspect import cleandoc
 import networkx as nx
 from networkx.drawing.nx_agraph import to_agraph
 
+import pandas as pd
+
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
@@ -45,6 +47,9 @@ CODE_FONT = {"font-family": "'Courier New', monospace"}
 app.title = "mlinspect"
 with open("example_pipelines/healthcare/healthcare.py") as f:
     default_pipeline = f.read()
+patients = pd.read_csv("example_pipelines/healthcare/healthcare_patients.csv", na_values='?')
+histories = pd.read_csv("example_pipelines/healthcare/healthcare_histories.csv", na_values='?')
+data = patients.merge(histories, on=['ssn'])
 sensitive_columns = ["age_group", "race"]
 inspection_switcher = {
     "HistogramForColumns": lambda: HistogramForColumns(sensitive_columns),
@@ -85,7 +90,7 @@ app.layout = dbc.Container([
                             dbc.Checklist(
                                 id="inspections",
                                 options=[
-                                    {"label": "Histogram For Columns", "value": "HistogramForColumns"},
+                                    # {"label": "Histogram For Columns", "value": "HistogramForColumns"},
                                     {"label": "Row Lineage", "value": "RowLineage"},
                                     {"label": "Materialize First Output Rows", "value": "MaterializeFirstOutputRows"},
                                 ],
@@ -99,7 +104,7 @@ app.layout = dbc.Container([
                             dbc.Checklist(
                                 id="checks",
                                 options=[
-                                    {"label": "No Bias Introduced For", "value": "NoBiasIntroducedFor"},
+                                    {"label": "No Bias Introduced For", "value": "NoBiasIntroducedFor"},  # TODO: Sub checklist with data.columns
                                     {"label": "No Illegal Features", "value": "NoIllegalFeatures"},
                                     {"label": "No Missing Embeddings", "value": "NoMissingEmbeddings"},
                                 ],
@@ -120,16 +125,39 @@ app.layout = dbc.Container([
                 dbc.Col([
                     # Display code
                     # TODO: Add button "EDIT PIPELINE" to go back to invisible first tab?
-                    html.P(
-                        id="pipeline-output",
-                        className="mb-3",
+                    # html.P(
+                    #     id="pipeline-output",
+                    #     className="mb-3",
+                    #     style={
+                    #         **CODE_FONT,
+                    #         "font-size": "12px",
+                    #         "white-space": "pre-line",
+                    #     },
+                    #     children=default_pipeline,
+                    # ),
+                    dcc.Markdown("""
+                        Pipeline definition:
+                        ```python
+                        {}
+                        ```
+                        """.format(default_pipeline), id="pipeline-output",
+                        dangerously_allow_html=True,
                         style={
-                            **CODE_FONT,
-                            "font-size": "12px",
-                            "white-space": "pre-line",
-                        },
-                        children=default_pipeline,
-                    ),
+                            "pre": {
+                                ".line-number": {
+                                    "display": "block",
+                                    "float": "left",
+                                    "margin": "0 1em 0 -1em",
+                                    "border-right": "1px solid #ddd",
+                                    "text-align": "right",
+                                    "span": {
+                                        "display": "block",
+                                        "padding": "0 .5em 0 1em",
+                                        "color": "#ccc",
+                                    },
+                                },
+                            },
+                        }),
                 ], width=6),
                 dbc.Col([
                     # Display DAG
@@ -142,8 +170,8 @@ app.layout = dbc.Container([
                         layout_yaxis={'visible': False},
                     )),
                     html.Br(),
-                    dbc.Button("Show first output rows", id="show-outputs", color="primary", size="lg", className="mr-1"),
-                    dbc.Button("Show histograms", id="show-histograms", color="primary", size="lg", className="mr-1"),
+                    # dbc.Button("Show first output rows", id="show-outputs", color="primary", size="lg", className="mr-1"),
+                    # dbc.Button("Show histograms", id="show-histograms", color="primary", size="lg", className="mr-1"),
                     # TODO: Maybe even tabs for different details, first output rows vs. histograms, instead of one button
                     html.Div(id="results-detail"),
                 ], width=6),
@@ -166,8 +194,9 @@ server = app.server
     ],
     [
         Input("execute", "n_clicks"),
-        Input("show-outputs", "n_clicks"),
-        Input("show-histograms", "n_clicks"),
+        Input("dag", "n_clicks"),
+        # Input("show-outputs", "n_clicks"),
+        # Input("show-histograms", "n_clicks"),
     ],
     state=[
         State("pipeline", "value"),
@@ -176,7 +205,7 @@ server = app.server
         State("dag", "figure"),
     ]
 )
-def update_outputs(execute_clicks, details_clicks, histograms_click, pipeline, checks, inspections, figure):
+def update_outputs(execute_clicks, dag_clicks, pipeline, checks, inspections, figure):
     """Dash callback function to show extracted DAG of ML pipeline."""
     user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
 
@@ -184,14 +213,19 @@ def update_outputs(execute_clicks, details_clicks, histograms_click, pipeline, c
         return "definition-tab", dash.no_update, dash.no_update, dash.no_update
 
     active_tab = "results-tab"
+    pipeline_output = """
+```python
+{}
+```
+""".format(pipeline)
 
     if user_click == "execute":
         execute_inspector_builder(pipeline, checks, inspections)
         figure = nx2go(INSPECTOR_RESULT.dag)
         details = []
-        return active_tab, pipeline, figure, details
+        return active_tab, pipeline_output, figure, details
 
-    elif user_click == "show-outputs":
+    elif user_click == "dag":
         # Update figure with highlighted (red) nodes
         figure, output_rows_results = materialize_first_output_rows(figure)
 
@@ -214,20 +248,24 @@ def update_outputs(execute_clicks, details_clicks, histograms_click, pipeline, c
             details += [html.Br(), description, table]
             code_linenos += [node.code_reference.lineno]
 
-        # Add code formatting, e.g. red text color for problem lines
-        lines = []
-        for idx, line in enumerate(pipeline.splitlines()):
-            if idx + 1 in code_linenos:
-                line = html.P(line, style={"color": "red"})
-            else:
-                line = html.P(line)
-            lines += [line]
+        # Highlight problematic code
+        lines = pipeline.splitlines(keepends=True)
+        for lineno in code_linenos:
+            print("Formatting code line:", lineno)
+            lines[lineno-1] = "<b>" + lines[lineno-1] + "</b>"
+        pipeline_output = """
+<pre>
+```python
+{}
+```
+</pre>
+""".format("".join(lines))
 
-        return active_tab, lines, figure, details
+        return active_tab, pipeline_output, figure, details
 
     elif user_click == "show-histograms":
         details = show_distribution_changes()
-        return active_tab, pipeline, figure, details
+        return active_tab, pipeline_output, figure, details
 
 
 def execute_inspector_builder(pipeline, checks=None, inspections=None):
