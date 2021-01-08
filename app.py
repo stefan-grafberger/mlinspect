@@ -385,6 +385,7 @@ def nx2go(G):
             'pad': 1,
         },
         hovermode='closest',
+        plot_bgcolor='rgb(255,255,255)',
     )
     layout.annotations = annotations
 
