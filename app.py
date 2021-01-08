@@ -136,7 +136,6 @@ app.layout = dbc.Container([
             html.Br(),
             # Inspection details
             dbc.Button("Show first output rows", id="show-outputs", color="primary", size="lg", className="mr-1"),
-            dbc.Button("Show problems", id="show-histograms", color="primary", size="lg", className="mr-1"),
             html.Div(id="results-detail"),
         ], width=6),
     ]),
@@ -172,7 +171,7 @@ def toggle_editable(textarea_blur, code_clicks, pipeline):
     if textarea_blur:
         return pipeline, False, True
 
-    if code_clicks:
+    if code_clicks:  # Doesn't work :/
         return pipeline, True, False
 
     return pipeline, dash.no_update, dash.no_update
@@ -186,7 +185,6 @@ def toggle_editable(textarea_blur, code_clicks, pipeline):
     [
         Input("execute", "n_clicks"),
         Input("show-outputs", "n_clicks"),
-        Input("show-histograms", "n_clicks"),
     ],
     state=[
         State("pipeline-code", "children"),
@@ -195,21 +193,17 @@ def toggle_editable(textarea_blur, code_clicks, pipeline):
         State("dag", "figure"),
     ]
 )
-def update_outputs(execute_clicks, outputs_clicks, histograms_clicks, pipeline, checks, inspections, figure):
+def update_outputs(execute_clicks, outputs_clicks, pipeline, checks, inspections, figure):
     """When user clicks 'execute' button, show extracted DAG and inspection results."""
     user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
 
     if not user_click:
         return dash.no_update, dash.no_update
 
-    print("type(pipeline):", type(pipeline))
-    print("pipeline:", pipeline)
-    # print("json.dumps(pipeline, indent='\\t'):", json.dumps(pipeline, indent="\t"))
-
     if user_click == "execute":
         execute_inspector_builder(pipeline, checks, inspections)
         figure = nx2go(INSPECTOR_RESULT.dag)
-        details = []
+        details = show_distribution_changes()
         return figure, details
 
     elif user_click == "show-outputs":
@@ -234,10 +228,6 @@ def update_outputs(execute_clicks, outputs_clicks, histograms_clicks, pipeline, 
             )
             details += [html.Br(), description, table]
 
-        return figure, details
-
-    elif user_click == "show-histograms":
-        details = show_distribution_changes()
         return figure, details
 
 
@@ -418,29 +408,35 @@ def materialize_first_output_rows(figure):
 
 def show_distribution_changes():
     """From mlinspect.checks._no_bias_introduced_for:NoBiasIntroducedFor.plot_distribution_change_histograms."""
-    # --- distribution changes
-    no_bias_check_result = INSPECTOR_RESULT.check_to_check_results[NoBiasIntroducedFor(["age_group", "race"])]
-    dag_node_distribution_changes_list = list(no_bias_check_result.bias_distribution_change.items())
+    try:
+        no_bias_check_result = INSPECTOR_RESULT.check_to_check_results[NoBiasIntroducedFor(sensitive_columns)]
+    except KeyError:
+        return []
 
-    # --- histograms
-    _, join_distribution_changes = dag_node_distribution_changes_list[0]
     graphs = []
-    for column, distribution_change in join_distribution_changes.items():
-        keys = distribution_change.before_and_after_df["sensitive_column_value"]
-        keys = [str(key) for key in keys]  # Necessary because of null values
-        before_values = distribution_change.before_and_after_df["count_before"]
-        after_values = distribution_change.before_and_after_df["count_after"]
+    for node_dict in no_bias_check_result.bias_distribution_change.values():
+        for column, distribution_change in node_dict.items():
+            # check if distribution change is acceptable
+            if distribution_change.acceptable_change:
+                continue
 
-        # --- plotly figure
-        # --- (with subplots)
-        # figure = make_subplots(rows=1, cols=2, subplot_titles=["before", "after"])
-        # figure.append_trace(go.Bar(x=keys, y=before_values), 1, 1)
-        # figure.append_trace(go.Bar(x=keys, y=after_values), 1, 1)
-        # figure.update_layout(title_text=f"Column '{column}'")
-        # --- (without subplots)
-        trace1 = go.Bar(x=keys, y=before_values, name="Before")
-        trace2 = go.Bar(x=keys, y=after_values, name="After")
-        graphs += [dcc.Graph(figure=go.Figure(data=[trace1, trace2], layout=go.Layout(title_text=f"Column '{column}'")))]
+            # create histogram
+            keys = distribution_change.before_and_after_df["sensitive_column_value"]
+            keys = [str(key) for key in keys]  # Necessary because of null values
+            before_values = distribution_change.before_and_after_df["count_before"]
+            after_values = distribution_change.before_and_after_df["count_after"]
+            trace1 = go.Bar(x=keys, y=before_values, name="Before")
+            trace2 = go.Bar(x=keys, y=after_values, name="After")
+            graphs.append(
+                dcc.Graph(
+                    figure=go.Figure(
+                        data=[trace1, trace2],
+                        layout_title_text=f"Line {distribution_change.dag_node.code_reference.lineno}, "\
+                                          f"Operator '{distribution_change.dag_node.operator_type.value}', "\
+                                          f"Column '{column}'",
+                    )
+                )
+            )
 
     return graphs
 
