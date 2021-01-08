@@ -66,119 +66,80 @@ app.layout = dbc.Container([
     html.H1("mlinspect", style={"font-size": "24px", **CODE_FONT}),
     html.P("Inspect ML Pipelines in Python in the form of a DAG."),
 
-    dcc.Tabs([
-        # Inspection definition tab
-        dcc.Tab([
+    dbc.Row([
+        dbc.Col([
+            # Inspection definition
             dbc.Form([
-                dbc.Row([
-                    dbc.Col([
-                        dbc.FormGroup([
-                            # Pipeline definition
-                            dbc.Label("Pipeline definition:", html_for="pipeline"),
-                            dbc.Textarea(
-                                id="pipeline",
-                                className="mb-3",
-                                style={"width": "700px", "height": "500px", **CODE_FONT},
-                                value=default_pipeline,
-                            ),
-                        ]),
-                    ]),
-                    dbc.Col([
-                        dbc.FormGroup([
-                            # Add inspections
-                            dbc.Label("Add required inspections:", html_for="inspections"),
-                            dbc.Checklist(
-                                id="inspections",
-                                options=[
-                                    # {"label": "Histogram For Columns", "value": "HistogramForColumns"},
-                                    {"label": "Row Lineage", "value": "RowLineage"},
-                                    {"label": "Materialize First Output Rows", "value": "MaterializeFirstOutputRows"},
-                                ],
-                                switch=True,
-                                value=[],
-                            ),
-                        ]),
-                        dbc.FormGroup([
-                            # Add checks
-                            dbc.Label("Add checks:", html_for="checks"),
-                            dbc.Checklist(
-                                id="checks",
-                                options=[
-                                    {"label": "No Bias Introduced For", "value": "NoBiasIntroducedFor"},  # TODO: Sub checklist with data.columns
-                                    {"label": "No Illegal Features", "value": "NoIllegalFeatures"},
-                                    {"label": "No Missing Embeddings", "value": "NoMissingEmbeddings"},
-                                ],
-                                switch=True,
-                                value=[],
-                            ),
-                        ]),
-                        # Execute inspection
-                        dbc.Button("Inspect pipeline", id="execute", color="primary", size="lg", className="mr-1"),
-                    ]),
+                dbc.FormGroup([
+                    # Pipeline definition
+                    # dbc.Label("Pipeline definition:", html_for="pipeline"),
+                    dbc.Textarea(
+                        id="pipeline-textarea",
+                        value=default_pipeline,
+                        className="mb-3",
+                        style={"height": "500px"},
+                    ),
+                    html.Pre(
+                        html.Code(
+                            # default_pipeline,
+                            id="pipeline-code",
+                            # contentEditable="true",
+                            hidden=True,
+                        ),
+                    )
                 ]),
-            ], style={"margin": "auto", "padding": "20px"}),
-        ], label="INSPECTION DEFINITION", value="definition-tab"),
-
-        # Inspection results tab
-        dcc.Tab([
-            dbc.Row([
-                dbc.Col([
-                    # Display code
-                    # TODO: Add button "EDIT PIPELINE" to go back to invisible first tab?
-                    # html.P(
-                    #     id="pipeline-output",
-                    #     className="mb-3",
-                    #     style={
-                    #         **CODE_FONT,
-                    #         "font-size": "12px",
-                    #         "white-space": "pre-line",
-                    #     },
-                    #     children=default_pipeline,
-                    # ),
-                    dcc.Markdown("""
-                        Pipeline definition:
-                        ```python
-                        {}
-                        ```
-                        """.format(default_pipeline), id="pipeline-output",
-                        dangerously_allow_html=True,
-                        style={
-                            "background": "white",
-                            # "pre": {
-                            #     ".line-number": {
-                            #         "display": "block",
-                            #         "float": "left",
-                            #         "margin": "0 1em 0 -1em",
-                            #         "border-right": "1px solid #ddd",
-                            #         "text-align": "right",
-                            #         "span": {
-                            #             "display": "block",
-                            #             "padding": "0 .5em 0 1em",
-                            #             "color": "#ccc",
-                            #         },
-                            #     },
-                            # },
-                        }),
-                ], width=6),
-                dbc.Col([
-                    # Display DAG
-                    dbc.Label("Extracted DAG:", html_for="dag"),
-                    dcc.Graph(id="dag", figure=go.Figure(
-                        # layout_width=650,
-                        layout_height=650,
-                        layout_showlegend=False,
-                        layout_xaxis={'visible': False},
-                        layout_yaxis={'visible': False},
-                    )),
-                    html.Br(),
-                    # dbc.Button("Show first output rows", id="show-outputs", color="primary", size="lg", className="mr-1"),
-                    # dbc.Button("Show histograms", id="show-histograms", color="primary", size="lg", className="mr-1"),
-                    # TODO: Maybe even tabs for different details, first output rows vs. histograms, instead of one button
-                    html.Div(id="results-detail"),
-                ], width=6),
-            ], style={"margin": "auto", "padding": "20px", "font-size": "12px"}),
-        ], label="INSPECTION RESULTS", value="results-tab"),
-    ], id="tabs", style={"display": "none"}),
+                dbc.FormGroup([
+                    # Add inspections
+                    dbc.Label("Run inspections:", html_for="inspections"),
+                    dbc.Checklist(
+                        id="inspections",
+                        options=[
+                            # {"label": "Histogram For Columns", "value": "HistogramForColumns"},
+                            {"label": "Row Lineage", "value": "RowLineage"},
+                            {"label": "Materialize First Output Rows", "value": "MaterializeFirstOutputRows"},
+                        ],
+                        switch=True,
+                        value=[],
+                    ),
+                ]),
+                dbc.FormGroup([
+                    # Add checks
+                    dbc.Label("Run checks:", html_for="checks"),
+                    dbc.Checklist(
+                        id="checks",
+                        options=[
+                            {"label": "No Bias Introduced For", "value": "NoBiasIntroducedFor"},  # TODO: Sub checklist with data.columns
+                            {"label": "No Illegal Features", "value": "NoIllegalFeatures"},
+                            {"label": "No Missing Embeddings", "value": "NoMissingEmbeddings"},
+                        ],
+                        switch=True,
+                        value=[],
+                    ),
+                ]),
+                # Execute inspection
+                dbc.Button("Inspect pipeline", id="execute", color="primary", size="lg", className="mr-1"),
+            ]),
+        ], width=6),
+        dbc.Col([
+            # Extracted DAG
+            # dbc.Label("Extracted DAG:", html_for="dag"),
+            dcc.Graph(
+                id="dag",
+                figure=go.Figure(
+                    layout_height=650,
+                    layout_showlegend=False,
+                    layout_xaxis={'visible': False},
+                    layout_yaxis={'visible': False},
+                    layout_plot_bgcolor='rgb(255,255,255)',
+                ),
+            ),
+            html.Br(),
+            # Inspection details
+            dbc.Button("Show first output rows", id="show-outputs", color="primary", size="lg", className="mr-1"),
+            dbc.Button("Show problems", id="show-histograms", color="primary", size="lg", className="mr-1"),
+            html.Div(id="results-detail"),
+        ], width=6),
+    ]),
 ], style={"font-size": "14px"})
 
 
@@ -188,50 +149,75 @@ server = app.server
 
 @app.callback(
     [
-        Output("tabs", "value"),
-        Output("pipeline-output", "children"),
+        Output("pipeline-code", "children"),
+        Output("pipeline-code", "hidden"),
+        Output("pipeline-textarea", "hidden"),
+    ],
+    [
+        Input("pipeline-textarea", "n_blur"),
+        Input("pipeline-code", "n_clicks"),
+    ],
+    state=[
+        State("pipeline-textarea", "value"),
+    ],
+)
+def toggle_editable(textarea_blur, code_clicks, pipeline):
+    """
+    When textarea loses focus, hide textarea and show code instead
+    (with children updated with textarea value).
+
+    When user clicks on code, hide code and show textarea instead.
+    """
+    # user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
+    if textarea_blur:
+        return pipeline, False, True
+
+    if code_clicks:
+        return pipeline, True, False
+
+    return pipeline, dash.no_update, dash.no_update
+
+
+@app.callback(
+    [
         Output("dag", "figure"),
         Output("results-detail", "children"),
     ],
     [
         Input("execute", "n_clicks"),
-        Input("dag", "n_clicks"),
-        # Input("show-outputs", "n_clicks"),
-        # Input("show-histograms", "n_clicks"),
+        Input("show-outputs", "n_clicks"),
+        Input("show-histograms", "n_clicks"),
     ],
     state=[
-        State("pipeline", "value"),
+        State("pipeline-code", "children"),
         State("checks", "value"),
         State("inspections", "value"),
         State("dag", "figure"),
     ]
 )
-def update_outputs(execute_clicks, dag_clicks, pipeline, checks, inspections, figure):
-    """Dash callback function to show extracted DAG of ML pipeline."""
+def update_outputs(execute_clicks, outputs_clicks, histograms_clicks, pipeline, checks, inspections, figure):
+    """When user clicks 'execute' button, show extracted DAG and inspection results."""
     user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
 
     if not user_click:
-        return "definition-tab", dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update
 
-    active_tab = "results-tab"
-    pipeline_output = """
-```python
-{}
-```
-""".format(pipeline)
+    print("type(pipeline):", type(pipeline))
+    print("pipeline:", pipeline)
+    # print("json.dumps(pipeline, indent='\\t'):", json.dumps(pipeline, indent="\t"))
 
     if user_click == "execute":
         execute_inspector_builder(pipeline, checks, inspections)
         figure = nx2go(INSPECTOR_RESULT.dag)
         details = []
-        return active_tab, pipeline_output, figure, details
+        return figure, details
 
-    elif user_click == "dag":
+    elif user_click == "show-outputs":
         # Update figure with highlighted (red) nodes
         figure, output_rows_results = materialize_first_output_rows(figure)
 
         # Display first output rows (results of MaterializeFirstOutputRows(5) inspection)
-        details, code_linenos = [], []
+        details = []
         for node, df in output_rows_results:
             description = html.Div(
                 "\n\033{} ({})\033\n{}\n{}".format(
@@ -247,26 +233,12 @@ def update_outputs(execute_clicks, dag_clicks, pipeline, checks, inspections, fi
                 data=df.to_dict('records'),
             )
             details += [html.Br(), description, table]
-            code_linenos += [node.code_reference.lineno]
 
-        # Highlight problematic code
-        lines = pipeline.splitlines(keepends=True)
-        for lineno in code_linenos:
-            print("Formatting code line:", lineno)
-            lines[lineno-1] = "<b>" + lines[lineno-1] + "</b>"
-        pipeline_output = """
-<pre>
-```python
-{}
-```
-</pre>
-""".format("".join(lines))
-
-        return active_tab, pipeline_output, figure, details
+        return figure, details
 
     elif user_click == "show-histograms":
         details = show_distribution_changes()
-        return active_tab, pipeline_output, figure, details
+        return figure, details
 
 
 def execute_inspector_builder(pipeline, checks=None, inspections=None):
@@ -361,7 +333,7 @@ def nx2go(G):
         x=Xn, y=Yn, mode='markers', name='', hoverinfo='text', text=labels,
         marker={
             'size': 15,
-            'color': '#85b6b6',
+            'color': '#a3a7e4',
             'line': {
                 'color': 'rgb(100,100,100)',
                 'width': 0.5,
@@ -390,7 +362,20 @@ def nx2go(G):
     )
     layout.annotations = annotations
 
-    fig = go.Figure(data=[edges, nodes], layout=layout)
+    fig = go.FigureWidget(data=[edges, nodes], layout=layout)
+
+    # create our callback function
+    def update_point(trace, points, selector):
+        c = list(nodes.marker.color)
+        s = list(nodes.marker.size)
+        for i in points.point_inds:
+            c[i] = '#bae2be'
+            s[i] = 20
+            with fig.batch_update():
+                nodes.marker.color = c
+                nodes.marker.size = s
+
+    nodes.on_click(update_point)
 
     return fig
 
