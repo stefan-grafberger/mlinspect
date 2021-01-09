@@ -141,8 +141,12 @@ app.layout = dbc.Container([
             ),
             html.Br(),
             # Inspection details
-            dbc.Button("Show first output rows", id="show-outputs", color="primary", size="lg", className="mr-1"),
-            html.Div(id="results-detail"),
+            html.Div(id="first-outputs"),
+            html.Div(id="problems"),
+            html.Div([
+                html.H4("Click data"),
+                html.Div(id="click-data")
+            ]),
         ], width=6),
     ]),
 ], style={"font-size": "14px"})
@@ -197,17 +201,51 @@ def show_subchecklist(checked):
 
 
 @app.callback(
+    Output("click-data", "children"),
+    Input("dag", "clickData"),
+)
+def on_graph_click(click_data):
+    """React on graph clicks."""
+    data1 = {
+        "points": [
+            {
+                "curveNumber": 1,
+                "pointNumber": 24,
+                "pointIndex": 24,
+                "x": 10153,
+                "y": 428.07,
+                "text": "Transformer (L47)\nImputer (SimpleImputer), Column: 'race'",
+            },
+        ],
+    }
+    data2 = {
+        "points": [
+            {
+                "curveNumber": 1,
+                "pointNumber": 29,
+                "pointIndex": 29,
+                "x": 6131,
+                "y": 315.38,
+                "text": "Transformer (L48)\nCategorical Encoder (OneHotEncoder), Column: 'county'",
+            },
+        ],
+    }
+
+    return json.dumps(click_data, indent=2)
+
+
+@app.callback(
     [
         Output("dag", "figure"),
-        Output("results-detail", "children"),
+        Output("first-outputs", "children"),
+        Output("problems", "children"),
     ],
     [
         Input("execute", "n_clicks"),
-        Input("show-outputs", "n_clicks"),
+        Input("dag", "clickData"),
     ],
     state=[
         State("pipeline-textarea", "value"),
-        # State("checks", "value"),
         State("nobiasintroduced-checkbox", "checked"),
         State("sensitive-columns", "value"),
         State("noillegalfeatures-checkbox", "checked"),
@@ -217,29 +255,39 @@ def show_subchecklist(checked):
     ]
 )
 # def update_outputs(execute_clicks, outputs_clicks, pipeline, checks, inspections, figure):
-def update_outputs(execute_clicks, outputs_clicks, pipeline, nobiasintroduced,
+def update_outputs(execute_clicks, graph_click_data, pipeline, nobiasintroduced,
                    sensitive_columns, noillegalfeatures, nomissingembeddings,
                    inspections, figure):
     """When user clicks 'execute' button, show extracted DAG and inspection results."""
     user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
 
     if not user_click:
-        return dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update
 
     if user_click == "execute":
+        # Execute pipeline and inspections
         checks = {
             "NoBiasIntroducedFor": (nobiasintroduced, [sensitive_columns]),
             "NoIllegalFeatures": (noillegalfeatures, []),
             "NoMissingEmbeddings": (nomissingembeddings, []),
         }
         execute_inspector_builder(pipeline, checks, inspections)
-        figure = nx2go(INSPECTOR_RESULT.dag)
-        figure, details = show_distribution_changes(figure, sensitive_columns)
-        return figure, details
 
-    elif user_click == "show-outputs":
-        figure, details = show_one_hot_encoder_details(figure)
-        return figure, details
+        # Convert extracted DAG into plotly figure
+        figure = nx2go(INSPECTOR_RESULT.dag)
+
+        # Highlight problematic nodes and show histograms of distribution changes
+        figure, problems = show_distribution_changes(figure, sensitive_columns)
+
+        return figure, problems, dash.no_update
+
+    if user_click == "dag":
+        # TODO: Highlight code
+
+        # Output first rows
+        figure, output_rows = show_one_hot_encoder_details(figure)
+
+        return figure, dash.no_update, output_rows
 
 
 def execute_inspector_builder(pipeline, checks=None, inspections=None):
@@ -363,21 +411,7 @@ def nx2go(G):
     layout.annotations = annotations
 
     fig = go.Figure(data=[edges, nodes], layout=layout)
-    # Obviously this won't work because it's for Jupyter!
-    # fig = go.FigureWidget(data=[edges, nodes], layout=layout)
-
-    # create our callback function
-    def update_point(trace, points, selector):
-        c = list(nodes.marker.color)
-        s = list(nodes.marker.size)
-        for i in points.point_inds:
-            c[i] = 'red'
-            s[i] = 20
-            with fig.batch_update():
-                nodes.marker.color = c
-                nodes.marker.size = s
-
-    nodes.on_click(update_point)
+    fig.update_layout(clickmode='event+select')
 
     return fig.to_dict()
 
@@ -412,7 +446,7 @@ def show_one_hot_encoder_details(fig_dict):
         return fig_dict, []
 
     # Display first output rows (results of MaterializeFirstOutputRows(5) inspection)
-    details = []
+    details = [html.H4("First output rows")]
     node_list = list(INSPECTOR_RESULT.dag.nodes)
     for idx, desc in [[23, "Input"], [29, "Output"]]:
         node = node_list[idx]
@@ -445,7 +479,7 @@ def show_distribution_changes(fig_dict, sensitive_columns):
     except (KeyError, TypeError):
         return fig_dict, []
 
-    details = []
+    details = [html.H4("Problematic distribution changes")]
     for node_dict in no_bias_check_result.bias_distribution_change.values():
         for column, distribution_change in node_dict.items():
             # check if distribution change is acceptable
