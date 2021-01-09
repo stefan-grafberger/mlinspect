@@ -185,11 +185,11 @@ def toggle_editable(textarea_blur, edit_clicks, execute_clicks, pipeline):
 ```
 """.format(pipeline)
 
-    if user_click == "execute" or textarea_blur:
-        return pipeline_md, {"display": "block"}, True
-
     if user_click == "edit":
         return pipeline_md, {"display": "none"}, False
+
+    if user_click == "execute" or textarea_blur:
+        return pipeline_md, {"display": "block"}, True
 
     return pipeline_md, dash.no_update, dash.no_update
 
