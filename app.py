@@ -181,7 +181,7 @@ def toggle_editable(textarea_blur, edit_clicks, execute_clicks, pipeline):
 
     # Add line numbers
     pipeline = "".join([
-        f"{idx: >3}. {line}"
+        f"{idx+1: >3}. {line}"
         for idx, line in enumerate(pipeline.splitlines(keepends=True))
     ])
 
