@@ -383,7 +383,7 @@ def nx2go(G):
     nodes = go.Scatter(
         x=Xn, y=Yn, mode='markers', name='', hoverinfo='text', text=labels,
         marker={
-            'size': 15,
+            'size': 20,
             'color': 'rgb(200,200,200)',
             'line': {
                 'color': 'black',
