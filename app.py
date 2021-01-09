@@ -79,13 +79,12 @@ app.layout = dbc.Container([
                         style={"height": "500px"},
                     ),
                     html.Pre(
-                        html.Code(
-                            # default_pipeline,
-                            id="pipeline-code",
-                            # contentEditable="true",
-                            hidden=True,
+                        dcc.Markdown(
+                            id="pipeline-md",
+                            style={"display": "none"},
                         ),
-                    )
+                    ),
+                    dbc.Button("Edit pipeline", id="edit", color="primary", size="lg", className="mr-1"),
                 ]),
                 dbc.FormGroup([
                     # Add inspections
@@ -158,35 +157,41 @@ server = app.server
 
 @app.callback(
     [
-        Output("pipeline-code", "children"),
-        Output("pipeline-code", "hidden"),
+        Output("pipeline-md", "children"),
+        Output("pipeline-md", "style"),
         Output("pipeline-textarea", "hidden"),
     ],
     [
         Input("pipeline-textarea", "n_blur"),
-        Input("pipeline-code", "n_clicks"),
+        Input("edit", "n_clicks"),
         Input("execute", "n_clicks"),
     ],
     state=[
         State("pipeline-textarea", "value"),
     ],
 )
-def toggle_editable(textarea_blur, code_clicks, execute_clicks, pipeline):
+def toggle_editable(textarea_blur, edit_clicks, execute_clicks, pipeline):
     """
     When textarea loses focus, hide textarea and show code instead
     (with children updated with textarea value).
 
     When user clicks on code, hide code and show textarea instead.
     """
-    # user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
+    user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
 
-    if textarea_blur or execute_clicks:
-        return pipeline, False, True
+    pipeline_md = """
+```python
+{}
+```
+""".format(pipeline)
 
-    if code_clicks:  # Doesn't work :/
-        return pipeline, True, False
+    if user_click == "execute" or textarea_blur:
+        return pipeline_md, {"display": "block"}, True
 
-    return pipeline, dash.no_update, dash.no_update
+    if user_click == "edit":
+        return pipeline_md, {"display": "none"}, False
+
+    return pipeline_md, dash.no_update, dash.no_update
 
 
 @app.callback(
@@ -282,6 +287,7 @@ def update_outputs(execute_clicks, graph_click_data, pipeline, nobiasintroduced,
         return figure, problems, dash.no_update
 
     if user_click == "dag":
+        # TODO: Actually use graph_click_data
         # TODO: Highlight code
 
         # Output first rows
