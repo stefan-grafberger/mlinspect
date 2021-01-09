@@ -50,14 +50,13 @@ with open("example_pipelines/healthcare/healthcare.py") as f:
 patients = pd.read_csv("example_pipelines/healthcare/healthcare_patients.csv", na_values='?')
 histories = pd.read_csv("example_pipelines/healthcare/healthcare_histories.csv", na_values='?')
 data = patients.merge(histories, on=['ssn'])
-sensitive_columns = ["age_group", "race"]
 inspection_switcher = {
-    "HistogramForColumns": lambda: HistogramForColumns(sensitive_columns),
+    "HistogramForColumns": HistogramForColumns,
     "RowLineage": lambda: RowLineage(5),
     "MaterializeFirstOutputRows": lambda: MaterializeFirstOutputRows(5),
 }
 check_switcher = {
-    "NoBiasIntroducedFor": lambda: NoBiasIntroducedFor(sensitive_columns),
+    "NoBiasIntroducedFor": NoBiasIntroducedFor,
     "NoIllegalFeatures": NoIllegalFeatures,
     "NoMissingEmbeddings": NoMissingEmbeddings,
 }
@@ -102,20 +101,20 @@ app.layout = dbc.Container([
                         value=[],
                     ),
                 ]),
+                html.Div("Run checks:"),
                 dbc.FormGroup([
-                    # Add checks
-                    dbc.Label("Run checks:", html_for="checks"),
-                    dbc.Checklist(
-                        id="checks",
-                        options=[
-                            {"label": "No Bias Introduced For", "value": "NoBiasIntroducedFor"},  # TODO: Sub checklist with data.columns
-                            {"label": "No Illegal Features", "value": "NoIllegalFeatures"},
-                            {"label": "No Missing Embeddings", "value": "NoMissingEmbeddings"},
-                        ],
-                        switch=True,
-                        value=[],
-                    ),
-                ]),
+                    dbc.Checkbox(id="nobiasintroduced-checkbox", className="form-check-input"),
+                    dbc.Label("No Bias Introduced For", html_for="nobiasintroduced-checkbox", className="form-check-label"),
+                    dbc.Checklist(id="sensitive-columns", options=[{"label": column, "value": column} for column in data.columns], style={"display": "none"}),
+                ], check=True),
+                dbc.FormGroup([
+                    dbc.Checkbox(id="noillegalfeatures-checkbox", className="form-check-input"),
+                    dbc.Label("No Illegal Features", html_for="noillegalfeatures-checkbox", className="form-check-label"),
+                ], check=True),
+                dbc.FormGroup([
+                    dbc.Checkbox(id="nomissingembeddings-checkbox", className="form-check-input"),
+                    dbc.Label("No Missing Embeddings", html_for="nomissingembeddings-checkbox", className="form-check-label"),
+                ], check=True),
                 # Execute inspection
                 dbc.Button("Inspect pipeline", id="execute", color="primary", size="lg", className="mr-1"),
             ]),
@@ -180,6 +179,17 @@ def toggle_editable(textarea_blur, code_clicks, execute_clicks, pipeline):
 
 
 @app.callback(
+    Output("sensitive-columns", "style"),
+    Input("nobiasintroduced-checkbox", "checked"),
+)
+def show_subchecklist(checked):
+    """Show checklist of sensitive columns if NoBiasIntroducedFor is selected."""
+    if checked:
+        return {"display": "block"}
+    return {"display": "none"}
+
+
+@app.callback(
     [
         Output("dag", "figure"),
         Output("results-detail", "children"),
@@ -190,12 +200,19 @@ def toggle_editable(textarea_blur, code_clicks, execute_clicks, pipeline):
     ],
     state=[
         State("pipeline-textarea", "value"),
-        State("checks", "value"),
+        # State("checks", "value"),
+        State("nobiasintroduced-checkbox", "checked"),
+        State("sensitive-columns", "value"),
+        State("noillegalfeatures-checkbox", "checked"),
+        State("nomissingembeddings-checkbox", "checked"),
         State("inspections", "value"),
         State("dag", "figure"),
     ]
 )
-def update_outputs(execute_clicks, outputs_clicks, pipeline, checks, inspections, figure):
+# def update_outputs(execute_clicks, outputs_clicks, pipeline, checks, inspections, figure):
+def update_outputs(execute_clicks, outputs_clicks, pipeline, nobiasintroduced,
+                   sensitive_columns, noillegalfeatures, nomissingembeddings,
+                   inspections, figure):
     """When user clicks 'execute' button, show extracted DAG and inspection results."""
     user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
 
@@ -203,9 +220,14 @@ def update_outputs(execute_clicks, outputs_clicks, pipeline, checks, inspections
         return dash.no_update, dash.no_update
 
     if user_click == "execute":
+        checks = {
+            "NoBiasIntroducedFor": (nobiasintroduced, [sensitive_columns]),
+            "NoIllegalFeatures": (noillegalfeatures, []),
+            "NoMissingEmbeddings": (nomissingembeddings, []),
+        }
         execute_inspector_builder(pipeline, checks, inspections)
         figure = nx2go(INSPECTOR_RESULT.dag)
-        details = show_distribution_changes()
+        details = show_distribution_changes(sensitive_columns)
         return figure, details
 
     elif user_click == "show-outputs":
@@ -215,21 +237,23 @@ def update_outputs(execute_clicks, outputs_clicks, pipeline, checks, inspections
         # Display first output rows (results of MaterializeFirstOutputRows(5) inspection)
         details = []
         node_list = list(INSPECTOR_RESULT.dag.nodes)
-        for idx in [23, 29]:
+        for idx, desc in [[23, "Input"], [29, "Output"]]:
             node = node_list[idx]
             df = first_rows_inspection_result[node]
-            operator = html.Div(f"{node.operator_type}", style=CODE_FONT)
-            description = html.Div(f"{node.description}", style=CODE_FONT)
+            # operator = html.Div(f"{node.operator_type}", style=CODE_FONT)
+            # description = html.Div(f"{node.description}", style=CODE_FONT)
             data = df.to_dict('records')
             if idx == 29:
                 for record in data:
                     record['county'] = np.array2string(record['county'])
-            print("data:", data)
+            label = dbc.Label(desc, html_for=f"table-{idx}", style=CODE_FONT)
             table = dash_table.DataTable(
                 columns=[{"name": i, "id": i} for i in df.columns],
                 data=data,
+                id=f"table-{idx}",
             )
-            details += [html.Br(), operator, description, table]
+            # details += [html.Br(), operator, description, table]
+            details += [html.Br(), label, table]
 
         return figure, details
 
@@ -242,8 +266,10 @@ def execute_inspector_builder(pipeline, checks=None, inspections=None):
     builder = PipelineInspector.on_pipeline_from_string(pipeline)
     for inspection in inspections:
         builder = builder.add_required_inspection(inspection_switcher[inspection]())
-    for check in checks:
-        builder = builder.add_check(check_switcher[check]())
+    for check_name, (check_bool, check_args) in checks.items():
+        # builder = builder.add_check(check_switcher[check]())
+        if check_bool:
+            builder = builder.add_check(check_switcher[check_name](*check_args))
     INSPECTOR_RESULT = builder.execute()
     print(f"Total time in seconds: {time.time() - start}")
 
@@ -396,12 +422,10 @@ def show_one_hot_encoder_details(figure):
     # Append scatter plot to figure
     figure['data'].append(nodes)
 
-    # print("first_rows_inspection_result:", first_rows_inspection_result)
-
     return figure, first_rows_inspection_result
 
 
-def show_distribution_changes():
+def show_distribution_changes(sensitive_columns):
     """From mlinspect.checks._no_bias_introduced_for:NoBiasIntroducedFor.plot_distribution_change_histograms."""
     try:
         no_bias_check_result = INSPECTOR_RESULT.check_to_check_results[NoBiasIntroducedFor(sensitive_columns)]
