@@ -179,6 +179,13 @@ def toggle_editable(textarea_blur, edit_clicks, execute_clicks, pipeline):
     """
     user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
 
+    # Add line numbers
+    pipeline = "".join([
+        f"{idx: >3}. {line}"
+        for idx, line in enumerate(pipeline.splitlines(keepends=True))
+    ])
+
+    # Convert to markdown code block
     pipeline_md = """
 ```{{python, attr.source='.numberLines'}}
 {}
