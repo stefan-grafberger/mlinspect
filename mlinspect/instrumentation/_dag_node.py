@@ -26,6 +26,23 @@ class OperatorType(Enum):
 
     @property
     def short_value(self):
+        rel_algebra_symbols = {
+            OperatorType.SELECTION: "σ",
+            OperatorType.PROJECTION: "π",
+            OperatorType.PROJECTION_MODIFY: "π",
+            OperatorType.JOIN: "⋈",
+            OperatorType.GROUP_BY_AGG: "Γ",
+            OperatorType.TRAIN_TEST_SPLIT: "◨",
+            OperatorType.DATA_SOURCE: "☷",
+            OperatorType.TRANSFORMER: "τ",
+            OperatorType.ESTIMATOR: "f",
+            OperatorType.FIT: "=",
+            OperatorType.TRAIN_DATA: "χ",
+            OperatorType.TRAIN_LABELS: "γ",
+            OperatorType.CONCATENATION: "⧺"
+        }
+        if self in rel_algebra_symbols:
+            return rel_algebra_symbols[self]
         return self.value[:1]
 
 
