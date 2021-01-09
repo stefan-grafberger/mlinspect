@@ -234,34 +234,11 @@ def update_outputs(execute_clicks, outputs_clicks, pipeline, nobiasintroduced,
         }
         execute_inspector_builder(pipeline, checks, inspections)
         figure = nx2go(INSPECTOR_RESULT.dag)
-        details = show_distribution_changes(sensitive_columns)
+        figure, details = show_distribution_changes(figure, sensitive_columns)
         return figure, details
 
     elif user_click == "show-outputs":
-        # Update figure with highlighted (red) nodes
-        figure, first_rows_inspection_result = show_one_hot_encoder_details(figure)
-
-        # Display first output rows (results of MaterializeFirstOutputRows(5) inspection)
-        details = []
-        node_list = list(INSPECTOR_RESULT.dag.nodes)
-        for idx, desc in [[23, "Input"], [29, "Output"]]:
-            node = node_list[idx]
-            df = first_rows_inspection_result[node]
-            # operator = html.Div(f"{node.operator_type}", style=CODE_FONT)
-            # description = html.Div(f"{node.description}", style=CODE_FONT)
-            data = df.to_dict('records')
-            if idx == 29:
-                for record in data:
-                    record['county'] = np.array2string(record['county'])
-            label = dbc.Label(desc, html_for=f"table-{idx}", style=CODE_FONT)
-            table = dash_table.DataTable(
-                columns=[{"name": i, "id": i} for i in df.columns],
-                data=data,
-                id=f"table-{idx}",
-            )
-            # details += [html.Br(), operator, description, table]
-            details += [html.Br(), label, table]
-
+        figure, details = show_one_hot_encoder_details(figure)
         return figure, details
 
 
@@ -385,7 +362,9 @@ def nx2go(G):
     )
     layout.annotations = annotations
 
-    fig = go.FigureWidget(data=[edges, nodes], layout=layout)
+    fig = go.Figure(data=[edges, nodes], layout=layout)
+    # Obviously this won't work because it's for Jupyter!
+    # fig = go.FigureWidget(data=[edges, nodes], layout=layout)
 
     # create our callback function
     def update_point(trace, points, selector):
@@ -400,17 +379,10 @@ def nx2go(G):
 
     nodes.on_click(update_point)
 
-    return fig
+    return fig.to_dict()
 
 
-def show_one_hot_encoder_details(figure):
-    try:
-        first_rows_inspection_result = INSPECTOR_RESULT.inspection_to_annotations[MaterializeFirstOutputRows(5)]
-    except KeyError:
-        return figure, []
-
-    dag_node = list(INSPECTOR_RESULT.dag.nodes)[29]
-
+def highlight_dag_node_in_figure(dag_node, fig_dict):
     # Create scatter plot of this node
     Xn, Yn = POS_DICT[dag_node]
     label = get_new_node_label(dag_node)
@@ -427,19 +399,53 @@ def show_one_hot_encoder_details(figure):
     )
 
     # Append scatter plot to figure
-    figure['data'].append(nodes)
+    fig_dict['data'].append(nodes)  # if it's a dict
+    # figure.add_trace(nodes)  # if it's a tuple
 
-    return figure, first_rows_inspection_result
+    return fig_dict
 
 
-def show_distribution_changes(sensitive_columns):
+def show_one_hot_encoder_details(fig_dict):
+    try:
+        first_rows_inspection_result = INSPECTOR_RESULT.inspection_to_annotations[MaterializeFirstOutputRows(5)]
+    except KeyError:
+        return fig_dict, []
+
+    # Display first output rows (results of MaterializeFirstOutputRows(5) inspection)
+    details = []
+    node_list = list(INSPECTOR_RESULT.dag.nodes)
+    for idx, desc in [[23, "Input"], [29, "Output"]]:
+        node = node_list[idx]
+        df = first_rows_inspection_result[node]
+        # operator = html.Div(f"{node.operator_type}", style=CODE_FONT)
+        # description = html.Div(f"{node.description}", style=CODE_FONT)
+        data = df.to_dict('records')
+        if idx == 29:
+            for record in data:
+                record['county'] = np.array2string(record['county'])
+        label = dbc.Label(desc, html_for=f"table-{idx}", style=CODE_FONT)
+        table = dash_table.DataTable(
+            columns=[{"name": i, "id": i} for i in df.columns],
+            data=data,
+            id=f"table-{idx}",
+        )
+        # details += [html.Br(), operator, description, table]
+        details += [html.Br(), label, table]
+
+    dag_node = node_list[29]
+    fig_dict = highlight_dag_node_in_figure(dag_node, fig_dict)
+
+    return fig_dict, details
+
+
+def show_distribution_changes(fig_dict, sensitive_columns):
     """From mlinspect.checks._no_bias_introduced_for:NoBiasIntroducedFor.plot_distribution_change_histograms."""
     try:
         no_bias_check_result = INSPECTOR_RESULT.check_to_check_results[NoBiasIntroducedFor(sensitive_columns)]
-    except KeyError:
-        return []
+    except (KeyError, TypeError):
+        return fig_dict, []
 
-    graphs = []
+    details = []
     for node_dict in no_bias_check_result.bias_distribution_change.values():
         for column, distribution_change in node_dict.items():
             # check if distribution change is acceptable
@@ -453,7 +459,7 @@ def show_distribution_changes(sensitive_columns):
             after_values = distribution_change.before_and_after_df["count_after"]
             trace1 = go.Bar(x=keys, y=before_values, name="Before")
             trace2 = go.Bar(x=keys, y=after_values, name="After")
-            graphs.append(
+            details.append(
                 dcc.Graph(
                     figure=go.Figure(
                         data=[trace1, trace2],
@@ -464,7 +470,10 @@ def show_distribution_changes(sensitive_columns):
                 )
             )
 
-    return graphs
+            # highlight this node in figure
+            fig_dict = highlight_dag_node_in_figure(distribution_change.dag_node, fig_dict)
+
+    return fig_dict, details
 
 
 if __name__ == "__main__":
