@@ -360,6 +360,9 @@ def _get_pos(G):
             'y': pos[1],
             'text': node.operator_type.short_value,
             'showarrow': False,
+            'font': {
+                "size": 16,
+            },
         }]
 
     return Xn, Yn, Xe, Ye, labels, annotations
