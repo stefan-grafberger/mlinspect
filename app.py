@@ -78,14 +78,14 @@ app.layout = dbc.Container([
                         className="mb-3",
                         style={"height": "500px"},
                     ),
-                    html.Pre(
-                        dcc.Markdown(
-                            id="pipeline-md",
-                            style={"display": "none"},
-                        ),
-                    ),
-                    dbc.Button("Edit pipeline", id="edit", color="primary", size="lg", className="mr-1"),
                 ]),
+                html.Pre(
+                    dcc.Markdown(
+                        id="pipeline-md",
+                        style={"display": "none"},
+                    ),
+                ),
+                dbc.Button("Edit pipeline", id="edit", color="primary", size="lg", className="mr-1"),
                 dbc.FormGroup([
                     # Add inspections
                     dbc.Label("Run inspections:", html_for="inspections"),
@@ -172,24 +172,28 @@ server = app.server
 )
 def toggle_editable(textarea_blur, edit_clicks, execute_clicks, pipeline):
     """
-    When textarea loses focus, hide textarea and show code instead
-    (with children updated with textarea value).
+    When textarea loses focus or when user clicks execute button,
+    hide textarea and show markdown instead (with children updated with textarea value).
 
-    When user clicks on code, hide code and show textarea instead.
+    When user clicks on edit button, hide markdown and show textarea instead.
     """
     user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
 
     pipeline_md = """
-```python
+```{{python, attr.source='.numberLines'}}
 {}
 ```
 """.format(pipeline)
 
     if user_click == "edit":
-        return pipeline_md, {"display": "none"}, False
+        md_style = {"display": "none"}
+        hide_textarea = False
+        return pipeline_md, md_style, hide_textarea
 
     if user_click == "execute" or textarea_blur:
-        return pipeline_md, {"display": "block"}, True
+        md_style = {"display": "block", "background": "#ffffff"}
+        hide_textarea = True
+        return pipeline_md, md_style, hide_textarea
 
     return pipeline_md, dash.no_update, dash.no_update
 
