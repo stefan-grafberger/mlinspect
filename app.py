@@ -101,20 +101,27 @@ app.layout = dbc.Container([
                         value=[],
                     ),
                 ]),
-                html.Div("Run checks:"),
                 dbc.FormGroup([
-                    dbc.Checkbox(id="nobiasintroduced-checkbox", className="form-check-input"),
-                    dbc.Label("No Bias Introduced For", html_for="nobiasintroduced-checkbox", className="form-check-label"),
-                    dbc.Checklist(id="sensitive-columns", options=[{"label": column, "value": column} for column in data.columns], style={"display": "none"}),
-                ], check=True),
-                dbc.FormGroup([
-                    dbc.Checkbox(id="noillegalfeatures-checkbox", className="form-check-input"),
-                    dbc.Label("No Illegal Features", html_for="noillegalfeatures-checkbox", className="form-check-label"),
-                ], check=True),
-                dbc.FormGroup([
-                    dbc.Checkbox(id="nomissingembeddings-checkbox", className="form-check-input"),
-                    dbc.Label("No Missing Embeddings", html_for="nomissingembeddings-checkbox", className="form-check-label"),
-                ], check=True),
+                    # Add checks
+                    dbc.Label("Run checks:", html_for="checks"),
+                    html.Div([
+                        html.Div([
+                            dbc.Checkbox(id="nobiasintroduced-checkbox", className="custom-control-input"),
+                            dbc.Label("No Bias Introduced For", html_for="nobiasintroduced-checkbox", className="custom-control-label"),
+                            dbc.Checklist(id="sensitive-columns",
+                                          options=[{"label": column, "value": column} for column in data.columns],
+                                          style={"display": "none"}),
+                        ], className="custom-switch custom-control"),
+                        html.Div([
+                            dbc.Checkbox(id="noillegalfeatures-checkbox", className="custom-control-input"),
+                            dbc.Label("No Illegal Features", html_for="noillegalfeatures-checkbox", className="custom-control-label"),
+                        ], className="custom-switch custom-control"),
+                        html.Div([
+                            dbc.Checkbox(id="nomissingembeddings-checkbox", className="custom-control-input"),
+                            dbc.Label("No Missing Embeddings", html_for="nomissingembeddings-checkbox", className="custom-control-label"),
+                        ], className="custom-switch custom-control"),
+                    ], id="checks"),
+                ]),
                 # Execute inspection
                 dbc.Button("Inspect pipeline", id="execute", color="primary", size="lg", className="mr-1"),
             ]),
