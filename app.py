@@ -27,7 +27,6 @@ from mlinspect.checks import NoBiasIntroducedFor, NoIllegalFeatures
 from mlinspect.inspections import HistogramForColumns, RowLineage, MaterializeFirstOutputRows
 from mlinspect.visualisation import save_fig_to_path
 
-
 # Initialize Dash app with external stylesheets
 app = dash.Dash(__name__, external_stylesheets=[
     # Dash CSS
@@ -36,8 +35,15 @@ app = dash.Dash(__name__, external_stylesheets=[
     "https://codepen.io/chriddyp/pen/brPBPO.css",
     # Bootstrap theme CSS
     dbc.themes.BOOTSTRAP,  # pro: CSS classes; con: tiny font size
+    # Link taken from https://highlightjs.org/download/
+    "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/default.min.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/a11y-dark.min.css",
+    # jquery
+    "https://code.jquery.com/jquery-3.5.1.min.js"
     # dbc.themes.GRID,  # pro: grid layouts, large enough font size; con: no other dbc elements or CSS classes
-])
+],  # Link taken from https://highlightjs.org/download/
+   external_scripts=["//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js",
+                     "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/python.min.js"])
 app.config.suppress_callback_exceptions = True
 INSPECTOR_RESULT, POS_DICT = None, None
 
@@ -64,6 +70,7 @@ app.layout = dbc.Container([
     # Header and description
     html.H1("mlinspect", style={"font-size": "24px", **CODE_FONT}),
     html.P("Inspect ML Pipelines in Python in the form of a DAG."),
+    html.Div([html.Pre([html.Code(["print('hello world')"], className="Python")])], id="highlightjs-test",),
 
     dbc.Row([
         dbc.Col([
