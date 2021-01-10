@@ -1,3 +1,4 @@
+"""Predicting which patients are at a higher risk of complications"""
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
