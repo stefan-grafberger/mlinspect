@@ -1,4 +1,6 @@
 from ast import literal_eval
+from contextlib import redirect_stdout
+import io
 import json
 import numpy as np
 import os
@@ -93,6 +95,10 @@ app.layout = dbc.Container([  # for more margin
                         ),
                     ]),
                 ], id="pipeline-definition-container"),
+                html.Div([
+                    html.H4("Pipeline Output"),
+                    html.Pre(html.Code(id="pipeline-output")),
+                ], id="pipeline-output-container", hidden=True),
                 html.Div([
                     html.H4("Inspector Definition"),
                     dbc.FormGroup([
@@ -192,7 +198,11 @@ def show_subchecklist(checked):
 
 
 @app.callback(
-    Output("dag", "figure"),
+    [
+        Output("dag", "figure"),
+        Output("pipeline-output", "children"),
+        Output("pipeline-output-container", "hidden"),
+    ],
     Input("execute", "n_clicks"),
     state=[
         State("pipeline-textarea", "value"),
@@ -210,7 +220,7 @@ def on_execute(execute_clicks, pipeline, nobiasintroduced, sensitive_columns,
     problem nodes in red.
     """
     if not execute_clicks:
-        return dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update
 
     # Execute pipeline and inspections
     checks = {
@@ -218,7 +228,8 @@ def on_execute(execute_clicks, pipeline, nobiasintroduced, sensitive_columns,
         "NoIllegalFeatures": (noillegalfeatures, []),
         "NoMissingEmbeddings": (nomissingembeddings, []),
     }
-    execute_inspector_builder(pipeline, checks, inspections)
+    pipeline_output = execute_inspector_builder(pipeline, checks, inspections)
+    hide_output = False
 
     # Convert extracted DAG into plotly figure
     figure = nx2go(INSPECTOR_RESULT.dag)
@@ -226,7 +237,7 @@ def on_execute(execute_clicks, pipeline, nobiasintroduced, sensitive_columns,
     # Highlight problematic nodes
     figure = highlight_problem_nodes(figure, sensitive_columns)
 
-    return figure
+    return figure, pipeline_output, hide_output
 
 
 @app.callback(
@@ -299,14 +310,22 @@ def execute_inspector_builder(pipeline, checks=None, inspections=None):
     global INSPECTOR_RESULT
 
     start = time.time()
+
     builder = PipelineInspector.on_pipeline_from_string(pipeline)
     for inspection in inspections:
         builder = builder.add_required_inspection(inspection_switcher[inspection]())
     for check_name, (check_bool, check_args) in checks.items():
         if check_bool:
             builder = builder.add_check(check_switcher[check_name](*check_args))
-    INSPECTOR_RESULT = builder.execute()
+
+    f = io.StringIO()
+    with redirect_stdout(f):
+        INSPECTOR_RESULT = builder.execute()
+    out = f.getvalue()
+
     print(f"Total time in seconds: {time.time() - start}")
+
+    return out
 
 
 def get_new_node_label(node):
