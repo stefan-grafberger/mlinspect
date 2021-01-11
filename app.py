@@ -409,9 +409,6 @@ def show_one_hot_encoder_details(fig_dict, graph_click_data, pipeline):
         # details += [html.Br(), operator, description, table]
         details += [html.Br(), label, table]
 
-    dag_node = node_list[29]
-    fig_dict = highlight_dag_node_in_figure(dag_node, fig_dict)
-
     # TODO: Highlight relevant lines in code
     # emphasis = [47, 48]
 
