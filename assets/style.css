@@ -1,3 +1,7 @@
 .hljs {
     /* background: #ffffff; */
 }
+
+.code-dag-highlight {
+    color: red !important;
+}
