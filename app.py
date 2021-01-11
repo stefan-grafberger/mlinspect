@@ -283,7 +283,7 @@ def _get_pos(G):
             POS_DICT[edge1],
             Xe,
             Ye,
-            length_frac=0.8,
+            length_frac=1,
             # arrow_pos='end',
             arrow_length=130,
             arrow_angle=5,
