@@ -60,9 +60,9 @@ with open("example_pipelines/healthcare/healthcare.py") as f:
     default_pipeline = f.read()
 patients = pd.read_csv("example_pipelines/healthcare/healthcare_patients.csv", na_values='?')
 histories = pd.read_csv("example_pipelines/healthcare/healthcare_histories.csv", na_values='?')
-data = patients.merge(histories, on=['ssn'])
+healthcare_data = patients.merge(histories, on=['ssn'])
 inspection_switcher = {
-    "HistogramForColumns": HistogramForColumns,
+    "HistogramForColumns": HistogramForColumns(['age_group', 'race']),
     "RowLineage": lambda: RowLineage(5),
     "MaterializeFirstOutputRows": lambda: MaterializeFirstOutputRows(5),
 }
@@ -71,7 +71,8 @@ check_switcher = {
     "NoIllegalFeatures": NoIllegalFeatures,
     "NoMissingEmbeddings": NoMissingEmbeddings,
 }
-app.layout = dbc.Container([
+# app.layout = html.Div([     # for no margin
+app.layout = dbc.Container([  # for more margin
     # Header and description
     html.H1("mlinspect", style={"fontSize": "24px", **CODE_FONT}),
     html.P("Inspect ML Pipelines in Python in the form of a DAG."),
@@ -80,75 +81,96 @@ app.layout = dbc.Container([
         dbc.Col([
             # Inspection definition
             dbc.Form([
-                dbc.FormGroup([
-                    # Pipeline definition
-                    # dbc.Label("Pipeline definition:", html_for="pipeline"),
-                    dbc.Textarea(
-                        id="pipeline-textarea",
-                        value=default_pipeline,
-                        className="mb-3",
-                    ),
-                ]),
-                dbc.FormGroup([
-                    # Add inspections
-                    dbc.Label("Run inspections:", html_for="inspections"),
-                    dbc.Checklist(
-                        id="inspections",
-                        options=[
-                            {"label": "Histogram For Columns", "value": "HistogramForColumns"},
-                            {"label": "Row Lineage", "value": "RowLineage"},
-                            {"label": "Materialize First Output Rows", "value": "MaterializeFirstOutputRows"},
-                        ],
-                        switch=True,
-                        value=[],
-                    ),
-                ]),
-                dbc.FormGroup([
-                    # Add checks
-                    dbc.Label("Run checks:", html_for="checks"),
-                    html.Div([
+                html.Div([
+                    html.H4("Pipeline Definition"),
+                    dbc.FormGroup([
+                        # Pipeline definition
+                        # dbc.Label("Pipeline definition:", html_for="pipeline"),
+                        dbc.Textarea(
+                            id="pipeline-textarea",
+                            value=default_pipeline,
+                            className="mb-3",
+                        ),
+                    ]),
+                ], id="pipeline-definition-container"),
+                html.Div([
+                    html.H4("Inspector Definition"),
+                    dbc.FormGroup([
+                        # Add inspections
+                        dbc.Label("Run inspections:", html_for="inspections"),
+                        dbc.Checklist(
+                            id="inspections",
+                            options=[
+                                # {"label": "Histogram For Columns", "value": "HistogramForColumns"},
+                                {"label": "Row Lineage", "value": "RowLineage"},
+                                {"label": "Materialize First Output Rows", "value": "MaterializeFirstOutputRows"},
+                            ],
+                            switch=True,
+                            value=[],
+                        ),
+                    ]),
+                    dbc.FormGroup([
+                        # Add checks
+                        dbc.Label("Run checks:", html_for="checks"),
                         html.Div([
-                            dbc.Checkbox(id="nobiasintroduced-checkbox", className="custom-control-input"),
-                            dbc.Label("No Bias Introduced For", html_for="nobiasintroduced-checkbox", className="custom-control-label"),
-                            dbc.Checklist(id="sensitive-columns",
-                                          options=[{"label": column, "value": column} for column in data.columns],
-                                          style={"display": "none"}),
-                        ], className="custom-switch custom-control"),
-                        html.Div([
-                            dbc.Checkbox(id="noillegalfeatures-checkbox", className="custom-control-input"),
-                            dbc.Label("No Illegal Features", html_for="noillegalfeatures-checkbox", className="custom-control-label"),
-                        ], className="custom-switch custom-control"),
-                        html.Div([
-                            dbc.Checkbox(id="nomissingembeddings-checkbox", className="custom-control-input"),
-                            dbc.Label("No Missing Embeddings", html_for="nomissingembeddings-checkbox", className="custom-control-label"),
-                        ], className="custom-switch custom-control"),
-                    ], id="checks"),
-                ]),
+                            html.Div([
+                                dbc.Checkbox(id="nobiasintroduced-checkbox",
+                                             className="custom-control-input"),
+                                dbc.Label("No Bias Introduced For",
+                                          html_for="nobiasintroduced-checkbox",
+                                          className="custom-control-label"),
+                                dbc.Checklist(id="sensitive-columns",
+                                              options=[{"label": column, "value": column}
+                                                       for column in healthcare_data.columns],
+                                              style={"display": "none"}),
+                            ], className="custom-switch custom-control"),
+                            html.Div([
+                                dbc.Checkbox(id="noillegalfeatures-checkbox",
+                                             className="custom-control-input"),
+                                dbc.Label("No Illegal Features",
+                                          html_for="noillegalfeatures-checkbox",
+                                          className="custom-control-label"),
+                            ], className="custom-switch custom-control"),
+                            html.Div([
+                                dbc.Checkbox(id="nomissingembeddings-checkbox",
+                                             className="custom-control-input"),
+                                dbc.Label("No Missing Embeddings",
+                                          html_for="nomissingembeddings-checkbox",
+                                          className="custom-control-label"),
+                            ], className="custom-switch custom-control"),
+                        ], id="checks"),
+                    ]),
+                ], id="inspector-definition-container"),
                 # Execute inspection
-                dbc.Button("Inspect pipeline", id="execute", color="primary", size="lg", className="mr-1"),
+                dbc.Button("Execute", id="execute", color="primary", size="lg", className="mr-1"),
             ]),
         ], width=6),
         dbc.Col([
             # Extracted DAG
             # dbc.Label("Extracted DAG:", html_for="dag"),
-            dcc.Graph(
-                id="dag",
-                figure=go.Figure(
-                    layout_height=650,
-                    layout_showlegend=False,
-                    layout_xaxis={'visible': False},
-                    layout_yaxis={'visible': False},
-                    layout_plot_bgcolor='rgb(255,255,255)',
+            html.Div([
+                html.H4("Extracted DAG"),
+                dcc.Graph(
+                    id="dag",
+                    figure=go.Figure(
+                        layout_height=650,
+                        layout_showlegend=False,
+                        layout_xaxis={'visible': False},
+                        layout_yaxis={'visible': False},
+                        layout_plot_bgcolor='rgb(255,255,255)',
+                    ),
                 ),
-            ),
+            ], id="dag-container"),
             html.Div([
                 html.Div(id="hovered-code-reference"),
                 html.Div(id="selected-code-reference"),
-            ], id="code-references", hidden=True),
+            ], id="code-reference-container", hidden=True),
             html.Br(),
-            # Inspection details
-            html.Div(id="first-outputs"),
-            html.Div(id="problems", hidden=True),
+            # Operator details
+            html.Div([
+                html.H4("Operator Details"),
+                html.Div("Select an operator in the DAG to see details", id="operator-details"),
+            ], id="operator-details-container"),
         ], width=6),
     ]),
 ], style={"fontSize": "14px"})
@@ -165,7 +187,7 @@ server = app.server
 def show_subchecklist(checked):
     """Show checklist of sensitive columns if NoBiasIntroducedFor is selected."""
     if checked:
-        return {"display": "block"}
+        return {"display": "block", **CODE_FONT}
     return {"display": "none"}
 
 
@@ -202,7 +224,7 @@ def on_execute(execute_clicks, pipeline, nobiasintroduced, sensitive_columns,
     figure = nx2go(INSPECTOR_RESULT.dag)
 
     # Highlight problematic nodes
-    figure = show_distribution_changes(figure, sensitive_columns)
+    figure = highlight_problem_nodes(figure, sensitive_columns)
 
     return figure
 
@@ -216,9 +238,11 @@ def on_dag_node_hover(hoverData):
     When user hovers on DAG node, show node label and emphasize corresponding
     source code.
     """
+    # Un-highlight source code
     if not hoverData:
         return []
 
+    # Find DagNode object at this position
     point = hoverData['points'][0]
     x = point['x']
     y = point['y']
@@ -228,6 +252,7 @@ def on_dag_node_hover(hoverData):
         print(f"[hover] Could not find node with pos {x} and {y}")
         return dash.no_update
 
+    # Highlight source code
     code_ref = node.code_reference
     return json.dumps(code_ref.__dict__)
 
@@ -235,8 +260,7 @@ def on_dag_node_hover(hoverData):
 @app.callback(
     [
         Output("selected-code-reference", "children"),
-        Output("first-outputs", "children"),
-        Output("problems", "children"),
+        Output("operator-details", "children"),
     ],
     [
         Input("dag", "selectedData"),
@@ -244,16 +268,14 @@ def on_dag_node_hover(hoverData):
 )
 def on_dag_node_select(selectedData):
     """
-    When user clicks on DAG node, show detailed check and inspection results
+    When user selects DAG node, show detailed check and inspection results
     and emphasize corresponding source code.
-
-    When user hovers on DAG node, show node label and emphasize corresponding
-    source code.
     """
-    # TODO: Populate and show div(s)
+    # Un-highlight source code
     if not selectedData:
-        return [], dash.no_update, dash.no_update
+        return [], dash.no_update
 
+    # Find DagNode object at this position
     point = selectedData['points'][0]
     x = point['x']
     y = point['y']
@@ -263,8 +285,13 @@ def on_dag_node_select(selectedData):
         print(f"[select] Could not find node with pos {x} and {y}")
         return dash.no_update, dash.no_update, dash.no_update
 
+    # Highlight source code
     code_ref = node.code_reference
-    return json.dumps(code_ref.__dict__), dash.no_update, dash.no_update
+
+    # Populate and show div(s)
+    operator_details = get_operator_details(node)
+
+    return json.dumps(code_ref.__dict__), operator_details
 
 
 def execute_inspector_builder(pipeline, checks=None, inspections=None):
@@ -276,7 +303,6 @@ def execute_inspector_builder(pipeline, checks=None, inspections=None):
     for inspection in inspections:
         builder = builder.add_required_inspection(inspection_switcher[inspection]())
     for check_name, (check_bool, check_args) in checks.items():
-        # builder = builder.add_check(check_switcher[check]())
         if check_bool:
             builder = builder.add_check(check_switcher[check_name](*check_args))
     INSPECTOR_RESULT = builder.execute()
@@ -405,93 +431,90 @@ def highlight_dag_node_in_figure(dag_node, figure):
     )
 
     # Append scatter plot to figure
-    print("=== type(figure):", type(figure))
     if isinstance(figure, dict):
-        print("figure is a dict")
         figure['data'].append(nodes)
     else:
-        print("figure is a", type(figure))
-        figure.data.add_trace(nodes)
+        figure.add_trace(nodes)
 
     return figure
 
 
-# def show_one_hot_encoder_details(fig_dict, graph_click_data):
-#     try:
-#         first_rows_inspection_result = INSPECTOR_RESULT.inspection_to_annotations[MaterializeFirstOutputRows(5)]
-#     except KeyError:
-#         return fig_dict, []
-
-#     # TODO: Actually use graph_click_data
-
-#     # Display first output rows (results of MaterializeFirstOutputRows(5) inspection)
-#     details = [html.H4("First output rows")]
-#     node_list = list(INSPECTOR_RESULT.dag.nodes)
-#     for idx, desc in [[23, "Input"], [29, "Output"]]:
-#         node = node_list[idx]
-#         df = first_rows_inspection_result[node]
-#         # operator = html.Div(f"{node.operator_type}", style=CODE_FONT)
-#         # description = html.Div(f"{node.description}", style=CODE_FONT)
-#         data = df.to_dict('records')
-#         if idx == 29:
-#             for record in data:
-#                 record['county'] = np.array2string(record['county'])
-#         label = dbc.Label(desc, html_for=f"table-{idx}", style=CODE_FONT)
-#         table = dash_table.DataTable(
-#             columns=[{"name": i, "id": i} for i in df.columns],
-#             data=data,
-#             id=f"table-{idx}",
-#         )
-#         # details += [html.Br(), operator, description, table]
-#         details += [html.Br(), label, table]
-
-#     # TODO: Highlight relevant lines in code
-#     # emphasis = [47, 48]
-
-#     return fig_dict, details
-
-
-def show_distribution_changes(fig_dict, sensitive_columns):
+def highlight_problem_nodes(fig_dict, sensitive_columns):
     """From mlinspect.checks._no_bias_introduced_for:NoBiasIntroducedFor.plot_distribution_change_histograms."""
     try:
         no_bias_check_result = INSPECTOR_RESULT.check_to_check_results[NoBiasIntroducedFor(sensitive_columns)]
     except (KeyError, TypeError):
-        return fig_dict#, []
+        return fig_dict
 
-    # details = [html.H4("Problematic distribution changes")]
-    # code_linenos = []
     for node_dict in no_bias_check_result.bias_distribution_change.values():
-        for column, distribution_change in node_dict.items():
+        for distribution_change in node_dict.values():
             # Check if distribution change is acceptable
             if distribution_change.acceptable_change:
                 continue
 
-            # # Create histogram
-            # keys = distribution_change.before_and_after_df["sensitive_column_value"]
-            # keys = [str(key) for key in keys]  # Necessary because of null values
-            # before_values = distribution_change.before_and_after_df["count_before"]
-            # after_values = distribution_change.before_and_after_df["count_after"]
-            # trace1 = go.Bar(x=keys, y=before_values, name="Before")
-            # trace2 = go.Bar(x=keys, y=after_values, name="After")
-            # details.append(
-            #     dcc.Graph(
-            #         figure=go.Figure(
-            #             data=[trace1, trace2],
-            #             layout_title_text=f"Line {distribution_change.dag_node.code_reference.lineno}, "\
-            #                               f"Operator '{distribution_change.dag_node.operator_type.value}', "\
-            #                               f"Column '{column}'",
-            #         )
-            #     )
-            # )
-
             # Highlight this node in figure
             fig_dict = highlight_dag_node_in_figure(distribution_change.dag_node, fig_dict)
 
-            # code_linenos += [distribution_change.dag_node.code_reference.lineno]
-    # TODO: Highlight relevant lines in code
-    # emphasis = code_linenos
+    return fig_dict
 
-    return fig_dict#, details
+
+def create_histogram(column, distribution_change):
+    keys = distribution_change.before_and_after_df["sensitive_column_value"]
+    keys = [str(key) for key in keys]  # Necessary because of null values
+    before_values = distribution_change.before_and_after_df["count_before"]
+    after_values = distribution_change.before_and_after_df["count_after"]
+    trace1 = go.Bar(x=keys, y=before_values, name="Before")
+    trace2 = go.Bar(x=keys, y=after_values, name="After")
+
+    data = [trace1, trace2]
+    title = f"Line {distribution_change.dag_node.code_reference.lineno}, "\
+            f"Operator '{distribution_change.dag_node.operator_type.value}', "\
+            f"Column '{column}'"
+    figure = go.Figure(data=data, layout_title_text=title)
+    return dcc.Graph(figure=figure)
+
+
+def get_operator_details(node):
+    details = []
+
+    # Show inspection results
+    for inspection, result_dict in INSPECTOR_RESULT.inspection_to_annotations.items():
+        if isinstance(inspection, MaterializeFirstOutputRows):
+            df = result_dict[node]
+            columns = [{"name": i, "id": i} for i in df.columns]
+            data = [
+                {
+                    k: np.array2string(v) if isinstance(v, np.ndarray) else v
+                    for k, v in record.items()
+                }
+                for record in df.to_dict('records')
+            ]
+            element = html.Div([
+                html.P(f"{inspection}:"),
+                dash_table.DataTable(columns=columns, data=data)
+            ], className="result-item")
+            details += [element]
+        else:
+            print("inspection:", inspection)
+
+    # Show check results
+    for check, result_obj in INSPECTOR_RESULT.check_to_check_results.items():
+        if isinstance(check, NoBiasIntroducedFor):
+            if node not in result_obj.bias_distribution_change:
+                print("check:", check)
+                continue
+            graphs = []
+            for column, distribution_change in result_obj.bias_distribution_change[node].items():
+                graphs += [create_histogram(column, distribution_change)]
+            element = html.Div([
+                html.P(f"{check}:"),
+                html.Div(graphs),
+            ], className="result-item")
+            details += [element]
+        else:
+            print("check:", check)
+
+    return details
 
 
 if __name__ == "__main__":
