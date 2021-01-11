@@ -453,7 +453,7 @@ def highlight_dag_node_in_figure(dag_node, fig_dict):
     nodes = go.Scatter(
         x=[Xn], y=[Yn], mode='markers', name='', hoverinfo='text', text=[label],
         marker={
-            'size': 15,
+            'size': 20,
             'color': 'red',
             'line': {
                 'color': 'red',
