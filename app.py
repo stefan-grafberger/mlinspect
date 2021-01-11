@@ -40,12 +40,14 @@ app = dash.Dash(__name__,
                     dbc.themes.BOOTSTRAP,  # pro: CSS classes; con: tiny font size
                     # dbc.themes.GRID,  # pro: grid layouts, large enough font size; con: no other dbc elements or CSS classes
 
-                    # https://stackoverflow.com/questions/42444093/where-is-codemirror-js
+                    # https://cdnjs.com/libraries/codemirror
                     "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.32.0/codemirror.min.css",
+                    "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.1/theme/twilight.min.css"
                 ],
                 external_scripts=[
-                    # https://stackoverflow.com/questions/42444093/where-is-codemirror-js
+                    # https://cdnjs.com/libraries/codemirror
                     "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.32.0/codemirror.min.js",
+                    "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.1/mode/python/python.min.js"
                 ])
 app.config.suppress_callback_exceptions = True
 INSPECTOR_RESULT, POS_DICT = None, None
