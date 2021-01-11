@@ -40,24 +40,19 @@ app = dash.Dash(__name__,
                     dbc.themes.BOOTSTRAP,  # pro: CSS classes; con: tiny font size
                     # dbc.themes.GRID,  # pro: grid layouts, large enough font size; con: no other dbc elements or CSS classes
 
-                    # Link taken from https://highlightjs.org/download/
-                    "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/default.min.css",
-                    "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/a11y-dark.min.css",
+                    # https://stackoverflow.com/questions/42444093/where-is-codemirror-js
+                    "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.32.0/codemirror.min.css",
                 ],
                 external_scripts=[
-                    # Link taken from https://highlightjs.org/download/
-                    "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js",
-                    "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/python.min.js",
-
-                    # jquery
-                    "https://code.jquery.com/jquery-3.5.1.min.js"
+                    # https://stackoverflow.com/questions/42444093/where-is-codemirror-js
+                    "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.32.0/codemirror.min.js",
                 ])
 app.config.suppress_callback_exceptions = True
 INSPECTOR_RESULT, POS_DICT = None, None
 
 
 # Create HTML layout
-CODE_FONT = {"font-family": "'Courier New', monospace"}
+CODE_FONT = {"fontFamily": "'Courier New', monospace"}
 app.title = "mlinspect"
 with open("example_pipelines/healthcare/healthcare.py") as f:
     default_pipeline = f.read()
@@ -76,7 +71,7 @@ check_switcher = {
 }
 app.layout = dbc.Container([
     # Header and description
-    html.H1("mlinspect", style={"font-size": "24px", **CODE_FONT}),
+    html.H1("mlinspect", style={"fontSize": "24px", **CODE_FONT}),
     html.P("Inspect ML Pipelines in Python in the form of a DAG."),
     html.Div([html.Pre([html.Code(["print('hello world')"], className="Python")])], id="highlightjs-test",),
 
@@ -164,7 +159,7 @@ app.layout = dbc.Container([
             ]),
         ], width=6),
     ]),
-], style={"font-size": "14px"})
+], style={"fontSize": "14px"})
 
 
 # Flask server (for gunicorn)
