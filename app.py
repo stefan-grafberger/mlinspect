@@ -27,8 +27,9 @@ from mlinspect.checks import NoBiasIntroducedFor, NoIllegalFeatures
 from mlinspect.inspections import HistogramForColumns, RowLineage, MaterializeFirstOutputRows
 from mlinspect.visualisation import save_fig_to_path
 
-# Initialize Dash app with external stylesheets
+# Initialize Dash app
 app = dash.Dash(__name__,
+                title="mlinspect",
                 external_stylesheets=[
                     # Dash CSS
                     "https://codepen.io/chriddyp/pen/bWLwgP.css",
@@ -55,7 +56,6 @@ INSPECTOR_RESULT, POS_DICT = None, None
 
 # Create HTML layout
 CODE_FONT = {"fontFamily": "'Courier New', monospace"}
-app.title = "mlinspect"
 with open("example_pipelines/healthcare/healthcare.py") as f:
     default_pipeline = f.read()
 patients = pd.read_csv("example_pipelines/healthcare/healthcare_patients.csv", na_values='?')
@@ -75,7 +75,6 @@ app.layout = dbc.Container([
     # Header and description
     html.H1("mlinspect", style={"fontSize": "24px", **CODE_FONT}),
     html.P("Inspect ML Pipelines in Python in the form of a DAG."),
-    html.Div([html.Pre([html.Code(["print('hello world')"], className="Python")])], id="highlightjs-test",),
 
     dbc.Row([
         dbc.Col([
@@ -88,17 +87,8 @@ app.layout = dbc.Container([
                         id="pipeline-textarea",
                         value=default_pipeline,
                         className="mb-3",
-                        style={"height": "500px"},
                     ),
                 ]),
-                # html.Pre(
-                    dcc.Markdown(
-                        id="pipeline-md",
-                        style={"display": "none"},
-                        dangerously_allow_html=True,  # to enable <b> tags for highlighting source code sections
-                    ),
-                # ),
-                dbc.Button("Edit pipeline", id="edit", color="primary", size="lg", className="mr-1"),
                 dbc.FormGroup([
                     # Add inspections
                     dbc.Label("Run inspections:", html_for="inspections"),
@@ -155,10 +145,6 @@ app.layout = dbc.Container([
             # Inspection details
             html.Div(id="first-outputs"),
             html.Div(id="problems"),
-            html.Div([
-                html.H4("Click data"),
-                html.Div(id="click-data")
-            ]),
         ], width=6),
     ]),
 ], style={"fontSize": "14px"})
@@ -166,44 +152,6 @@ app.layout = dbc.Container([
 
 # Flask server (for gunicorn)
 server = app.server
-
-
-@app.callback(
-    [
-        # Output("pipeline-md", "children"),
-        Output("pipeline-md", "style"),
-        Output("pipeline-textarea", "hidden"),
-    ],
-    [
-        Input("pipeline-textarea", "n_blur"),
-        Input("edit", "n_clicks"),
-        Input("execute", "n_clicks"),
-    ],
-    state=[
-        State("pipeline-textarea", "value"),
-    ],
-)
-def toggle_editable(textarea_blur, edit_clicks, execute_clicks, pipeline):
-    """
-    When textarea loses focus or when user clicks execute button,
-    hide textarea and show markdown instead.
-    Handle update of markdown content in main callback instead of here.
-
-    When user clicks on edit button, hide markdown and show textarea instead.
-    """
-    user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
-
-    if user_click == "edit":
-        md_style = {"display": "none"}
-        hide_textarea = False
-        return md_style, hide_textarea
-
-    if user_click == "execute" or textarea_blur:
-        md_style = {"display": "block", "background": "#ffffff"}
-        hide_textarea = True
-        return md_style, hide_textarea
-
-    return dash.no_update, dash.no_update
 
 
 @app.callback(
@@ -218,45 +166,10 @@ def show_subchecklist(checked):
 
 
 @app.callback(
-    Output("click-data", "children"),
-    Input("dag", "clickData"),
-)
-def on_graph_click(click_data):
-    """React on graph clicks."""
-    data1 = {
-        "points": [
-            {
-                "curveNumber": 1,
-                "pointNumber": 24,
-                "pointIndex": 24,
-                "x": 10153,
-                "y": 428.07,
-                "text": "Transformer (L47)\nImputer (SimpleImputer), Column: 'race'",
-            },
-        ],
-    }
-    data2 = {
-        "points": [
-            {
-                "curveNumber": 1,
-                "pointNumber": 29,
-                "pointIndex": 29,
-                "x": 6131,
-                "y": 315.38,
-                "text": "Transformer (L48)\nCategorical Encoder (OneHotEncoder), Column: 'county'",
-            },
-        ],
-    }
-
-    return json.dumps(click_data, indent=2)
-
-
-@app.callback(
     [
         Output("dag", "figure"),
         Output("first-outputs", "children"),
         Output("problems", "children"),
-        Output("pipeline-md", "children"),
     ],
     [
         Input("execute", "n_clicks"),
@@ -290,7 +203,7 @@ def update_outputs(execute_clicks, graph_click_data, textarea_blur, pipeline,
     user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
 
     if not user_click:
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update
 
     if user_click == "execute":
         # Execute pipeline and inspections
@@ -305,21 +218,15 @@ def update_outputs(execute_clicks, graph_click_data, textarea_blur, pipeline,
         figure = nx2go(INSPECTOR_RESULT.dag)
 
         # Highlight problematic nodes and show histograms of distribution changes
-        figure, problems, pipeline_md = show_distribution_changes(figure, sensitive_columns, pipeline)
+        figure, problems = show_distribution_changes(figure, sensitive_columns, pipeline)
 
-        return figure, problems, dash.no_update, pipeline_md
+        return figure, problems, dash.no_update
 
     if user_click == "dag":
         # Output first rows and highlight code
-        figure, output_rows, pipeline_md = show_one_hot_encoder_details(figure, graph_click_data, pipeline)
+        figure, output_rows = show_one_hot_encoder_details(figure, graph_click_data, pipeline)
 
-        return figure, dash.no_update, output_rows, pipeline_md
-
-    if textarea_blur:
-        # Simply update the markdown content from the textarea
-        pipeline_md = convert_to_markdown(pipeline, add_line_numbers=True)
-
-        return dash.no_update, dash.no_update, dash.no_update, pipeline_md
+        return figure, dash.no_update, output_rows
 
 
 def execute_inspector_builder(pipeline, checks=None, inspections=None):
@@ -469,37 +376,8 @@ def highlight_dag_node_in_figure(dag_node, fig_dict):
 
     # Append scatter plot to figure
     fig_dict['data'].append(nodes)  # if it's a dict
-    # figure.add_trace(nodes)  # if it's a tuple
 
     return fig_dict
-
-
-def convert_to_markdown(pipeline, add_line_numbers=True, emphasis=[]):
-    lines = pipeline.splitlines(keepends=True)
-
-    # Add line numbers
-    if add_line_numbers:
-        for idx, line in enumerate(lines):
-            lineno = idx + 1  # because line numbers should have one-based indexing
-            line = f"{lineno: >3}. {line}"
-
-    # Add emphasis on certain line(s)
-    for lineno in emphasis:
-        idx = lineno - 1  # due to zero-based python array indexing
-        lines[idx] = f"<b>{lines[idx]}</b>"
-
-    pipeline = "".join(lines)
-
-    # Convert to markdown code block
-    pipeline_md = """
-```python
-{}
-```
-""".format(pipeline)
-    if emphasis:
-        pipeline_md = f"<pre>{pipeline_md}</pre>"
-
-    return pipeline_md
 
 
 def show_one_hot_encoder_details(fig_dict, graph_click_data, pipeline):
@@ -534,10 +412,10 @@ def show_one_hot_encoder_details(fig_dict, graph_click_data, pipeline):
     dag_node = node_list[29]
     fig_dict = highlight_dag_node_in_figure(dag_node, fig_dict)
 
-    # highlight relevant lines in code
-    pipeline_md = convert_to_markdown(pipeline, add_line_numbers=True, emphasis=[47, 48])
+    # TODO: Highlight relevant lines in code
+    # emphasis = [47, 48]
 
-    return fig_dict, details, pipeline_md
+    return fig_dict, details
 
 
 def show_distribution_changes(fig_dict, sensitive_columns, pipeline):
@@ -551,11 +429,11 @@ def show_distribution_changes(fig_dict, sensitive_columns, pipeline):
     code_linenos = []
     for node_dict in no_bias_check_result.bias_distribution_change.values():
         for column, distribution_change in node_dict.items():
-            # check if distribution change is acceptable
+            # Check if distribution change is acceptable
             if distribution_change.acceptable_change:
                 continue
 
-            # create histogram
+            # Create histogram
             keys = distribution_change.before_and_after_df["sensitive_column_value"]
             keys = [str(key) for key in keys]  # Necessary because of null values
             before_values = distribution_change.before_and_after_df["count_before"]
@@ -573,14 +451,14 @@ def show_distribution_changes(fig_dict, sensitive_columns, pipeline):
                 )
             )
 
-            # highlight this node in figure
+            # Highlight this node in figure
             fig_dict = highlight_dag_node_in_figure(distribution_change.dag_node, fig_dict)
 
             code_linenos += [distribution_change.dag_node.code_reference.lineno]
-    # highlight relevant lines in code
-    pipeline_md = convert_to_markdown(pipeline, add_line_numbers=True, emphasis=code_linenos)
+    # TODO: Highlight relevant lines in code
+    # emphasis = code_linenos
 
-    return fig_dict, details, pipeline_md
+    return fig_dict, details
 
 
 if __name__ == "__main__":

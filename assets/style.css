@@ -1,5 +1,6 @@
-.hljs {
-    /* background: #ffffff; */
+.CodeMirror {
+    height: 500px;
+    font-size: 12px;
 }
 
 .code-dag-highlight {
