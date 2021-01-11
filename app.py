@@ -95,7 +95,7 @@ app.layout = dbc.Container([
                     dbc.Checklist(
                         id="inspections",
                         options=[
-                            # {"label": "Histogram For Columns", "value": "HistogramForColumns"},
+                            {"label": "Histogram For Columns", "value": "HistogramForColumns"},
                             {"label": "Row Lineage", "value": "RowLineage"},
                             {"label": "Materialize First Output Rows", "value": "MaterializeFirstOutputRows"},
                         ],
@@ -141,10 +141,14 @@ app.layout = dbc.Container([
                     layout_plot_bgcolor='rgb(255,255,255)',
                 ),
             ),
+            html.Div([
+                html.Div(id="hovered-code-reference"),
+                html.Div(id="selected-code-reference"),
+            ], id="code-references", hidden=True),
             html.Br(),
             # Inspection details
             html.Div(id="first-outputs"),
-            html.Div(id="problems"),
+            html.Div(id="problems", hidden=True),
         ], width=6),
     ]),
 ], style={"fontSize": "14px"})
@@ -166,16 +170,8 @@ def show_subchecklist(checked):
 
 
 @app.callback(
-    [
-        Output("dag", "figure"),
-        Output("first-outputs", "children"),
-        Output("problems", "children"),
-    ],
-    [
-        Input("execute", "n_clicks"),
-        Input("dag", "clickData"),
-        Input("pipeline-textarea", "n_blur"),
-    ],
+    Output("dag", "figure"),
+    Input("execute", "n_clicks"),
     state=[
         State("pipeline-textarea", "value"),
         State("nobiasintroduced-checkbox", "checked"),
@@ -183,50 +179,92 @@ def show_subchecklist(checked):
         State("noillegalfeatures-checkbox", "checked"),
         State("nomissingembeddings-checkbox", "checked"),
         State("inspections", "value"),
-        State("dag", "figure"),
     ]
 )
-def update_outputs(execute_clicks, graph_click_data, textarea_blur, pipeline,
-                   nobiasintroduced, sensitive_columns, noillegalfeatures,
-                   nomissingembeddings, inspections, figure):
+def on_execute(execute_clicks, pipeline, nobiasintroduced, sensitive_columns,
+               noillegalfeatures, nomissingembeddings, inspections):
     """
-    When user clicks 'execute' button, show extracted DAG and automatically flag
-    potential problems: highlight DAG node, highlight source code, and show
-    histograms of distribution changes.
-
-    When textarea loses focus or when user clicks execute button,
-    update markdown content with value from textarea instead.
-    Handle toggling between textarea and code in separate callback.
-
-    When user clicks on DAG node, output first rows of this operator.
+    When user clicks 'execute' button, show extracted DAG including potential
+    problem nodes in red.
     """
-    user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
+    if not execute_clicks:
+        return dash.no_update
 
-    if not user_click:
+    # Execute pipeline and inspections
+    checks = {
+        "NoBiasIntroducedFor": (nobiasintroduced, [sensitive_columns]),
+        "NoIllegalFeatures": (noillegalfeatures, []),
+        "NoMissingEmbeddings": (nomissingembeddings, []),
+    }
+    execute_inspector_builder(pipeline, checks, inspections)
+
+    # Convert extracted DAG into plotly figure
+    figure = nx2go(INSPECTOR_RESULT.dag)
+
+    # Highlight problematic nodes
+    figure = show_distribution_changes(figure, sensitive_columns)
+
+    return figure
+
+
+@app.callback(
+    Output("hovered-code-reference", "children"),
+    Input("dag", "hoverData"),
+)
+def on_dag_node_hover(hoverData):
+    """
+    When user hovers on DAG node, show node label and emphasize corresponding
+    source code.
+    """
+    if not hoverData:
+        return []
+
+    point = hoverData['points'][0]
+    x = point['x']
+    y = point['y']
+    try:
+        node = [node for node, pos in POS_DICT.items() if pos == (x, y)][0]
+    except IndexError:
+        print(f"[hover] Could not find node with pos {x} and {y}")
+        return dash.no_update
+
+    code_ref = node.code_reference
+    return json.dumps(code_ref.__dict__)
+
+
+@app.callback(
+    [
+        Output("selected-code-reference", "children"),
+        Output("first-outputs", "children"),
+        Output("problems", "children"),
+    ],
+    [
+        Input("dag", "selectedData"),
+    ],
+)
+def on_dag_node_select(selectedData):
+    """
+    When user clicks on DAG node, show detailed check and inspection results
+    and emphasize corresponding source code.
+
+    When user hovers on DAG node, show node label and emphasize corresponding
+    source code.
+    """
+    # TODO: Populate and show div(s)
+    if not selectedData:
+        return [], dash.no_update, dash.no_update
+
+    point = selectedData['points'][0]
+    x = point['x']
+    y = point['y']
+    try:
+        node = [node for node, pos in POS_DICT.items() if pos == (x, y)][0]
+    except IndexError:
+        print(f"[select] Could not find node with pos {x} and {y}")
         return dash.no_update, dash.no_update, dash.no_update
 
-    if user_click == "execute":
-        # Execute pipeline and inspections
-        checks = {
-            "NoBiasIntroducedFor": (nobiasintroduced, [sensitive_columns]),
-            "NoIllegalFeatures": (noillegalfeatures, []),
-            "NoMissingEmbeddings": (nomissingembeddings, []),
-        }
-        execute_inspector_builder(pipeline, checks, inspections)
-
-        # Convert extracted DAG into plotly figure
-        figure = nx2go(INSPECTOR_RESULT.dag)
-
-        # Highlight problematic nodes and show histograms of distribution changes
-        figure, problems = show_distribution_changes(figure, sensitive_columns, pipeline)
-
-        return figure, problems, dash.no_update
-
-    if user_click == "dag":
-        # Output first rows and highlight code
-        figure, output_rows = show_one_hot_encoder_details(figure, graph_click_data, pipeline)
-
-        return figure, dash.no_update, output_rows
+    code_ref = node.code_reference
+    return json.dumps(code_ref.__dict__), dash.no_update, dash.no_update
 
 
 def execute_inspector_builder(pipeline, checks=None, inspections=None):
@@ -244,11 +282,6 @@ def execute_inspector_builder(pipeline, checks=None, inspections=None):
     INSPECTOR_RESULT = builder.execute()
     print(f"Total time in seconds: {time.time() - start}")
 
-    # extracted_dag = INSPECTOR_RESULT.dag
-    # inspection_results = INSPECTOR_RESULT.inspection_to_annotations
-    # check_results = INSPECTOR_RESULT.check_to_check_results
-    # return extracted_dag, inspection_results, check_results
-
 
 def get_new_node_label(node):
     """From mlinspect.visualisation._visualisation."""
@@ -262,9 +295,6 @@ def get_new_node_label(node):
 def _get_pos(G):
     global POS_DICT
     POS_DICT = nx.nx_agraph.graphviz_layout(G, 'dot')
-    # pos_json = {k.node_id: {'pos': v, 'node': k.to_dict()} for k, v in POS_DICT.items()}
-    # with open('pos_dict_with_checks.json', 'w') as f:
-    #     json.dump(pos_json, f, indent="\t", ensure_ascii=True)
 
     nodes = G.nodes()
     edges = G.edges()
@@ -355,10 +385,10 @@ def nx2go(G):
     fig = go.Figure(data=[edges, nodes], layout=layout)
     fig.update_layout(clickmode='event+select')
 
-    return fig.to_dict()
+    return fig#.to_dict()
 
 
-def highlight_dag_node_in_figure(dag_node, fig_dict):
+def highlight_dag_node_in_figure(dag_node, figure):
     # Create scatter plot of this node
     Xn, Yn = POS_DICT[dag_node]
     label = get_new_node_label(dag_node)
@@ -375,87 +405,93 @@ def highlight_dag_node_in_figure(dag_node, fig_dict):
     )
 
     # Append scatter plot to figure
-    fig_dict['data'].append(nodes)  # if it's a dict
+    print("=== type(figure):", type(figure))
+    if isinstance(figure, dict):
+        print("figure is a dict")
+        figure['data'].append(nodes)
+    else:
+        print("figure is a", type(figure))
+        figure.data.add_trace(nodes)
 
-    return fig_dict
-
-
-def show_one_hot_encoder_details(fig_dict, graph_click_data, pipeline):
-    try:
-        first_rows_inspection_result = INSPECTOR_RESULT.inspection_to_annotations[MaterializeFirstOutputRows(5)]
-    except KeyError:
-        return fig_dict, []
-
-    # TODO: Actually use graph_click_data
-
-    # Display first output rows (results of MaterializeFirstOutputRows(5) inspection)
-    details = [html.H4("First output rows")]
-    node_list = list(INSPECTOR_RESULT.dag.nodes)
-    for idx, desc in [[23, "Input"], [29, "Output"]]:
-        node = node_list[idx]
-        df = first_rows_inspection_result[node]
-        # operator = html.Div(f"{node.operator_type}", style=CODE_FONT)
-        # description = html.Div(f"{node.description}", style=CODE_FONT)
-        data = df.to_dict('records')
-        if idx == 29:
-            for record in data:
-                record['county'] = np.array2string(record['county'])
-        label = dbc.Label(desc, html_for=f"table-{idx}", style=CODE_FONT)
-        table = dash_table.DataTable(
-            columns=[{"name": i, "id": i} for i in df.columns],
-            data=data,
-            id=f"table-{idx}",
-        )
-        # details += [html.Br(), operator, description, table]
-        details += [html.Br(), label, table]
-
-    # TODO: Highlight relevant lines in code
-    # emphasis = [47, 48]
-
-    return fig_dict, details
+    return figure
 
 
-def show_distribution_changes(fig_dict, sensitive_columns, pipeline):
+# def show_one_hot_encoder_details(fig_dict, graph_click_data):
+#     try:
+#         first_rows_inspection_result = INSPECTOR_RESULT.inspection_to_annotations[MaterializeFirstOutputRows(5)]
+#     except KeyError:
+#         return fig_dict, []
+
+#     # TODO: Actually use graph_click_data
+
+#     # Display first output rows (results of MaterializeFirstOutputRows(5) inspection)
+#     details = [html.H4("First output rows")]
+#     node_list = list(INSPECTOR_RESULT.dag.nodes)
+#     for idx, desc in [[23, "Input"], [29, "Output"]]:
+#         node = node_list[idx]
+#         df = first_rows_inspection_result[node]
+#         # operator = html.Div(f"{node.operator_type}", style=CODE_FONT)
+#         # description = html.Div(f"{node.description}", style=CODE_FONT)
+#         data = df.to_dict('records')
+#         if idx == 29:
+#             for record in data:
+#                 record['county'] = np.array2string(record['county'])
+#         label = dbc.Label(desc, html_for=f"table-{idx}", style=CODE_FONT)
+#         table = dash_table.DataTable(
+#             columns=[{"name": i, "id": i} for i in df.columns],
+#             data=data,
+#             id=f"table-{idx}",
+#         )
+#         # details += [html.Br(), operator, description, table]
+#         details += [html.Br(), label, table]
+
+#     # TODO: Highlight relevant lines in code
+#     # emphasis = [47, 48]
+
+#     return fig_dict, details
+
+
+def show_distribution_changes(fig_dict, sensitive_columns):
     """From mlinspect.checks._no_bias_introduced_for:NoBiasIntroducedFor.plot_distribution_change_histograms."""
     try:
         no_bias_check_result = INSPECTOR_RESULT.check_to_check_results[NoBiasIntroducedFor(sensitive_columns)]
     except (KeyError, TypeError):
-        return fig_dict, []
+        return fig_dict#, []
 
-    details = [html.H4("Problematic distribution changes")]
-    code_linenos = []
+    # details = [html.H4("Problematic distribution changes")]
+    # code_linenos = []
     for node_dict in no_bias_check_result.bias_distribution_change.values():
         for column, distribution_change in node_dict.items():
             # Check if distribution change is acceptable
             if distribution_change.acceptable_change:
                 continue
 
-            # Create histogram
-            keys = distribution_change.before_and_after_df["sensitive_column_value"]
-            keys = [str(key) for key in keys]  # Necessary because of null values
-            before_values = distribution_change.before_and_after_df["count_before"]
-            after_values = distribution_change.before_and_after_df["count_after"]
-            trace1 = go.Bar(x=keys, y=before_values, name="Before")
-            trace2 = go.Bar(x=keys, y=after_values, name="After")
-            details.append(
-                dcc.Graph(
-                    figure=go.Figure(
-                        data=[trace1, trace2],
-                        layout_title_text=f"Line {distribution_change.dag_node.code_reference.lineno}, "\
-                                          f"Operator '{distribution_change.dag_node.operator_type.value}', "\
-                                          f"Column '{column}'",
-                    )
-                )
-            )
+            # # Create histogram
+            # keys = distribution_change.before_and_after_df["sensitive_column_value"]
+            # keys = [str(key) for key in keys]  # Necessary because of null values
+            # before_values = distribution_change.before_and_after_df["count_before"]
+            # after_values = distribution_change.before_and_after_df["count_after"]
+            # trace1 = go.Bar(x=keys, y=before_values, name="Before")
+            # trace2 = go.Bar(x=keys, y=after_values, name="After")
+            # details.append(
+            #     dcc.Graph(
+            #         figure=go.Figure(
+            #             data=[trace1, trace2],
+            #             layout_title_text=f"Line {distribution_change.dag_node.code_reference.lineno}, "\
+            #                               f"Operator '{distribution_change.dag_node.operator_type.value}', "\
+            #                               f"Column '{column}'",
+            #         )
+            #     )
+            # )
 
             # Highlight this node in figure
             fig_dict = highlight_dag_node_in_figure(distribution_change.dag_node, fig_dict)
 
-            code_linenos += [distribution_change.dag_node.code_reference.lineno]
+            # code_linenos += [distribution_change.dag_node.code_reference.lineno]
     # TODO: Highlight relevant lines in code
     # emphasis = code_linenos
 
-    return fig_dict, details
+    return fig_dict#, details
 
 
 if __name__ == "__main__":
