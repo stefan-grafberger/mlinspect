@@ -372,7 +372,7 @@ def _get_pos(G):
             Xe,
             Ye,
             length_frac=0.8,
-            arrow_pos='end',
+            # arrow_pos='end',
             arrow_length=130,
             arrow_angle=5,
             # dot_size=15,
