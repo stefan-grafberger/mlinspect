@@ -4,5 +4,8 @@
 }
 
 .code-dag-highlight {
-    color: red !important;
+    /*color: red !important;
+    font-weight: bold; */
+    font-style: italic;
+    text-decoration: underline;
 }
