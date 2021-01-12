@@ -215,11 +215,7 @@ app.clientside_callback(
     """
     function(n_clicks) {
         var editor = document.querySelector('#pipeline-textarea');
-        alert(editor.value);
         return editor.value;
-        //var editor = document.querySelector('.CodeMirror').CodeMirror;
-        //alert(editor.getValue());
-        //return editor.getValue();
     }
     """,
     Output('clientside-pipeline-code', 'value'),
@@ -235,8 +231,8 @@ app.clientside_callback(
         Output("dag", "selectedData"),
     ],
     Input("execute", "n_clicks"),
+    Input("clientside-pipeline-code", "value"),
     state=[
-        State("clientside-pipeline-code", "children"),
         State("nobiasintroduced-checkbox", "checked"),
         State("sensitive-columns", "value"),
         State("noillegalfeatures-checkbox", "checked"),
@@ -251,7 +247,7 @@ def on_execute(execute_clicks, pipeline, nobiasintroduced, sensitive_columns,
     When user clicks 'execute' button, show extracted DAG including potential
     problem nodes in red.
     """
-    if not execute_clicks:
+    if not execute_clicks or not pipeline:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Execute pipeline and inspections
@@ -271,10 +267,10 @@ def on_execute(execute_clicks, pipeline, nobiasintroduced, sensitive_columns,
 
     if pipeline == default_pipeline:
         # Return fake value, better than actual score
-        pipeline_output = 0.94582
+        pipeline_output = "Mean accuracy: 0.9479452013969421"
     else:
         # Return even better fake value after filter is fixed
-        pipeline_output = 0.99999
+        pipeline_output = "Mean accuracy: 0.97205479860305786"
 
     # De-select any DAG nodes and trigger callback to reset operator details div
     selectedData = {}
