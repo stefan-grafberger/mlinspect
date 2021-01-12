@@ -6,6 +6,12 @@
     box-sizing: border-box;
 }
 
+#pipeline-output-cell {
+    border: 1px solid #ccc;
+    margin: 10px auto;
+    box-sizing: border-box;
+}
+
 .code-dag-highlight {
     /*color: red !important;
     font-weight: bold; */

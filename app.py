@@ -104,7 +104,7 @@ app.layout = dbc.Container([  # for more margin
                 # Pipeline execution output
                 html.Div([
                     html.H3("Pipeline Output"),
-                    html.Pre(html.Code(id="pipeline-output")),
+                    html.Pre(html.Code(id="pipeline-output"), id="pipeline-output-cell"),
                 ], id="pipeline-output-container", className="container", hidden=True),
                 html.Div([
                     html.H3("Inspector Definition"),
@@ -155,6 +155,7 @@ app.layout = dbc.Container([  # for more margin
                     ]),
                     # Execute inspection
                     dbc.Button(id="execute", color="primary", size="lg", className="mr-1 play-button"),
+                    html.Br(),
                 ], id="inspector-definition-container", className="container"),
             ]),
         ], width=6),
