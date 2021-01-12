@@ -218,7 +218,7 @@ app.clientside_callback(
         return editor.value;
     }
     """,
-    Output('clientside-pipeline-code', 'value'),
+    Output('clientside-pipeline-code', 'children'),
     Input("execute", "n_clicks")
 )
 
@@ -231,7 +231,7 @@ app.clientside_callback(
         Output("dag", "selectedData"),
     ],
     Input("execute", "n_clicks"),
-    Input("clientside-pipeline-code", "value"),
+    Input("clientside-pipeline-code", "children"),
     state=[
         State("nobiasintroduced-checkbox", "checked"),
         State("sensitive-columns", "value"),
