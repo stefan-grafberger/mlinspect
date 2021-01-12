@@ -60,8 +60,8 @@ INSPECTOR_RESULT, POS_DICT = None, None
 CODE_FONT = {"fontFamily": "'Courier New', monospace"}
 with open("example_pipelines/healthcare/healthcare.py") as f:
     default_pipeline = f.read()
-patients = pd.read_csv("example_pipelines/healthcare/healthcare_patients.csv", na_values='?')
-histories = pd.read_csv("example_pipelines/healthcare/healthcare_histories.csv", na_values='?')
+patients = pd.read_csv("example_pipelines/healthcare/patients.csv", na_values='?')
+histories = pd.read_csv("example_pipelines/healthcare/histories.csv", na_values='?')
 healthcare_data = patients.merge(histories, on=['ssn'])
 inspection_switcher = {
     "HistogramForColumns": HistogramForColumns(['age_group', 'race']),
@@ -180,7 +180,7 @@ app.layout = dbc.Container([  # for more margin
             ], id="operator-details-container", className="container"),
         ], width=6),
     ]),
-], style={"fontSize": "14px"})
+], style={"fontSize": "14px"}, id="app-container")
 
 
 # Flask server (for gunicorn)
