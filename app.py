@@ -37,8 +37,7 @@ app = dash.Dash(__name__,
                     "https://codepen.io/chriddyp/pen/brPBPO.css",
 
                     # Bootstrap theme CSS
-                    dbc.themes.BOOTSTRAP,  # pro: CSS classes; con: tiny font size
-                    # dbc.themes.GRID,  # pro: grid layouts, large enough font size; con: no other dbc elements or CSS classes
+                    dbc.themes.BOOTSTRAP,
 
                     # CodeMirror stylesheets: https://cdnjs.com/libraries/codemirror
                     "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.32.0/codemirror.min.css",
@@ -126,15 +125,13 @@ app.layout = dbc.Container([
                 html.Div(id="hovered-code-reference"),
                 html.Div(id="selected-code-reference"),
             ], id="code-reference-container", className="container", hidden=True),
-            html.Br(),
         ], width=6),
     ]),
-    html.H3("Inspector Definition"),
     dbc.Row([
         dbc.Col([
             dbc.FormGroup([
                 # Add inspections
-                dbc.Label("Run inspections:", html_for="inspections"),
+                html.H3("Inspections"),
                 dbc.Checklist(
                     id="inspections",
                     options=[
@@ -150,7 +147,7 @@ app.layout = dbc.Container([
         dbc.Col([
             dbc.FormGroup([
                 # Add checks
-                dbc.Label("Run checks:", html_for="checks"),
+                html.H3("Checks"),
                 html.Div([
                     html.Div([
                         dbc.Checkbox(id="nobiasintroduced-checkbox",
@@ -182,8 +179,9 @@ app.layout = dbc.Container([
         ], width=3),
         dbc.Col([
             # Execute inspection
-            dbc.Button(id="execute", color="primary", size="lg", className="mr-1 play-button"),
             html.Br(),
+            html.Br(),
+            dbc.Button(id="execute", color="primary", size="lg", className="mr-1 play-button"),
         ], width=1),
         dbc.Col([
             # Operator details
