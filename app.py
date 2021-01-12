@@ -77,10 +77,10 @@ app.layout = dbc.Container([
     # Header and description
     dbc.Row([
         dbc.Col([
-            html.H1("mlinspect"),
+            html.H2("mlinspect"),
         ], width=4),
         dbc.Col([
-            html.H3("Inspect ML Pipelines in Python in the form of a DAG.", style={"text-align": "right"}),
+            html.H2("Inspect ML Pipelines in Python in the form of a DAG.", style={"text-align": "right"}),
         ], width=8),
     ], id="header-container", className="container", style=CODE_FONT),
     html.Hr(),
