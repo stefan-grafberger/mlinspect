@@ -38,8 +38,8 @@
     position: relative;
     display: block;
     transform: scale(var(--ggs,1));
-    width: 25px;
-    height: 25px;
+    width: 40px;
+    height: 40px;
 }
 
 .play-button::before {
@@ -52,6 +52,6 @@
     border-top: 5px solid transparent;
     border-bottom: 5px solid transparent;
     border-left: 6px solid;
-    top: 6px;
-    left: 9px;
+    top: 13px;
+    left: 17px;
 }
