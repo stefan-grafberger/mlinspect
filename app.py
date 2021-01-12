@@ -193,6 +193,7 @@ app.layout = dbc.Container([
             ], id="operator-details-container", className="container"),
         ], width=5)
     ], id="inspector-definition-container", className="container"),
+    html.Div(id="clientside-pipeline-code", hidden=True)
 ], style={"fontSize": "14px"}, id="app-container")
 
 
@@ -212,6 +213,22 @@ def on_nobiasintroduced_checked(checked):
     return {"display": "none"}
 
 
+app.clientside_callback(
+    """
+    function(n_clicks) {
+        var editor = document.querySelector('#pipeline-textarea');
+        alert(editor.value);
+        return editor.value;
+        //var editor = document.querySelector('.CodeMirror').CodeMirror;
+        //alert(editor.getValue());
+        //return editor.getValue();
+    }
+    """,
+    Output('clientside-pipeline-code', 'value'),
+    Input("execute", "n_clicks")
+)
+
+
 @app.callback(
     [
         Output("dag", "figure"),
@@ -221,12 +238,12 @@ def on_nobiasintroduced_checked(checked):
     ],
     Input("execute", "n_clicks"),
     state=[
-        State("pipeline-textarea", "value"),
+        State("clientside-pipeline-code", "children"),
         State("nobiasintroduced-checkbox", "checked"),
         State("sensitive-columns", "value"),
         State("noillegalfeatures-checkbox", "checked"),
         State("nomissingembeddings-checkbox", "checked"),
-        State("inspections", "value"),
+        State("inspections", "value")
     ]
 )
 def on_execute(execute_clicks, pipeline, nobiasintroduced, sensitive_columns,

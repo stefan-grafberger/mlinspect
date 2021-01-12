@@ -12,7 +12,7 @@ function hightightCodeBlock(editor, codeReferenceText){
 }
 
 setTimeout(function(){
-   textArea = document.querySelector('#pipeline-textarea')
+    textArea = document.querySelector('#pipeline-textarea');
     console.log(textArea);
     // then highlight each
     var editor = CodeMirror.fromTextArea(textArea, {
@@ -23,6 +23,16 @@ setTimeout(function(){
         // can use other themes, only need to include css file from https://cdnjs.com/libraries/codemirror
         // see https://codemirror.net/demo/theme.html#default
     });
+
+    editor.on('change', function(){
+        // get value right from instance
+        editor.save();
+        textArea.value = editor.getValue();
+        console.log(editor.getValue());
+        input = document.querySelector('#pipeline-textarea');
+        input.value = editor.getValue();
+    });
+    console.log(editor);
 
     //More Details https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
     // select the target node
@@ -46,5 +56,5 @@ setTimeout(function(){
     var config = { attributes: true, childList: true, characterData: true };
     // pass in the target node, as well as the observer options
     observer.observe(hoverDiv, config);
-    observer.observe(selectDiv, config);
+    observer.observe(selectDiv, config)
 }, 2000);
