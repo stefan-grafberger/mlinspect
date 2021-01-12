@@ -29,7 +29,7 @@ from mlinspect.checks import NoBiasIntroducedFor, NoIllegalFeatures
 from mlinspect.inspections import HistogramForColumns, RowLineage, MaterializeFirstOutputRows
 from mlinspect.visualisation import save_fig_to_path
 
-# Initialize Dash app
+# === Initialize Dash app ===
 app = dash.Dash(__name__,
                 title="mlinspect",
                 external_stylesheets=[
@@ -43,12 +43,12 @@ app = dash.Dash(__name__,
                     dbc.themes.BOOTSTRAP,  # pro: CSS classes; con: tiny font size
                     # dbc.themes.GRID,  # pro: grid layouts, large enough font size; con: no other dbc elements or CSS classes
 
-                    # https://cdnjs.com/libraries/codemirror
+                    # CodeMirror stylesheets: https://cdnjs.com/libraries/codemirror
                     "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.32.0/codemirror.min.css",
                     "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.1/theme/twilight.min.css"
                 ],
                 external_scripts=[
-                    # https://cdnjs.com/libraries/codemirror
+                    # CodeMirror scripts: https://cdnjs.com/libraries/codemirror
                     "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.32.0/codemirror.min.js",
                     "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.59.1/mode/python/python.min.js"
                 ])
@@ -56,13 +56,16 @@ app.config.suppress_callback_exceptions = True
 INSPECTOR_RESULT, POS_DICT = None, None
 
 
-# Create HTML layout
+# === Create HTML layout ===
 CODE_FONT = {"fontFamily": "'Courier New', monospace"}
+
 with open("example_pipelines/healthcare/healthcare.py") as f:
     default_pipeline = f.read()
+
 patients = pd.read_csv("example_pipelines/healthcare/patients.csv", na_values='?')
 histories = pd.read_csv("example_pipelines/healthcare/histories.csv", na_values='?')
 healthcare_data = patients.merge(histories, on=['ssn'])
+
 inspection_switcher = {
     "HistogramForColumns": HistogramForColumns(['age_group', 'race']),
     "RowLineage": lambda: RowLineage(5),
@@ -73,8 +76,8 @@ check_switcher = {
     "NoIllegalFeatures": NoIllegalFeatures,
     "NoMissingEmbeddings": NoMissingEmbeddings,
 }
-# app.layout = html.Div([     # for no margin
-app.layout = dbc.Container([  # for more margin
+
+app.layout = dbc.Container([
     # Header and description
     dbc.Row([
         dbc.Col([
@@ -88,76 +91,22 @@ app.layout = dbc.Container([  # for more margin
 
     dbc.Row([
         dbc.Col([
-            # Inspection definition
-            dbc.Form([
-                # Pipeline definition
-                html.Div([
-                    html.H3("Pipeline Definition"),
-                    dbc.FormGroup([
-                        dbc.Textarea(
-                            id="pipeline-textarea",
-                            value=default_pipeline,
-                            className="mb-3",
-                        ),
-                    ]),
-                ], id="pipeline-definition-container", className="container"),
-                # Pipeline execution output
-                html.Div([
-                    html.H3("Pipeline Output"),
-                    html.Pre(html.Code(id="pipeline-output"), id="pipeline-output-cell"),
-                ], id="pipeline-output-container", className="container", hidden=True),
-                html.Div([
-                    html.H3("Inspector Definition"),
-                    dbc.FormGroup([
-                        # Add inspections
-                        dbc.Label("Run inspections:", html_for="inspections"),
-                        dbc.Checklist(
-                            id="inspections",
-                            options=[
-                                # {"label": "Histogram For Columns", "value": "HistogramForColumns"},
-                                {"label": "Row Lineage", "value": "RowLineage"},
-                                {"label": "Materialize First Output Rows", "value": "MaterializeFirstOutputRows"},
-                            ],
-                            switch=True,
-                            value=[],
-                        ),
-                    ]),
-                    dbc.FormGroup([
-                        # Add checks
-                        dbc.Label("Run checks:", html_for="checks"),
-                        html.Div([
-                            html.Div([
-                                dbc.Checkbox(id="nobiasintroduced-checkbox",
-                                             className="custom-control-input"),
-                                dbc.Label("No Bias Introduced For",
-                                          html_for="nobiasintroduced-checkbox",
-                                          className="custom-control-label"),
-                                dbc.Checklist(id="sensitive-columns",
-                                              options=[{"label": column, "value": column}
-                                                       for column in healthcare_data.columns],
-                                              style={"display": "none"}),
-                            ], className="custom-switch custom-control"),
-                            html.Div([
-                                dbc.Checkbox(id="noillegalfeatures-checkbox",
-                                             className="custom-control-input"),
-                                dbc.Label("No Illegal Features",
-                                          html_for="noillegalfeatures-checkbox",
-                                          className="custom-control-label"),
-                            ], className="custom-switch custom-control"),
-                            html.Div([
-                                dbc.Checkbox(id="nomissingembeddings-checkbox",
-                                             className="custom-control-input"),
-                                dbc.Label("No Missing Embeddings",
-                                          html_for="nomissingembeddings-checkbox",
-                                          className="custom-control-label"),
-                            ], className="custom-switch custom-control"),
-                        ], id="checks"),
-                    ]),
-                    # Execute inspection
-                    dbc.Button(id="execute", color="primary", size="lg", className="mr-1 play-button"),
-                    html.Br(),
-                ], id="inspector-definition-container", className="container"),
-            ]),
+            # Pipeline definition
+            html.Div([
+                html.H3("Pipeline Definition"),
+                dbc.FormGroup([
+                    dbc.Textarea(
+                        id="pipeline-textarea",
+                        value=default_pipeline,
+                        className="mb-3",
+                    ),
+                ]),
+            ], id="pipeline-definition-container", className="container"),
+            # Pipeline execution output
+            html.Div([
+                html.H3("Pipeline Output"),
+                html.Pre(html.Code(id="pipeline-output"), id="pipeline-output-cell"),
+            ], id="pipeline-output-container", className="container", hidden=True),
         ], width=6),
         dbc.Col([
             # Extracted DAG
@@ -181,20 +130,80 @@ app.layout = dbc.Container([  # for more margin
                 html.Div(id="selected-code-reference"),
             ], id="code-reference-container", className="container", hidden=True),
             html.Br(),
+        ], width=6),
+    ]),
+    html.H3("Inspector Definition"),
+    dbc.Row([
+        dbc.Col([
+            dbc.FormGroup([
+                # Add inspections
+                dbc.Label("Run inspections:", html_for="inspections"),
+                dbc.Checklist(
+                    id="inspections",
+                    options=[
+                        {"label": "Histogram For Columns", "value": "HistogramForColumns"},
+                        {"label": "Row Lineage", "value": "RowLineage"},
+                        {"label": "Materialize First Output Rows", "value": "MaterializeFirstOutputRows"},
+                    ],
+                    switch=True,
+                    value=[],
+                ),
+            ]),
+        ], width=3),
+        dbc.Col([
+            dbc.FormGroup([
+                # Add checks
+                dbc.Label("Run checks:", html_for="checks"),
+                html.Div([
+                    html.Div([
+                        dbc.Checkbox(id="nobiasintroduced-checkbox",
+                                        className="custom-control-input"),
+                        dbc.Label("No Bias Introduced For",
+                                    html_for="nobiasintroduced-checkbox",
+                                    className="custom-control-label"),
+                        dbc.Checklist(id="sensitive-columns",
+                                        options=[{"label": column, "value": column}
+                                                for column in healthcare_data.columns],
+                                        style={"display": "none"}),
+                    ], className="custom-switch custom-control"),
+                    html.Div([
+                        dbc.Checkbox(id="noillegalfeatures-checkbox",
+                                        className="custom-control-input"),
+                        dbc.Label("No Illegal Features",
+                                    html_for="noillegalfeatures-checkbox",
+                                    className="custom-control-label"),
+                    ], className="custom-switch custom-control"),
+                    html.Div([
+                        dbc.Checkbox(id="nomissingembeddings-checkbox",
+                                     className="custom-control-input"),
+                        dbc.Label("No Missing Embeddings",
+                                  html_for="nomissingembeddings-checkbox",
+                                  className="custom-control-label"),
+                    ], className="custom-switch custom-control"),
+                ], id="checks"),
+            ]),
+        ], width=3),
+        dbc.Col([
+            # Execute inspection
+            dbc.Button(id="execute", color="primary", size="lg", className="mr-1 play-button"),
+            html.Br(),
+        ], width=1),
+        dbc.Col([
             # Operator details
             html.Div([
                 html.H3("Operator Details", id="operator-details-header"),
                 html.Div("Select an operator in the DAG to see details", id="operator-details"),
             ], id="operator-details-container", className="container"),
-        ], width=6),
-    ]),
+        ], width=5)
+    ], id="inspector-definition-container", className="container"),
 ], style={"fontSize": "14px"}, id="app-container")
 
 
-# Flask server (for gunicorn)
+# === Flask server (for gunicorn) ===
 server = app.server
 
 
+# === Set up callback functions ===
 @app.callback(
     Output("sensitive-columns", "style"),
     Input("nobiasintroduced-checkbox", "checked"),
@@ -224,6 +233,7 @@ def on_nobiasintroduced_checked(checked):
     ]
 )
 def on_execute(execute_clicks, pipeline, nobiasintroduced, sensitive_columns,
+            #    noillegalfeatures, inspections):
                noillegalfeatures, nomissingembeddings, inspections):
     """
     When user clicks 'execute' button, show extracted DAG including potential
@@ -330,6 +340,7 @@ def on_dag_node_select(selectedData):
     return json.dumps(code_ref.__dict__), operator_details, header
 
 
+# === Utility functions ===
 def execute_inspector_builder(pipeline, checks=None, inspections=None):
     """Extract DAG the original way, i.e. by creating a PipelineInspectorBuilder."""
     global INSPECTOR_RESULT
