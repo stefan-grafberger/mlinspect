@@ -76,8 +76,10 @@ check_switcher = {
 # app.layout = html.Div([     # for no margin
 app.layout = dbc.Container([  # for more margin
     # Header and description
-    html.H1("mlinspect", style={"fontSize": "24px", **CODE_FONT}),
-    html.P("Inspect ML Pipelines in Python in the form of a DAG."),
+    html.Div([
+        html.H1("mlinspect", style={"fontSize": "24px", **CODE_FONT}),
+        html.P("Inspect ML Pipelines in Python in the form of a DAG."),
+    ], id="header-container", className="container"),
 
     dbc.Row([
         dbc.Col([
@@ -94,11 +96,11 @@ app.layout = dbc.Container([  # for more margin
                             className="mb-3",
                         ),
                     ]),
-                ], id="pipeline-definition-container"),
+                ], id="pipeline-definition-container", className="container"),
                 html.Div([
                     html.H4("Pipeline Output"),
                     html.Pre(html.Code(id="pipeline-output")),
-                ], id="pipeline-output-container", hidden=True),
+                ], id="pipeline-output-container", className="container", hidden=True),
                 html.Div([
                     html.H4("Inspector Definition"),
                     dbc.FormGroup([
@@ -146,14 +148,13 @@ app.layout = dbc.Container([  # for more margin
                             ], className="custom-switch custom-control"),
                         ], id="checks"),
                     ]),
-                ], id="inspector-definition-container"),
+                ], id="inspector-definition-container", className="container"),
                 # Execute inspection
                 dbc.Button("Execute", id="execute", color="primary", size="lg", className="mr-1"),
             ]),
         ], width=6),
         dbc.Col([
             # Extracted DAG
-            # dbc.Label("Extracted DAG:", html_for="dag"),
             html.Div([
                 html.H4("Extracted DAG"),
                 dcc.Graph(
@@ -166,17 +167,17 @@ app.layout = dbc.Container([  # for more margin
                         layout_plot_bgcolor='rgb(255,255,255)',
                     ),
                 ),
-            ], id="dag-container"),
+            ], id="dag-container", className="container"),
             html.Div([
                 html.Div(id="hovered-code-reference"),
                 html.Div(id="selected-code-reference"),
-            ], id="code-reference-container", hidden=True),
+            ], id="code-reference-container", className="container", hidden=True),
             html.Br(),
             # Operator details
             html.Div([
                 html.H4("Operator Details"),
                 html.Div("Select an operator in the DAG to see details", id="operator-details"),
-            ], id="operator-details-container"),
+            ], id="operator-details-container", className="container"),
         ], width=6),
     ]),
 ], style={"fontSize": "14px"})
@@ -190,7 +191,7 @@ server = app.server
     Output("sensitive-columns", "style"),
     Input("nobiasintroduced-checkbox", "checked"),
 )
-def show_subchecklist(checked):
+def on_nobiasintroduced_checked(checked):
     """Show checklist of sensitive columns if NoBiasIntroducedFor is selected."""
     if checked:
         return {"display": "block", **CODE_FONT}
@@ -486,10 +487,16 @@ def create_histogram(column, distribution_change):
     trace2 = go.Bar(x=keys, y=after_values, name="After")
 
     data = [trace1, trace2]
-    title = f"Line {distribution_change.dag_node.code_reference.lineno}, "\
-            f"Operator '{distribution_change.dag_node.operator_type.value}', "\
-            f"Column '{column}'"
-    figure = go.Figure(data=data, layout_title_text=title)
+    title = {
+        "text": f"Line {distribution_change.dag_node.code_reference.lineno}, "\
+                f"Operator '{distribution_change.dag_node.operator_type.value}', "\
+                f"Column '{column}'",
+        "font_size": 12,
+    }
+    margin = {"l": 20, "r": 20, "t": 20, "b": 20}
+
+    layout = go.Layout(title=title, margin=margin, autosize=False, width=350, height=300)
+    figure = go.Figure(data=data, layout=layout)
     return dcc.Graph(figure=figure)
 
 
