@@ -85,11 +85,10 @@ app.layout = dbc.Container([  # for more margin
         dbc.Col([
             # Inspection definition
             dbc.Form([
+                # Pipeline definition
                 html.Div([
                     html.H3("Pipeline Definition"),
                     dbc.FormGroup([
-                        # Pipeline definition
-                        # dbc.Label("Pipeline definition:", html_for="pipeline"),
                         dbc.Textarea(
                             id="pipeline-textarea",
                             value=default_pipeline,
@@ -97,6 +96,7 @@ app.layout = dbc.Container([  # for more margin
                         ),
                     ]),
                 ], id="pipeline-definition-container", className="container"),
+                # Pipeline execution output
                 html.Div([
                     html.H3("Pipeline Output"),
                     html.Pre(html.Code(id="pipeline-output")),
@@ -168,6 +168,7 @@ app.layout = dbc.Container([  # for more margin
                     ),
                 ),
             ], id="dag-container", className="container"),
+            # Code references for highlighting source code (hidden)
             html.Div([
                 html.Div(id="hovered-code-reference"),
                 html.Div(id="selected-code-reference"),
@@ -431,7 +432,7 @@ def nx2go(G):
     fig = go.Figure(data=[edges, nodes], layout=layout)
     fig.update_layout(clickmode='event+select')
 
-    return fig#.to_dict()
+    return fig
 
 
 def highlight_dag_node_in_figure(dag_node, figure):
