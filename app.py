@@ -527,24 +527,36 @@ def create_histogram(column, distribution_change):
     return dcc.Graph(figure=figure)
 
 
+def convert_dataframe_to_dash_table(df):
+    columns = [{"name": i, "id": i} for i in df.columns]
+    data = [
+        {
+            k: np.array2string(v) if isinstance(v, np.ndarray) else v
+            for k, v in record.items()
+        }
+        for record in df.to_dict('records')
+    ]
+    return dash_table.DataTable(columns=columns, data=data)
+
+
 def get_operator_details(node):
     details = []
 
     # Show inspection results
     for inspection, result_dict in INSPECTOR_RESULT.inspection_to_annotations.items():
         if isinstance(inspection, MaterializeFirstOutputRows):
-            df = result_dict[node]
-            columns = [{"name": i, "id": i} for i in df.columns]
-            data = [
-                {
-                    k: np.array2string(v) if isinstance(v, np.ndarray) else v
-                    for k, v in record.items()
-                }
-                for record in df.to_dict('records')
+            output_df = result_dict[node]
+            output_table = convert_dataframe_to_dash_table(output_df)
+            input_tables = [
+                convert_dataframe_to_dash_table(result_dict[input_node])
+                for input_node in INSPECTOR_RESULT.dag.predecessors(node)
             ]
             element = html.Div([
                 html.H4(f"{inspection}", className="result-item-header"),
-                dash_table.DataTable(columns=columns, data=data)#, className="result-item-content")
+                dbc.Label("Input(s)"),
+                *input_tables,
+                dbc.Label("Output"),
+                output_table,
             ], className="result-item")
             details += [element]
         else:
