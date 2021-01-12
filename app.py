@@ -25,6 +25,7 @@ from mlinspect import PipelineInspector
 from mlinspect.checks import NoBiasIntroducedFor, NoIllegalFeatures
 from mlinspect.inspections import HistogramForColumns, RowLineage, MaterializeFirstOutputRows
 
+
 # === Initialize Dash app ===
 app = dash.Dash(__name__,
                 title="mlinspect",
@@ -63,7 +64,7 @@ histories = pd.read_csv("example_pipelines/healthcare/histories.csv", na_values=
 healthcare_data = patients.merge(histories, on=['ssn'])
 
 inspection_switcher = {
-    "HistogramForColumns": HistogramForColumns(['age_group', 'race']),
+    "HistogramForColumns": lambda: HistogramForColumns(['age_group', 'race']),
     "RowLineage": lambda: RowLineage(5),
     "MaterializeFirstOutputRows": lambda: MaterializeFirstOutputRows(5),
 }
@@ -527,10 +528,10 @@ def create_histogram(column, distribution_change):
     }
     margin = {"l": 20, "r": 20, "t": 20, "b": 20}
 
-    layout = go.Layout(title=title, margin=margin,
-                       hovermode="x", hovertemplate="%{text:.2f}",
+    layout = go.Layout(title=title, margin=margin, hovermode="x",
                        autosize=False, width=380, height=300)
     figure = go.Figure(data=data, layout=layout)
+    figure.update_traces(hovertemplate="%{text:.2f}")
     return dcc.Graph(figure=figure)
 
 
