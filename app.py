@@ -1,4 +1,3 @@
-from ast import literal_eval
 from contextlib import redirect_stdout
 import io
 import json
@@ -16,18 +15,15 @@ import dash_table
 from inspect import cleandoc
 
 import networkx as nx
-from networkx.drawing.nx_agraph import to_agraph
 
 import pandas as pd
 
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
 from demo.feature_overview.no_missing_embeddings import NoMissingEmbeddings
 from mlinspect import PipelineInspector
 from mlinspect.checks import NoBiasIntroducedFor, NoIllegalFeatures
 from mlinspect.inspections import HistogramForColumns, RowLineage, MaterializeFirstOutputRows
-from mlinspect.visualisation import save_fig_to_path
 
 # === Initialize Dash app ===
 app = dash.Dash(__name__,
