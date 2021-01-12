@@ -13,10 +13,7 @@
 }
 
 .code-dag-highlight {
-    /*color: red !important;
-    font-weight: bold; */
-    font-style: italic;
-    text-decoration: underline;
+    background-color: rgb(151, 187, 255);
 }
 
 .result-item {
