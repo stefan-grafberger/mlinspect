@@ -77,7 +77,7 @@ check_switcher = {
 app.layout = dbc.Container([  # for more margin
     # Header and description
     html.Div([
-        html.H1("mlinspect", style={"fontSize": "24px", **CODE_FONT}),
+        html.H1("mlinspect", style=CODE_FONT),
         html.P("Inspect ML Pipelines in Python in the form of a DAG."),
     ], id="header-container", className="container"),
 
@@ -86,7 +86,7 @@ app.layout = dbc.Container([  # for more margin
             # Inspection definition
             dbc.Form([
                 html.Div([
-                    html.H4("Pipeline Definition"),
+                    html.H3("Pipeline Definition"),
                     dbc.FormGroup([
                         # Pipeline definition
                         # dbc.Label("Pipeline definition:", html_for="pipeline"),
@@ -98,11 +98,11 @@ app.layout = dbc.Container([  # for more margin
                     ]),
                 ], id="pipeline-definition-container", className="container"),
                 html.Div([
-                    html.H4("Pipeline Output"),
+                    html.H3("Pipeline Output"),
                     html.Pre(html.Code(id="pipeline-output")),
                 ], id="pipeline-output-container", className="container", hidden=True),
                 html.Div([
-                    html.H4("Inspector Definition"),
+                    html.H3("Inspector Definition"),
                     dbc.FormGroup([
                         # Add inspections
                         dbc.Label("Run inspections:", html_for="inspections"),
@@ -156,7 +156,7 @@ app.layout = dbc.Container([  # for more margin
         dbc.Col([
             # Extracted DAG
             html.Div([
-                html.H4("Extracted DAG"),
+                html.H3("Extracted DAG"),
                 dcc.Graph(
                     id="dag",
                     figure=go.Figure(
@@ -175,7 +175,7 @@ app.layout = dbc.Container([  # for more margin
             html.Br(),
             # Operator details
             html.Div([
-                html.H4("Operator Details"),
+                html.H3("Operator Details"),
                 html.Div("Select an operator in the DAG to see details", id="operator-details"),
             ], id="operator-details-container", className="container"),
         ], width=6),
@@ -516,7 +516,7 @@ def get_operator_details(node):
                 for record in df.to_dict('records')
             ]
             element = html.Div([
-                html.P(f"{inspection}:"),
+                html.H4(f"{inspection}"),
                 dash_table.DataTable(columns=columns, data=data)
             ], className="result-item")
             details += [element]
@@ -533,7 +533,7 @@ def get_operator_details(node):
             for column, distribution_change in result_obj.bias_distribution_change[node].items():
                 graphs += [create_histogram(column, distribution_change)]
             element = html.Div([
-                html.P(f"{check}:"),
+                html.H4(f"{check}"),
                 html.Div(graphs),
             ], className="result-item")
             details += [element]
