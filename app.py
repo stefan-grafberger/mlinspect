@@ -93,7 +93,7 @@ app.layout = dbc.Container([
                 dbc.FormGroup([
                     dbc.Textarea(
                         id="pipeline-textarea",
-                        value=default_pipeline,
+                        # value=default_pipeline,
                         className="mb-3",
                     ),
                 ]),
@@ -182,14 +182,14 @@ app.layout = dbc.Container([
             html.Br(),
             html.Br(),
             dbc.Button(id="execute", color="primary", size="lg", className="mr-1 play-button"),
-        ], width=2),
+        ], width=1),
         dbc.Col([
             # Operator details
             html.Div([
                 html.H3("Operator Details", id="operator-details-header"),
                 html.Div("Select an operator in the DAG to see details", id="operator-details"),
             ], id="operator-details-container", className="container"),
-        ], width=4)
+        ], width=5)
     ], id="inspector-definition-container", className="container"),
     html.Div(id="clientside-pipeline-code", hidden=True)
 ], style={"fontSize": "14px"}, id="app-container")

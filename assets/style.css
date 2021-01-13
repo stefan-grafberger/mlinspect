@@ -17,6 +17,10 @@
     background-color: rgb(151, 187, 255);
 }
 
+#operator-details-container {
+    margin-left: 130px;
+}
+
 .result-item {
     border: 1px solid #eee;
     box-shadow: 0 2px 3px #ccc;
