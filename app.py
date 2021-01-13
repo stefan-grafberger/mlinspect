@@ -103,7 +103,7 @@ app.layout = dbc.Container([
                 html.H3("Pipeline Output"),
                 html.Pre(html.Code(id="pipeline-output"), id="pipeline-output-cell"),
             ], id="pipeline-output-container", className="container", hidden=True),
-        ], width=6),
+        ], width=7),
         dbc.Col([
             # Extracted DAG
             html.Div([
@@ -125,7 +125,7 @@ app.layout = dbc.Container([
                 html.Div(id="hovered-code-reference"),
                 html.Div(id="selected-code-reference"),
             ], id="code-reference-container", className="container", hidden=True),
-        ], width=6),
+        ], width=5),
     ]),
     dbc.Row([
         dbc.Col([
@@ -182,14 +182,14 @@ app.layout = dbc.Container([
             html.Br(),
             html.Br(),
             dbc.Button(id="execute", color="primary", size="lg", className="mr-1 play-button"),
-        ], width=1),
+        ], width=2),
         dbc.Col([
             # Operator details
             html.Div([
                 html.H3("Operator Details", id="operator-details-header"),
                 html.Div("Select an operator in the DAG to see details", id="operator-details"),
             ], id="operator-details-container", className="container"),
-        ], width=5)
+        ], width=4)
     ], id="inspector-definition-container", className="container"),
     html.Div(id="clientside-pipeline-code", hidden=True)
 ], style={"fontSize": "14px"}, id="app-container")
