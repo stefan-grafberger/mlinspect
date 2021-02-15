@@ -18,7 +18,8 @@ class IntersectionalLabelHistogramForColumns(Inspection):
     def __init__(self, sensitive_columns, label_column):
         self._histogram_op_output = None
         self._operator_type = None
-        self.sensitive_columns = sensitive_columns + [label_column]
+        self.sensitive_columns = [label_column] + sensitive_columns
+        # Fixme: once label column is preprocessed, e.g., binarized, we need to capture it too
 
     def visit_operator(self, inspection_input) -> Iterable[any]:
         """
@@ -49,10 +50,7 @@ class IntersectionalLabelHistogramForColumns(Inspection):
                         else:
                             column_value = row.annotation[check_index]
                         column_values.append(column_value)
-                    value_tuple = tuple(column_values)
-                    group_count = histogram_map.get(value_tuple, 0)
-                    group_count += 1
-                    histogram_map[value_tuple] = group_count
+                    update_histograms(column_values, histogram_map)
                     yield column_values
             else:
                 for row in inspection_input.row_iterator:
@@ -64,10 +62,7 @@ class IntersectionalLabelHistogramForColumns(Inspection):
                         else:
                             column_value = row.annotation[check_index]
                         column_values.append(column_value)
-                    value_tuple = tuple(column_values)
-                    group_count = histogram_map.get(value_tuple, 0)
-                    group_count += 1
-                    histogram_map[value_tuple] = group_count
+                    update_histograms(column_values, histogram_map)
                     yield column_values
         elif isinstance(inspection_input, InspectionInputDataSource):
             sensitive_columns_present = []
@@ -86,10 +81,7 @@ class IntersectionalLabelHistogramForColumns(Inspection):
                         column_values.append(column_value)
                     else:
                         column_values.append(None)
-                value_tuple = tuple(column_values)
-                group_count = histogram_map.get(value_tuple, 0)
-                group_count += 1
-                histogram_map[value_tuple] = group_count
+                update_histograms(column_values, histogram_map)
                 yield column_values
         elif isinstance(inspection_input, InspectionInputNAryOperator):
             sensitive_columns_present = []
@@ -108,10 +100,7 @@ class IntersectionalLabelHistogramForColumns(Inspection):
                         column_values.append(column_value)
                     else:
                         column_values.append(None)
-                value_tuple = tuple(column_values)
-                group_count = histogram_map.get(value_tuple, 0)
-                group_count += 1
-                histogram_map[value_tuple] = group_count
+                update_histograms(column_values, histogram_map)
                 yield column_values
         else:
             for _ in inspection_input.row_iterator:
@@ -128,3 +117,14 @@ class IntersectionalLabelHistogramForColumns(Inspection):
             return result
         self._operator_type = None
         return None
+
+
+def update_histograms(column_values, histogram_map):
+    """Update the histograms with the intersectional information"""
+    label = column_values[0]
+    value_tuple = tuple(column_values[1:])
+    group_map = histogram_map.get(label, {})
+    group_count = group_map.get(value_tuple, 0)
+    group_count += 1
+    group_map[value_tuple] = group_count
+    histogram_map[label] = group_map
