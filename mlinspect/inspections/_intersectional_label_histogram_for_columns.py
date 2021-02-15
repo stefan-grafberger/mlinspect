@@ -11,7 +11,8 @@ from mlinspect.instrumentation._dag_node import OperatorType
 
 class IntersectionalLabelHistogramForColumns(Inspection):
     """
-    A simple example inspection
+    A inspection to compute intersectional histograms and the distribution of positive/negative labels
+     for different demographic groups
     """
 
     def __init__(self, sensitive_columns):
