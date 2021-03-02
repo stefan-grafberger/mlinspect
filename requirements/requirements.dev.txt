@@ -11,3 +11,5 @@ keras==2.4.3
 jupyter==1.0.0
 importnb==0.6.2
 seaborn==0.11.0
+mxnet
+datawig==0.2.0
