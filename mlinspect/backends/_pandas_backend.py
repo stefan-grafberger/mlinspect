@@ -33,6 +33,7 @@ class PandasBackend(Backend):
         ('pandas.core.frame', '__getitem__', 'Projection'): OperatorType.PROJECTION,
         ('pandas.core.frame', '__getitem__', 'Selection'): OperatorType.SELECTION,
         ('pandas.core.frame', '__setitem__'): OperatorType.PROJECTION_MODIFY,
+        ('datawig.simple_imputer', 'predict'): OperatorType.TRANSFORMER,
         ('pandas.core.frame', 'replace'): OperatorType.PROJECTION_MODIFY,
         ('pandas.core.frame', 'merge'): OperatorType.JOIN,
         ('pandas.core.groupby.generic', 'agg'): OperatorType.GROUP_BY_AGG
@@ -99,6 +100,9 @@ class PandasBackend(Backend):
             assert isinstance(args_values[0], MlinspectDataFrame)
             args_values[0]['mlinspect_index_y'] = range(0, len(args_values[0]))
             self.df_arg = args_values[0]
+        if function_info == ('datawig.simple_imputer', 'predict'):
+            assert isinstance(args_values[0], MlinspectDataFrame)
+            self.input_data[-1] = args_values[0]
         elif function_info == ('pandas.core.frame', '__getitem__') and isinstance(args_values, MlinspectSeries):
             self.select = True
             assert isinstance(self.input_data[-1], MlinspectDataFrame)
@@ -134,6 +138,8 @@ class PandasBackend(Backend):
             description = "Group by {}, ".format(args_values)
         elif function_info == ('pandas.core.frame', 'replace'):
             description = "Replace {} with {}".format(args_values[0], args_values[1])
+        elif function_info == ('datawig.simple_imputer', 'predict'):
+            description = "Datawig imputer"  # Todo: more meaningful message
         if description:
             self.code_reference_to_description[code_reference] = description
 
@@ -215,6 +221,13 @@ class PandasBackend(Backend):
             self.df_arg.drop("mlinspect_index_y", axis=1, inplace=True)
         elif function_info == ('pandas.core.frame', 'replace'):
             operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
+            return_value = execute_inspection_visits_unary_operator(self, operator_context, code_reference,
+                                                                    self.input_data[-1],
+                                                                    self.input_data[-1].annotations,
+                                                                    return_value,
+                                                                    False)
+        elif function_info == ('datawig.simple_imputer', 'predict'):
+            operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
             return_value = execute_inspection_visits_unary_operator(self, operator_context, code_reference,
                                                                     self.input_data[-1],
                                                                     self.input_data[-1].annotations,

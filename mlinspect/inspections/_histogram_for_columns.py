@@ -40,13 +40,17 @@ class HistogramForColumns(Inspection):
                 sensitive_columns_present.append(column_present)
                 column_index = inspection_input.input_columns.get_index_of_column(column)
                 sensitive_columns_index.append(column_index)
-            if inspection_input.operator_context.function_info == ('sklearn.impute._base', 'fit_transform'):
+            if inspection_input.operator_context.function_info in {('sklearn.impute._base', 'fit_transform'),
+                                                                   ('datawig.simple_imputer', 'predict')}:
                 for row in inspection_input.row_iterator:
                     current_count += 1
                     column_values = []
                     for check_index, _ in enumerate(self.sensitive_columns):
                         if sensitive_columns_present[check_index]:
-                            column_value = row.output[sensitive_columns_index[check_index]][0]
+                            if isinstance(row.output[sensitive_columns_index[check_index]], list):
+                                column_value = row.output[sensitive_columns_index[check_index]][0]
+                            else:
+                                column_value = row.output[sensitive_columns_index[check_index]]
                         else:
                             column_value = row.annotation[check_index]
                         column_values.append(column_value)
