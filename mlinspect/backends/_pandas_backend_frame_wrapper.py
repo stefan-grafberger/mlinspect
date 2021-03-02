@@ -1,6 +1,7 @@
 """
 A wrapper for pandas dataframes and series to store our additional annotations
 """
+from collections import Hashable
 
 from pandas import DataFrame, Series
 
@@ -44,11 +45,14 @@ class MlinspectDataFrame(DataFrame):
         return MlinspectDataFrame
 
     def __setitem__(self, key, value):
-        if key not in {'mlinspect_index', 'mlinspect_index_x', 'mlinspect_index_y'}:
+        if isinstance(key, Hashable) and key not in {'mlinspect_index', 'mlinspect_index_x', 'mlinspect_index_y'}:
             assert self.backend
 
             previous_df = self.copy()
             super()._set_item(key, value)
             self.backend.after_call_used_setkey(key, previous_df, self)
+        elif isinstance(value, MlinspectDataFrame):  # No idea why this special case is necessary
+            for key_item in key:
+                super()._set_item(key_item, value[key_item])
         else:
             super()._set_item(key, value)

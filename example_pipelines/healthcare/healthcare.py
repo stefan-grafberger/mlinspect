@@ -54,4 +54,4 @@ data["county"] = data["county_imputed"]
 data = data[['smoker', 'last_name', 'county', 'num_children', 'race', 'income']]
 
 # no rows should now have missing values
-print(data[data.isnull().any(axis=1)])
+#print(data[data.isnull().any(axis=1)])

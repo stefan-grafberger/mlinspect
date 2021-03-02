@@ -228,11 +228,12 @@ class PandasBackend(Backend):
     def after_call_used_setkey(self, args_code, value_before, value_after):
         """The value before and after some __setkey__ call"""
         # pylint: disable=unused-argument
-        code_reference, function_info, args_code = self.set_key_info
-        operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
-        execute_inspection_visits_unary_operator(self, operator_context, code_reference,
-                                                 value_before, value_before.annotations,
-                                                 value_after, False)
+        if self.set_key_info:
+            code_reference, function_info, args_code = self.set_key_info
+            operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
+            execute_inspection_visits_unary_operator(self, operator_context, code_reference,
+                                                     value_before, value_before.annotations,
+                                                     value_after, False)
 
     def replace_wrapper_modules(self, function_info):
         """Replace the module of mlinspect wrappers with the original modules"""
