@@ -12,6 +12,9 @@ ADULT_SIMPLE_PNG = os.path.join(str(get_project_root()), "example_pipelines", "a
 ADULT_COMPLEX_PY = os.path.join(str(get_project_root()), "example_pipelines", "adult_complex", "adult_complex.py")
 ADULT_COMPLEX_PNG = os.path.join(str(get_project_root()), "example_pipelines", "adult_complex", "adult_complex.png")
 
+ADULT_DEMO_PY = os.path.join(str(get_project_root()), "example_pipelines", "adult_demo", "adult_demo.py")
+ADULT_DEMO_PNG = os.path.join(str(get_project_root()), "example_pipelines", "adult_demo", "adult_demo.png")
+
 COMPAS_PY = os.path.join(str(get_project_root()), "example_pipelines", "compas", "compas.py")
 COMPAS_PNG = os.path.join(str(get_project_root()), "example_pipelines", "compas", "compas.png")
 
