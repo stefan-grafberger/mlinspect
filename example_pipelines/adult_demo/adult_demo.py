@@ -14,18 +14,26 @@ from sklearn.tree import DecisionTreeClassifier
 
 from mlinspect.utils import get_project_root
 
-train_file = os.path.join(str(get_project_root()), "example_pipelines", "adult_complex", "adult_train.csv")
+train_file = os.path.join(str(get_project_root()), "example_pipelines", "adult_demo", "adult_demo.csv")
 train_data = pd.read_csv(train_file, na_values='?', index_col=0)
-test_file = os.path.join(str(get_project_root()), "example_pipelines", "adult_complex", "adult_test.csv")
-test_data = pd.read_csv(test_file, na_values='?', index_col=0)
 
-# non_na_values = train_data[['occupation', 'native-country', 'income-per-year']].notna()
-# train_data = train_data[non_na_values]
-# train_data = train_data.dropna()
-# test_data = test_data[test_data[['occupation', 'native-country', 'income-per-year']].notna()]
+# print(train_data)
+#occupation_notna = train_data['occupation'].notna()
+#native_country_notna = train_data['native-country'].notna()
+#income_notna = train_data['income-per-year'].notna()
+#train_data = train_data[occupation_notna & native_country_notna & income_notna]
+#train_data = train_data[train_data['occupation'].notna()]
+train_data = train_data[train_data['native-country'].notna()]
+#train_data = train_data[train_data['income-per-year'].notna()]
+# print(train_data)
 
 train_labels = preprocessing.label_binarize(train_data['income-per-year'], classes=['>50K', '<=50K'])
-test_labels = preprocessing.label_binarize(test_data['income-per-year'], classes=['>50K', '<=50K'])
+
+train_series = pd.Series(np.squeeze(train_labels))
+# print(train_series)
+
+test = train_data.corrwith(train_series)
+# print(test)
 
 nested_categorical_feature_transformation = Pipeline([
         ('impute', SimpleImputer(missing_values=np.nan, strategy='most_frequent')),
@@ -43,4 +51,4 @@ nested_income_pipeline = Pipeline([
 
 nested_income_pipeline.fit(train_data, train_labels)
 
-print(nested_income_pipeline.score(test_data, test_labels))
+# print(nested_income_pipeline.score(test_data, test_labels))
