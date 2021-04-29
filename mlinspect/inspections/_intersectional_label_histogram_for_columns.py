@@ -118,6 +118,13 @@ class IntersectionalLabelHistogramForColumns(Inspection):
         self._operator_type = None
         return None
 
+    def __hash__(self):
+        return hash(tuple(self.sensitive_columns))
+
+    def __eq__(self, other):
+        return (isinstance(other, IntersectionalLabelHistogramForColumns) and
+                self.sensitive_columns, other.sensitive_columns)
+
 
 def update_histograms(column_values, histogram_map):
     """Update the histograms with the intersectional information"""
