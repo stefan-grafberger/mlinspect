@@ -38,7 +38,12 @@ Prerequisite: Python 3.8
 ### Docker Development Environment
 
 	docker build . -t mlinspect
-	docker run -ti --rm --name mlinspect-demo -v $PWD:/mlinspect -w /mlinspect -p 8050:8050 mlinspect
+
+	# Run with DEBUG mode enabled and local code changes available
+	docker run -ti --rm --name mlinspect-demo -v $PWD:/mlinspect -w /mlinspect -p 8050:8050 -e DEBUG=1 mlinspect
+
+	# Run with DEBUG mode disabled and local code changes unavailable
+	docker run -ti --rm --name mlinspect-demo -p 8050:8050 mlinspect
 
 Vision
 ---

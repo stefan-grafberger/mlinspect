@@ -1,9 +1,11 @@
+# pylint: disable=import-error
+import os
+import time
+
 from contextlib import redirect_stdout
 import io
 import json
 import numpy as np
-import os
-import time
 
 import dash
 from dash.dependencies import Input, Output, State
@@ -54,6 +56,8 @@ INSPECTOR_RESULT, POS_DICT = None, None
 
 # === Create HTML layout ===
 CODE_FONT = {"fontFamily": "'Courier New', monospace"}
+STYLE_HIDDEN = {"display": "none"}
+STYLE_SHOWN = {"display": "block"}
 
 with open("example_pipelines/healthcare/healthcare.py") as f:
     default_pipeline = f.read()
@@ -63,9 +67,9 @@ histories = pd.read_csv("example_pipelines/healthcare/histories.csv", na_values=
 healthcare_data = patients.merge(histories, on=['ssn'])
 
 inspection_switcher = {
-    "HistogramForColumns": lambda: HistogramForColumns(['age_group', 'race']),
-    "RowLineage": lambda: RowLineage(5),
-    "MaterializeFirstOutputRows": lambda: MaterializeFirstOutputRows(5),
+    "HistogramForColumns": HistogramForColumns,
+    "RowLineage": RowLineage,
+    "MaterializeFirstOutputRows": MaterializeFirstOutputRows,
 }
 check_switcher = {
     "NoBiasIntroducedFor": NoBiasIntroducedFor,
@@ -86,6 +90,7 @@ app.layout = dbc.Container([
     html.Hr(),
 
     dbc.Row([
+        # Pipeline
         dbc.Col([
             # Pipeline definition
             html.Div([
@@ -104,6 +109,7 @@ app.layout = dbc.Container([
                 html.Pre(html.Code(id="pipeline-output"), id="pipeline-output-cell"),
             ], id="pipeline-output-container", className="container", hidden=True),
         ], width=7),
+        # DAG
         dbc.Col([
             # Extracted DAG
             html.Div([
@@ -128,46 +134,75 @@ app.layout = dbc.Container([
         ], width=5),
     ]),
     dbc.Row([
+        # Inspections
         dbc.Col([
             dbc.FormGroup([
                 # Add inspections
                 html.H3("Inspections"),
-                dbc.Checklist(
-                    id="inspections",
-                    options=[
-                        {"label": "Histogram For Columns", "value": "HistogramForColumns"},
-                        {"label": "Row Lineage", "value": "RowLineage"},
-                        {"label": "Materialize First Output Rows", "value": "MaterializeFirstOutputRows"},
-                    ],
-                    switch=True,
-                    value=[],
-                ),
+                html.Div([
+                    html.Div([  # Histogram For Columns
+                        dbc.Checkbox(id="histogramforcolumns-checkbox",
+                                     className="custom-control-input"),
+                        dbc.Label("Histogram For Columns",
+                                  html_for="histogramforcolumns-checkbox",
+                                  className="custom-control-label"),
+                        dbc.Checklist(id="histogram-sensitive-columns",
+                                      options=[{"label": column, "value": column}
+                                               for column in healthcare_data.columns],
+                                      style=STYLE_HIDDEN),
+                    ], className="custom-switch custom-control"),
+                    html.Div([  # Row Lineage
+                        dbc.Checkbox(id="rowlineage-checkbox",
+                                     className="custom-control-input"),
+                        dbc.Label("Row Lineage",
+                                  html_for="rowlineage-checkbox",
+                                  className="custom-control-label"),
+                        dbc.Input(id="rowlineage-num-rows", type="number",
+                                  min=0, step=1, placeholder="Number of rows",
+                                  style=STYLE_HIDDEN),
+                    ], className="custom-switch custom-control"),
+                    html.Div([  # Materialize First Output Rows
+                        dbc.Checkbox(id="materializefirstoutputrows-checkbox",
+                                     className="custom-control-input"),
+                        dbc.Label("Materialize First Output Rows",
+                                  html_for="materializefirstoutputrows-checkbox",
+                                  className="custom-control-label"),
+                        dbc.Input(id="materializefirstoutputrows-num-rows", type="number",
+                                  min=0, step=1, placeholder="Number of rows",
+                                  style=STYLE_HIDDEN),
+                    ], className="custom-switch custom-control"),
+                ]),
             ]),
         ], width=3),
+        # Checks
         dbc.Col([
             dbc.FormGroup([
                 # Add checks
                 html.H3("Checks"),
                 html.Div([
-                    html.Div([
+                    html.Div([  # No Bias Introduced For
                         dbc.Checkbox(id="nobiasintroduced-checkbox",
-                                        className="custom-control-input"),
+                                     className="custom-control-input"),
                         dbc.Label("No Bias Introduced For",
-                                    html_for="nobiasintroduced-checkbox",
-                                    className="custom-control-label"),
-                        dbc.Checklist(id="sensitive-columns",
-                                        options=[{"label": column, "value": column}
-                                                for column in healthcare_data.columns],
-                                        style={"display": "none"}),
+                                  html_for="nobiasintroduced-checkbox",
+                                  className="custom-control-label"),
+                        dbc.Input(id="nobiasintroduced-threshold", type="number",
+                                  min=-100, max=0, step=1,
+                                  placeholder="Default threshold -30%",
+                                  style=STYLE_HIDDEN),
+                        dbc.Checklist(id="nobiasintroduced-sensitive-columns",
+                                      options=[{"label": column, "value": column}
+                                               for column in healthcare_data.columns],
+                                      style=STYLE_HIDDEN),
                     ], className="custom-switch custom-control"),
-                    html.Div([
+                    html.Div([  # No Illegal Features
                         dbc.Checkbox(id="noillegalfeatures-checkbox",
-                                        className="custom-control-input"),
+                                     className="custom-control-input"),
                         dbc.Label("No Illegal Features",
-                                    html_for="noillegalfeatures-checkbox",
-                                    className="custom-control-label"),
+                                  html_for="noillegalfeatures-checkbox",
+                                  className="custom-control-label"),
                     ], className="custom-switch custom-control"),
-                    html.Div([
+                    html.Div([  # No Missing Embeddings
                         dbc.Checkbox(id="nomissingembeddings-checkbox",
                                      className="custom-control-input"),
                         dbc.Label("No Missing Embeddings",
@@ -177,12 +212,14 @@ app.layout = dbc.Container([
                 ], id="checks"),
             ]),
         ], width=3),
+        # Execute
         dbc.Col([
             # Execute inspection
             html.Br(),
             html.Br(),
             dbc.Button(id="execute", color="primary", size="lg", className="mr-1 play-button"),
         ], width=1),
+        # Details
         dbc.Col([
             # Operator details
             html.Div([
@@ -200,17 +237,6 @@ server = app.server
 
 
 # === Set up callback functions ===
-@app.callback(
-    Output("sensitive-columns", "style"),
-    Input("nobiasintroduced-checkbox", "checked"),
-)
-def on_nobiasintroduced_checked(checked):
-    """Show checklist of sensitive columns if NoBiasIntroducedFor is selected."""
-    if checked:
-        return {"display": "block", **CODE_FONT}
-    return {"display": "none"}
-
-
 app.clientside_callback(
     """
     function(n_clicks) {
@@ -224,6 +250,53 @@ app.clientside_callback(
 
 
 @app.callback(
+    Output("histogram-sensitive-columns", "style"),
+    Input("histogramforcolumns-checkbox", "checked"),
+)
+def on_histogramforcolumns_checked(checked):
+    """Show checklist of sensitive columns if HistogramForColumns is selected."""
+    if checked:
+        return {**STYLE_SHOWN, **CODE_FONT}
+    return STYLE_HIDDEN
+
+
+@app.callback(
+    Output("rowlineage-num-rows", "style"),
+    Input("rowlineage-checkbox", "checked"),
+)
+def on_rowlineage_checked(checked):
+    """Show input for number of rows if RowLineage is selected."""
+    if checked:
+        return STYLE_SHOWN
+    return STYLE_HIDDEN
+
+
+@app.callback(
+    Output("materializefirstoutputrows-num-rows", "style"),
+    Input("materializefirstoutputrows-checkbox", "checked"),
+)
+def on_materializefirstoutputrows_checked(checked):
+    """Show input for number of rows if MaterializeFirstOutputRows is selected."""
+    if checked:
+        return STYLE_SHOWN
+    return STYLE_HIDDEN
+
+
+@app.callback(
+    [
+        Output("nobiasintroduced-threshold", "style"),
+        Output("nobiasintroduced-sensitive-columns", "style"),
+    ],
+    Input("nobiasintroduced-checkbox", "checked"),
+)
+def on_nobiasintroduced_checked(checked):
+    """Show checklist of sensitive columns if NoBiasIntroducedFor is selected."""
+    if checked:
+        return STYLE_SHOWN, {**STYLE_SHOWN, **CODE_FONT}
+    return STYLE_HIDDEN, STYLE_HIDDEN
+
+
+@app.callback(
     [
         Output("dag", "figure"),
         Output("pipeline-output", "children"),
@@ -233,16 +306,33 @@ app.clientside_callback(
     Input("execute", "n_clicks"),
     Input("clientside-pipeline-code", "children"),
     state=[
+        # HistogramForColumns
+        State("histogramforcolumns-checkbox", "checked"),
+        State("histogram-sensitive-columns", "value"),
+        # RowLineage
+        State("rowlineage-checkbox", "checked"),
+        State("rowlineage-num-rows", "value"),
+        # MaterializeFirstOutputRows
+        State("materializefirstoutputrows-checkbox", "checked"),
+        State("materializefirstoutputrows-num-rows", "value"),
+        # NoBiasIntroducedFor
         State("nobiasintroduced-checkbox", "checked"),
-        State("sensitive-columns", "value"),
+        State("nobiasintroduced-sensitive-columns", "value"),
+        State("nobiasintroduced-threshold", "value"),
+        # NoIllegalFeatures
         State("noillegalfeatures-checkbox", "checked"),
+        # NoMissingEmbeddings
         State("nomissingembeddings-checkbox", "checked"),
-        State("inspections", "value")
     ]
 )
-def on_execute(execute_clicks, pipeline, nobiasintroduced, sensitive_columns,
-            #    noillegalfeatures, inspections):
-               noillegalfeatures, nomissingembeddings, inspections):
+def on_execute(execute_clicks, pipeline,
+               # Inspections
+               histogramforcolumns, histogramforcolumns_sensitive_columns,
+               rowlineage, rowlineage_num_rows,
+               materializefirstoutputrows, materializefirstoutputrows_num_rows,
+               # Checks
+               nobiasintroduced, nobiasintroduced_sensitive_columns, nobiasintroduced_threshold,
+               noillegalfeatures, nomissingembeddings):
     """
     When user clicks 'execute' button, show extracted DAG including potential
     problem nodes in red.
@@ -251,8 +341,24 @@ def on_execute(execute_clicks, pipeline, nobiasintroduced, sensitive_columns,
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Execute pipeline and inspections
+    if nobiasintroduced_threshold:
+        # convert percentage to decimal
+        nobiasintroduced_threshold = nobiasintroduced_threshold/100.
+    else:
+        # use default value if None
+        nobiasintroduced_threshold = -0.3
+    # if both rowlineage and materializefirstoutputrows are enabled, display the higher number of rows
+    if materializefirstoutputrows and rowlineage:
+        rowlineage_num_rows = max(rowlineage_num_rows, materializefirstoutputrows_num_rows)
+    # don't include materializefirstoutputrows if rowlineage is also checked
+    materializefirstoutputrows = materializefirstoutputrows and not rowlineage
+    inspections = {
+        "HistogramForColumns": (histogramforcolumns, [histogramforcolumns_sensitive_columns]),
+        "RowLineage": (rowlineage, [rowlineage_num_rows]),
+        "MaterializeFirstOutputRows": (materializefirstoutputrows, [materializefirstoutputrows_num_rows]),
+    }
     checks = {
-        "NoBiasIntroducedFor": (nobiasintroduced, [sensitive_columns]),
+        "NoBiasIntroducedFor": (nobiasintroduced, [nobiasintroduced_sensitive_columns, nobiasintroduced_threshold]),
         "NoIllegalFeatures": (noillegalfeatures, []),
         "NoMissingEmbeddings": (nomissingembeddings, []),
     }
@@ -263,7 +369,7 @@ def on_execute(execute_clicks, pipeline, nobiasintroduced, sensitive_columns,
     figure = nx2go(INSPECTOR_RESULT.dag)
 
     # Highlight problematic nodes
-    figure = highlight_problem_nodes(figure, sensitive_columns)
+    figure = highlight_problem_nodes(figure, nobiasintroduced_sensitive_columns)
 
     if pipeline == default_pipeline:
         # Return fake value, better than actual score
@@ -356,8 +462,9 @@ def execute_inspector_builder(pipeline, checks=None, inspections=None):
     start = time.time()
 
     builder = PipelineInspector.on_pipeline_from_string(pipeline)
-    for inspection in inspections:
-        builder = builder.add_required_inspection(inspection_switcher[inspection]())
+    for inspection_name, (inspection_bool, inspection_args) in inspections.items():
+        if inspection_bool:
+            builder = builder.add_required_inspection(inspection_switcher[inspection_name](*inspection_args))
     for check_name, (check_bool, check_args) in checks.items():
         if check_bool:
             builder = builder.add_check(check_switcher[check_name](*check_args))
@@ -550,12 +657,20 @@ def convert_dataframe_to_dash_table(df):
     columns = [{"name": i, "id": i} for i in df.columns]
     data = [
         {
-            k: np.array2string(v) if isinstance(v, np.ndarray) else v
+            k: np.array2string(v, precision=2, threshold=2)
+            if isinstance(v, np.ndarray) else str(v)
             for k, v in record.items()
         }
         for record in df.to_dict('records')
     ]
-    return dash_table.DataTable(columns=columns, data=data)
+    return dash_table.DataTable(
+        columns=columns,
+        data=data,
+        style_cell={
+            'whiteSpace': 'normal',
+            'height': 'auto',
+        },
+    )
 
 
 def get_operator_details(node):
@@ -563,7 +678,7 @@ def get_operator_details(node):
 
     # Show inspection results
     for inspection, result_dict in INSPECTOR_RESULT.inspection_to_annotations.items():
-        if isinstance(inspection, MaterializeFirstOutputRows):
+        if isinstance(inspection, RowLineage) or isinstance(inspection, MaterializeFirstOutputRows):
             output_df = result_dict[node]
             output_table = convert_dataframe_to_dash_table(output_df)
             input_tables = [
@@ -572,20 +687,19 @@ def get_operator_details(node):
             ]
             element = html.Div([
                 html.H4(f"{inspection}", className="result-item-header"),
-                dbc.Label("Input(s)"),
+                dbc.Label("Input Rows"),
                 *input_tables,
-                dbc.Label("Output"),
+                dbc.Label("Output Rows"),
                 output_table,
             ], className="result-item")
             details += [element]
         else:
-            print("inspection:", inspection)
+            print("inspection not implemented:", inspection)
 
     # Show check results
     for check, result_obj in INSPECTOR_RESULT.check_to_check_results.items():
         if isinstance(check, NoBiasIntroducedFor):
             if node not in result_obj.bias_distribution_change:
-                print("check:", check)
                 continue
             graphs = []
             for column, distribution_change in result_obj.bias_distribution_change[node].items():
@@ -596,7 +710,7 @@ def get_operator_details(node):
             ], className="result-item")
             details += [element]
         else:
-            print("check:", check)
+            print("check not implemented:", check)
 
     return details
 
