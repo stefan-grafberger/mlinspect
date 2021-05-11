@@ -126,7 +126,10 @@ class NoBiasIntroducedFor(Check):
         # Probability of removal
         joined_df["removed_records"] = joined_df["count_before"] - joined_df["count_after"]
         joined_df["removal_probability"] = joined_df["removed_records"] / joined_df["count_before"]
-        removal_probability_min = joined_df["removal_probability"].min()
+        # There might be classes where no records are being removed.
+        # We should probably find a more principled method to do this at some point
+        non_zero_probabilities = joined_df["removal_probability"] > 0.0
+        removal_probability_min = joined_df[non_zero_probabilities]["removal_probability"].min()
         joined_df["normed_removal_probability"] = joined_df["removal_probability"] / removal_probability_min
 
         return BiasDistributionChange(node, all_changes_acceptable, min_relative_ratio_change, joined_df)
