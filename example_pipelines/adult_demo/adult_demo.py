@@ -8,24 +8,26 @@ import numpy as np
 from sklearn import preprocessing
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
+from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
 from mlinspect.utils import get_project_root
 
-train_file = os.path.join(str(get_project_root()), "example_pipelines", "adult_demo", "adult_demo.csv")
+train_file = os.path.join(str(get_project_root()), "example_pipelines", "adult_demo", "adult_demo_all.csv")
 train_data = pd.read_csv(train_file, na_values='?', index_col=0)
 
-# print(train_data)
-#occupation_notna = train_data['occupation'].notna()
-#native_country_notna = train_data['native-country'].notna()
-#income_notna = train_data['income-per-year'].notna()
-#train_data = train_data[occupation_notna & native_country_notna & income_notna]
-#train_data = train_data[train_data['occupation'].notna()]
+X_train, X_test = train_test_split(train_data, test_size=0.15, random_state=42)
+new_train_path = os.path.join(str(get_project_root()), "example_pipelines", "adult_demo", "adult_demo_train.csv")
+new_test_path = os.path.join(str(get_project_root()), "example_pipelines", "adult_demo", "adult_demo_test.csv")
+X_train.to_csv(new_train_path, header=True)
+X_test.to_csv(new_test_path, header=True)
+
+
+
 train_data = train_data[train_data['native-country'].notna()]
-#train_data = train_data[train_data['income-per-year'].notna()]
-# print(train_data)
+# train_data = train_data.dropna()
 
 train_labels = preprocessing.label_binarize(train_data['income-per-year'], classes=['>50K', '<=50K'])
 
