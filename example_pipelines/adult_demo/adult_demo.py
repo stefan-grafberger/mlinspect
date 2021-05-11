@@ -15,18 +15,22 @@ from sklearn.tree import DecisionTreeClassifier
 from mlinspect.utils import get_project_root
 
 train_file = os.path.join(str(get_project_root()), "example_pipelines", "adult_demo", "adult_demo_train.csv")
-raw_train_data = pd.read_csv(train_file, na_values='?', index_col=0)
+train_data = pd.read_csv(train_file, na_values='?', index_col=0)
 test_file = os.path.join(str(get_project_root()), "example_pipelines", "adult_demo", "adult_demo_test.csv")
 test_data = pd.read_csv(test_file, na_values='?', index_col=0)
 
-# train_data = raw_train_data[raw_train_data['native-country'].notna()]
+#train_data = train_data[train_data['native-country'].notna()]
 #train_data = train_data[train_data['occupation'].notna()]
+#train_data = train_data[train_data['age'] > 40]
+#train_data = train_data[train_data['education-num'] >= 10]
+#train_data = train_data[train_data['marital-status'] == 'Married-civ-spouse']
+#train_data = train_data[train_data['capital-gain'] > 0]
 #train_data = train_data[train_data['native-country'].notna()]
 #train_data = train_data[train_data['income-per-year'].notna()]
 #train_data = train_data[train_data['occupation'].notna() & train_data['native-country'].notna()
-#    & train_data['income-per-year'].notna()]
+#                        & train_data['income-per-year'].notna()]
 #train_data = train_data[train_data['occupation'].notna()]
-train_data = raw_train_data.dropna()
+train_data = train_data.dropna()
 test_data = test_data.dropna()
 
 train_labels = preprocessing.label_binarize(train_data['income-per-year'], classes=['>50K', '<=50K'])
