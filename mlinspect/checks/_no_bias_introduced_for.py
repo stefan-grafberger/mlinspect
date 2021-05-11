@@ -229,9 +229,15 @@ class NoBiasIntroducedFor(Check):
         code_snippets = []
         descriptions = []
         assert isinstance(no_bias_check_result.check, NoBiasIntroducedFor)
-        sensitive_column_names = no_bias_check_result.check.sensitive_columns
-        sensitive_column_names = ["'{}' distribution change below the configured minimum test threshold".format(name)
-                                  for name in sensitive_column_names]
+        sensitive_column_names = []
+        for name in no_bias_check_result.check.sensitive_columns:
+            total_change_column_name = "'{}' distribution change below the configured minimum test threshold"\
+                .format(name)
+            sensitive_column_names.append(total_change_column_name)
+            removal_probability_column_name = "'{}' probability difference above the configured maximum test threshold"\
+                .format(name)
+            sensitive_column_names.append(removal_probability_column_name)
+
         sensitive_columns = []
         for _ in range(len(sensitive_column_names)):
             sensitive_columns.append([])
@@ -242,7 +248,8 @@ class NoBiasIntroducedFor(Check):
             code_snippets.append(dag_node.source_code)
             descriptions.append(dag_node.description)
             for index, change_info in enumerate(distribution_change.values()):
-                sensitive_columns[index].append(not change_info.acceptable_change)
+                sensitive_columns[2*index].append(not change_info.acceptable_change)
+                sensitive_columns[2*index+1].append(not change_info.acceptable_probability_difference)
         return DataFrame(zip(operator_types, descriptions, code_references, code_snippets, modules, *sensitive_columns),
                          columns=[
                              "operator_type",
