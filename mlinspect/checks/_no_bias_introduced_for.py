@@ -202,7 +202,7 @@ class NoBiasIntroducedFor(Check):
         removal_probabilities = distribution_change.before_and_after_df["normed_removal_probability"]
 
         pyplot.bar(keys, removal_probabilities)
-        pyplot.gca().set_title("normed removal probability per sensitive group")
+        pyplot.gca().set_title("normed removal probability per member of sensitive group")
         pyplot.xticks(
             rotation=45,
             horizontalalignment='right',
