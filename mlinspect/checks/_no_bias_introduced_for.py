@@ -141,12 +141,12 @@ class NoBiasIntroducedFor(Check):
         # We should probably find a more principled method to do this at some point
         non_zero_probabilities = joined_df["removal_probability"] > 0.0
         removal_probability_min = joined_df[non_zero_probabilities]["removal_probability"].min()
-        joined_df["normed_removal_probability"] = joined_df["removal_probability"] / removal_probability_min
+        joined_df["normalized_removal_probability"] = joined_df["removal_probability"] / removal_probability_min
         joined_df.loc[joined_df['removed_records'] < 0, 'removal_probability'] = 0
-        joined_df.loc[joined_df['removed_records'] < 0, 'normed_removal_probability'] = 0
+        joined_df.loc[joined_df['removed_records'] < 0, 'normalized_removal_probability'] = 0
 
-        not_nan = joined_df["normed_removal_probability"].notnull()
-        max_probability_difference = nanmax([joined_df[not_nan]["normed_removal_probability"].max(), 0.])
+        not_nan = joined_df["normalized_removal_probability"].notnull()
+        max_probability_difference = nanmax([joined_df[not_nan]["normalized_removal_probability"].max(), 0.])
         acceptable_probability_difference = max_probability_difference <= self.max_allowed_probability_difference
 
         return BiasDistributionChange(node, all_changes_acceptable, min_relative_ratio_change,
@@ -199,7 +199,7 @@ class NoBiasIntroducedFor(Check):
         pyplot.subplot(1, 1, 1)
         keys = distribution_change.before_and_after_df["sensitive_column_value"]
         keys = [str(key) for key in keys]  # Necessary because of null values
-        removal_probabilities = distribution_change.before_and_after_df["normed_removal_probability"]
+        removal_probabilities = distribution_change.before_and_after_df["normalized_removal_probability"]
 
         pyplot.bar(keys, removal_probabilities)
         pyplot.gca().set_title("normed removal probability per member of sensitive group")
@@ -223,6 +223,7 @@ class NoBiasIntroducedFor(Check):
         """
         Get a pandas DataFrame with an overview of all DistributionChanges
         """
+        # pylint: disable=too-many-locals
         operator_types = []
         code_references = []
         modules = []

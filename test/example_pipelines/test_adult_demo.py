@@ -4,11 +4,11 @@ Tests whether the adult_easy test pipeline works
 import ast
 import os
 
+from test.testing_helper_utils import run_and_assert_all_op_outputs_inspected
 import matplotlib
 from importnb import Notebook
 
 from mlinspect.utils import get_project_root
-from test.testing_helper_utils import run_and_assert_all_op_outputs_inspected
 from example_pipelines._pipelines import ADULT_DEMO_PY, ADULT_DEMO_PNG
 
 
