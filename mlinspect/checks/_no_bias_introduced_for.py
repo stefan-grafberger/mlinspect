@@ -3,11 +3,11 @@ The NoBiasIntroducedFor check
 """
 from __future__ import annotations
 
-import copy
 import dataclasses
 from typing import Iterable, OrderedDict
 import collections
 from matplotlib import pyplot
+from numpy import nanmax
 from pandas import DataFrame
 
 from mlinspect.checks._check import Check, CheckStatus, CheckResult
@@ -25,6 +25,8 @@ class BiasDistributionChange:
     dag_node: DagNode
     acceptable_change: bool
     min_relative_ratio_change: float
+    acceptable_probability_difference: bool
+    max_probability_difference: float
     before_and_after_df: DataFrame
 
 
@@ -43,14 +45,17 @@ class NoBiasIntroducedFor(Check):
 
     # pylint: disable=unnecessary-pass, too-few-public-methods
 
-    def __init__(self, sensitive_columns, min_allowed_relative_ratio_change=-0.3):
+    def __init__(self, sensitive_columns, min_allowed_relative_ratio_change=-0.3,
+                 max_allowed_probability_difference=2.0):
         self.sensitive_columns = sensitive_columns
         self.min_allowed_relative_ratio_change = min_allowed_relative_ratio_change
+        self.max_allowed_probability_difference = max_allowed_probability_difference
 
     @property
     def check_id(self):
         """The id of the Check"""
-        return tuple(self.sensitive_columns), self.min_allowed_relative_ratio_change
+        return tuple(self.sensitive_columns), self.min_allowed_relative_ratio_change, \
+            self.max_allowed_probability_difference
 
     @property
     def required_inspections(self) -> Iterable[Inspection]:
@@ -79,6 +84,13 @@ class NoBiasIntroducedFor(Check):
                             "configured minimum threshold {}!" \
                         .format(node.operator_type.value, column, column_result.min_relative_ratio_change,
                                 self.min_allowed_relative_ratio_change)
+                    issue_list.append(issue)
+                    check_status = CheckStatus.FAILURE
+                elif not column_result.acceptable_probability_difference:
+                    issue = "A {} causes a max_probability_difference of '{}' by {}, a value above the " \
+                            "configured maximum threshold {}!" \
+                        .format(node.operator_type.value, column, column_result.max_probability_difference,
+                                self.max_allowed_probability_difference)
                     issue_list.append(issue)
                     check_status = CheckStatus.FAILURE
 
@@ -120,7 +132,6 @@ class NoBiasIntroducedFor(Check):
         # Dropping nan values (e.g., missing value imputation) is a distribution change we consider okay
         not_nan = joined_df["sensitive_column_value"].notnull()
         min_relative_ratio_change = joined_df[not_nan]["relative_ratio_change"].min()
-
         all_changes_acceptable = min_relative_ratio_change >= self.min_allowed_relative_ratio_change
 
         # Probability of removal
@@ -131,8 +142,15 @@ class NoBiasIntroducedFor(Check):
         non_zero_probabilities = joined_df["removal_probability"] > 0.0
         removal_probability_min = joined_df[non_zero_probabilities]["removal_probability"].min()
         joined_df["normed_removal_probability"] = joined_df["removal_probability"] / removal_probability_min
+        joined_df.loc[joined_df['removed_records'] < 0, 'removal_probability'] = 0
+        joined_df.loc[joined_df['removed_records'] < 0, 'normed_removal_probability'] = 0
 
-        return BiasDistributionChange(node, all_changes_acceptable, min_relative_ratio_change, joined_df)
+        not_nan = joined_df["normed_removal_probability"].notnull()
+        max_probability_difference = nanmax([joined_df[not_nan]["normed_removal_probability"].max(), 0.])
+        acceptable_probability_difference = max_probability_difference <= self.max_allowed_probability_difference
+
+        return BiasDistributionChange(node, all_changes_acceptable, min_relative_ratio_change,
+                                      acceptable_probability_difference, max_probability_difference, joined_df)
 
     @staticmethod
     def plot_distribution_change_histograms(distribution_change: BiasDistributionChange, filename=None,

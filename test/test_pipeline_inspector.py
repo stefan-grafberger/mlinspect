@@ -28,7 +28,7 @@ def test_inspector_adult_easy_py_pipeline():
 
     assert HistogramForColumns(['race']) in inspector_result.inspection_to_annotations
     check_to_check_results = inspector_result.check_to_check_results
-    assert check_to_check_results[NoBiasIntroducedFor(['race'])].status == CheckStatus.SUCCESS
+    assert check_to_check_results[NoBiasIntroducedFor(['race'])].status == CheckStatus.FAILURE
     assert check_to_check_results[NoIllegalFeatures()].status == CheckStatus.FAILURE
 
 
@@ -60,7 +60,7 @@ def test_inspector_adult_easy_ipynb_pipeline():
 
     assert HistogramForColumns(['race']) in inspector_result.inspection_to_annotations
     check_to_check_results = inspector_result.check_to_check_results
-    assert check_to_check_results[NoBiasIntroducedFor(['race'])].status == CheckStatus.SUCCESS
+    assert check_to_check_results[NoBiasIntroducedFor(['race'])].status == CheckStatus.FAILURE
     assert check_to_check_results[NoIllegalFeatures()].status == CheckStatus.FAILURE
 
 
@@ -83,5 +83,5 @@ def test_inspector_adult_easy_str_pipeline():
 
         assert HistogramForColumns(['race']) in inspector_result.inspection_to_annotations
         check_to_check_results = inspector_result.check_to_check_results
-        assert check_to_check_results[NoBiasIntroducedFor(['race'])].status == CheckStatus.SUCCESS
+        assert check_to_check_results[NoBiasIntroducedFor(['race'])].status == CheckStatus.FAILURE
         assert check_to_check_results[NoIllegalFeatures()].status == CheckStatus.FAILURE
