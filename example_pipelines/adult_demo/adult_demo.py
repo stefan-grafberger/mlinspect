@@ -37,13 +37,13 @@ train_labels = preprocessing.label_binarize(train_data['income-per-year'], class
 test_labels = preprocessing.label_binarize(test_data['income-per-year'], classes=['>50K', '<=50K'])
 
 nested_categorical_feature_transformation = Pipeline([
-        ('impute', SimpleImputer(missing_values=np.nan, strategy='most_frequent')),
+        ('impute', SimpleImputer(missing_values=np.nan, strategy='most_frequent')),  # Try dropna/comment out imputer
         ('encode', OneHotEncoder(handle_unknown='ignore'))
     ])
 
 nested_feature_transformation = ColumnTransformer(transformers=[
         ('categorical', nested_categorical_feature_transformation, ['education', 'workclass']),
-        ('numeric', StandardScaler(), ['age', 'hours-per-week'])
+        ('numeric', StandardScaler(), ['age', 'hours-per-week'])  # change columns, e.g. education-num instead of educ.
     ])
 
 nested_income_pipeline = Pipeline([
@@ -53,4 +53,4 @@ nested_income_pipeline = Pipeline([
 nested_income_pipeline.fit(train_data, train_labels)
 
 print(nested_income_pipeline.score(test_data, test_labels))
-print(nested_income_pipeline.score(train_data, train_labels))
+print(nested_income_pipeline.score(train_data, train_labels))  # Use separate test set + load additional file or not
