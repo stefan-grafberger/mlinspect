@@ -3,6 +3,7 @@ The NoBiasIntroducedFor check
 """
 from __future__ import annotations
 
+import copy
 import dataclasses
 from typing import Iterable, OrderedDict
 import collections
@@ -121,6 +122,13 @@ class NoBiasIntroducedFor(Check):
         min_relative_ratio_change = joined_df[not_nan]["relative_ratio_change"].min()
 
         all_changes_acceptable = min_relative_ratio_change >= self.min_allowed_relative_ratio_change
+
+        # Probability of removal
+        joined_df["removed_records"] = joined_df["count_before"] - joined_df["count_after"]
+        joined_df["removal_probability"] = joined_df["removed_records"] / joined_df["count_before"]
+        removal_probability_min = joined_df["removal_probability"].min()
+        joined_df["normed_removal_probability"] = joined_df["removal_probability"] / removal_probability_min
+
         return BiasDistributionChange(node, all_changes_acceptable, min_relative_ratio_change, joined_df)
 
     @staticmethod
@@ -153,6 +161,34 @@ class NoBiasIntroducedFor(Check):
 
         fig = pyplot.gcf()
         fig.set_size_inches(12, 4)
+
+        if save_to_file:
+            fig.savefig(filename + '.svg', bbox_inches='tight')
+            fig.savefig(filename + '.png', bbox_inches='tight', dpi=800)
+
+        pyplot.show()
+        pyplot.close()
+
+    @staticmethod
+    def plot_removal_probability_histograms(distribution_change: BiasDistributionChange, filename=None,
+                                            save_to_file=False):
+        """
+        Plot before and after histograms visualising a DistributionChange
+        """
+        pyplot.subplot(1, 1, 1)
+        keys = distribution_change.before_and_after_df["sensitive_column_value"]
+        keys = [str(key) for key in keys]  # Necessary because of null values
+        removal_probabilities = distribution_change.before_and_after_df["normed_removal_probability"]
+
+        pyplot.bar(keys, removal_probabilities)
+        pyplot.gca().set_title("Normed Removal Probability per sensitive group")
+        pyplot.xticks(
+            rotation=45,
+            horizontalalignment='right',
+        )
+
+        fig = pyplot.gcf()
+        fig.set_size_inches(6, 4)
 
         if save_to_file:
             fig.savefig(filename + '.svg', bbox_inches='tight')
