@@ -49,6 +49,7 @@ class MlinspectDataFrame(DataFrame):
 
             previous_df = self.copy()
             super()._set_item(key, value)
-            self.backend.after_call_used_setkey(key, previous_df, self)
+            result = self.backend.after_call_used_setkey(key, previous_df, self)
+            self.annotations = result.annotations
         else:
             super()._set_item(key, value)

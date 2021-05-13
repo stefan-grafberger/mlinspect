@@ -230,9 +230,10 @@ class PandasBackend(Backend):
         # pylint: disable=unused-argument
         code_reference, function_info, args_code = self.set_key_info
         operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
-        execute_inspection_visits_unary_operator(self, operator_context, code_reference,
-                                                 value_before, value_before.annotations,
-                                                 value_after, False)
+        return_value = execute_inspection_visits_unary_operator(self, operator_context, code_reference,
+                                                                value_before, value_before.annotations,
+                                                                value_after, False)
+        return return_value
 
     def replace_wrapper_modules(self, function_info):
         """Replace the module of mlinspect wrappers with the original modules"""
