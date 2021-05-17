@@ -199,10 +199,10 @@ class NoBiasIntroducedFor(Check):
         pyplot.subplot(1, 1, 1)
         keys = distribution_change.before_and_after_df["sensitive_column_value"]
         keys = [str(key) for key in keys]  # Necessary because of null values
-        removal_probabilities = distribution_change.before_and_after_df["normalized_removal_probability"]
+        removal_probabilities = distribution_change.before_and_after_df["removal_probability"]
 
         pyplot.bar(keys, removal_probabilities)
-        pyplot.gca().set_title("normalized removal probability per member of sensitive group")
+        pyplot.gca().set_title("removal probability per member of sensitive group")
         pyplot.xticks(
             rotation=45,
             horizontalalignment='right',
