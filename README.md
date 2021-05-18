@@ -1,10 +1,10 @@
 mlinspect
 ===
 
-[![mlinspect](https://img.shields.io/badge/🔎-mlinspect-green)](https://github.com/stefan-grafberger/MLInspect)
-[![GitHub license](https://img.shields.io/badge/License-Apache%202.0-yellowgreen.svg)](https://github.com/stefan-grafberger/MLInspect/blob/master/LICENSE)
-[![Build Status](https://travis-ci.com/stefan-grafberger/mlinspect.svg?token=x1zHsibRoiV8cZwxNVsj&branch=master)](https://travis-ci.com/stefan-grafberger/MLInspect)
-[![codecov](https://codecov.io/gh/stefan-grafberger/MLInspect/branch/master/graph/badge.svg?token=KTMNPBV1ZZ)](https://codecov.io/gh/stefan-grafberger/MLInspect)
+[![mlinspect](https://img.shields.io/badge/🔎-mlinspect-green)](https://github.com/stefan-grafberger/mlinspect)
+[![GitHub license](https://img.shields.io/badge/License-Apache%202.0-yellowgreen.svg)](https://github.com/stefan-grafberger/mlinspect/blob/master/LICENSE)
+[![Build Status](https://github.com/stefan-grafberger/mlinspect/actions/workflows/build.yml/badge.svg)](https://github.com/stefan-grafberger/mlinspect/actions/workflows/build.yml)
+[![codecov](https://codecov.io/gh/stefan-grafberger/mlinspect/branch/master/graph/badge.svg?token=KTMNPBV1ZZ)](https://codecov.io/gh/stefan-grafberger/mlinspect)
 
 Inspect ML Pipelines in Python in the form of a DAG
 
