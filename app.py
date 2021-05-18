@@ -371,13 +371,6 @@ def on_execute(execute_clicks, pipeline,
     # Highlight problematic nodes
     figure = highlight_problem_nodes(figure, nobiasintroduced_sensitive_columns)
 
-    if pipeline == default_pipeline:
-        # Return fake value, better than actual score
-        pipeline_output = "Mean accuracy: 0.9479452013969421"
-    else:
-        # Return even better fake value after filter is fixed
-        pipeline_output = "Mean accuracy: 0.97205479860305786"
-
     # De-select any DAG nodes and trigger callback to reset operator details div
     selectedData = {}
 
