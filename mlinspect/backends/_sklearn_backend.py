@@ -4,7 +4,7 @@ The scikit-learn backend
 
 import networkx
 from sklearn.base import BaseEstimator
-from tensorflow.python.keras.wrappers.scikit_learn import BaseWrapper
+from tensorflow.python.keras.wrappers.scikit_learn import BaseWrapper  # pylint: disable=no-name-in-module
 
 from ._backend import Backend
 from ._pandas_backend import execute_inspection_visits_unary_operator

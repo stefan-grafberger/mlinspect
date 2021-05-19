@@ -10,7 +10,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
+from tensorflow.keras.wrappers.scikit_learn import KerasClassifier  # pylint: disable=no-name-in-module
 from example_pipelines.healthcare.healthcare_utils import MyW2VTransformer, create_model
 from mlinspect.utils import get_project_root
 

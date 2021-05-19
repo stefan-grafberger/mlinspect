@@ -4,9 +4,9 @@ Some useful utils for the project
 import numpy
 from sklearn.exceptions import NotFittedError
 from gensim.sklearn_api import W2VTransformer
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.models import Sequential
-from tensorflow.python.keras.optimizer_v2.gradient_descent import SGD
+from tensorflow.keras.layers import Dense  # pylint: disable=no-name-in-module
+from tensorflow.keras.models import Sequential  # pylint: disable=no-name-in-module
+from tensorflow.python.keras.optimizer_v2.gradient_descent import SGD  # pylint: disable=no-name-in-module
 
 
 class MyW2VTransformer(W2VTransformer):

@@ -65,7 +65,7 @@ class WirExtractor:
             self.extract_wir_tuple(ast_node)
         elif isinstance(ast_node, (ast.Attribute, ast.Expr, ast.Index, ast.Load, ast.Module, ast.Name, ast.Store,
                                    ast.alias, ast.Gt, ast.Lt, ast.LtE, ast.GtE, ast.Mult, ast.BinOp, ast.Compare,
-                                   ast.Sub, ast.USub, ast.UnaryOp, ast.NotEq, ast.BitAnd)):
+                                   ast.Sub, ast.USub, ast.UnaryOp, ast.NotEq, ast.BitAnd, ast.For, ast.Dict, ast.Add)):
             pass  # TODO: Test if we really covered all necessary edge cases
         else:
             print("AST Node Type not supported yet: {}!".format(str(ast_node)))
@@ -106,16 +106,14 @@ class WirExtractor:
         name_name_ast = name_ast.id
         name_wir = self.get_wir_node_for_variable(name_name_ast)
         index_ast = ast_node.children[1]
-        assert isinstance(index_ast, ast.Index)
 
-        index_value_ast = index_ast.children[0]
-        index_value_wir = self.get_wir_node_for_ast(index_value_ast)
+        index_wir = self.get_wir_node_for_ast(index_ast)
         new_wir_node = WirNode(self.get_next_wir_id(), "Index-Subscript", "Subscript",
                                CodeReference(ast_node.lineno, ast_node.col_offset,
                                              ast_node.end_lineno, ast_node.end_col_offset))
         self.graph.add_node(new_wir_node)
         self.graph.add_edge(name_wir, new_wir_node, type="caller", arg_index=-1)
-        self.graph.add_edge(index_value_wir, new_wir_node, type="input", arg_index=0)
+        self.graph.add_edge(index_wir, new_wir_node, type="input", arg_index=0)
         self.store_ast_node_wir_mapping(ast_node, new_wir_node)
 
     def extract_wir_list(self, ast_node):
@@ -192,7 +190,11 @@ class WirExtractor:
         elif isinstance(assign_left_ast, ast.Subscript):  # TODO: Cover more edge cases
             data_name = assign_left_ast.children[0].id
             data_wir = self.get_wir_node_for_variable(data_name)
-            index_value = assign_left_ast.children[1].value.n
+            index_ast_node = assign_left_ast.children[1]
+            if isinstance(index_ast_node, ast.Name):
+                index_value = index_ast_node.id
+            else:
+                index_value = index_ast_node.n
             new_wir_node = WirNode(self.get_next_wir_id(), "{}.{}".format(data_name, index_value), "Subscript-Assign",
                                    CodeReference(assign_left_ast.lineno, assign_left_ast.col_offset,
                                                  assign_left_ast.end_lineno, assign_left_ast.end_col_offset))
