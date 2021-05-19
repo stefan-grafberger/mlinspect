@@ -133,9 +133,9 @@ class PipelineExecutor:
                                                  ast.alias(name='before_call_used_kwargs', asname=None),
                                                  ast.alias(name='after_call_used', asname=None)],
                                           level=0)
-        parsed_modified_ast.body.insert(2, func_import_node)
+        parsed_modified_ast.body.insert(0, func_import_node)
         inspect_import_node = ast.Import(names=[ast.alias(name='inspect', asname=None)])
-        parsed_modified_ast.body.insert(3, inspect_import_node)
+        parsed_modified_ast.body.insert(1, inspect_import_node)
         parsed_modified_ast = ast.fix_missing_locations(parsed_modified_ast)
         return parsed_modified_ast
 
@@ -237,7 +237,11 @@ class PipelineExecutor:
             if not store:
                 function_info = (module_info.__name__, "__getitem__")
             else:
-                function_info = (module_info.__name__, "__setitem__")
+                if module_info is not None:
+                    function_info = (module_info.__name__, "__setitem__")
+                else:
+                    module_info = "builtin_function_or_method"
+                    function_info = (module_info, "__setitem__")
 
         function_prefix = function_info[0].split(".", 1)[0]
 

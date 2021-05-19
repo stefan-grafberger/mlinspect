@@ -117,7 +117,7 @@ class CallCaptureTransformer(ast.NodeTransformer):
         """
         When the __getitem__ method of some object is called, capture the arguments of the method before executing it
         """
-        old_args_code = ast.List([ast.Constant(n=ast.get_source_segment(all_source_code, node.slice.value), kind=None)],
+        old_args_code = ast.List([ast.Constant(n=ast.get_source_segment(all_source_code, node.slice), kind=None)],
                                  ctx=ast.Load())
         new_args_node = ast.Call(func=ast.Name(id='before_call_used_args', ctx=ast.Load()),
                                  args=[ast.Constant(n=True, kind=None),
@@ -128,9 +128,9 @@ class CallCaptureTransformer(ast.NodeTransformer):
                                        ast.Constant(n=node.end_lineno, kind=None),
                                        ast.Constant(n=node.end_col_offset, kind=None),
                                        ast.Constant(n=store, kind=None),
-                                       node.slice.value],
+                                       node.slice],
                                  keywords=[])
-        node.slice.value = new_args_node
+        node.slice = new_args_node
 
     @staticmethod
     def add_before_call_used_kwargs_capturing_call(call_code, node, all_source_code):

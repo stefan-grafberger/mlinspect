@@ -28,6 +28,7 @@ class MlinspectDataFrame(DataFrame):
     A DataFrame wrapper also storing annotations.
     See the pandas documentation: https://pandas.pydata.org/pandas-docs/stable/development/extending.html
     """
+    # pylint: disable=too-many-ancestors
 
     _metadata = ['annotations', 'backend']
 
