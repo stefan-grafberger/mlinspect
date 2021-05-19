@@ -59,8 +59,10 @@ CODE_FONT = {"fontFamily": "'Courier New', monospace"}
 STYLE_HIDDEN = {"display": "none"}
 STYLE_SHOWN = {"display": "block"}
 
-with open("example_pipelines/healthcare/healthcare.py") as f:
-    default_pipeline = f.read()
+with open("example_pipelines/healthcare/healthcare.py") as healthcare_file:
+    healthcare_pipeline = healthcare_file.read()
+with open("example_pipelines/adult_demo/adult_demo.py") as adult_file:
+    adult_pipeline = adult_file.read()
 
 patients = pd.read_csv("example_pipelines/healthcare/patients.csv", na_values='?')
 histories = pd.read_csv("example_pipelines/healthcare/histories.csv", na_values='?')
@@ -84,7 +86,7 @@ app.layout = dbc.Container([
             html.H2("mlinspect"),
         ], width=4),
         dbc.Col([
-            html.H2("Inspect ML Pipelines in Python in the form of a DAG.", style={"text-align": "right"}),
+            html.H2("Inspect ML Pipelines in Python in the form of a DAG.", style={"textAlign": "right"}),
         ], width=8),
     ], id="header-container", className="container", style=CODE_FONT),
     html.Hr(),
@@ -96,11 +98,13 @@ app.layout = dbc.Container([
             html.Div([
                 html.H3("Pipeline Definition"),
                 dbc.FormGroup([
-                    dbc.Textarea(
-                        id="pipeline-textarea",
-                        # value=default_pipeline,
-                        className="mb-3",
-                    ),
+                    # Paste text from pipeline: Healthcare Adult
+                    html.Div("Paste text from pipeline:"),
+                    dbc.Button("Healthcare", id="healthcare-pipeline", color="secondary", size="lg", className="mr-1"),
+                    dbc.Button("Adult", id="adult-pipeline", color="secondary", size="lg", className="mr-1"),
+                    dbc.Textarea(id="pipeline-textarea", className="mb-3"),
+                    html.Div(healthcare_pipeline, id="healthcare-pipeline-text", hidden=True),
+                    html.Div(adult_pipeline, id="adult-pipeline-text", hidden=True),
                 ]),
             ], id="pipeline-definition-container", className="container"),
             # Pipeline execution output
@@ -246,6 +250,36 @@ app.clientside_callback(
     """,
     Output('clientside-pipeline-code', 'children'),
     Input("execute", "n_clicks")
+)
+
+
+app.clientside_callback(
+    """
+    function(healthcare_clicked, adult_clicked) {
+        const ctx = dash_clientside.callback_context;
+        if (ctx.triggered.length === 0) {
+            return '';
+        }
+        const prop_id = ctx.triggered[0]["prop_id"];
+        var val = '';
+        if (prop_id.startsWith("healthcare")) {
+            const healthcareElem = document.getElementById('healthcare-pipeline-text');
+            val = healthcareElem.textContent;
+        } else if (prop_id.startsWith("adult")) {
+            const adultElem = document.getElementById('adult-pipeline-text');
+            val = adultElem.textContent;
+        }
+
+        var editor = document.querySelector('.CodeMirror').CodeMirror;
+        editor.setValue(val);
+        return val;
+    }
+    """,
+    Output("pipeline-textarea", "value"),
+    [
+        Input("healthcare-pipeline", "n_clicks"),
+        Input("adult-pipeline", "n_clicks"),
+    ]
 )
 
 
@@ -656,6 +690,17 @@ def convert_dataframe_to_dash_table(df):
         }
         for record in df.to_dict('records')
     ]
+    # data = []
+    # for record in df.to_dict('records'):
+    #     record_dict = {}
+    #     for k, v in record.items():
+    #         if isinstance(v, np.ndarray):
+    #             record_dict[k] = np.array2string(v, precision=2, threshold=2)
+    #         elif isinstance(v, set):
+    #             record_dict[k] = "{" + "\n".join(map(str, v)) + "}"
+    #         else:
+    #             record_dict[k] = str(v)
+    #     data += [record_dict]
     return dash_table.DataTable(
         columns=columns,
         data=data,

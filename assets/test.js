@@ -1,6 +1,6 @@
-function hightightCodeBlock(editor, codeReferenceText){
+function highlightCodeBlock(editor, codeReferenceText){
     code_reference = JSON.parse(codeReferenceText);
-    console.log(code_reference); // todo: call marktext
+    console.log(code_reference);
     document.querySelectorAll('.code-dag-highlight').forEach(block => {
         block.classList.remove("code-dag-highlight");
     });
@@ -43,9 +43,9 @@ setTimeout(function(){
     var observer = new MutationObserver(function(mutations) {
         console.log("attributes: ");
         if (hoverDiv.innerText) {
-            hightightCodeBlock(editor, hoverDiv.innerText);
+            highlightCodeBlock(editor, hoverDiv.innerText);
         } else if (selectDiv.innerText) {
-            hightightCodeBlock(editor, selectDiv.innerText);
+            highlightCodeBlock(editor, selectDiv.innerText);
         } else {
             document.querySelectorAll('.code-dag-highlight').forEach(block => {
                 block.classList.remove("code-dag-highlight");
