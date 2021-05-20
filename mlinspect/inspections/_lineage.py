@@ -2,9 +2,9 @@
 A simple inspection for testing annotation propagation
 """
 import dataclasses
-from typing import Iterable, Tuple
+from typing import Iterable
 
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 from mlinspect.inspections._inspection import Inspection
 from mlinspect.inspections._inspection_input import InspectionInputUnaryOperator, \
@@ -19,22 +19,6 @@ class LineageId:
     """
     operator_id: int
     row_id: int
-
-
-@dataclasses.dataclass(frozen=True)
-class JoinLineageId:
-    """
-    A lineage id class
-    """
-    lineage_ids: Tuple
-
-
-@dataclasses.dataclass(frozen=True)
-class ConcatLineageId:
-    """
-    A lineage id class
-    """
-    lineage_ids: Tuple
 
 
 class RowLineage(Inspection):
@@ -70,7 +54,7 @@ class RowLineage(Inspection):
         if isinstance(inspection_input, InspectionInputDataSource):
             for row in inspection_input.row_iterator:
                 current_count += 1
-                annotation = LineageId(self._operator_count, current_count)
+                annotation = {LineageId(self._operator_count, current_count)}
                 if current_count < self.row_count:
                     operator_output.append(row.output)
                     operator_lineage.append(annotation)
@@ -81,7 +65,7 @@ class RowLineage(Inspection):
                 for row in inspection_input.row_iterator:
                     current_count += 1
 
-                    annotation = JoinLineageId(row.annotation)
+                    annotation = set.union(*row.annotation)
                     if current_count < self.row_count:
                         operator_output.append(row.output)
                         operator_lineage.append(annotation)
@@ -90,7 +74,7 @@ class RowLineage(Inspection):
                 for row in inspection_input.row_iterator:
                     current_count += 1
 
-                    annotation = ConcatLineageId(row.annotation)
+                    annotation = set.union(*row.annotation)
                     if current_count < self.row_count:
                         operator_output.append(row.output)
                         operator_lineage.append(annotation)
@@ -110,7 +94,7 @@ class RowLineage(Inspection):
             self._is_sink = True
             for row in inspection_input.row_iterator:
                 current_count += 1
-                annotation = row.annotation[0]  # TODO: May want to also show lineage of target
+                annotation = set.union(*row.annotation)
                 operator_lineage.append(annotation)
                 yield annotation
         else:
@@ -125,7 +109,8 @@ class RowLineage(Inspection):
             result = DataFrame(self._op_output, columns=self._output_columns)
             result["mlinspect_lineage"] = self._op_lineage
         else:
-            result = DataFrame(self._op_lineage, columns=["mlinspect_lineage"])
+            lineage_series = Series(self._op_lineage)
+            result = DataFrame(lineage_series, columns=["mlinspect_lineage"])
         self._op_output = None
         self._op_lineage = None
         self._output_columns = None
