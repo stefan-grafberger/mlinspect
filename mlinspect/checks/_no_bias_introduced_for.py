@@ -59,7 +59,9 @@ class NoBiasIntroducedFor(Check):
     def evaluate(self, inspection_result: InspectionResult) -> CheckResult:
         """Evaluate the check"""
         dag = inspection_result.dag
-        histograms = inspection_result.inspection_to_annotations[HistogramForColumns(self.sensitive_columns)]
+        histograms = {}
+        for dag_node, inspection_results in inspection_result.inspection_to_annotations:
+            histograms[dag_node] = inspection_results[HistogramForColumns(self.sensitive_columns)]
         relevant_nodes = [node for node in dag.nodes if node.operator_type in {OperatorType.JOIN,
                                                                                OperatorType.SELECTION} or
                           (node.module == ('sklearn.impute._base', 'SimpleImputer', 'Pipeline') and
@@ -180,9 +182,12 @@ class NoBiasIntroducedFor(Check):
             sensitive_columns.append([])
         for dag_node, distribution_change in no_bias_check_result.bias_distribution_change.items():
             operator_types.append(dag_node.operator_type)
-            code_references.append(dag_node.code_reference)
+            if dag_node.optional_code_reference is not None:
+                code_references.append(dag_node.optional_code_reference)
+            else:
+                code_references.append(dag_node.lineno)
             modules.append(dag_node.module)
-            code_snippets.append(dag_node.source_code)
+            code_snippets.append(dag_node.optional_source_code)
             descriptions.append(dag_node.description)
             for index, change_info in enumerate(distribution_change.values()):
                 sensitive_columns[index].append(not change_info.acceptable_change)

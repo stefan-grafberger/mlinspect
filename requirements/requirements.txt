@@ -12,3 +12,4 @@ more-itertools==8.6.0
 pygraphviz==1.7
 testfixtures==6.15.0
 matplotlib==3.4.2
+gorilla==0.3.0
