@@ -65,7 +65,7 @@ class PipelineExecutor:
         if reset_state:
             # reset_state=False should only be used internally for performance experiments etc!
             # It does not ensure the same inspections are still used as args etc.
-            self.reset_singleton(all_inspections)
+            self.reset_singleton()
 
         self.run_inspections(notebook_path, python_code, python_path)
         check_to_results = dict((check, check.evaluate(self.inspection_results)) for check in checks)
@@ -115,7 +115,7 @@ class PipelineExecutor:
             parsed_ast = ast.fix_missing_locations(parsed_ast)
 
         # from mlinspect2._pipeline_executor import set_code_reference, monkey_patch
-        func_import_node = ast.ImportFrom(module='mlinspect2._pipeline_executor',
+        func_import_node = ast.ImportFrom(module='mlinspect.instrumentation._pipeline_executor',
                                           names=[ast.alias(name='set_code_reference_call', asname=None),
                                                  ast.alias(name='set_code_reference_subscript', asname=None),
                                                  ast.alias(name='monkey_patch', asname=None)],
@@ -154,7 +154,8 @@ class PipelineExecutor:
             assert False
         return source_code, source_code_path
 
-    def reset_singleton(self, inspections: Iterable[Inspection]):
+    @staticmethod
+    def reset_singleton():
         """
         Reset all attributes in the singleton object. This can be used when there are multiple repeated calls to mlinspect
         """

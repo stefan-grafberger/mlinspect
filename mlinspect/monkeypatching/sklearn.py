@@ -9,6 +9,7 @@ from scipy.sparse import csr_matrix
 from sklearn import preprocessing, compose, tree
 
 from mlinspect.backends._pandas_backend import execute_inspection_visits_unary_operator
+from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.inspections._inspection_input import OperatorContext
 from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import OperatorType, DagNode
@@ -38,15 +39,21 @@ class SklearnPreprocessingPatching:
                                         optional_source_code)
 
             operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
-            return_value = execute_inspection_visits_unary_operator(operator_context,
-                                                                    input_info.input_data,
-                                                                    input_info.input_annotation,
-                                                                    return_value,
-                                                                    False)
+            input_infos = SklearnBackend.before_call(function_info,
+                                                     operator_context,
+                                                     [input_info.annotated_dfobject])
+            result = original(input_infos[0].result_data, *args[1:], **kwargs)
+            annotated_df = SklearnBackend.after_call(function_info,
+                                                     operator_context,
+                                                     input_infos,
+                                                     result)
 
-            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.PROJECTION_MODIFY, module, description,
-                                ["array"], optional_code_reference, optional_source_code)
-            add_dag_node(dag_node, [input_info.dag_node], result, engine_result)
+            classes = kwargs['classes']
+            description = "label_binarize, classes: {}".format(classes)
+            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.PROJECTION_MODIFY, function_info,
+                               description,
+                               ["array"], optional_code_reference, optional_source_code)
+            add_dag_node(dag_node, [input_info.dag_node], annotated_df)
             return result
 
         return execute_patched_func(original, execute_inspections, *args, **kwargs)
@@ -144,8 +151,8 @@ class SklearnComposePatching:
             result = engine_result.user_op_result.to_numpy_2d_array()
             assert isinstance(result, MlinspectNdarray)
 
-        dag_node = DagNode2(self.mlinspect_op_id, self.mlinspect_filename, self.mlinspect_lineno,
-                            OperatorType2.CONCATENATION, module, "", ['array'], self.mlinspect_optional_code_reference,
+        dag_node = DagNode(self.mlinspect_op_id, self.mlinspect_filename, self.mlinspect_lineno,
+                            OperatorType.CONCATENATION, module, "", ['array'], self.mlinspect_optional_code_reference,
                             self.mlinspect_optional_source_code)
         input_dag_nodes = [input_info.dag_node for input_info in input_infos]
         add_dag_node(dag_node, input_dag_nodes, result, engine_result)

@@ -10,11 +10,19 @@ import numpy
 from pandas import DataFrame, Series
 from scipy.sparse import csr_matrix
 
+from mlinspect.backends._backend import AnnotatedDfObject
 from mlinspect.backends._pandas_backend import execute_inspection_visits_data_source
 from mlinspect.inspections._inspection_input import OperatorContext
 from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import DagNode, OperatorType, CodeReference
 from mlinspect.instrumentation._pipeline_executor import singleton
+
+
+@dataclasses.dataclass(frozen=True)
+class InputInfo:
+    """ WIP experiments """
+    dag_node: DagNode
+    annotated_dfobject: AnnotatedDfObject
 
 
 def execute_patched_func(original_func, execute_inspections_func, *args, **kwargs):
@@ -102,7 +110,7 @@ def execute_patched_func_indirect_allowed(execute_inspections_func):
         caller_source_code = ast.get_source_segment(singleton.source_code, node=call_ast_node)
         caller_lineno = singleton.lineno_next_call_or_subscript
         op_id = singleton.get_next_op_id()
-        caller_code_reference = CodeReference2(singleton.lineno_next_call_or_subscript,
+        caller_code_reference = CodeReference(singleton.lineno_next_call_or_subscript,
                                                singleton.col_offset_next_call_or_subscript,
                                                singleton.end_lineno_next_call_or_subscript,
                                                singleton.end_col_offset_next_call_or_subscript)
@@ -115,14 +123,6 @@ def execute_patched_func_indirect_allowed(execute_inspections_func):
         result = execute_inspections_func(op_id, caller_filename, caller_lineno, None, None)
         # singleton.lineno_next_call_or_subscript = -1
     return result
-
-
-@dataclasses.dataclass(frozen=True)
-class InputInfo:
-    """ WIP experiments """
-    dag_node: DagNode
-    input_data: any
-    input_annotation: any
 
 
 def get_input_info(df_object, caller_filename, lineno, function_info, optional_code_reference, optional_source_code) \
@@ -147,7 +147,7 @@ def get_input_info(df_object, caller_filename, lineno, function_info, optional_c
         input_info = InputInfo(input_dag_node, df_object, annotation_df)
     else:
         operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
-        return_value = execute_inspection_visits_data_source(operator_context, df_object)
+        annotated_df = execute_inspection_visits_data_source(operator_context, df_object)
         if optional_code_reference:
             code_reference = "({})".format(optional_source_code)
         else:
@@ -159,14 +159,13 @@ def get_input_info(df_object, caller_filename, lineno, function_info, optional_c
                                  description=description,
                                  columns=columns, optional_code_reference=optional_code_reference,
                                  optional_source_code=optional_source_code)
-        add_dag_node(input_dag_node, [], df_object, engine_result)
-        annotation_df = engine_result.annotation_df
-        input_info = InputInfo(input_dag_node, df_object, annotation_df)
+        add_dag_node(input_dag_node, [], annotated_df)
+        annotation_df = annotated_df.result_annotation
+        input_info = InputInfo(input_dag_node, AnnotatedDfObject(df_object, annotation_df))
     return input_info
 
 
-def add_dag_node(dag_node: DagNode2, dag_node_parents: List[DagNode2], df_result_obj,
-                 engine_result: EngineResult or None):
+def add_dag_node(dag_node: DagNode, dag_node_parents: List[DagNode], annotated_df: AnnotatedDfObject):
     """
     Inserts a new node into the DAG
     """
@@ -176,19 +175,14 @@ def add_dag_node(dag_node: DagNode2, dag_node_parents: List[DagNode2], df_result
 
     print("source code: {}".format(dag_node.optional_source_code))
 
-    if df_result_obj is not None:
-        df_result_obj._mlinspect_dag_node = dag_node.node_id
-        if engine_result is not None:  # TODO: Remove this branch once we support all operators with DAG node mapping
-            df_result_obj._mlinspect_annotation = engine_result.annotation_df
-            df_result_obj._mlinspect_inspection_to_annotation_columns = engine_result \
-                .inspection_to_annotation_columns
+    if annotated_df.result_data is not None:
+        annotated_df.result_data._mlinspect_dag_node = dag_node.node_id
+        if annotated_df.result_annotation is not None:
+            # TODO: Remove this branching once we support all operators with DAG node mapping
+            annotated_df.result_data._mlinspect_annotation = annotated_df.result_annotation
     if dag_node_parents:
         for parent in dag_node_parents:
-            singleton.graph.add_edge(parent, dag_node)
+            singleton.inspection_results.dag.add_edge(parent, dag_node)
     else:
-        singleton.graph.add_node(dag_node)
+        singleton.inspection_results.dag.add_node(dag_node)
     singleton.op_id_to_dag_node[dag_node.node_id] = dag_node
-    if engine_result is not None:
-        singleton.dag_node_to_inspection_results[dag_node] = engine_result.inspection_to_result
-    else:
-        singleton.dag_node_to_inspection_results[dag_node] = dict()

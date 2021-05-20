@@ -7,13 +7,8 @@ from functools import partial
 import gorilla
 import pandas
 
-from mlinspect2 import _pipeline_executor
-from mlinspect2._dag_node import OperatorType2, DagNode2
-from mlinspect2.inspections._logical_dataframe import LogicalDf, DataframeType
-from mlinspect2.inspections._logical_operators import LogicalDataSource, LogicalProjectAssignColumn, LogicalSelection, \
-    LogicalProjection
-from mlinspect2.monkeypatching.monkey_patching_utils import execute_patched_func, add_dag_node, get_input_info
-from mlinspect2.monkeypatching.sklearn import call_info_singleton
+from mlinspect.instrumentation import _pipeline_executor
+from mlinspect.monkeypatching.monkey_patching_utils import execute_patched_func, get_input_info
 
 
 @gorilla.patches(pandas)
@@ -34,14 +29,14 @@ class PandasPatching:
             module = ('pandas.io.parsers', 'read_csv')
             result = original(*args, **kwargs)
 
-            user_operation = LogicalDataSource(-1, LogicalDf(df_object=result))
+            #user_operation = LogicalDataSource(-1, LogicalDf(df_object=result))
             fallback = partial(original, *args, **kwargs)
-            engine_result = _pipeline_executor.singleton.engine.run([], user_operation, fallback)
+            #engine_result = _pipeline_executor.singleton.engine.run([], user_operation, fallback)
 
             description = "{}".format(args[0].split(os.path.sep)[-1])
-            dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.DATA_SOURCE, module, description,
-                                list(result.columns), optional_code_reference, optional_source_code)
-            add_dag_node(dag_node, [], result, engine_result)
+            #dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.DATA_SOURCE, module, description,
+            #                    list(result.columns), optional_code_reference, optional_source_code)
+            #add_dag_node(dag_node, [], result, engine_result)
             return result
 
         return execute_patched_func(original, execute_inspections, *args, **kwargs)
@@ -63,12 +58,12 @@ class DataFramePatching:
             original(self, *args, **kwargs)
             columns = list(self.columns)  # pylint: disable=no-member
 
-            user_operation = LogicalDataSource(-1, LogicalDf(df_object=self))
-            fallback = lambda: self
-            engine_result = _pipeline_executor.singleton.engine.run([], user_operation, fallback)
-            dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.DATA_SOURCE, module,
-                                "", columns, optional_code_reference, optional_source_code)
-            add_dag_node(dag_node, [], self, engine_result)
+            #user_operation = LogicalDataSource(-1, LogicalDf(df_object=self))
+            #fallback = lambda: self
+            #engine_result = _pipeline_executor.singleton.engine.run([], user_operation, fallback)
+            #dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.DATA_SOURCE, module,
+             #                   "", columns, optional_code_reference, optional_source_code)
+            #add_dag_node(dag_node, [], self, engine_result)
 
         execute_patched_func(original, execute_inspections, self, *args, **kwargs)
 
@@ -90,15 +85,15 @@ class DataFramePatching:
             # FIXME: Introduce a flag to LogicalSelection to indicate whether e.g. inspection annotations with
             #  null values can change the result of the user function call if we are not careful?
             partial_dropna = lambda x: original(x, *args, **kwargs)
-            user_operation = LogicalSelection(1, partial_dropna, DataframeType.PANDAS_DF)
+            #user_operation = LogicalSelection(1, partial_dropna, DataframeType.PANDAS_DF)
             engine_input = [input_info.engine_input]
             fallback = partial(original, self, *args, **kwargs)
-            engine_result = _pipeline_executor.singleton.engine.run(engine_input, user_operation, fallback)
-            user_op_result = engine_result.user_op_result.to_pandas_df()
-            dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.SELECTION, module,
-                                "dropna", list(user_op_result.columns), optional_code_reference, optional_source_code)
-            add_dag_node(dag_node, [input_info.dag_node], user_op_result, engine_result)
-            return user_op_result
+            #engine_result = _pipeline_executor.singleton.engine.run(engine_input, user_operation, fallback)
+            #user_op_result = engine_result.user_op_result.to_pandas_df()
+            #dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.SELECTION, module,
+            #                    "dropna", list(user_op_result.columns), optional_code_reference, optional_source_code)
+            #add_dag_node(dag_node, [input_info.dag_node], user_op_result, engine_result)
+            #return user_op_result
 
         return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
 
@@ -113,34 +108,34 @@ class DataFramePatching:
             module = ('pandas.core.frame', '__getitem__')
             input_info = get_input_info(self, caller_filename, lineno, module, optional_code_reference,
                                         optional_source_code)
-            if isinstance(args[0], str):  # Projection to Series
-                columns = [args[0]]
-                user_operation = LogicalProjection(1, columns)
-                dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.PROJECTION, module,
-                                    "to {}".format(columns), columns, optional_code_reference, optional_source_code)
-            elif isinstance(args[0], list) and isinstance(args[0][0], str):  # Projection to DF
-                columns = args[0]
-                user_operation = LogicalProjection(1, columns)
-                dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.PROJECTION, module,
-                                    "to {}".format(columns), columns, optional_code_reference, optional_source_code)
-            elif isinstance(args[0], pandas.Series):  # Selection
-                partial_select = lambda x: original(x, args[0])
-                user_operation = LogicalSelection(1, partial_select, DataframeType.PANDAS_DF)
-                columns = list(self.columns)  # pylint: disable=no-member
-                dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.SELECTION, module,
-                                    "Select by Series", columns, optional_code_reference, optional_source_code)
-            else:
-                raise NotImplementedError()
-            engine_input = [input_info.engine_input]
-            fallback = partial(original, self, *args, **kwargs)
-            engine_result = _pipeline_executor.singleton.engine.run(engine_input, user_operation, fallback)
-
-            if isinstance(args[0], str):
-                result = engine_result.user_op_result.to_pandas_series()
-            else:
-                result = engine_result.user_op_result.to_pandas_df()
-            add_dag_node(dag_node, [input_info.dag_node], result, engine_result)
-            return result
+            # if isinstance(args[0], str):  # Projection to Series
+            #     columns = [args[0]]
+            #     user_operation = LogicalProjection(1, columns)
+            #     dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.PROJECTION, module,
+            #                         "to {}".format(columns), columns, optional_code_reference, optional_source_code)
+            # elif isinstance(args[0], list) and isinstance(args[0][0], str):  # Projection to DF
+            #     columns = args[0]
+            #     user_operation = LogicalProjection(1, columns)
+            #     dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.PROJECTION, module,
+            #                         "to {}".format(columns), columns, optional_code_reference, optional_source_code)
+            # elif isinstance(args[0], pandas.Series):  # Selection
+            #     partial_select = lambda x: original(x, args[0])
+            #     user_operation = LogicalSelection(1, partial_select, DataframeType.PANDAS_DF)
+            #     columns = list(self.columns)  # pylint: disable=no-member
+            #     dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.SELECTION, module,
+            #                         "Select by Series", columns, optional_code_reference, optional_source_code)
+            # else:
+            #     raise NotImplementedError()
+            # engine_input = [input_info.engine_input]
+            # fallback = partial(original, self, *args, **kwargs)
+            # engine_result = _pipeline_executor.singleton.engine.run(engine_input, user_operation, fallback)
+            #
+            # if isinstance(args[0], str):
+            #     result = engine_result.user_op_result.to_pandas_series()
+            # else:
+            #     result = engine_result.user_op_result.to_pandas_df()
+            # add_dag_node(dag_node, [input_info.dag_node], result, engine_result)
+            # return result
 
         return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
 
@@ -158,19 +153,19 @@ class DataFramePatching:
                                         optional_source_code)
             input_dag_node = input_info.dag_node
             engine_input = [input_info.engine_input]
-            if isinstance(args[0], str):
-                user_operation = LogicalProjectAssignColumn(1, args[0], args[1])
-                fallback = partial(original, self, *args, **kwargs)
-                engine_result = _pipeline_executor.singleton.engine.run(engine_input, user_operation, fallback)
-                result = engine_result.user_op_result.to_pandas_df()
-                columns = list(result.columns)
-                description = "modifies {}".format([args[0]])
-            else:
-                raise NotImplementedError("TODO: Handling __setitem__ for key type {}".format(type(args[0])))
-            dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.PROJECTION_MODIFY, module,
-                                description, columns, optional_code_reference, optional_source_code)
-            add_dag_node(dag_node, [input_dag_node], result, engine_result)
-            return result
+            # if isinstance(args[0], str):
+            #     user_operation = LogicalProjectAssignColumn(1, args[0], args[1])
+            #     fallback = partial(original, self, *args, **kwargs)
+            #     engine_result = _pipeline_executor.singleton.engine.run(engine_input, user_operation, fallback)
+            #     result = engine_result.user_op_result.to_pandas_df()
+            #     columns = list(result.columns)
+            #     description = "modifies {}".format([args[0]])
+            # else:
+            #     raise NotImplementedError("TODO: Handling __setitem__ for key type {}".format(type(args[0])))
+            # dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.PROJECTION_MODIFY, module,
+            #                     description, columns, optional_code_reference, optional_source_code)
+            # add_dag_node(dag_node, [input_dag_node], result, engine_result)
+            # return result
 
         return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
 
@@ -188,40 +183,40 @@ class LocIndexerPatching:
         original = gorilla.get_original_attribute(
             pandas.core.indexing._LocIndexer, '__getitem__')  # pylint: disable=protected-access
 
-        if call_info_singleton.column_transformer_active:
-            op_id = _pipeline_executor.singleton.get_next_op_id()
-            caller_filename = call_info_singleton.transformer_filename
-            lineno = call_info_singleton.transformer_lineno
-            module = call_info_singleton.module
-            optional_code_reference = call_info_singleton.transformer_optional_code_reference
-            optional_source_code = call_info_singleton.transformer_optional_source_code
-
-            if isinstance(args[0], tuple) and not args[0][0].start and not args[0][0].stop \
-                    and isinstance(args[0][1], list) and isinstance(args[0][1][0], str):
-                # Projection to one or multiple columns, return value is df
-                columns = args[0][1]
-                user_operation = LogicalProjection(1, columns)
-                dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.PROJECTION, module,
-                                    "to {}".format(columns), columns, optional_code_reference, optional_source_code)
-            else:
-                raise NotImplementedError()
-
-            input_info = get_input_info(self.obj, caller_filename,  # pylint: disable=no-member
-                                        lineno, module, optional_code_reference, optional_source_code)
-            engine_input = [input_info.engine_input]
-            fallback = partial(original, self, *args, **kwargs)
-            engine_result = _pipeline_executor.singleton.engine.run(engine_input, user_operation, fallback)
-
-            result = engine_result.user_op_result.to_pandas_df()
-            add_dag_node(dag_node, [input_info.dag_node], result, engine_result)
-
-            dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.PROJECTION, module,
-                                "to {}".format(columns), columns, optional_code_reference, optional_source_code)
-            add_dag_node(dag_node, [input_info.dag_node], result, engine_result)
-        else:
-            result = original(self, *args, **kwargs)
-
-        return result
+        # if call_info_singleton.column_transformer_active:
+        #     op_id = _pipeline_executor.singleton.get_next_op_id()
+        #     caller_filename = call_info_singleton.transformer_filename
+        #     lineno = call_info_singleton.transformer_lineno
+        #     module = call_info_singleton.module
+        #     optional_code_reference = call_info_singleton.transformer_optional_code_reference
+        #     optional_source_code = call_info_singleton.transformer_optional_source_code
+        #
+        #     if isinstance(args[0], tuple) and not args[0][0].start and not args[0][0].stop \
+        #             and isinstance(args[0][1], list) and isinstance(args[0][1][0], str):
+        #         # Projection to one or multiple columns, return value is df
+        #         columns = args[0][1]
+        #         user_operation = LogicalProjection(1, columns)
+        #         dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.PROJECTION, module,
+        #                             "to {}".format(columns), columns, optional_code_reference, optional_source_code)
+        #     else:
+        #         raise NotImplementedError()
+        #
+        #     input_info = get_input_info(self.obj, caller_filename,  # pylint: disable=no-member
+        #                                 lineno, module, optional_code_reference, optional_source_code)
+        #     engine_input = [input_info.engine_input]
+        #     fallback = partial(original, self, *args, **kwargs)
+        #     engine_result = _pipeline_executor.singleton.engine.run(engine_input, user_operation, fallback)
+        #
+        #     result = engine_result.user_op_result.to_pandas_df()
+        #     add_dag_node(dag_node, [input_info.dag_node], result, engine_result)
+        #
+        #     dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.PROJECTION, module,
+        #                         "to {}".format(columns), columns, optional_code_reference, optional_source_code)
+        #     add_dag_node(dag_node, [input_info.dag_node], result, engine_result)
+        # else:
+        #     result = original(self, *args, **kwargs)
+        #
+        # return result
 
 
 @gorilla.patches(pandas.Series)
@@ -242,17 +237,17 @@ class SeriesPatching:
             original(self, *args, **kwargs)
             # FIMXE: DO this next
             # pylint: disable=no-member
-            if self.name:
-                columns = list(self.name)
-            else:
-                columns = ["_1"]
-
-            user_operation = LogicalDataSource(-1, LogicalDf(df_object=self))
-            fallback = lambda: self
-            engine_result = _pipeline_executor.singleton.engine.run([], user_operation, fallback)
-
-            dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.DATA_SOURCE, module,
-                                "", columns, optional_code_reference, optional_source_code)
-            add_dag_node(dag_node, [], self, engine_result)
+            # if self.name:
+            #     columns = list(self.name)
+            # else:
+            #     columns = ["_1"]
+            #
+            # user_operation = LogicalDataSource(-1, LogicalDf(df_object=self))
+            # fallback = lambda: self
+            # engine_result = _pipeline_executor.singleton.engine.run([], user_operation, fallback)
+            #
+            # dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.DATA_SOURCE, module,
+            #                     "", columns, optional_code_reference, optional_source_code)
+            # add_dag_node(dag_node, [], self, engine_result)
 
         execute_patched_func(original, execute_inspections, self, *args, **kwargs)

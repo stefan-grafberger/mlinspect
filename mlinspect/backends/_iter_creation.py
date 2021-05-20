@@ -17,7 +17,7 @@ def iter_input_data_source(inspection_count, output, operator_context):
     """
     if inspection_count == 0:
         return []
-    output_columns, output_rows = get_df_row_iterator(output)
+    output_columns, output_rows = get_iterator_for_type(output)
     duplicated_output_iterators = itertools.tee(output_rows, inspection_count)
     inspection_iterators = []
     for inspection_index in range(inspection_count):
