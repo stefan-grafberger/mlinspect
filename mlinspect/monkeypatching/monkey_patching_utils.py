@@ -144,7 +144,7 @@ def get_input_info(df_object, caller_filename, lineno, function_info, optional_c
         input_op_id = df_object._mlinspect_dag_node
         input_dag_node = singleton.op_id_to_dag_node[input_op_id]
         annotation_df = df_object._mlinspect_annotation
-        input_info = InputInfo(input_dag_node, df_object, annotation_df)
+        input_info = InputInfo(input_dag_node, AnnotatedDfObject(df_object, annotation_df))
     else:
         operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
         annotated_df = execute_inspection_visits_data_source(operator_context, df_object)
@@ -186,3 +186,5 @@ def add_dag_node(dag_node: DagNode, dag_node_parents: List[DagNode], annotated_d
     else:
         singleton.inspection_results.dag.add_node(dag_node)
     singleton.op_id_to_dag_node[dag_node.node_id] = dag_node
+    if annotated_df is not None:
+        singleton.inspection_results.dag_node_to_inspection_results[dag_node] = annotated_df.result_annotation

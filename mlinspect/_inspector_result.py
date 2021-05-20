@@ -16,5 +16,5 @@ class InspectorResult:
     The class the PipelineExecutor returns
     """
     dag: networkx.DiGraph
-    inspection_to_annotations: Dict[any, Dict[Inspection, any]]  # TODO: First any is DagNode
+    dag_node_to_inspection_results: Dict[any, Dict[Inspection, any]]  # TODO: First any is DagNode
     check_to_check_results: Dict[Check, CheckResult]

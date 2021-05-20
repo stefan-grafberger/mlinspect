@@ -69,7 +69,7 @@ class PipelineExecutor:
 
         self.run_inspections(notebook_path, python_code, python_path)
         check_to_results = dict((check, check.evaluate(self.inspection_results)) for check in checks)
-        return InspectorResult(self.inspection_results.dag, self.inspection_results.inspection_to_annotations,
+        return InspectorResult(self.inspection_results.dag, self.inspection_results.dag_node_to_inspection_results,
                                check_to_results)
 
     def run_inspections(self, notebook_path, python_code, python_path):

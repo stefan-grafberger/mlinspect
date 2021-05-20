@@ -15,4 +15,4 @@ class InspectionResult:
     The class the PipelineExecutor returns
     """
     dag: networkx.DiGraph
-    inspection_to_annotations: dict[DagNode, dict[Inspection, any]]
+    dag_node_to_inspection_results: dict[DagNode, dict[Inspection, any]]

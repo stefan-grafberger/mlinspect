@@ -7,8 +7,12 @@ from functools import partial
 import gorilla
 import pandas
 
+from mlinspect import OperatorType, DagNode
+from mlinspect.backends._backend import AnnotatedDfObject
+from mlinspect.backends._pandas_backend import PandasBackend
+from mlinspect.inspections._inspection_input import OperatorContext
 from mlinspect.instrumentation import _pipeline_executor
-from mlinspect.monkeypatching.monkey_patching_utils import execute_patched_func, get_input_info
+from mlinspect.monkeypatching.monkey_patching_utils import execute_patched_func, get_input_info, add_dag_node
 
 
 @gorilla.patches(pandas)
@@ -29,14 +33,14 @@ class PandasPatching:
             module = ('pandas.io.parsers', 'read_csv')
             result = original(*args, **kwargs)
 
-            #user_operation = LogicalDataSource(-1, LogicalDf(df_object=result))
+            # user_operation = LogicalDataSource(-1, LogicalDf(df_object=result))
             fallback = partial(original, *args, **kwargs)
-            #engine_result = _pipeline_executor.singleton.engine.run([], user_operation, fallback)
+            # engine_result = _pipeline_executor.singleton.engine.run([], user_operation, fallback)
 
             description = "{}".format(args[0].split(os.path.sep)[-1])
-            #dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.DATA_SOURCE, module, description,
+            # dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.DATA_SOURCE, module, description,
             #                    list(result.columns), optional_code_reference, optional_source_code)
-            #add_dag_node(dag_node, [], result, engine_result)
+            # add_dag_node(dag_node, [], result, engine_result)
             return result
 
         return execute_patched_func(original, execute_inspections, *args, **kwargs)
@@ -54,16 +58,22 @@ class DataFramePatching:
 
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            module = ('pandas.core.frame', 'DataFrame')
-            original(self, *args, **kwargs)
+            function_info = ('pandas.core.frame', 'DataFrame')
             columns = list(self.columns)  # pylint: disable=no-member
 
-            #user_operation = LogicalDataSource(-1, LogicalDf(df_object=self))
-            #fallback = lambda: self
-            #engine_result = _pipeline_executor.singleton.engine.run([], user_operation, fallback)
-            #dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.DATA_SOURCE, module,
-             #                   "", columns, optional_code_reference, optional_source_code)
-            #add_dag_node(dag_node, [], self, engine_result)
+            operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
+            input_infos = PandasBackend.before_call(function_info,
+                                                    operator_context,
+                                                    [AnnotatedDfObject(self, None)])
+            original(self, *args, **kwargs)
+            result = self
+            annotated_df = PandasBackend.after_call(function_info,
+                                                    operator_context,
+                                                    input_infos,
+                                                    result)
+            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.DATA_SOURCE, function_info,
+                               "", columns, optional_code_reference, optional_source_code)
+            add_dag_node(dag_node, [], annotated_df)
 
         execute_patched_func(original, execute_inspections, self, *args, **kwargs)
 
@@ -85,15 +95,15 @@ class DataFramePatching:
             # FIXME: Introduce a flag to LogicalSelection to indicate whether e.g. inspection annotations with
             #  null values can change the result of the user function call if we are not careful?
             partial_dropna = lambda x: original(x, *args, **kwargs)
-            #user_operation = LogicalSelection(1, partial_dropna, DataframeType.PANDAS_DF)
+            # user_operation = LogicalSelection(1, partial_dropna, DataframeType.PANDAS_DF)
             engine_input = [input_info.engine_input]
             fallback = partial(original, self, *args, **kwargs)
-            #engine_result = _pipeline_executor.singleton.engine.run(engine_input, user_operation, fallback)
-            #user_op_result = engine_result.user_op_result.to_pandas_df()
-            #dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.SELECTION, module,
+            # engine_result = _pipeline_executor.singleton.engine.run(engine_input, user_operation, fallback)
+            # user_op_result = engine_result.user_op_result.to_pandas_df()
+            # dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.SELECTION, module,
             #                    "dropna", list(user_op_result.columns), optional_code_reference, optional_source_code)
-            #add_dag_node(dag_node, [input_info.dag_node], user_op_result, engine_result)
-            #return user_op_result
+            # add_dag_node(dag_node, [input_info.dag_node], user_op_result, engine_result)
+            # return user_op_result
 
         return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
 
@@ -233,21 +243,25 @@ class SeriesPatching:
 
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            module = ('pandas.core.series', 'Series')
+            function_info = ('pandas.core.series', 'Series')
+
+            operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
+            input_infos = PandasBackend.before_call(function_info,
+                                                    operator_context,
+                                                    [AnnotatedDfObject(self, None)])
             original(self, *args, **kwargs)
-            # FIMXE: DO this next
-            # pylint: disable=no-member
-            # if self.name:
-            #     columns = list(self.name)
-            # else:
-            #     columns = ["_1"]
-            #
-            # user_operation = LogicalDataSource(-1, LogicalDf(df_object=self))
-            # fallback = lambda: self
-            # engine_result = _pipeline_executor.singleton.engine.run([], user_operation, fallback)
-            #
-            # dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.DATA_SOURCE, module,
-            #                     "", columns, optional_code_reference, optional_source_code)
-            # add_dag_node(dag_node, [], self, engine_result)
+            result = self
+            annotated_df = PandasBackend.after_call(function_info,
+                                                    operator_context,
+                                                    input_infos,
+                                                    result)
+
+            if self.name:
+                columns = list(self.name)  # pylint: disable=no-member
+            else:
+                columns = ["_1"]
+            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.DATA_SOURCE, function_info,
+                               "", columns, optional_code_reference, optional_source_code)
+            add_dag_node(dag_node, [], annotated_df)
 
         execute_patched_func(original, execute_inspections, self, *args, **kwargs)
