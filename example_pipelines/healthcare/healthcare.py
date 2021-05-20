@@ -18,9 +18,9 @@ warnings.filterwarnings('ignore')
 COUNTIES_OF_INTEREST = ['county2', 'county3']
 
 patients = pd.read_csv(os.path.join(str(get_project_root()), "example_pipelines", "healthcare",
-                                    "healthcare_patients.csv"), na_values='?')
+                                    "patients.csv"), na_values='?')
 histories = pd.read_csv(os.path.join(str(get_project_root()), "example_pipelines", "healthcare",
-                                     "healthcare_histories.csv"), na_values='?')
+                                     "histories.csv"), na_values='?')
 
 data = patients.merge(histories, on=['ssn'])
 complications = data.groupby('age_group') \
