@@ -1,4 +1,5 @@
 """Predicting which patients are at a higher risk of complications"""
+import warnings
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
@@ -8,6 +9,12 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from example_pipelines.healthcare.healthcare_utils import MyW2VTransformer, MyKerasClassifier, \
     create_model
 from mlinspect.utils import get_project_root
+
+# FutureWarning: Sklearn 0.24 made a change that breaks remainder='drop', that change will be fixed
+#  in an upcoming version: https://github.com/scikit-learn/scikit-learn/pull/19263
+warnings.filterwarnings('ignore')
+
+COUNTIES_OF_INTEREST = ['county2', 'county3']
 
 patients = pd.read_csv("{}/example_pipelines/healthcare/patients.csv".format(get_project_root()),
                        na_values='?')
@@ -20,7 +27,7 @@ complications = data.groupby('age_group') \
 data = data.merge(complications, on=['age_group'])
 data['label'] = data['complications'] > 1.2 * data['mean_complications']
 data = data[['smoker', 'last_name', 'county', 'num_children', 'race', 'income', 'label']]
-data = data[data['county'].isin(['county2', 'county3'])]
+data = data[data['county'].isin(COUNTIES_OF_INTEREST)]
 
 impute_and_one_hot_encode = Pipeline([
     ('impute', SimpleImputer(strategy='most_frequent')),
