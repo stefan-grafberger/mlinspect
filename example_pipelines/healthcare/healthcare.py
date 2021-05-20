@@ -1,5 +1,6 @@
 """Predicting which patients are at a higher risk of complications"""
 import warnings
+import os
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
@@ -16,10 +17,10 @@ warnings.filterwarnings('ignore')
 
 COUNTIES_OF_INTEREST = ['county2', 'county3']
 
-patients = pd.read_csv("{}/example_pipelines/healthcare/patients.csv".format(get_project_root()),
-                       na_values='?')
-histories = pd.read_csv("{}/example_pipelines/healthcare/histories.csv".format(
-    get_project_root()), na_values='?')
+patients = pd.read_csv(os.path.join(str(get_project_root()), "example_pipelines", "healthcare",
+                                    "healthcare_patients.csv"), na_values='?')
+histories = pd.read_csv(os.path.join(str(get_project_root()), "example_pipelines", "healthcare",
+                                     "healthcare_histories.csv"), na_values='?')
 
 data = patients.merge(histories, on=['ssn'])
 complications = data.groupby('age_group') \
