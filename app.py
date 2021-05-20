@@ -67,6 +67,8 @@ with open("example_pipelines/adult_demo/adult_demo.py") as adult_file:
 patients = pd.read_csv("example_pipelines/healthcare/patients.csv", na_values='?')
 histories = pd.read_csv("example_pipelines/healthcare/histories.csv", na_values='?')
 healthcare_data = patients.merge(histories, on=['ssn'])
+adult_data = pd.read_csv("example_pipelines/adult_demo/adult_demo_train.csv",
+                         na_values='?', index_col=0)
 
 inspection_switcher = {
     "HistogramForColumns": HistogramForColumns,
@@ -151,8 +153,8 @@ app.layout = dbc.Container([
                                   html_for="histogramforcolumns-checkbox",
                                   className="custom-control-label"),
                         dbc.Checklist(id="histogram-sensitive-columns",
-                                      options=[{"label": column, "value": column}
-                                               for column in healthcare_data.columns],
+                                      options=[{"label": "label1", "value": "value1"},
+                                               {"label": "label2", "value": "value2"}],
                                       style=STYLE_HIDDEN),
                     ], className="custom-switch custom-control"),
                     html.Div([  # Row Lineage
@@ -195,8 +197,8 @@ app.layout = dbc.Container([
                                   placeholder="Default threshold -30%",
                                   style=STYLE_HIDDEN),
                         dbc.Checklist(id="nobiasintroduced-sensitive-columns",
-                                      options=[{"label": column, "value": column}
-                                               for column in healthcare_data.columns],
+                                      options=[{"label": "label1", "value": "value1"},
+                                               {"label": "label2", "value": "value2"}],
                                       style=STYLE_HIDDEN),
                     ], className="custom-switch custom-control"),
                     html.Div([  # No Illegal Features
@@ -261,18 +263,20 @@ app.clientside_callback(
             return '';
         }
         const prop_id = ctx.triggered[0]["prop_id"];
-        var val = '';
+
+        var text = '';
         if (prop_id.startsWith("healthcare")) {
             const healthcareElem = document.getElementById('healthcare-pipeline-text');
-            val = healthcareElem.textContent;
+            text = healthcareElem.textContent;
         } else if (prop_id.startsWith("adult")) {
             const adultElem = document.getElementById('adult-pipeline-text');
-            val = adultElem.textContent;
+            text = adultElem.textContent;
         }
 
         var editor = document.querySelector('.CodeMirror').CodeMirror;
-        editor.setValue(val);
-        return val;
+        editor.setValue(text);
+
+        return text;
     }
     """,
     Output("pipeline-textarea", "value"),
@@ -281,6 +285,34 @@ app.clientside_callback(
         Input("adult-pipeline", "n_clicks"),
     ]
 )
+
+
+@app.callback(
+    [
+        Output("histogram-sensitive-columns", "options"),
+        Output("nobiasintroduced-sensitive-columns", "options"),
+    ],
+    [
+        Input("healthcare-pipeline", "n_clicks"),
+        Input("adult-pipeline", "n_clicks"),
+    ],
+)
+def on_sensitive_column_options_changed(healthcare_clicked, adult_clicked):
+    if not healthcare_clicked and not adult_clicked:
+        return dash.no_update
+
+    ctx = dash.callback_context
+    elem_id = ctx.triggered[0]["prop_id"].split(".")[0]
+
+    if elem_id == "healthcare-pipeline":
+        columns = healthcare_data.columns
+    elif elem_id == "adult-pipeline":
+        columns = adult_data.columns
+    else:
+        columns = []
+
+    options = [{"label": c, "value": c} for c in columns]
+    return options, options
 
 
 @app.callback(
