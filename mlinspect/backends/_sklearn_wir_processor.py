@@ -21,7 +21,8 @@ class SklearnWirPreprocessor:
         ('sklearn.impute._base', 'SimpleImputer'),
         ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer'),
         ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
-        ('sklearn.linear_model._logistic', 'LogisticRegression')
+        ('sklearn.linear_model._logistic', 'LogisticRegression'),
+        ('example_pipelines.healthcare.healthcare_utils', 'MyKerasClassifier'),
     }
 
     KNOWN_MULTI_STEPS = {
