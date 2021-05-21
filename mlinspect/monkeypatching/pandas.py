@@ -30,17 +30,20 @@ class PandasPatching:
 
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            module = ('pandas.io.parsers', 'read_csv')
-            result = original(*args, **kwargs)
+            function_info = ('pandas.io.parsers', 'read_csv')
 
-            # user_operation = LogicalDataSource(-1, LogicalDf(df_object=result))
-            fallback = partial(original, *args, **kwargs)
-            # engine_result = _pipeline_executor.singleton.engine.run([], user_operation, fallback)
+            operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
+            input_infos = PandasBackend.before_call(function_info, operator_context, [])
+            result = original(*args, **kwargs)
+            backend_result = PandasBackend.after_call(function_info,
+                                                      operator_context,
+                                                      input_infos,
+                                                      result)
 
             description = "{}".format(args[0].split(os.path.sep)[-1])
-            # dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.DATA_SOURCE, module, description,
-            #                    list(result.columns), optional_code_reference, optional_source_code)
-            # add_dag_node(dag_node, [], result, engine_result)
+            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.DATA_SOURCE, function_info, description,
+                               list(result.columns), optional_code_reference, optional_source_code)
+            add_dag_node(dag_node, [], backend_result)
             return result
 
         return execute_patched_func(original, execute_inspections, *args, **kwargs)
@@ -246,15 +249,13 @@ class SeriesPatching:
             function_info = ('pandas.core.series', 'Series')
 
             operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
-            input_infos = PandasBackend.before_call(function_info,
-                                                    operator_context,
-                                                    [AnnotatedDfObject(self, None)])
+            input_infos = PandasBackend.before_call(function_info, operator_context, [])
             original(self, *args, **kwargs)
             result = self
-            annotated_df = PandasBackend.after_call(function_info,
-                                                    operator_context,
-                                                    input_infos,
-                                                    result)
+            backend_result = PandasBackend.after_call(function_info,
+                                                      operator_context,
+                                                      input_infos,
+                                                      result)
 
             if self.name:
                 columns = list(self.name)  # pylint: disable=no-member
@@ -262,6 +263,6 @@ class SeriesPatching:
                 columns = ["_1"]
             dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.DATA_SOURCE, function_info,
                                "", columns, optional_code_reference, optional_source_code)
-            add_dag_node(dag_node, [], annotated_df)
+            add_dag_node(dag_node, [], backend_result)
 
         execute_patched_func(original, execute_inspections, self, *args, **kwargs)

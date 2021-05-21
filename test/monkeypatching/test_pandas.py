@@ -41,15 +41,17 @@ def test_read_csv():
     compare(extracted_node, expected_node)
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[extracted_node]
-    lineage_output = inspection_results_data_source[RowLineage(2)].to_pandas_df()
+    lineage_output = inspection_results_data_source[RowLineage(2)]
     expected_lineage_df = DataFrame([[46, 'Private', 128645, 'Some-college', 10, 'Divorced', 'Prof-specialty',
-                                      'Not-in-family', 'White', 'Female', 0, 0, 40, 'United-States', '<=50K', 0],
+                                      'Not-in-family', 'White', 'Female', 0, 0, 40, 'United-States', '<=50K',
+                                      {LineageId(0, 0)}],
                                      [29, 'Local-gov', 115585, 'Some-college', 10, 'Never-married', 'Handlers-cleaners',
-                                      'Not-in-family', 'White', 'Male', 0, 0, 50, 'United-States', '<=50K', 1]],
+                                      'Not-in-family', 'White', 'Male', 0, 0, 50, 'United-States', '<=50K',
+                                      {LineageId(0, 1)}]],
                                     columns=['age', 'workclass', 'fnlwgt', 'education', 'education-num',
                                              'marital-status', 'occupation', 'relationship', 'race', 'sex',
                                              'capital-gain', 'capital-loss', 'hours-per-week', 'native-country',
-                                             'income-per-year', 'mlinspect_row_lineage_2_data_source_0'])
+                                             'income-per-year', 'mlinspect_lineage'])
 
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
