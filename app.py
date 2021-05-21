@@ -462,6 +462,9 @@ def on_execute(execute_clicks, pipeline,
     ### De-select any DAG nodes and trigger callback to reset operator details div
     selected_data = {}
 
+    ### Summary
+    # check_result_df = PipelineInspector.check_results_as_data_frame(INSPECTOR_RESULT.check_to_check_results)
+
     return figure, pipeline_output, hide_output, selected_data
 
 
@@ -503,17 +506,17 @@ def on_dag_node_hover(hover_data):
         Input("dag", "selectedData"),
     ],
 )
-def on_dag_node_select(selectedData):
+def on_dag_node_select(selected_data):
     """
     When user selects DAG node, show detailed check and inspection results
     and emphasize corresponding source code.
     """
     # Un-highlight source code
-    if not selectedData:
+    if not selected_data:
         return [], "Select an operator in the DAG to see details", "Operator Details"
 
     # Find DagNode object at this position
-    point = selectedData['points'][0]
+    point = selected_data['points'][0]
     x = point['x']
     y = point['y']
     try:
@@ -540,8 +543,6 @@ def execute_inspector_builder(pipeline, checks=None, inspections=None):
     """Extract DAG the original way, i.e. by creating a PipelineInspectorBuilder."""
     global INSPECTOR_RESULT
 
-    start = time.time()
-
     builder = PipelineInspector.on_pipeline_from_string(pipeline)
     for inspection_name, (inspection_bool, inspection_args) in inspections.items():
         if inspection_bool:
@@ -550,12 +551,14 @@ def execute_inspector_builder(pipeline, checks=None, inspections=None):
         if check_bool:
             builder = builder.add_check(check_switcher[check_name](*check_args))
 
+    start = time.time()
+
     f = io.StringIO()
     with redirect_stdout(f):
         INSPECTOR_RESULT = builder.execute()
     out = f.getvalue()
 
-    print(f"Total time in seconds: {time.time() - start}")
+    print(f"Execution time: {time.time() - start:.02f} seconds")
 
     return out
 
@@ -801,11 +804,11 @@ def get_operator_details(node):
             output_df = result_dict[node]
             output_table = convert_dataframe_to_dash_table(output_df)
             input_tables = [
-                dbc.Label("Input Rows")
-            ] + [
                 convert_dataframe_to_dash_table(result_dict[input_node])
                 for input_node in INSPECTOR_RESULT.dag.predecessors(node)
             ]
+            if input_tables:
+                input_tables.insert(0, dbc.Label("Input Rows"))
             element = html.Div([
                 html.H4(f"{inspection}", className="result-item-header"),
                 *input_tables,
@@ -815,7 +818,6 @@ def get_operator_details(node):
             details += [element]
         elif isinstance(inspection, HistogramForColumns):
             print("inspection not implemented:", inspection)
-            pass
         else:
             print("inspection not implemented:", inspection)
 
@@ -835,12 +837,8 @@ def get_operator_details(node):
                 html.Div(graphs, className="result-item-content"),
             ], className="result-item")
             details += [element]
-        elif isinstance(check, NoIllegalFeatures):
-            print("check not implemented:", check)
-            pass
         elif isinstance(check, NoMissingEmbeddings):
             info = result_obj.dag_node_to_missing_embeddings[node]
-            # for node, info in result_obj.items():
             element = html.Div([
                 html.H4(f"{check}", className="result-item-header"),
                 html.Div(info.missing_embeddings_examples,
