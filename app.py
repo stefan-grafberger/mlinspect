@@ -103,7 +103,7 @@ app.layout = dbc.Container([
                     # Paste text from pipeline: Healthcare Adult
                     html.Div("Paste text from pipeline:"),
                     dbc.Button("Healthcare", id="healthcare-pipeline", color="secondary", size="lg", className="mr-1"),
-                    dbc.Button("Adult", id="adult-pipeline", color="secondary", size="lg", className="mr-1"),
+                    dbc.Button("Adult Income", id="adult-pipeline", color="secondary", size="lg", className="mr-1"),
                     dbc.Textarea(id="pipeline-textarea", className="mb-3"),
                     html.Div(healthcare_pipeline, id="healthcare-pipeline-text", hidden=True),
                     html.Div(adult_pipeline, id="adult-pipeline-text", hidden=True),
