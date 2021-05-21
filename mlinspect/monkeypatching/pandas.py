@@ -62,21 +62,21 @@ class DataFramePatching:
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             function_info = ('pandas.core.frame', 'DataFrame')
-            columns = list(self.columns)  # pylint: disable=no-member
-
             operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
             input_infos = PandasBackend.before_call(function_info,
                                                     operator_context,
-                                                    [AnnotatedDfObject(self, None)])
+                                                    [])
             original(self, *args, **kwargs)
             result = self
-            annotated_df = PandasBackend.after_call(function_info,
-                                                    operator_context,
-                                                    input_infos,
-                                                    result)
+            backend_result = PandasBackend.after_call(function_info,
+                                                      operator_context,
+                                                      input_infos,
+                                                      result)
+
+            columns = list(self.columns)  # pylint: disable=no-member
             dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.DATA_SOURCE, function_info,
                                "", columns, optional_code_reference, optional_source_code)
-            add_dag_node(dag_node, [], annotated_df)
+            add_dag_node(dag_node, [], backend_result)
 
         execute_patched_func(original, execute_inspections, self, *args, **kwargs)
 
