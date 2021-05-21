@@ -146,7 +146,7 @@ def get_input_info(df_object, caller_filename, lineno, function_info, optional_c
         input_info = InputInfo(input_dag_node, AnnotatedDfObject(df_object, annotation_df))
     else:
         operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
-        annotated_df = execute_inspection_visits_data_source(operator_context, df_object)
+        backend_result = execute_inspection_visits_data_source(operator_context, df_object)
         if optional_code_reference:
             code_reference = "({})".format(optional_source_code)
         else:
@@ -158,8 +158,8 @@ def get_input_info(df_object, caller_filename, lineno, function_info, optional_c
                                  description=description,
                                  columns=columns, optional_code_reference=optional_code_reference,
                                  optional_source_code=optional_source_code)
-        add_dag_node(input_dag_node, [], annotated_df)
-        annotation_df = annotated_df.result_annotation
+        add_dag_node(input_dag_node, [], backend_result)
+        annotation_df = backend_result.annotated_dfobject.result_annotation
         input_info = InputInfo(input_dag_node, AnnotatedDfObject(df_object, annotation_df))
     return input_info
 

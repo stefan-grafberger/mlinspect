@@ -14,7 +14,6 @@ from mlinspect.visualisation._visualisation import save_fig_to_path
 from mlinspect.inspections._lineage import RowLineage
 from mlinspect.inspections._materialize_first_output_rows import MaterializeFirstOutputRows
 from mlinspect.instrumentation._dag_node import DagNode, OperatorType, CodeReference
-from mlinspect.instrumentation._wir_extractor import WirExtractor
 from mlinspect._pipeline_inspector import PipelineInspector
 
 
@@ -382,18 +381,6 @@ def get_adult_simple_py_ast():
 
         test_ast = ast.parse(test_code)
     return test_ast
-
-
-def get_test_wir():
-    """
-    Get the extracted WIR for the adult_easy pipeline with runtime info
-    """
-    test_ast = get_adult_simple_py_ast()
-    extractor = WirExtractor(test_ast)
-    extractor.extract_wir()
-    wir = extractor.add_runtime_info(get_module_info(), get_call_description_info(), get_call_source_code_info())
-
-    return wir
 
 
 def get_pandas_read_csv_and_dropna_code():

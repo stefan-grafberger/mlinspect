@@ -58,7 +58,11 @@ class PipelineInspectorBuilder:
         """
         Instrument and execute the pipeline
         """
-        return singleton.run(self.notebook_path, self.python_path, self.python_code, self.inspections, self.checks)
+        return singleton.run(notebook_path=self.notebook_path,
+                             python_path=self.python_path,
+                             python_code=self.python_code,
+                             inspections=self.inspections,
+                             checks=self.checks)
 
 
 class PipelineInspector:
