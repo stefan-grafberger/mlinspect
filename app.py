@@ -711,16 +711,30 @@ def highlight_problem_nodes(fig_dict, sensitive_columns):
     try:
         no_bias_check_result = INSPECTOR_RESULT.check_to_check_results[NoBiasIntroducedFor(sensitive_columns)]
     except (KeyError, TypeError):
-        return fig_dict
+        pass
+    else:
+        for node_dict in no_bias_check_result.bias_distribution_change.values():
+            for distribution_change in node_dict.values():
+                # Check if distribution change is acceptable
+                if distribution_change.acceptable_change and distribution_change.acceptable_probability_difference:
+                    continue
 
-    for node_dict in no_bias_check_result.bias_distribution_change.values():
-        for distribution_change in node_dict.values():
-            # Check if distribution change is acceptable
-            if distribution_change.acceptable_change and distribution_change.acceptable_probability_difference:
+                # Highlight this node in figure
+                fig_dict = highlight_dag_node_in_figure(distribution_change.dag_node, fig_dict)
+
+    # highlight embeddings operator if there are missing embeddings
+    try:
+        embedding_check_result = INSPECTOR_RESULT.check_to_check_results[NoMissingEmbeddings()]
+    except (KeyError, TypeError):
+        pass
+    else:
+        for dag_node, missing_embeddings_info in embedding_check_result.dag_node_to_missing_embeddings.items():
+            # Check if there are any missing embeddings examples
+            if not missing_embeddings_info.missing_embeddings_examples:
                 continue
 
             # Highlight this node in figure
-            fig_dict = highlight_dag_node_in_figure(distribution_change.dag_node, fig_dict)
+            fig_dict = highlight_dag_node_in_figure(dag_node, fig_dict)
 
     return fig_dict
 
