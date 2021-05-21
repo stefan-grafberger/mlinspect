@@ -880,12 +880,8 @@ def get_result_details(node):
             ], className="result-item")
             details += [element]
         elif isinstance(check, NoIllegalFeatures):
-            element = html.Div([
-                html.H4(f"{check}", className="result-item-header"),
-                html.Div(result_obj.illegal_features,
-                         className="result-item-content"),
-            ], className="result-item")
-            details += [element]
+            # already shown in results summary
+            pass
         elif isinstance(check, NoMissingEmbeddings):
             if node not in result_obj.dag_node_to_missing_embeddings:
                 continue
