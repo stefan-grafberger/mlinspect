@@ -155,7 +155,7 @@ app.layout = dbc.Container([
                         dbc.Checklist(id="histogram-sensitive-columns",
                                       options=[{"label": "label1", "value": "value1"},
                                                {"label": "label2", "value": "value2"}],
-                                      style=STYLE_HIDDEN),
+                                      style=STYLE_HIDDEN, className="param"),
                     ], className="custom-switch custom-control"),
                     html.Div([  # Row Lineage
                         dbc.Checkbox(id="rowlineage-checkbox",
@@ -165,7 +165,7 @@ app.layout = dbc.Container([
                                   className="custom-control-label"),
                         dbc.Input(id="rowlineage-num-rows", type="number",
                                   min=0, step=1, placeholder="Number of rows (default 5)",
-                                  style=STYLE_HIDDEN),
+                                  style=STYLE_HIDDEN, className="param"),
                     ], className="custom-switch custom-control"),
                     html.Div([  # Materialize First Output Rows
                         dbc.Checkbox(id="materializefirstoutputrows-checkbox",
@@ -175,7 +175,7 @@ app.layout = dbc.Container([
                                   className="custom-control-label"),
                         dbc.Input(id="materializefirstoutputrows-num-rows", type="number",
                                   min=0, step=1, placeholder="Number of rows (default 5)",
-                                  style=STYLE_HIDDEN),
+                                  style=STYLE_HIDDEN, className="param"),
                     ], className="custom-switch custom-control"),
                 ]),
             ]),
@@ -196,16 +196,16 @@ app.layout = dbc.Container([
                         dbc.Input(id="nobiasintroduced-ratio-threshold", type="number",
                                   min=-100, max=0, step=1,
                                   placeholder="Min ratio change -30%",
-                                  style=STYLE_HIDDEN),
+                                  style=STYLE_HIDDEN, className="param"),
                         #   max_allowed_probability_difference=2.0
                         dbc.Input(id="nobiasintroduced-probability-threshold", type="number",
                                   min=0, step=1,
                                   placeholder="Max prob diff 200%",
-                                  style=STYLE_HIDDEN),
+                                  style=STYLE_HIDDEN, className="param"),
                         dbc.Checklist(id="nobiasintroduced-sensitive-columns",
                                       options=[{"label": "label1", "value": "value1"},
                                                {"label": "label2", "value": "value2"}],
-                                      style=STYLE_HIDDEN),
+                                      style=STYLE_HIDDEN, className="param"),
                     ], className="custom-switch custom-control"),
                     html.Div([  # No Illegal Features
                         dbc.Checkbox(id="noillegalfeatures-checkbox",
@@ -213,6 +213,9 @@ app.layout = dbc.Container([
                         dbc.Label("No Illegal Features",
                                   html_for="noillegalfeatures-checkbox",
                                   className="custom-control-label"),
+                        dbc.Input(id="noillegalfeatures-additionalnames", type="text",
+                                  placeholder="Optional additional features (comma-separated)",
+                                  style=STYLE_HIDDEN, className="param"),
                     ], className="custom-switch custom-control"),
                     html.Div([  # No Missing Embeddings
                         dbc.Checkbox(id="nomissingembeddings-checkbox",
@@ -220,6 +223,9 @@ app.layout = dbc.Container([
                         dbc.Label("No Missing Embeddings",
                                   html_for="nomissingembeddings-checkbox",
                                   className="custom-control-label"),
+                        dbc.Input(id="nomissingembeddings-threshold", type="number",
+                                  placeholder="Default threshold 10",
+                                  style=STYLE_HIDDEN, className="param"),
                     ], className="custom-switch custom-control"),
                 ], id="checks"),
             ]),
@@ -235,7 +241,7 @@ app.layout = dbc.Container([
         dbc.Col([
             # Summary
             html.Div([
-                html.H3("Check Summary", id="results-summary-header"),
+                html.H3("Summary of Checks", id="results-summary-header"),
                 html.Div("Enable checks and execute to see results", id="results-summary"),
             ], id="results-summary-container"),
             # Details
@@ -378,6 +384,26 @@ def on_nobiasintroduced_checked(checked):
 
 
 @app.callback(
+    Output("noillegalfeatures-additionalnames", "style"),
+    Input("noillegalfeatures-checkbox", "checked"),
+)
+def on_noillegalfeatures_checked(checked):
+    if checked:
+        return STYLE_SHOWN
+    return STYLE_HIDDEN
+
+
+@app.callback(
+    Output("nomissingembeddings-threshold", "style"),
+    Input("nomissingembeddings-checkbox", "checked")
+)
+def on_nomissingembeddings_checked(checked):
+    if checked:
+        return STYLE_SHOWN
+    return STYLE_HIDDEN
+
+
+@app.callback(
     [
         Output("dag", "figure"),
         Output("pipeline-output", "children"),
@@ -404,8 +430,10 @@ def on_nobiasintroduced_checked(checked):
         State("nobiasintroduced-probability-threshold", "value"),
         # NoIllegalFeatures
         State("noillegalfeatures-checkbox", "checked"),
+        State("noillegalfeatures-additionalnames", "value"),
         # NoMissingEmbeddings
         State("nomissingembeddings-checkbox", "checked"),
+        State("nomissingembeddings-threshold", "value"),
     ]
 )
 def on_execute(execute_clicks, pipeline,
@@ -416,7 +444,8 @@ def on_execute(execute_clicks, pipeline,
                # Checks
                nobiasintroduced, nobiasintroduced_sensitive_columns,
                nobiasintroduced_ratio_threshold, nobiasintroduced_probability_threshold,
-               noillegalfeatures, nomissingembeddings):
+               noillegalfeatures, noillegalfeatures_additional_names,
+               nomissingembeddings, nomissingembeddings_threshold):
     """
     When user clicks 'execute' button, show extracted DAG including potential
     problem nodes in red.
@@ -425,7 +454,15 @@ def on_execute(execute_clicks, pipeline,
         return [dash.no_update]*5
 
     ### Execute pipeline and inspections
-    # params for NoBiasIntroducedFor
+    # [RowLineage, MaterializeFirstOutputRows] set default num rows to 5
+    rowlineage_num_rows = rowlineage_num_rows or 5
+    materializefirstoutputrows_num_rows = materializefirstoutputrows_num_rows or 5
+    # [RowLineage, MaterializeFirstOutputRows] if both enabled, display the higher number of rows
+    if materializefirstoutputrows and rowlineage:
+        rowlineage_num_rows = max(rowlineage_num_rows, materializefirstoutputrows_num_rows)
+    # [RowLineage, MaterializeFirstOutputRows] don't include MaterializeFirstOutputRows if RowLineage also checked
+    materializefirstoutputrows = materializefirstoutputrows and not rowlineage
+    # [NoBiasIntroducedFor]
     if nobiasintroduced_ratio_threshold:
         # convert percentage to decimal
         nobiasintroduced_ratio_threshold = nobiasintroduced_ratio_threshold/100.
@@ -438,14 +475,11 @@ def on_execute(execute_clicks, pipeline,
     else:
         # use default value if None
         nobiasintroduced_probability_threshold = 2.0
-    # set default num rows to 5
-    rowlineage_num_rows = rowlineage_num_rows or 5
-    materializefirstoutputrows_num_rows = materializefirstoutputrows_num_rows or 5
-    # if both RowLineage and MaterializeFirstOutputRows are enabled, display the higher number of rows
-    if materializefirstoutputrows and rowlineage:
-        rowlineage_num_rows = max(rowlineage_num_rows, materializefirstoutputrows_num_rows)
-    # don't include MaterializeFirstOutputRows if RowLineage is also checked
-    materializefirstoutputrows = materializefirstoutputrows and not rowlineage
+    # [NoIllegalFeatures]
+    noillegalfeatures_additional_names = noillegalfeatures_additional_names.split(",") \
+                                         if noillegalfeatures_additional_names else []
+    # [NoMissingEmbeddings]
+    nomissingembeddings_threshold = nomissingembeddings_threshold or 10
     # construct arguments for inspector builder
     inspections = {
         "HistogramForColumns": (histogramforcolumns, [histogramforcolumns_sensitive_columns]),
@@ -459,8 +493,8 @@ def on_execute(execute_clicks, pipeline,
             nobiasintroduced_ratio_threshold,
             nobiasintroduced_probability_threshold,
         ]),
-        "NoIllegalFeatures": (noillegalfeatures, []),
-        "NoMissingEmbeddings": (nomissingembeddings, []),
+        "NoIllegalFeatures": (noillegalfeatures, [noillegalfeatures_additional_names]),
+        "NoMissingEmbeddings": (nomissingembeddings, [nomissingembeddings_threshold]),
     }
     pipeline_output = execute_inspector_builder(pipeline, checks, inspections)
     hide_output = False
