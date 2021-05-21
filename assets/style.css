@@ -27,6 +27,7 @@
     padding: 10px;
     margin: 10px auto;
     box-sizing: border-box;
+    width: fit-content;
 }
 
 .result-item-content {
