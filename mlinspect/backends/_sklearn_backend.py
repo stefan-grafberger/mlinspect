@@ -16,7 +16,7 @@ class SklearnBackend(Backend):
     """
 
     @staticmethod
-    def before_call(function_info, operator_context, input_infos: List[AnnotatedDfObject]):
+    def before_call(operator_context, input_infos: List[AnnotatedDfObject]):
         """The value or module a function may be called on"""
         # pylint: disable=too-many-arguments
         if operator_context.operator == OperatorType.TRAIN_TEST_SPLIT:
@@ -26,7 +26,7 @@ class SklearnBackend(Backend):
         return input_infos
 
     @staticmethod
-    def after_call(function_info, operator_context, input_infos: List[AnnotatedDfObject], return_value) \
+    def after_call(operator_context, input_infos: List[AnnotatedDfObject], return_value) \
             -> BackendResult:
         """The return value of some function"""
         # pylint: disable=too-many-arguments

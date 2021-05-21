@@ -63,13 +63,11 @@ class DataFramePatching:
             """ Execute inspections, add DAG node """
             function_info = ('pandas.core.frame', 'DataFrame')
             operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
-            input_infos = PandasBackend.before_call(function_info,
-                                                    operator_context,
+            input_infos = PandasBackend.before_call(operator_context,
                                                     [])
             original(self, *args, **kwargs)
             result = self
-            backend_result = PandasBackend.after_call(function_info,
-                                                      operator_context,
+            backend_result = PandasBackend.after_call(operator_context,
                                                       input_infos,
                                                       result)
 
@@ -249,11 +247,10 @@ class SeriesPatching:
             function_info = ('pandas.core.series', 'Series')
 
             operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
-            input_infos = PandasBackend.before_call(function_info, operator_context, [])
+            input_infos = PandasBackend.before_call(operator_context, [])
             original(self, *args, **kwargs)
             result = self
-            backend_result = PandasBackend.after_call(function_info,
-                                                      operator_context,
+            backend_result = PandasBackend.after_call(operator_context,
                                                       input_infos,
                                                       result)
 

@@ -39,14 +39,12 @@ class SklearnPreprocessingPatching:
                                         optional_source_code)
 
             operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
-            input_infos = SklearnBackend.before_call(function_info,
-                                                     operator_context,
+            input_infos = SklearnBackend.before_call(operator_context,
                                                      [input_info.annotated_dfobject])
             result = original(input_infos[0].result_data, *args[1:], **kwargs)
-            backend_result = SklearnBackend.after_call(function_info,
-                                                     operator_context,
-                                                     input_infos,
-                                                     result)
+            backend_result = SklearnBackend.after_call(operator_context,
+                                                       input_infos,
+                                                       result)
 
             classes = kwargs['classes']
             description = "label_binarize, classes: {}".format(classes)
@@ -152,8 +150,8 @@ class SklearnComposePatching:
             assert isinstance(result, MlinspectNdarray)
 
         dag_node = DagNode(self.mlinspect_op_id, self.mlinspect_filename, self.mlinspect_lineno,
-                            OperatorType.CONCATENATION, module, "", ['array'], self.mlinspect_optional_code_reference,
-                            self.mlinspect_optional_source_code)
+                           OperatorType.CONCATENATION, module, "", ['array'], self.mlinspect_optional_code_reference,
+                           self.mlinspect_optional_source_code)
         input_dag_nodes = [input_info.dag_node for input_info in input_infos]
         add_dag_node(dag_node, input_dag_nodes, result, engine_result)
 

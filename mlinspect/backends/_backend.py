@@ -28,14 +28,14 @@ class Backend(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def before_call(self, function_info, operator_context, input_infos: List[AnnotatedDfObject]) \
+    def before_call(self, operator_context, input_infos: List[AnnotatedDfObject]) \
             -> List[AnnotatedDfObject]:
         """The value or module a function may be called on"""
         # pylint: disable=too-many-arguments, unused-argument
         raise NotImplementedError
 
     @abc.abstractmethod
-    def after_call(self, function_info, operator_context, input_infos: List[AnnotatedDfObject], return_value) \
+    def after_call(self, operator_context, input_infos: List[AnnotatedDfObject], return_value) \
             -> BackendResult:
         """The return value of some function"""
         # pylint: disable=too-many-arguments, unused-argument

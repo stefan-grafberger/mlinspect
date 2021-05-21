@@ -21,14 +21,14 @@ class PandasBackend(Backend):
     """
 
     @staticmethod
-    def before_call(function_info, operator_context, input_infos: List[AnnotatedDfObject]):
+    def before_call(operator_context, input_infos: List[AnnotatedDfObject]):
         """The value or module a function may be called on"""
         # pylint: disable=too-many-arguments
         if operator_context.operator == OperatorType.SELECTION:
             pandas_df = input_infos[0].result_data
             assert isinstance(pandas_df, pandas.DataFrame)
             pandas_df['mlinspect_index'] = range(0, len(pandas_df))
-        elif function_info == ('pandas.core.frame', 'merge'):
+        elif operator_context.function_info == ('pandas.core.frame', 'merge'):
             first_pandas_df = input_infos[0].result_data
             assert isinstance(first_pandas_df, pandas.DataFrame)
             first_pandas_df['mlinspect_index_x'] = range(0, len(first_pandas_df))
@@ -38,14 +38,13 @@ class PandasBackend(Backend):
         return input_infos
 
     @staticmethod
-    def after_call(function_info, operator_context, input_infos: List[AnnotatedDfObject], return_value) \
+    def after_call(operator_context, input_infos: List[AnnotatedDfObject], return_value) \
             -> BackendResult:
         """The return value of some function"""
         # pylint: disable=too-many-arguments
         if operator_context.operator == OperatorType.DATA_SOURCE:
             return_value = execute_inspection_visits_data_source(operator_context, return_value)
         elif operator_context.operator == OperatorType.GROUP_BY_AGG:
-            operator_context = OperatorContext(OperatorType.GROUP_BY_AGG, function_info)
             return_value = execute_inspection_visits_data_source(operator_context, return_value.reset_index())
         elif operator_context.operator == OperatorType.SELECTION:
             return_value = execute_inspection_visits_unary_operator(operator_context,
