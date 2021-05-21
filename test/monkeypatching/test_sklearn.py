@@ -46,7 +46,6 @@ def test_label_binarize():
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
-    # FIXME: Add final DAG node annotation to after_call result
     lineage_output = inspection_results_data_source[RowLineage(3)]
     expected_lineage_df = DataFrame([[numpy.array([1]), {LineageId(0, 0)}],
                                      [numpy.array([0]), {LineageId(0, 1)}],
