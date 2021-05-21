@@ -112,6 +112,8 @@ def get_series_row_iterator(series, columns=None):
     """
     if columns:
         column_info = ColumnInfo(columns)
+    elif series.name:
+        column_info = ColumnInfo([series.name])
     else:
         column_info = ColumnInfo(["array"])
     numpy_iterator = series.__iter__()

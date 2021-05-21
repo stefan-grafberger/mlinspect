@@ -2,6 +2,7 @@
 Data class used as result of the PipelineExecutor
 """
 import dataclasses
+from typing import Dict
 
 import networkx
 
@@ -15,4 +16,4 @@ class InspectionResult:
     The class the PipelineExecutor returns
     """
     dag: networkx.DiGraph
-    dag_node_to_inspection_results: dict[DagNode, dict[Inspection, any]]
+    dag_node_to_inspection_results: Dict[DagNode, Dict[Inspection, any]]
