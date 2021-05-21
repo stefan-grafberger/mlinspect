@@ -26,7 +26,7 @@ def test_inspector_adult_easy_py_pipeline():
     expected_dag = get_expected_dag_adult_easy_py()
     compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
 
-    assert HistogramForColumns(['race']) in inspector_result.inspection_to_annotations
+    assert HistogramForColumns(['race']) in inspector_result.dag_node_to_inspection_results.keys()[0]
     check_to_check_results = inspector_result.check_to_check_results
     assert check_to_check_results[NoBiasIntroducedFor(['race'])].status == CheckStatus.SUCCESS
     assert check_to_check_results[NoIllegalFeatures()].status == CheckStatus.FAILURE
@@ -58,7 +58,7 @@ def test_inspector_adult_easy_ipynb_pipeline():
     expected_dag = get_expected_dag_adult_easy_ipynb()
     compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
 
-    assert HistogramForColumns(['race']) in inspector_result.inspection_to_annotations
+    assert HistogramForColumns(['race']) in inspector_result.dag_node_to_inspection_results.keys()[0]
     check_to_check_results = inspector_result.check_to_check_results
     assert check_to_check_results[NoBiasIntroducedFor(['race'])].status == CheckStatus.SUCCESS
     assert check_to_check_results[NoIllegalFeatures()].status == CheckStatus.FAILURE
@@ -81,7 +81,7 @@ def test_inspector_adult_easy_str_pipeline():
         expected_dag = get_expected_dag_adult_easy_py()
         compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
 
-        assert HistogramForColumns(['race']) in inspector_result.inspection_to_annotations
+        assert HistogramForColumns(['race']) in inspector_result.dag_node_to_inspection_results.keys()[0]
         check_to_check_results = inspector_result.check_to_check_results
         assert check_to_check_results[NoBiasIntroducedFor(['race'])].status == CheckStatus.SUCCESS
         assert check_to_check_results[NoIllegalFeatures()].status == CheckStatus.FAILURE
