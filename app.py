@@ -233,12 +233,19 @@ app.layout = dbc.Container([
         ], width=1),
         # Details
         dbc.Col([
-            # Operator details
+            # Summary
             html.Div([
-                html.H3("Operator Details", id="operator-details-header"),
-                html.Div("Select an operator in the DAG to see details", id="operator-details"),
-            ], id="operator-details-container", className="container"),
-        ], width=5)
+                html.H3("Summary", id="results-summary-header"),
+                html.Div("Select inspections and/or checks and execute to see results",
+                         id="results-summary"),
+            ], id="results-summary-container", className="container"),
+            # Details
+            html.Div([
+                html.H3("Details", id="results-details-header"),
+                html.Div("Select an operator in the DAG to see operator-specific details",
+                         id="results-details"),
+            ], id="results-details-container", className="container"),
+        ], id="results-container", width=5, align="end")
     ], id="inspector-definition-container", className="container"),
     html.Div(id="clientside-pipeline-code", hidden=True)
 ], style={"fontSize": "14px"}, id="app-container")
@@ -375,6 +382,7 @@ def on_nobiasintroduced_checked(checked):
         Output("pipeline-output", "children"),
         Output("pipeline-output-container", "hidden"),
         Output("dag", "selectedData"),
+        Output("results-summary", "children"),
     ],
     Input("execute", "n_clicks"),
     Input("clientside-pipeline-code", "children"),
@@ -413,7 +421,7 @@ def on_execute(execute_clicks, pipeline,
     problem nodes in red.
     """
     if not execute_clicks or not pipeline:
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return [dash.no_update]*5
 
     ### Execute pipeline and inspections
     # params for NoBiasIntroducedFor
@@ -459,13 +467,13 @@ def on_execute(execute_clicks, pipeline,
     ### Highlight problematic nodes
     figure = highlight_problem_nodes(figure, nobiasintroduced_sensitive_columns)
 
-    ### De-select any DAG nodes and trigger callback to reset operator details div
+    ### De-select any DAG nodes and trigger callback to reset details div
     selected_data = {}
 
-    ### Summary
-    # check_result_df = PipelineInspector.check_results_as_data_frame(INSPECTOR_RESULT.check_to_check_results)
+    ### Summary results
+    summary = get_result_summary()
 
-    return figure, pipeline_output, hide_output, selected_data
+    return figure, pipeline_output, hide_output, selected_data, summary
 
 
 @app.callback(
@@ -499,8 +507,8 @@ def on_dag_node_hover(hover_data):
 @app.callback(
     [
         Output("selected-code-reference", "children"),
-        Output("operator-details", "children"),
-        Output("operator-details-header", "children"),
+        Output("results-details", "children"),
+        Output("results-details-header", "children"),
     ],
     [
         Input("dag", "selectedData"),
@@ -513,7 +521,7 @@ def on_dag_node_select(selected_data):
     """
     # Un-highlight source code
     if not selected_data:
-        return [], "Select an operator in the DAG to see details", "Operator Details"
+        return [], "Select an operator in the DAG to see operator-specific details", "Details"
 
     # Find DagNode object at this position
     point = selected_data['points'][0]
@@ -529,11 +537,11 @@ def on_dag_node_select(selected_data):
     code_ref = node.code_reference
 
     # Populate and show div(s)
-    header = "Operator Details: Operator '{operator}', Line {code_ref}".format(
+    header = "Details: Operator '{operator}', Line {code_ref}".format(
         operator=node.operator_type.value,
         code_ref=node.code_reference.lineno,
     )
-    operator_details = get_operator_details(node)
+    operator_details = get_result_details(node)
 
     return json.dumps(code_ref.__dict__), operator_details, header
 
@@ -795,7 +803,13 @@ def convert_dataframe_to_dash_table(df):
     )
 
 
-def get_operator_details(node):
+def get_result_summary():
+    check_results = INSPECTOR_RESULT.check_to_check_results
+    check_result_df = PipelineInspector.check_results_as_data_frame(check_results)
+    return convert_dataframe_to_dash_table(check_result_df)
+
+
+def get_result_details(node):
     details = []
 
     # Show inspection results
@@ -826,8 +840,9 @@ def get_operator_details(node):
         if isinstance(check, NoBiasIntroducedFor):
             if node not in result_obj.bias_distribution_change:
                 continue
+            dist_changes = result_obj.bias_distribution_change[node]
             graphs = []
-            for column, distribution_change in result_obj.bias_distribution_change[node].items():
+            for column, distribution_change in dist_changes.items():
                 graphs += [
                     create_distribution_change_histograms(column, distribution_change),
                     create_removal_probability_histograms(column, distribution_change),
@@ -837,7 +852,16 @@ def get_operator_details(node):
                 html.Div(graphs, className="result-item-content"),
             ], className="result-item")
             details += [element]
+        elif isinstance(check, NoIllegalFeatures):
+            element = html.Div([
+                html.H4(f"{check}", className="result-item-header"),
+                html.Div(result_obj.illegal_features,
+                         className="result-item-content"),
+            ], className="result-item")
+            details += [element]
         elif isinstance(check, NoMissingEmbeddings):
+            if node not in result_obj.dag_node_to_missing_embeddings:
+                continue
             info = result_obj.dag_node_to_missing_embeddings[node]
             element = html.Div([
                 html.H4(f"{check}", className="result-item-header"),
