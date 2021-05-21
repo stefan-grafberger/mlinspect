@@ -67,7 +67,7 @@ with open("example_pipelines/adult_demo/adult_demo.py") as adult_file:
 patients = pd.read_csv("example_pipelines/healthcare/patients.csv", na_values='?')
 histories = pd.read_csv("example_pipelines/healthcare/histories.csv", na_values='?')
 healthcare_data = patients.merge(histories, on=['ssn'])
-adult_data = pd.read_csv("example_pipelines/adult_demo/adult_demo_train.csv",
+adult_data = pd.read_csv("example_pipelines/adult_demo/train.csv",
                          na_values='?', index_col=0)
 
 inspection_switcher = {
@@ -164,7 +164,7 @@ app.layout = dbc.Container([
                                   html_for="rowlineage-checkbox",
                                   className="custom-control-label"),
                         dbc.Input(id="rowlineage-num-rows", type="number",
-                                  min=0, step=1, placeholder="Number of rows",
+                                  min=0, step=1, placeholder="Number of rows (default 5)",
                                   style=STYLE_HIDDEN),
                     ], className="custom-switch custom-control"),
                     html.Div([  # Materialize First Output Rows
@@ -174,7 +174,7 @@ app.layout = dbc.Container([
                                   html_for="materializefirstoutputrows-checkbox",
                                   className="custom-control-label"),
                         dbc.Input(id="materializefirstoutputrows-num-rows", type="number",
-                                  min=0, step=1, placeholder="Number of rows",
+                                  min=0, step=1, placeholder="Number of rows (default 5)",
                                   style=STYLE_HIDDEN),
                     ], className="custom-switch custom-control"),
                 ]),
@@ -415,7 +415,8 @@ def on_execute(execute_clicks, pipeline,
     if not execute_clicks or not pipeline:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
-    # Execute pipeline and inspections
+    ### Execute pipeline and inspections
+    # params for NoBiasIntroducedFor
     if nobiasintroduced_ratio_threshold:
         # convert percentage to decimal
         nobiasintroduced_ratio_threshold = nobiasintroduced_ratio_threshold/100.
@@ -428,15 +429,17 @@ def on_execute(execute_clicks, pipeline,
     else:
         # use default value if None
         nobiasintroduced_probability_threshold = 2.0
-    # if both rowlineage and materializefirstoutputrows are enabled, display the higher number of rows
+    # if both RowLineage and MaterializeFirstOutputRows are enabled, display the higher number of rows
     if materializefirstoutputrows and rowlineage:
         rowlineage_num_rows = max(rowlineage_num_rows, materializefirstoutputrows_num_rows)
-    # don't include materializefirstoutputrows if rowlineage is also checked
+    # don't include MaterializeFirstOutputRows if RowLineage is also checked
     materializefirstoutputrows = materializefirstoutputrows and not rowlineage
+    # construct arguments for inspector builder
     inspections = {
         "HistogramForColumns": (histogramforcolumns, [histogramforcolumns_sensitive_columns]),
-        "RowLineage": (rowlineage, [rowlineage_num_rows]),
-        "MaterializeFirstOutputRows": (materializefirstoutputrows, [materializefirstoutputrows_num_rows]),
+        "RowLineage": (rowlineage, [rowlineage_num_rows or 5]),
+        "MaterializeFirstOutputRows": (materializefirstoutputrows,
+                                       [materializefirstoutputrows_num_rows or 5]),
     }
     checks = {
         "NoBiasIntroducedFor": (nobiasintroduced, [
@@ -450,33 +453,33 @@ def on_execute(execute_clicks, pipeline,
     pipeline_output = execute_inspector_builder(pipeline, checks, inspections)
     hide_output = False
 
-    # Convert extracted DAG into plotly figure
+    ### Convert extracted DAG into plotly figure
     figure = nx2go(INSPECTOR_RESULT.dag)
 
-    # Highlight problematic nodes
+    ### Highlight problematic nodes
     figure = highlight_problem_nodes(figure, nobiasintroduced_sensitive_columns)
 
-    # De-select any DAG nodes and trigger callback to reset operator details div
-    selectedData = {}
+    ### De-select any DAG nodes and trigger callback to reset operator details div
+    selected_data = {}
 
-    return figure, pipeline_output, hide_output, selectedData
+    return figure, pipeline_output, hide_output, selected_data
 
 
 @app.callback(
     Output("hovered-code-reference", "children"),
     Input("dag", "hoverData"),
 )
-def on_dag_node_hover(hoverData):
+def on_dag_node_hover(hover_data):
     """
     When user hovers on DAG node, show node label and emphasize corresponding
     source code.
     """
     # Un-highlight source code
-    if not hoverData:
+    if not hover_data:
         return []
 
     # Find DagNode object at this position
-    point = hoverData['points'][0]
+    point = hover_data['points'][0]
     x = point['x']
     y = point['y']
     try:
@@ -562,7 +565,11 @@ def get_new_node_label(node):
     label = cleandoc("""
             {} (L{})
             {}
-            """.format(node.operator_type.value, node.code_reference.lineno, node.description or ""))
+            """.format(
+                node.operator_type.value,
+                node.code_reference.lineno,
+                node.description or ""
+            ))
     return label
 
 
@@ -746,7 +753,7 @@ def create_removal_probability_histograms(column, distribution_change):
     layout = go.Layout(title=title, margin=margin, hovermode="x",
                        autosize=False, width=380, height=300)
     figure = go.Figure(data=data, layout=layout)
-    figure.update_traces(hovertemplate="%{text:.2f}")
+    # figure.update_traces(hovertemplate="%{text:.2f}")
     return dcc.Graph(figure=figure)
 
 
@@ -790,17 +797,21 @@ def get_operator_details(node):
             output_df = result_dict[node]
             output_table = convert_dataframe_to_dash_table(output_df)
             input_tables = [
+                dbc.Label("Input Rows")
+            ] + [
                 convert_dataframe_to_dash_table(result_dict[input_node])
                 for input_node in INSPECTOR_RESULT.dag.predecessors(node)
             ]
             element = html.Div([
                 html.H4(f"{inspection}", className="result-item-header"),
-                dbc.Label("Input Rows"),
                 *input_tables,
                 dbc.Label("Output Rows"),
                 output_table,
             ], className="result-item")
             details += [element]
+        elif isinstance(inspection, HistogramForColumns):
+            print("inspection not implemented:", inspection)
+            pass
         else:
             print("inspection not implemented:", inspection)
 
@@ -820,6 +831,12 @@ def get_operator_details(node):
                 html.Div(graphs, className="result-item-content"),
             ], className="result-item")
             details += [element]
+        elif isinstance(check, NoIllegalFeatures):
+            print("check not implemented:", check)
+            pass
+        elif isinstance(check, NoMissingEmbeddings):
+            print("check not implemented:", check)
+            pass
         else:
             print("check not implemented:", check)
 

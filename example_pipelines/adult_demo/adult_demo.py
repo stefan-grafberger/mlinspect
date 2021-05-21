@@ -1,4 +1,4 @@
-""" A pipeline using the adult_income dataset"""
+"""A pipeline using the adult_income dataset"""
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import label_binarize
