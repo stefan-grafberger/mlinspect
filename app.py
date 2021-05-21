@@ -114,7 +114,7 @@ app.layout = dbc.Container([
                 html.H3("Pipeline Output"),
                 html.Pre(html.Code(id="pipeline-output"), id="pipeline-output-cell"),
             ], id="pipeline-output-container", className="container", hidden=True),
-        ], width=7),
+        ], width=7, style={"min-width": str(100*7/12.)+"%"}),
         # DAG
         dbc.Col([
             # Extracted DAG
@@ -137,8 +137,8 @@ app.layout = dbc.Container([
                 html.Div(id="hovered-code-reference"),
                 html.Div(id="selected-code-reference"),
             ], id="code-reference-container", className="container", hidden=True),
-        ], width=5),
-    ]),
+        ], width=5, style={"min-width": str(100*5/12.)+"%"}),
+    ], style={"min-width": "100%"}),
     dbc.Row([
         # Inspections
         dbc.Col([
@@ -179,7 +179,7 @@ app.layout = dbc.Container([
                     ], className="custom-switch custom-control"),
                 ]),
             ]),
-        ], width=3),
+        ], width=3, style={"min-width": "25%"}),
         # Checks
         dbc.Col([
             dbc.FormGroup([
@@ -223,30 +223,31 @@ app.layout = dbc.Container([
                     ], className="custom-switch custom-control"),
                 ], id="checks"),
             ]),
-        ], width=3),
+        ], width=3, style={"min-width": "25%"}),
         # Execute
         dbc.Col([
             # Execute inspection
             html.Br(),
             html.Br(),
             dbc.Button(id="execute", color="primary", size="lg", className="mr-1 play-button"),
-        ], width=1),
+        ], width=1, style={"min-width": str(100*1/12.)+"%"}),
         # Details
         dbc.Col([
             # Summary
             html.Div([
-                html.H3("Summary", id="results-summary-header"),
-                html.Div("Select inspections and/or checks and execute to see results",
-                         id="results-summary"),
-            ], id="results-summary-container", className="container"),
+                html.H3("Check Summary", id="results-summary-header"),
+                html.Div("Enable checks and execute to see results", id="results-summary"),
+            ], id="results-summary-container"),
             # Details
+            html.Br(),
+            html.Br(),
             html.Div([
                 html.H3("Details", id="results-details-header"),
                 html.Div("Select an operator in the DAG to see operator-specific details",
                          id="results-details"),
-            ], id="results-details-container", className="container"),
-        ], id="results-container", width=5, align="end")
-    ], id="inspector-definition-container", className="container"),
+            ], id="results-details-container"),
+        ], id="results-container", width=5, style={"min-width": str(100*5/12.)+"%"}),
+    ], id="inspector-definition-container", className="container", style={"min-width": "100%"}),
     html.Div(id="clientside-pipeline-code", hidden=True)
 ], style={"fontSize": "14px"}, id="app-container")
 
@@ -437,6 +438,9 @@ def on_execute(execute_clicks, pipeline,
     else:
         # use default value if None
         nobiasintroduced_probability_threshold = 2.0
+    # set default num rows to 5
+    rowlineage_num_rows = rowlineage_num_rows or 5
+    materializefirstoutputrows_num_rows = materializefirstoutputrows_num_rows or 5
     # if both RowLineage and MaterializeFirstOutputRows are enabled, display the higher number of rows
     if materializefirstoutputrows and rowlineage:
         rowlineage_num_rows = max(rowlineage_num_rows, materializefirstoutputrows_num_rows)
@@ -470,8 +474,11 @@ def on_execute(execute_clicks, pipeline,
     ### De-select any DAG nodes and trigger callback to reset details div
     selected_data = {}
 
-    ### Summary results
-    summary = get_result_summary()
+    ### Summary check results
+    if INSPECTOR_RESULT.check_to_check_results:
+        summary = get_result_summary()
+    else:
+        summary = dash.no_update
 
     return figure, pipeline_output, hide_output, selected_data, summary
 
