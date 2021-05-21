@@ -742,8 +742,12 @@ def create_removal_probability_histograms(column, distribution_change):
     keys = distribution_change.before_and_after_df["sensitive_column_value"]
     keys = [str(key) for key in keys]  # Necessary because of null values
     removal_probabilities = distribution_change.before_and_after_df["removal_probability"]
-    bar = go.Bar(x=keys, y=removal_probabilities, text="removal_probability", hoverinfo="text")
-    data = [bar]
+    data = go.Bar(
+        x=keys, y=removal_probabilities,
+        text=removal_probabilities,
+        hoverinfo="text",
+        hovertemplate="%{text:.2f}",
+    )
     title = {
         "text": f"Column '{column}' Removal Probabilities",
         "font_size": 12,
