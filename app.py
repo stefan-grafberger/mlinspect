@@ -757,7 +757,7 @@ def create_removal_probability_histograms(column, distribution_change):
     layout = go.Layout(title=title, margin=margin, hovermode="x",
                        autosize=False, width=380, height=300)
     figure = go.Figure(data=data, layout=layout)
-    # figure.update_traces(hovertemplate="%{text:.2f}")
+    # figure.update_traces(marker_color="orange")
     return dcc.Graph(figure=figure)
 
 
@@ -839,8 +839,14 @@ def get_operator_details(node):
             print("check not implemented:", check)
             pass
         elif isinstance(check, NoMissingEmbeddings):
-            print("check not implemented:", check)
-            pass
+            info = result_obj.dag_node_to_missing_embeddings[node]
+            # for node, info in result_obj.items():
+            element = html.Div([
+                html.H4(f"{check}", className="result-item-header"),
+                html.Div(info.missing_embeddings_examples,
+                         className="result-item-content"),
+            ], className="result-item")
+            details += [element]
         else:
             print("check not implemented:", check)
 
