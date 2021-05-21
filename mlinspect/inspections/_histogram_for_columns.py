@@ -19,6 +19,9 @@ class HistogramForColumns(Inspection):
         self._operator_type = None
         self.sensitive_columns = sensitive_columns
 
+    def __str__(self):
+        return f"HistogramForColumns({self.sensitive_columns})"
+
     def visit_operator(self, inspection_input) -> Iterable[any]:
         """
         Visit an operator
