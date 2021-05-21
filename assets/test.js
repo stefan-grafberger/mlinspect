@@ -13,7 +13,7 @@ function highlightCodeBlock(editor, codeReferenceText){
 
 setTimeout(function(){
     textArea = document.querySelector('#pipeline-textarea');
-    console.log(textArea);
+
     // then highlight each
     var editor = CodeMirror.fromTextArea(textArea, {
         lineNumbers: true,
@@ -28,11 +28,9 @@ setTimeout(function(){
         // get value right from instance
         editor.save();
         textArea.value = editor.getValue();
-        console.log(editor.getValue());
         input = document.querySelector('#pipeline-textarea');
         input.value = editor.getValue();
     });
-    console.log(editor);
 
     //More Details https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
     // select the target node
@@ -41,7 +39,7 @@ setTimeout(function(){
     //console.log(target.getAttribute('n_clicks_timestamp')); // todo: get actual attributes
     // create an observer instance
     var observer = new MutationObserver(function(mutations) {
-        console.log("attributes: ");
+        // console.log("attributes: ");
         if (hoverDiv.innerText) {
             highlightCodeBlock(editor, hoverDiv.innerText);
         } else if (selectDiv.innerText) {
