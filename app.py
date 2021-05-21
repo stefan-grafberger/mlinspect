@@ -192,9 +192,15 @@ app.layout = dbc.Container([
                         dbc.Label("No Bias Introduced For",
                                   html_for="nobiasintroduced-checkbox",
                                   className="custom-control-label"),
-                        dbc.Input(id="nobiasintroduced-threshold", type="number",
+                        #   min_allowed_relative_ratio_change=-0.3
+                        dbc.Input(id="nobiasintroduced-ratio-threshold", type="number",
                                   min=-100, max=0, step=1,
-                                  placeholder="Default threshold -30%",
+                                  placeholder="Min ratio change -30%",
+                                  style=STYLE_HIDDEN),
+                        #   max_allowed_probability_difference=2.0
+                        dbc.Input(id="nobiasintroduced-probability-threshold", type="number",
+                                  min=0, step=1,
+                                  placeholder="Max prob diff 200%",
                                   style=STYLE_HIDDEN),
                         dbc.Checklist(id="nobiasintroduced-sensitive-columns",
                                       options=[{"label": "label1", "value": "value1"},
@@ -350,7 +356,8 @@ def on_materializefirstoutputrows_checked(checked):
 
 @app.callback(
     [
-        Output("nobiasintroduced-threshold", "style"),
+        Output("nobiasintroduced-ratio-threshold", "style"),
+        Output("nobiasintroduced-probability-threshold", "style"),
         Output("nobiasintroduced-sensitive-columns", "style"),
     ],
     Input("nobiasintroduced-checkbox", "checked"),
@@ -358,8 +365,8 @@ def on_materializefirstoutputrows_checked(checked):
 def on_nobiasintroduced_checked(checked):
     """Show checklist of sensitive columns if NoBiasIntroducedFor is selected."""
     if checked:
-        return STYLE_SHOWN, {**STYLE_SHOWN, **CODE_FONT}
-    return STYLE_HIDDEN, STYLE_HIDDEN
+        return STYLE_SHOWN, STYLE_SHOWN, {**STYLE_SHOWN, **CODE_FONT}
+    return STYLE_HIDDEN, STYLE_HIDDEN, STYLE_HIDDEN
 
 
 @app.callback(
@@ -384,7 +391,8 @@ def on_nobiasintroduced_checked(checked):
         # NoBiasIntroducedFor
         State("nobiasintroduced-checkbox", "checked"),
         State("nobiasintroduced-sensitive-columns", "value"),
-        State("nobiasintroduced-threshold", "value"),
+        State("nobiasintroduced-ratio-threshold", "value"),
+        State("nobiasintroduced-probability-threshold", "value"),
         # NoIllegalFeatures
         State("noillegalfeatures-checkbox", "checked"),
         # NoMissingEmbeddings
@@ -397,7 +405,8 @@ def on_execute(execute_clicks, pipeline,
                rowlineage, rowlineage_num_rows,
                materializefirstoutputrows, materializefirstoutputrows_num_rows,
                # Checks
-               nobiasintroduced, nobiasintroduced_sensitive_columns, nobiasintroduced_threshold,
+               nobiasintroduced, nobiasintroduced_sensitive_columns,
+               nobiasintroduced_ratio_threshold, nobiasintroduced_probability_threshold,
                noillegalfeatures, nomissingembeddings):
     """
     When user clicks 'execute' button, show extracted DAG including potential
@@ -407,12 +416,18 @@ def on_execute(execute_clicks, pipeline,
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Execute pipeline and inspections
-    if nobiasintroduced_threshold:
+    if nobiasintroduced_ratio_threshold:
         # convert percentage to decimal
-        nobiasintroduced_threshold = nobiasintroduced_threshold/100.
+        nobiasintroduced_ratio_threshold = nobiasintroduced_ratio_threshold/100.
     else:
         # use default value if None
-        nobiasintroduced_threshold = -0.3
+        nobiasintroduced_ratio_threshold = -0.3
+    if nobiasintroduced_probability_threshold:
+        # convert percentage to decimal
+        nobiasintroduced_probability_threshold = nobiasintroduced_probability_threshold/100.
+    else:
+        # use default value if None
+        nobiasintroduced_probability_threshold = 2.0
     # if both rowlineage and materializefirstoutputrows are enabled, display the higher number of rows
     if materializefirstoutputrows and rowlineage:
         rowlineage_num_rows = max(rowlineage_num_rows, materializefirstoutputrows_num_rows)
@@ -424,7 +439,11 @@ def on_execute(execute_clicks, pipeline,
         "MaterializeFirstOutputRows": (materializefirstoutputrows, [materializefirstoutputrows_num_rows]),
     }
     checks = {
-        "NoBiasIntroducedFor": (nobiasintroduced, [nobiasintroduced_sensitive_columns, nobiasintroduced_threshold]),
+        "NoBiasIntroducedFor": (nobiasintroduced, [
+            nobiasintroduced_sensitive_columns,
+            nobiasintroduced_ratio_threshold,
+            nobiasintroduced_probability_threshold,
+        ]),
         "NoIllegalFeatures": (noillegalfeatures, []),
         "NoMissingEmbeddings": (nomissingembeddings, []),
     }
@@ -679,7 +698,7 @@ def highlight_problem_nodes(fig_dict, sensitive_columns):
     for node_dict in no_bias_check_result.bias_distribution_change.values():
         for distribution_change in node_dict.values():
             # Check if distribution change is acceptable
-            if distribution_change.acceptable_change:
+            if distribution_change.acceptable_change and distribution_change.acceptable_probability_difference:
                 continue
 
             # Highlight this node in figure
@@ -688,7 +707,7 @@ def highlight_problem_nodes(fig_dict, sensitive_columns):
     return fig_dict
 
 
-def create_histogram(column, distribution_change):
+def create_distribution_change_histograms(column, distribution_change):
     keys = distribution_change.before_and_after_df["sensitive_column_value"]
     keys = [str(key) for key in keys]  # Necessary because of null values
     before_values = distribution_change.before_and_after_df["count_before"]
@@ -700,7 +719,26 @@ def create_histogram(column, distribution_change):
 
     data = [before, after]
     title = {
-        "text": f"Column '{column}'",
+        "text": f"Column '{column}' Distribution Change",
+        "font_size": 12,
+    }
+    margin = {"l": 20, "r": 20, "t": 20, "b": 20}
+
+    layout = go.Layout(title=title, margin=margin, hovermode="x",
+                       autosize=False, width=380, height=300)
+    figure = go.Figure(data=data, layout=layout)
+    figure.update_traces(hovertemplate="%{text:.2f}")
+    return dcc.Graph(figure=figure)
+
+
+def create_removal_probability_histograms(column, distribution_change):
+    keys = distribution_change.before_and_after_df["sensitive_column_value"]
+    keys = [str(key) for key in keys]  # Necessary because of null values
+    removal_probabilities = distribution_change.before_and_after_df["removal_probability"]
+    bar = go.Bar(x=keys, y=removal_probabilities, text="removal_probability", hoverinfo="text")
+    data = [bar]
+    title = {
+        "text": f"Column '{column}' Removal Probabilities",
         "font_size": 12,
     }
     margin = {"l": 20, "r": 20, "t": 20, "b": 20}
@@ -773,7 +811,10 @@ def get_operator_details(node):
                 continue
             graphs = []
             for column, distribution_change in result_obj.bias_distribution_change[node].items():
-                graphs += [create_histogram(column, distribution_change)]
+                graphs += [
+                    create_distribution_change_histograms(column, distribution_change),
+                    create_removal_probability_histograms(column, distribution_change),
+                ]
             element = html.Div([
                 html.H4(f"{check}", className="result-item-header"),
                 html.Div(graphs, className="result-item-content"),
