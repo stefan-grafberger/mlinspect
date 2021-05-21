@@ -725,6 +725,22 @@ def highlight_problem_nodes(fig_dict, sensitive_columns):
     return fig_dict
 
 
+def create_distribution_histogram(column, distribution_dict):
+    keys = list(distribution_dict.keys())
+    counts = list(distribution_dict.values())
+    data = go.Bar(x=keys, y=counts, text=counts, hoverinfo="text")
+    title = {
+        "text": f"Column '{column}' Distribution",
+        "font_size": 12,
+    }
+    margin = {"l": 20, "r": 20, "t": 20, "b": 20}
+
+    layout = go.Layout(title=title, margin=margin, hovermode="x",
+                       autosize=False, width=380, height=300)
+    figure = go.Figure(data=data, layout=layout)
+    return dcc.Graph(figure=figure)
+
+
 def create_distribution_change_histograms(column, distribution_change):
     keys = distribution_change.before_and_after_df["sensitive_column_value"]
     keys = [str(key) for key in keys]  # Necessary because of null values
@@ -831,7 +847,18 @@ def get_result_details(node):
             ], className="result-item")
             details += [element]
         elif isinstance(inspection, HistogramForColumns):
-            print("inspection not implemented:", inspection)
+            if node not in result_dict:
+                continue
+
+            distribution_dicts = result_dict[node]
+            graphs = []
+            for column, distribution in distribution_dicts.items():
+                graphs += [create_distribution_histogram(column, distribution)]
+            element = html.Div([
+                html.H4(f"{inspection}", className="result-item-header"),
+                html.Div(graphs, className="result-item-content"),
+            ], className="result-item")
+            details += [element]
         else:
             print("inspection not implemented:", inspection)
 
