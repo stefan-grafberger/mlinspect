@@ -10,10 +10,9 @@ import numpy
 from pandas import DataFrame, Series
 from scipy.sparse import csr_matrix
 
-from mlinspect.backends._backend import AnnotatedDfObject
+from mlinspect.backends._backend import AnnotatedDfObject, BackendResult
 from mlinspect.backends._pandas_backend import execute_inspection_visits_data_source
 from mlinspect.inspections._inspection_input import OperatorContext
-from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import DagNode, OperatorType, CodeReference
 from mlinspect.instrumentation._pipeline_executor import singleton
 
@@ -165,7 +164,7 @@ def get_input_info(df_object, caller_filename, lineno, function_info, optional_c
     return input_info
 
 
-def add_dag_node(dag_node: DagNode, dag_node_parents: List[DagNode], annotated_df: AnnotatedDfObject):
+def add_dag_node(dag_node: DagNode, dag_node_parents: List[DagNode], backend_result: BackendResult):
     """
     Inserts a new node into the DAG
     """
@@ -174,6 +173,7 @@ def add_dag_node(dag_node: DagNode, dag_node_parents: List[DagNode], annotated_d
     print("{}:{}: {}".format(dag_node.caller_filename, dag_node.lineno, dag_node.module))
 
     print("source code: {}".format(dag_node.optional_source_code))
+    annotated_df = backend_result.annotated_dfobject
 
     if annotated_df.result_data is not None:
         annotated_df.result_data._mlinspect_dag_node = dag_node.node_id
@@ -187,4 +187,4 @@ def add_dag_node(dag_node: DagNode, dag_node_parents: List[DagNode], annotated_d
         singleton.inspection_results.dag.add_node(dag_node)
     singleton.op_id_to_dag_node[dag_node.node_id] = dag_node
     if annotated_df is not None:
-        singleton.inspection_results.dag_node_to_inspection_results[dag_node] = annotated_df.result_annotation
+        singleton.inspection_results.dag_node_to_inspection_results[dag_node] = backend_result.dag_node_annotation

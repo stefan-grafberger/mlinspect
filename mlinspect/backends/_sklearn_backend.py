@@ -5,7 +5,7 @@ from typing import List
 
 import pandas
 
-from ._backend import Backend, AnnotatedDfObject
+from ._backend import Backend, AnnotatedDfObject, BackendResult
 from ._pandas_backend import execute_inspection_visits_unary_operator
 from ..instrumentation._dag_node import OperatorType
 
@@ -27,7 +27,7 @@ class SklearnBackend(Backend):
 
     @staticmethod
     def after_call(function_info, operator_context, input_infos: List[AnnotatedDfObject], return_value) \
-            -> AnnotatedDfObject:
+            -> BackendResult:
         """The return value of some function"""
         # pylint: disable=too-many-arguments
         if operator_context.operator == OperatorType.TRAIN_TEST_SPLIT:

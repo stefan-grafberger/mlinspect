@@ -11,7 +11,7 @@ from testfixtures import compare
 
 from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import DagNode, OperatorType, CodeReference
-from mlinspect.inspections._lineage import RowLineage
+from mlinspect.inspections._lineage import RowLineage, LineageId
 
 
 def test_label_binarize():
@@ -47,11 +47,11 @@ def test_label_binarize():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
     # FIXME: Add final DAG node annotation to after_call result
-    lineage_output = inspection_results_data_source[RowLineage(3)].to_pandas_df()
-    expected_lineage_df = DataFrame([[numpy.array([1]), 0],
-                                     [numpy.array([0]), 1],
-                                     [numpy.array([0]), 2]],
-                                    columns=['array', 'mlinspect_row_lineage_3_data_source_0'])
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([1]), {LineageId(0, 0)}],
+                                     [numpy.array([0]), {LineageId(0, 1)}],
+                                     [numpy.array([0]), {LineageId(0, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 

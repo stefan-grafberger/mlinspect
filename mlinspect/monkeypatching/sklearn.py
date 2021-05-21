@@ -43,7 +43,7 @@ class SklearnPreprocessingPatching:
                                                      operator_context,
                                                      [input_info.annotated_dfobject])
             result = original(input_infos[0].result_data, *args[1:], **kwargs)
-            annotated_df = SklearnBackend.after_call(function_info,
+            backend_result = SklearnBackend.after_call(function_info,
                                                      operator_context,
                                                      input_infos,
                                                      result)
@@ -53,7 +53,7 @@ class SklearnPreprocessingPatching:
             dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.PROJECTION_MODIFY, function_info,
                                description,
                                ["array"], optional_code_reference, optional_source_code)
-            add_dag_node(dag_node, [input_info.dag_node], annotated_df)
+            add_dag_node(dag_node, [input_info.dag_node], backend_result)
             return result
 
         return execute_patched_func(original, execute_inspections, *args, **kwargs)

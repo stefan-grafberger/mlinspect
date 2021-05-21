@@ -3,7 +3,9 @@ The Interface for the different instrumentation backends
 """
 import abc
 import dataclasses
-from typing import List
+from typing import List, Dict
+
+from mlinspect.inspections import Inspection
 
 
 @dataclasses.dataclass(frozen=True)
@@ -11,6 +13,13 @@ class AnnotatedDfObject:
     """ A dataframe-like object and its annotations """
     result_data: any
     result_annotation: any
+
+
+@dataclasses.dataclass(frozen=True)
+class BackendResult:
+    """ The annotated dataframe and the annotations for the current DAG node """
+    annotated_dfobject: AnnotatedDfObject
+    dag_node_annotation: Dict[Inspection, any]
 
 
 class Backend(metaclass=abc.ABCMeta):
@@ -27,7 +36,7 @@ class Backend(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def after_call(self, function_info, operator_context, input_infos: List[AnnotatedDfObject], return_value) \
-            -> AnnotatedDfObject:
+            -> BackendResult:
         """The return value of some function"""
         # pylint: disable=too-many-arguments, unused-argument
         raise NotImplementedError

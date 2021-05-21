@@ -5,7 +5,7 @@ from typing import List
 
 import pandas
 
-from ._backend import Backend, AnnotatedDfObject
+from ._backend import Backend, AnnotatedDfObject, BackendResult
 from ._backend_utils import build_annotation_df_from_iters, \
     create_wrapper_with_annotations
 from ._iter_creation import iter_input_data_source, iter_input_annotation_output_resampled, \
@@ -39,7 +39,7 @@ class PandasBackend(Backend):
 
     @staticmethod
     def after_call(function_info, operator_context, input_infos: List[AnnotatedDfObject], return_value) \
-            -> AnnotatedDfObject:
+            -> BackendResult:
         """The return value of some function"""
         # pylint: disable=too-many-arguments
         if operator_context.operator == OperatorType.DATA_SOURCE:
@@ -82,7 +82,7 @@ class PandasBackend(Backend):
 # Execute inspections functions
 # -------------------------------------------------------
 
-def execute_inspection_visits_data_source(operator_context, return_value) -> AnnotatedDfObject:
+def execute_inspection_visits_data_source(operator_context, return_value) -> BackendResult:
     """Execute inspections when the current operator is a data source and does not have parents in the DAG"""
     # pylint: disable=unused-argument
     inspection_count = len(singleton.inspections)
@@ -92,7 +92,7 @@ def execute_inspection_visits_data_source(operator_context, return_value) -> Ann
 
 
 def execute_inspection_visits_unary_operator(operator_context, input_data,
-                                             input_annotations, return_value_df, resampled) -> AnnotatedDfObject:
+                                             input_annotations, return_value_df, resampled) -> BackendResult:
     """Execute inspections when the current operator has one parent in the DAG"""
     # pylint: disable=too-many-arguments, unused-argument
     assert not resampled or "mlinspect_index" in return_value_df.columns
@@ -116,7 +116,7 @@ def execute_inspection_visits_unary_operator(operator_context, input_data,
 
 def execute_inspection_visits_join(operator_context, input_data_one,
                                    input_annotations_one, input_data_two, input_annotations_two,
-                                   return_value_df) -> AnnotatedDfObject:
+                                   return_value_df) -> BackendResult:
     """Execute inspections when the current operator has one parent in the DAG"""
     # pylint: disable=too-many-arguments, too-many-locals
     assert "mlinspect_index_x" in return_value_df
@@ -135,7 +135,7 @@ def execute_inspection_visits_join(operator_context, input_data_one,
     return return_value
 
 
-def execute_visits_and_store_results(iterators_for_inspections, return_value) -> AnnotatedDfObject:
+def execute_visits_and_store_results(iterators_for_inspections, return_value) -> BackendResult:
     """
     After creating the iterators we need depending on the operator type, we need to execute the
     generic inspection visits and store the annotations in the resulting data frame
@@ -154,7 +154,7 @@ def execute_visits_and_store_results(iterators_for_inspections, return_value) ->
 # Store inspection results functions
 # -------------------------------------------------------
 
-def store_inspection_outputs(annotation_iterators, return_value) -> AnnotatedDfObject:
+def store_inspection_outputs(annotation_iterators, return_value) -> BackendResult:
     """
     Stores the inspection annotations for the rows in the dataframe and the
     inspection annotations for the DAG operators in a map
@@ -164,4 +164,4 @@ def store_inspection_outputs(annotation_iterators, return_value) -> AnnotatedDfO
     for inspection in singleton.inspections:
         inspection_outputs[inspection] = inspection.get_operator_annotation_after_visit()
     new_return_value = create_wrapper_with_annotations(annotations_df, return_value)
-    return new_return_value
+    return BackendResult(new_return_value, inspection_outputs)
