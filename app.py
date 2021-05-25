@@ -554,8 +554,16 @@ def on_dag_node_hover(hover_data):
     [
         Input("dag", "selectedData"),
     ],
+    state=[
+        State("histogramforcolumns-checkbox", "checked"),
+        State("rowlineage-checkbox", "checked"),
+        State("materializefirstoutputrows-checkbox", "checked"),
+        State("nobiasintroduced-checkbox", "checked"),
+        State("noillegalfeatures-checkbox", "checked"),
+        State("nomissingembeddings-checkbox", "checked"),
+    ]
 )
-def on_dag_node_select(selected_data):
+def on_dag_node_select(selected_data, *inspections_and_checks):
     """
     When user selects DAG node, show detailed check and inspection results
     and emphasize corresponding source code.
@@ -582,7 +590,7 @@ def on_dag_node_select(selected_data):
         operator=node.operator_type.value,
         code_ref=node.code_reference.lineno,
     )
-    operator_details = get_result_details(node)
+    operator_details = get_result_details(node, *inspections_and_checks)
 
     return json.dumps(code_ref.__dict__), operator_details, header
 
@@ -880,12 +888,15 @@ def get_result_summary():
     return convert_dataframe_to_dash_table(check_result_df)
 
 
-def get_result_details(node):
+def get_result_details(node,
+                       histogramforcolumns, rowlineage, materializefirstoutputrows,
+                       nobiasintroduced, noillegalfeatures, nomissingembeddings):
     details = []
 
     # Show inspection results
     for inspection, result_dict in INSPECTOR_RESULT.inspection_to_annotations.items():
-        if isinstance(inspection, RowLineage) or isinstance(inspection, MaterializeFirstOutputRows):
+        if (isinstance(inspection, RowLineage) and rowlineage) or \
+            (isinstance(inspection, MaterializeFirstOutputRows) and materializefirstoutputrows):
             output_df = result_dict[node]
             output_table = convert_dataframe_to_dash_table(output_df)
             input_tables = [
@@ -901,7 +912,7 @@ def get_result_details(node):
                 output_table,
             ], className="result-item")
             details += [element]
-        elif isinstance(inspection, HistogramForColumns):
+        elif (isinstance(inspection, HistogramForColumns) and histogramforcolumns):
             if node not in result_dict:
                 continue
 
@@ -919,7 +930,7 @@ def get_result_details(node):
 
     # Show check results
     for check, result_obj in INSPECTOR_RESULT.check_to_check_results.items():
-        if isinstance(check, NoBiasIntroducedFor):
+        if (isinstance(check, NoBiasIntroducedFor) and nobiasintroduced):
             if node not in result_obj.bias_distribution_change:
                 continue
             dist_changes = result_obj.bias_distribution_change[node]
@@ -934,10 +945,10 @@ def get_result_details(node):
                 html.Div(graphs, className="result-item-content"),
             ], className="result-item")
             details += [element]
-        elif isinstance(check, NoIllegalFeatures):
+        elif (isinstance(check, NoIllegalFeatures) and noillegalfeatures):
             # already shown in results summary
             pass
-        elif isinstance(check, NoMissingEmbeddings):
+        elif (isinstance(check, NoMissingEmbeddings) and nomissingembeddings):
             if node not in result_obj.dag_node_to_missing_embeddings:
                 continue
             info = result_obj.dag_node_to_missing_embeddings[node]
