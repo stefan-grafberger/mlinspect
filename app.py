@@ -114,7 +114,7 @@ app.layout = dbc.Container([
                 html.H3("Pipeline Output"),
                 html.Pre(html.Code(id="pipeline-output"), id="pipeline-output-cell"),
             ], id="pipeline-output-container", className="container", hidden=True),
-        ], width=7, style={"min-width": str(100*7/12.)+"%"}),
+        ], width=7, style={"minWidth": str(100*7/12.)+"%"}),
         # DAG
         dbc.Col([
             # Extracted DAG
@@ -137,8 +137,8 @@ app.layout = dbc.Container([
                 html.Div(id="hovered-code-reference"),
                 html.Div(id="selected-code-reference"),
             ], id="code-reference-container", className="container", hidden=True),
-        ], width=5, style={"min-width": str(100*5/12.)+"%"}),
-    ], style={"min-width": "100%"}),
+        ], width=5, style={"minWidth": str(100*5/12.)+"%"}),
+    ], style={"minWidth": "100%"}),
     dbc.Row([
         # Inspections
         dbc.Col([
@@ -179,7 +179,7 @@ app.layout = dbc.Container([
                     ], className="custom-switch custom-control"),
                 ]),
             ]),
-        ], width=3, style={"min-width": "25%"}),
+        ], width=3, style={"minWidth": "25%"}),
         # Checks
         dbc.Col([
             dbc.FormGroup([
@@ -229,14 +229,14 @@ app.layout = dbc.Container([
                     ], className="custom-switch custom-control"),
                 ], id="checks"),
             ]),
-        ], width=3, style={"min-width": "25%"}),
+        ], width=3, style={"minWidth": "25%"}),
         # Execute
         dbc.Col([
             # Execute inspection
             html.Br(),
             html.Br(),
             dbc.Button(id="execute", color="primary", size="lg", className="mr-1 play-button"),
-        ], width=1, style={"min-width": str(100*1/12.)+"%"}),
+        ], width=1, style={"minWidth": str(100*1/12.)+"%"}),
         # Details
         dbc.Col([
             # Summary
@@ -252,8 +252,8 @@ app.layout = dbc.Container([
                 html.Div("Select an operator in the DAG to see operator-specific details",
                          id="results-details"),
             ], id="results-details-container"),
-        ], id="results-container", width=5, style={"min-width": str(100*5/12.)+"%"}),
-    ], id="inspector-definition-container", className="container", style={"min-width": "100%"}),
+        ], id="results-container", width=5, style={"minWidth": str(100*5/12.)+"%"}),
+    ], id="inspector-definition-container", className="container", style={"minWidth": "100%"}),
     html.Div(id="clientside-pipeline-code", hidden=True)
 ], style={"fontSize": "14px"}, id="app-container")
 
