@@ -19,7 +19,7 @@ complications = data.groupby('age_group') \
     .agg(mean_complications=('complications', 'mean'))
 data = data.merge(complications, on=['age_group'])
 data['label'] = data['complications'] > 1.2 * data['mean_complications']
-data = data[['smoker', 'last_name', 'county', 'num_children', 'race', 'income', 'label']]
+data = data[['smoker', 'last_name', 'county', 'num_children', 'income', 'label']]
 data = data[data['county'].isin(['county2', 'county3'])]
 
 impute_and_one_hot_encode = Pipeline([
@@ -27,8 +27,7 @@ impute_and_one_hot_encode = Pipeline([
     ('encode', OneHotEncoder(sparse=False, handle_unknown='ignore'))
 ])
 featurisation = ColumnTransformer(transformers=[
-    ("impute_and_one_hot_encode", impute_and_one_hot_encode,
-     ['smoker', 'county', 'race']),
+    ("impute_and_one_hot_encode", impute_and_one_hot_encode, ['smoker', 'county']),
     ('word2vec', MyW2VTransformer(min_count=2), ['last_name']),
     ('numeric', StandardScaler(), ['num_children', 'income'])
 ])

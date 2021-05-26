@@ -11,8 +11,8 @@ from mlinspect.utils import get_project_root
 
 train_data = pd.read_csv("{}/example_pipelines/adult_demo/train.csv".format(get_project_root()),
                          na_values='?', index_col=0)
-test_data = pd.read_csv("{}/example_pipelines/adult_demo/test.csv".format(get_project_root()),
-                        na_values='?', index_col=0)
+# test_data = pd.read_csv("{}/example_pipelines/adult_demo/test.csv".format(get_project_root()),
+#                         na_values='?', index_col=0)
 
 train_data = train_data.dropna()
 # test_data = test_data.dropna()
