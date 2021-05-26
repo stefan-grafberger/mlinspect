@@ -310,7 +310,9 @@ app.clientside_callback(
 @app.callback(
     [
         Output("histogram-sensitive-columns", "options"),
+        Output("histogram-sensitive-columns", "value"),
         Output("nobiasintroduced-sensitive-columns", "options"),
+        Output("nobiasintroduced-sensitive-columns", "value"),
     ],
     [
         Input("healthcare-pipeline", "n_clicks"),
@@ -319,7 +321,7 @@ app.clientside_callback(
 )
 def on_sensitive_column_options_changed(healthcare_clicked, adult_clicked):
     if not healthcare_clicked and not adult_clicked:
-        return dash.no_update
+        return [dash.no_update]*4
 
     ctx = dash.callback_context
     elem_id = ctx.triggered[0]["prop_id"].split(".")[0]
@@ -332,7 +334,7 @@ def on_sensitive_column_options_changed(healthcare_clicked, adult_clicked):
         columns = []
 
     options = [{"label": c, "value": c} for c in columns]
-    return options, options
+    return options, [], options, []
 
 
 @app.callback(
@@ -926,7 +928,7 @@ def get_result_details(node,
             ], className="result-item")
             details += [element]
         else:
-            print("inspection not implemented:", inspection)
+            print("inspection not selected or not implemented:", inspection)
 
     # Show check results
     for check, result_obj in INSPECTOR_RESULT.check_to_check_results.items():
@@ -959,7 +961,7 @@ def get_result_details(node,
             ], className="result-item")
             details += [element]
         else:
-            print("check not implemented:", check)
+            print("check not selected or not implemented:", check)
 
     return details
 
