@@ -112,10 +112,10 @@ def test_frame_dropna():
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
-    lineage_output = inspection_results_data_source[RowLineage(2)].to_pandas_df()
-    expected_lineage_df = DataFrame([[0., 0],
-                                     [2., 1]],
-                                    columns=['A', 'mlinspect_row_lineage_2_data_source_0'])
+    lineage_output = inspection_results_data_source[RowLineage(2)]
+    expected_lineage_df = DataFrame([[0., {LineageId(0, 0)}],
+                                     [2.,  {LineageId(0, 1)}]],
+                                    columns=['A', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 

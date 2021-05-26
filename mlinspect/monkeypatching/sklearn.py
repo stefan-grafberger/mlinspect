@@ -39,8 +39,7 @@ class SklearnPreprocessingPatching:
                                         optional_source_code)
 
             operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
-            input_infos = SklearnBackend.before_call(operator_context,
-                                                     [input_info.annotated_dfobject])
+            input_infos = SklearnBackend.before_call(operator_context, [input_info.annotated_dfobject])
             result = original(input_infos[0].result_data, *args[1:], **kwargs)
             backend_result = SklearnBackend.after_call(operator_context,
                                                        input_infos,

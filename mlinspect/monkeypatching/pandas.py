@@ -1,6 +1,7 @@
 """
 Monkey patching for pandas
 """
+import copy
 import os
 from functools import partial
 
@@ -62,13 +63,10 @@ class DataFramePatching:
             """ Execute inspections, add DAG node """
             function_info = ('pandas.core.frame', 'DataFrame')
             operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
-            input_infos = PandasBackend.before_call(operator_context,
-                                                    [])
+            input_infos = PandasBackend.before_call(operator_context, [])
             original(self, *args, **kwargs)
             result = self
-            backend_result = PandasBackend.after_call(operator_context,
-                                                      input_infos,
-                                                      result)
+            backend_result = PandasBackend.after_call(operator_context, input_infos, result)
 
             columns = list(self.columns)  # pylint: disable=no-member
             dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.DATA_SOURCE, function_info,
@@ -85,25 +83,25 @@ class DataFramePatching:
 
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            module = ('pandas.core.frame', 'dropna')
+            function_info = ('pandas.core.frame', 'dropna')
 
-            input_info = get_input_info(self, caller_filename, lineno, module, optional_code_reference,
+            input_info = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
                                         optional_source_code)
-            # TODO: Test passing of optional args/kwargs
-            # TODO: Maybe we do not want to have UDFs like that in our engine DAG but introduce corresponding
-            #  abstract functions that then map to different implementations in different backends
-            # FIXME: Introduce a flag to LogicalSelection to indicate whether e.g. inspection annotations with
-            #  null values can change the result of the user function call if we are not careful?
-            partial_dropna = lambda x: original(x, *args, **kwargs)
-            # user_operation = LogicalSelection(1, partial_dropna, DataframeType.PANDAS_DF)
-            engine_input = [input_info.engine_input]
-            fallback = partial(original, self, *args, **kwargs)
-            # engine_result = _pipeline_executor.singleton.engine.run(engine_input, user_operation, fallback)
-            # user_op_result = engine_result.user_op_result.to_pandas_df()
-            # dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.SELECTION, module,
-            #                    "dropna", list(user_op_result.columns), optional_code_reference, optional_source_code)
-            # add_dag_node(dag_node, [input_info.dag_node], user_op_result, engine_result)
-            # return user_op_result
+            operator_context = OperatorContext(OperatorType.SELECTION, function_info)
+            input_infos = PandasBackend.before_call(operator_context, [input_info.annotated_dfobject])
+            # No input_infos copy needed because it's only a selection and the rows not being removed don't change
+            result = original(input_infos[0].result_data, *args[1:], **kwargs)
+            if result is None:
+                raise NotImplementedError("TODO: Support inplace dropna")
+            backend_result = PandasBackend.after_call(operator_context,
+                                                      input_infos,
+                                                      result)
+            result = backend_result.annotated_dfobject.result_data
+            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.SELECTION, function_info,
+                               "dropna", list(result.columns), optional_code_reference, optional_source_code)
+            add_dag_node(dag_node, [input_info.dag_node], backend_result)
+
+            return result
 
         return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
 
@@ -224,9 +222,9 @@ class LocIndexerPatching:
         #                         "to {}".format(columns), columns, optional_code_reference, optional_source_code)
         #     add_dag_node(dag_node, [input_info.dag_node], result, engine_result)
         # else:
-        #     result = original(self, *args, **kwargs)
-        #
-        # return result
+        result = original(self, *args, **kwargs)
+
+        return result
 
 
 @gorilla.patches(pandas.Series)
