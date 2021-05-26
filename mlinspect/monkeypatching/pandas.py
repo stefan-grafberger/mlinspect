@@ -33,10 +33,9 @@ class PandasPatching:
             function_info = ('pandas.io.parsers', 'read_csv')
 
             operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
-            input_infos = PandasBackend.before_call(function_info, operator_context, [])
+            input_infos = PandasBackend.before_call(operator_context, [])
             result = original(*args, **kwargs)
-            backend_result = PandasBackend.after_call(function_info,
-                                                      operator_context,
+            backend_result = PandasBackend.after_call(operator_context,
                                                       input_infos,
                                                       result)
 
