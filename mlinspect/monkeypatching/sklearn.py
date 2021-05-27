@@ -257,26 +257,22 @@ class SklearnOneHotEncoderPatching:
         """ Patch for ('sklearn.preprocessing._encoders.OneHotEncoder', 'fit_transform') """
         # pylint: disable=no-method-argument
         original = gorilla.get_original_attribute(preprocessing.OneHotEncoder, 'fit_transform')
-        module = ('sklearn.preprocessing._encoders', 'OneHotEncoder')
-        input_info = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno, module,
+        function_info = ('sklearn.preprocessing._encoders', 'OneHotEncoder')
+        input_info = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno, function_info,
                                     self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
-        partial_fit_transform = lambda x: original(self, x, *args[1:], **kwargs)
-        input_type = DataframeType.get_dataframe_type(args[0])
-        user_operation = LogicalProjectionTransformer(1, partial_fit_transform, module, input_type)
-        engine_input = [input_info.engine_input]
-        fallback = partial(original, self, *args, **kwargs)
-        engine_result = _pipeline_executor.singleton.engine.run(engine_input, user_operation, fallback)
-        if self.sparse:  # pylint: disable=no-member
-            result = engine_result.user_op_result.to_csr_matrix()
-            assert isinstance(result, csr_matrix)
-        else:
-            result = engine_result.user_op_result.to_numpy_2d_array()
-            assert isinstance(result, MlinspectNdarray)
-        dag_node = DagNode2(self.mlinspect_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
-                            OperatorType2.TRANSFORMER, module, "One-Hot Encoder", ['array'],
+
+        operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
+        input_infos = SklearnBackend.before_call(operator_context, [input_info.annotated_dfobject])
+        result = original(self, input_infos[0].result_data, *args[1:], **kwargs)
+        backend_result = SklearnBackend.after_call(operator_context,
+                                                   input_infos,
+                                                   result)
+        new_return_value = backend_result.annotated_dfobject.result_data
+        dag_node = DagNode(self.mlinspect_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
+                            OperatorType.TRANSFORMER, function_info, "One-Hot Encoder", ['array'],
                             self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
-        add_dag_node(dag_node, [input_info.dag_node], result, engine_result)
-        return result
+        add_dag_node(dag_node, [input_info.dag_node], backend_result)
+        return new_return_value
 
 
 @gorilla.patches(tree.DecisionTreeClassifier)
