@@ -217,6 +217,65 @@ class SklearnStandardScalerPatching:
         return new_return_value
 
 
+@gorilla.patches(preprocessing.KBinsDiscretizer)
+class SklearnKBinsDiscretizerPatching:
+    """ Patches for sklearn KBinsDiscretizer"""
+
+    # pylint: disable=too-few-public-methods
+
+    @gorilla.name('__init__')
+    @gorilla.settings(allow_hit=True)
+    def patched__init__(self, n_bins=5, *, encode='onehot', strategy='quantile', mlinspect_op_id=None,
+                        mlinspect_caller_filename=None, mlinspect_lineno=None,
+                        mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None):
+        """ Patch for ('sklearn.preprocessing._discretization', 'KBinsDiscretizer') """
+        # pylint: disable=no-method-argument, attribute-defined-outside-init
+        original = gorilla.get_original_attribute(preprocessing.KBinsDiscretizer, '__init__')
+
+        self.mlinspect_op_id = mlinspect_op_id
+        self.mlinspect_caller_filename = mlinspect_caller_filename
+        self.mlinspect_lineno = mlinspect_lineno
+        self.mlinspect_optional_code_reference = mlinspect_optional_code_reference
+        self.mlinspect_optional_source_code = mlinspect_optional_source_code
+
+        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            original(self, n_bins=n_bins, encode=encode, strategy=strategy)
+
+            self.mlinspect_op_id = op_id
+            self.mlinspect_caller_filename = caller_filename
+            self.mlinspect_lineno = lineno
+            self.mlinspect_optional_code_reference = optional_code_reference
+            self.mlinspect_optional_source_code = optional_source_code
+
+        return execute_patched_func(original, execute_inspections, self, n_bins=n_bins, encode=encode,
+                                    strategy=strategy)
+
+    @gorilla.name('fit_transform')
+    @gorilla.settings(allow_hit=True)
+    def patched_fit_transform(self, *args, **kwargs):
+        """ Patch for ('sklearn.preprocessing._discretization.KBinsDiscretizer', 'fit_transform') """
+        # pylint: disable=no-method-argument
+        original = gorilla.get_original_attribute(preprocessing.KBinsDiscretizer, 'fit_transform')
+        function_info = ('sklearn.preprocessing._discretization', 'KBinsDiscretizer')
+        input_info = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno, function_info,
+                                    self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+
+        operator_context = OperatorContext(OperatorType.TRANSFORMER, function_info)
+        input_infos = SklearnBackend.before_call(operator_context, [input_info.annotated_dfobject])
+        result = original(self, input_infos[0].result_data, *args[1:], **kwargs)
+        backend_result = SklearnBackend.after_call(operator_context,
+                                                   input_infos,
+                                                   result)
+        new_return_value = backend_result.annotated_dfobject.result_data
+        assert isinstance(new_return_value, MlinspectNdarray)
+        dag_node = DagNode(self.mlinspect_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
+                           OperatorType.TRANSFORMER, function_info, "K-Bins Discretizer", ['array'],
+                           self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        add_dag_node(dag_node, [input_info.dag_node], backend_result)
+        return new_return_value
+
+
 @gorilla.patches(preprocessing.OneHotEncoder)
 class SklearnOneHotEncoderPatching:
     """ Patches for sklearn OneHotEncoder"""

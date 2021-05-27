@@ -60,7 +60,7 @@ def test_standard_scaler():
     """
     test_code = cleandoc("""
                 import pandas as pd
-                from sklearn.preprocessing import label_binarize, StandardScaler
+                from sklearn.preprocessing import StandardScaler
                 import numpy as np
 
                 df = pd.DataFrame({'A': [1, 2, 10, 5]})
@@ -91,6 +91,47 @@ def test_standard_scaler():
     expected_lineage_df = DataFrame([[numpy.array([-1.0]), {LineageId(0, 0)}],
                                      [numpy.array([-0.7142857142857143]), {LineageId(0, 1)}],
                                      [numpy.array([1.5714285714285714]), {LineageId(0, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
+def test_kbins_discretizer():
+    """
+    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+                from sklearn.preprocessing import KBinsDiscretizer
+                import numpy as np
+
+                df = pd.DataFrame({'A': [1, 2, 10, 5]})
+                discretizer = KBinsDiscretizer(n_bins=3, encode='ordinal', strategy='uniform')
+                encoded_data = discretizer.fit_transform(df)
+                expected = np.array([[0.], [0.], [2.], [1.]])
+                assert np.allclose(encoded_data, expected)
+                """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(3)])
+
+    expected_dag = networkx.DiGraph()
+    expected_data_source = DagNode(0, "<string-source>", 5, OperatorType.DATA_SOURCE,
+                                  ('pandas.core.frame', 'DataFrame'), description='', columns=['A'],
+                                  optional_code_reference=CodeReference(5, 5, 5, 39),
+                                  optional_source_code="pd.DataFrame({'A': [1, 2, 10, 5]})")
+    expected_discretizer = DagNode(1, "<string-source>", 6, OperatorType.TRANSFORMER,
+                              module=('sklearn.preprocessing._discretization', 'KBinsDiscretizer'),
+                              description='K-Bins Discretizer', columns=['array'],
+                              optional_code_reference=CodeReference(6, 14, 6, 78),
+                              optional_source_code="KBinsDiscretizer(n_bins=3, encode='ordinal', strategy='uniform')")
+    expected_dag.add_edge(expected_data_source, expected_discretizer)
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_discretizer]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([0.]), {LineageId(0, 0)}],
+                                     [numpy.array([0.]), {LineageId(0, 1)}],
+                                     [numpy.array([2.]), {LineageId(0, 2)}]],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
