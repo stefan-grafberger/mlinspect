@@ -8,8 +8,8 @@ from pandas import DataFrame, Series
 from scipy.sparse import csr_matrix
 
 from ._backend import AnnotatedDfObject
-from ._sklearn_backend_ndarray_wrapper import MlinspectNdarray
 from ..inspections._inspection_input import ColumnInfo
+from ..monkeypatching.numpy import MlinspectNdarray
 
 
 def get_annotation_rows(input_annotations, inspection_index):

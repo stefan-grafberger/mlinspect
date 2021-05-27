@@ -3,11 +3,13 @@ The scikit-learn backend
 """
 from typing import List
 
+import numpy
 import pandas
 
 from ._backend import Backend, AnnotatedDfObject, BackendResult
 from ._pandas_backend import execute_inspection_visits_unary_operator
 from ..instrumentation._dag_node import OperatorType
+from ..monkeypatching.numpy import MlinspectNdarray
 
 
 class SklearnBackend(Backend):
@@ -37,7 +39,8 @@ class SklearnBackend(Backend):
                                                                     return_value,
                                                                     True)
             input_infos[0].result_data.drop("mlinspect_index", axis=1, inplace=True)
-        elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY}:
+        elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY,
+                                           OperatorType.TRANSFORMER}:
             return_value = execute_inspection_visits_unary_operator(operator_context,
                                                                     input_infos[0].result_data,
                                                                     input_infos[0].result_annotation,
@@ -46,5 +49,4 @@ class SklearnBackend(Backend):
         else:
             raise NotImplementedError("SklearnBackend doesn't know any operations of type '{}' yet!"
                                       .format(operator_context.operator))
-
         return return_value
