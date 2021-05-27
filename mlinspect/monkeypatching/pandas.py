@@ -9,8 +9,10 @@ import pandas
 from mlinspect import OperatorType, DagNode
 from mlinspect.backends._pandas_backend import PandasBackend
 from mlinspect.inspections._inspection_input import OperatorContext
+from mlinspect.instrumentation._pipeline_executor import singleton
 from mlinspect.monkeypatching.monkey_patching_utils import execute_patched_func, get_input_info, add_dag_node, \
     get_dag_node_for_id, execute_patched_func_no_op_id
+from mlinspect.monkeypatching.sklearn import call_info_singleton
 
 
 @gorilla.patches(pandas)
@@ -340,38 +342,36 @@ class LocIndexerPatching:
         original = gorilla.get_original_attribute(
             pandas.core.indexing._LocIndexer, '__getitem__')  # pylint: disable=protected-access
 
-        # if call_info_singleton.column_transformer_active:
-        #     op_id = _pipeline_executor.singleton.get_next_op_id()
-        #     caller_filename = call_info_singleton.transformer_filename
-        #     lineno = call_info_singleton.transformer_lineno
-        #     module = call_info_singleton.module
-        #     optional_code_reference = call_info_singleton.transformer_optional_code_reference
-        #     optional_source_code = call_info_singleton.transformer_optional_source_code
-        #
-        #     if isinstance(args[0], tuple) and not args[0][0].start and not args[0][0].stop \
-        #             and isinstance(args[0][1], list) and isinstance(args[0][1][0], str):
-        #         # Projection to one or multiple columns, return value is df
-        #         columns = args[0][1]
-        #         user_operation = LogicalProjection(1, columns)
-        #         dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.PROJECTION, module,
-        #                             "to {}".format(columns), columns, optional_code_reference, optional_source_code)
-        #     else:
-        #         raise NotImplementedError()
-        #
-        #     input_info = get_input_info(self.obj, caller_filename,  # pylint: disable=no-member
-        #                                 lineno, module, optional_code_reference, optional_source_code)
-        #     engine_input = [input_info.engine_input]
-        #     fallback = partial(original, self, *args, **kwargs)
-        #     engine_result = _pipeline_executor.singleton.engine.run(engine_input, user_operation, fallback)
-        #
-        #     result = engine_result.user_op_result.to_pandas_df()
-        #     add_dag_node(dag_node, [input_info.dag_node], result, engine_result)
-        #
-        #     dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.PROJECTION, module,
-        #                         "to {}".format(columns), columns, optional_code_reference, optional_source_code)
-        #     add_dag_node(dag_node, [input_info.dag_node], result, engine_result)
-        # else:
-        result = original(self, *args, **kwargs)
+        if call_info_singleton.column_transformer_active:
+            op_id = singleton.get_next_op_id()
+            caller_filename = call_info_singleton.transformer_filename
+            lineno = call_info_singleton.transformer_lineno
+            function_info = call_info_singleton.module
+            optional_code_reference = call_info_singleton.transformer_optional_code_reference
+            optional_source_code = call_info_singleton.transformer_optional_source_code
+
+            if isinstance(args[0], tuple) and not args[0][0].start and not args[0][0].stop \
+                    and isinstance(args[0][1], list) and isinstance(args[0][1][0], str):
+                # Projection to one or multiple columns, return value is df
+                columns = args[0][1]
+            else:
+                raise NotImplementedError()
+
+            operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
+            input_info = get_input_info(self.obj, caller_filename, lineno, function_info, optional_code_reference,
+                                        optional_source_code)
+            input_infos = PandasBackend.before_call(operator_context, [input_info.annotated_dfobject])
+            result = original(self, *args, **kwargs)
+            backend_result = PandasBackend.after_call(operator_context,
+                                                      input_infos,
+                                                      result)
+            result = backend_result.annotated_dfobject.result_data
+
+            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.PROJECTION, function_info,
+                               "to {}".format(columns), columns, optional_code_reference, optional_source_code)
+            add_dag_node(dag_node, [input_info.dag_node], backend_result)
+        else:
+            result = original(self, *args, **kwargs)
 
         return result
 

@@ -65,7 +65,7 @@ class SklearnCallInfo:
     transformer_op_id = None
     transformer_filename = None
     transformer_lineno = None
-    module = None
+    function_info = None
     transformer_optional_code_reference = None
     transformer_optional_source_code = None
     column_transformer_active = False
@@ -132,29 +132,28 @@ class SklearnComposePatching:
         # pylint: disable=no-method-argument, unused-argument, too-many-locals
         original = gorilla.get_original_attribute(compose.ColumnTransformer, '_hstack')
         input_tuple = args[0]
-        module = ('sklearn.compose._column_transformer', 'ColumnTransformer')
+        function_info = ('sklearn.compose._column_transformer', 'ColumnTransformer')
         input_infos = []
         for input_df_obj in input_tuple:
-            input_info = get_input_info(input_df_obj, self.mlinspect_filename, self.mlinspect_lineno, module,
+            input_info = get_input_info(input_df_obj, self.mlinspect_filename, self.mlinspect_lineno, function_info,
                                         self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
             input_infos.append(input_info)
 
-        user_operation = LogicalConcat(1, True, self.sparse_output_)  # pylint: disable=no-member
-        engine_inputs = [input_info.engine_input for input_info in input_infos]
-        fallback = partial(original, self, *args, **kwargs)
-        engine_result = _pipeline_executor.singleton.engine.run(engine_inputs, user_operation, fallback)
-
-        if self.sparse_output_:  # pylint: disable=no-member
-            result = engine_result.user_op_result.to_csr_matrix()
-        else:
-            result = engine_result.user_op_result.to_numpy_2d_array()
-            assert isinstance(result, MlinspectNdarray)
+        operator_context = OperatorContext(OperatorType.CONCATENATION, function_info)
+        input_annotated_dfs = [input_info.annotated_dfobject for input_info in input_infos]
+        backend_input_infos = SklearnBackend.before_call(operator_context, input_annotated_dfs)
+        # No input_infos copy needed because it's only a selection and the rows not being removed don't change
+        result = original(self, *args, **kwargs)
+        backend_result = SklearnBackend.after_call(operator_context,
+                                                   backend_input_infos,
+                                                   result)
+        result = backend_result.annotated_dfobject.result_data
 
         dag_node = DagNode(self.mlinspect_op_id, self.mlinspect_filename, self.mlinspect_lineno,
-                           OperatorType.CONCATENATION, module, "", ['array'], self.mlinspect_optional_code_reference,
-                           self.mlinspect_optional_source_code)
+                           OperatorType.CONCATENATION, function_info, "", ['array'],
+                           self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
         input_dag_nodes = [input_info.dag_node for input_info in input_infos]
-        add_dag_node(dag_node, input_dag_nodes, result, engine_result)
+        add_dag_node(dag_node, input_dag_nodes, backend_result)
 
         return result
 

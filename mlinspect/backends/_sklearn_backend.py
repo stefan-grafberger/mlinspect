@@ -9,7 +9,7 @@ from pandas import DataFrame, Series
 from scipy.sparse import csr_matrix
 
 from ._backend import Backend, AnnotatedDfObject, BackendResult
-from ._iter_creation import iter_input_annotation_output_sink_op
+from ._iter_creation import iter_input_annotation_output_sink_op, iter_input_annotation_output_nary_op
 from ._pandas_backend import execute_inspection_visits_unary_operator, store_inspection_outputs
 from ..instrumentation._dag_node import OperatorType
 from ..instrumentation._pipeline_executor import singleton
@@ -56,6 +56,8 @@ class SklearnBackend(Backend):
                                                              input_infos[0].result_annotation,
                                                              input_infos[1].result_data,
                                                              input_infos[1].result_annotation)
+        elif operator_context.operator == OperatorType.CONCATENATION:
+            return_value = execute_inspection_visits_nary_op(operator_context, input_infos, return_value)
         else:
             raise NotImplementedError("SklearnBackend doesn't know any operations of type '{}' yet!"
                                       .format(operator_context.operator))
@@ -79,6 +81,20 @@ def execute_inspection_visits_sink_op(operator_context, data, data_annotation, t
                                                                      operator_context)
     annotation_iterators = execute_visits(iterators_for_inspections)
     return_value = store_inspection_outputs(annotation_iterators, None)
+    return return_value
+
+
+def execute_inspection_visits_nary_op(operator_context, annotated_dfs: List[AnnotatedDfObject],
+                                      return_value_df) -> BackendResult:
+    """Execute inspections"""
+    # pylint: disable=too-many-arguments
+    inspection_count = len(singleton.inspections)
+    iterators_for_inspections = iter_input_annotation_output_nary_op(inspection_count,
+                                                                     annotated_dfs,
+                                                                     return_value_df,
+                                                                     operator_context)
+    annotation_iterators = execute_visits(iterators_for_inspections)
+    return_value = store_inspection_outputs(annotation_iterators, return_value_df)
     return return_value
 
 
