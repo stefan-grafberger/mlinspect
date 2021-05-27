@@ -239,6 +239,44 @@ def test_frame__getitem__selection():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
+def test_frame_replace():
+    """
+    Tests whether the monkey patching of ('pandas.core.frame', 'replace') works
+    """
+    test_code = cleandoc("""
+        import pandas as pd
+
+        df = pd.DataFrame(['Low', 'Medium', 'Low', 'High', None], columns=['A'])
+        df_replace = df.replace('Medium', 'Low')
+        df_expected = pd.DataFrame(['Low', 'Low', 'Low', 'High', None], columns=['A'])
+        pd.testing.assert_frame_equal(df_replace.reset_index(drop=True), df_expected.reset_index(drop=True))
+        """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(2)])
+    inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[2])
+
+    expected_dag = networkx.DiGraph()
+    expected_missing_op = DagNode(0, "<string-source>", 3, OperatorType.DATA_SOURCE,
+                                  ('pandas.core.frame', 'DataFrame'), description='', columns=['A'],
+                                  optional_code_reference=CodeReference(3, 5, 3, 72),
+                                  optional_source_code="pd.DataFrame(['Low', 'Medium', 'Low', 'High', None], "
+                                                       "columns=['A'])")
+    expected_select = DagNode(1, "<string-source>", 4, OperatorType.PROJECTION_MODIFY,
+                              module=('pandas.core.frame', 'replace'), description="Replace 'Medium' with 'Low'",
+                              columns=['A'], optional_code_reference=CodeReference(4, 13, 4, 40),
+                              optional_source_code="df.replace('Medium', 'Low')")
+    expected_dag.add_edge(expected_missing_op, expected_select)
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
+    lineage_output = inspection_results_data_source[RowLineage(2)]
+    expected_lineage_df = DataFrame([['Low', {LineageId(0, 0)}],
+                                     ['Low', {LineageId(0, 1)}]],
+                                    columns=['A', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
 def test_series__init__():
     """
     Tests whether the monkey patching of ('pandas.core.series', 'Series') works

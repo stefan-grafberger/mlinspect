@@ -1,18 +1,14 @@
 """
 Monkey patching for pandas
 """
-import copy
 import os
-from functools import partial
 
 import gorilla
 import pandas
 
 from mlinspect import OperatorType, DagNode
-from mlinspect.backends._backend import AnnotatedDfObject
 from mlinspect.backends._pandas_backend import PandasBackend
 from mlinspect.inspections._inspection_input import OperatorContext
-from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.monkeypatching.monkey_patching_utils import execute_patched_func, get_input_info, add_dag_node
 
 
@@ -172,6 +168,37 @@ class DataFramePatching:
             #                     description, columns, optional_code_reference, optional_source_code)
             # add_dag_node(dag_node, [input_dag_node], result, engine_result)
             # return result
+
+        return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
+
+    @gorilla.name('replace')
+    @gorilla.settings(allow_hit=True)
+    def patched_replace(self, *args, **kwargs):
+        """ Patch for ('pandas.core.frame', 'replace') """
+        original = gorilla.get_original_attribute(pandas.DataFrame, 'replace')
+
+        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            function_info = ('pandas.core.frame', 'replace')
+
+            input_info = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
+                                        optional_source_code)
+            operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
+            input_infos = PandasBackend.before_call(operator_context, [input_info.annotated_dfobject])
+            # No input_infos copy needed because it's only a selection and the rows not being removed don't change
+            result = original(input_infos[0].result_data, *args, **kwargs)
+            backend_result = PandasBackend.after_call(operator_context,
+                                                      input_infos,
+                                                      result)
+            result = backend_result.annotated_dfobject.result_data
+            if isinstance(args[0], dict):
+                raise NotImplementedError("TODO: Add support for replace with dicts")
+            description = "Replace '{}' with '{}'".format(args[0], args[1])
+            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.PROJECTION_MODIFY, function_info,
+                               description, list(result.columns), optional_code_reference, optional_source_code)
+            add_dag_node(dag_node, [input_info.dag_node], backend_result)
+
+            return result
 
         return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
 
