@@ -44,6 +44,7 @@ class SklearnPreprocessingPatching:
             backend_result = SklearnBackend.after_call(operator_context,
                                                        input_infos,
                                                        result)
+            new_return_value = backend_result.annotated_dfobject.result_data
 
             classes = kwargs['classes']
             description = "label_binarize, classes: {}".format(classes)
@@ -51,7 +52,8 @@ class SklearnPreprocessingPatching:
                                description,
                                ["array"], optional_code_reference, optional_source_code)
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
-            return result
+
+            return new_return_value
 
         return execute_patched_func(original, execute_inspections, *args, **kwargs)
 
@@ -269,8 +271,8 @@ class SklearnOneHotEncoderPatching:
                                                    result)
         new_return_value = backend_result.annotated_dfobject.result_data
         dag_node = DagNode(self.mlinspect_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
-                            OperatorType.TRANSFORMER, function_info, "One-Hot Encoder", ['array'],
-                            self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+                           OperatorType.TRANSFORMER, function_info, "One-Hot Encoder", ['array'],
+                           self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
         return new_return_value
 
@@ -328,45 +330,52 @@ class SklearnDecisionTreePatching:
         """ Patch for ('sklearn.tree._classes.DecisionTreeClassifier', 'fit') """
         # pylint: disable=no-method-argument, too-many-locals
         original = gorilla.get_original_attribute(tree.DecisionTreeClassifier, 'fit')
-        module = ('sklearn.tree._classes', 'DecisionTreeClassifier')
+        function_info = ('sklearn.tree._classes', 'DecisionTreeClassifier')
 
-        input_info_train_data = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno, module,
-                                               self.mlinspect_optional_code_reference,
+        # Train data
+        input_info_train_data = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno,
+                                               function_info, self.mlinspect_optional_code_reference,
                                                self.mlinspect_optional_source_code)
-
         train_data_op_id = _pipeline_executor.singleton.get_next_op_id()
-        train_data_dag_node = DagNode2(train_data_op_id, self.mlinspect_caller_filename,
-                                       self.mlinspect_lineno, OperatorType2.TRAIN_DATA, module, "Train Data", ["array"],
-                                       self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
-        train_data_operation = LogicalNoOp(1)
-        engine_input = [input_info_train_data.engine_input]
-        fallback = lambda: args[0]
-        engine_result_data = _pipeline_executor.singleton.engine.run(engine_input, train_data_operation, fallback)
-        add_dag_node(train_data_dag_node, [input_info_train_data.dag_node], args[0], engine_result_data)
+        train_data_dag_node = DagNode(train_data_op_id, self.mlinspect_caller_filename,
+                                      self.mlinspect_lineno, OperatorType.TRAIN_DATA, function_info, "Train Data",
+                                      ["array"], self.mlinspect_optional_code_reference,
+                                      self.mlinspect_optional_source_code)
+        operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
+        input_infos = SklearnBackend.before_call(operator_context, [input_info_train_data.annotated_dfobject])
+        data_backend_result = SklearnBackend.after_call(operator_context,
+                                                        input_infos,
+                                                        args[0])
+        add_dag_node(train_data_dag_node, [input_info_train_data.dag_node], data_backend_result)
+        train_data_result = data_backend_result.annotated_dfobject.result_data
 
-        input_info_train_labels = get_input_info(args[1], self.mlinspect_caller_filename, self.mlinspect_lineno, module,
-                                                 self.mlinspect_optional_code_reference,
+        # Train labels
+        operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
+        input_info_train_labels = get_input_info(args[1], self.mlinspect_caller_filename, self.mlinspect_lineno,
+                                                 function_info, self.mlinspect_optional_code_reference,
                                                  self.mlinspect_optional_source_code)
         train_label_op_id = _pipeline_executor.singleton.get_next_op_id()
-        train_labels_dag_node = DagNode2(train_label_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
-                                         OperatorType2.TRAIN_LABELS, module, "Train Labels", ["array"],
-                                         self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
-        train_data_operation = LogicalNoOp(1)
-        engine_input = [input_info_train_labels.engine_input]
-        fallback = lambda: args[1]
-        engine_result_labels = _pipeline_executor.singleton.engine.run(engine_input, train_data_operation, fallback)
-        add_dag_node(train_labels_dag_node, [input_info_train_labels.dag_node], args[1], engine_result_labels)
+        train_labels_dag_node = DagNode(train_label_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
+                                        OperatorType.TRAIN_LABELS, function_info, "Train Labels", ["array"],
+                                        self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        input_infos = SklearnBackend.before_call(operator_context, [input_info_train_labels.annotated_dfobject])
+        label_backend_result = SklearnBackend.after_call(operator_context,
+                                                         input_infos,
+                                                         args[1])
+        add_dag_node(train_labels_dag_node, [input_info_train_labels.dag_node], label_backend_result)
+        train_labels_result = label_backend_result.annotated_dfobject.result_data
 
-        engine_input = [get_engine_input(engine_result_data), get_engine_input(engine_result_labels)]
-        partial_fit = lambda x, y: original(self, x, y, *args[2:], **kwargs)
-        data_input_type = DataframeType.get_dataframe_type(args[0])
-        label_input_type = DataframeType.get_dataframe_type(args[1])
-        estimator_operation = LogicalEstimator(1, partial_fit, data_input_type, label_input_type)
-        fallback = partial(original, self, *args, **kwargs)
-        engine_result_estimator = _pipeline_executor.singleton.engine.run(engine_input, estimator_operation, fallback)
+        # Estimator
+        operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
+        input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+        input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+        original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
+        estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                             input_infos,
+                                                             None)
 
-        dag_node = DagNode2(self.mlinspect_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
-                            OperatorType2.ESTIMATOR, module, "Decision Tree", [],
-                            self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
-        add_dag_node(dag_node, [train_data_dag_node, train_labels_dag_node], None, engine_result_estimator)
+        dag_node = DagNode(self.mlinspect_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
+                           OperatorType.ESTIMATOR, function_info, "Decision Tree", [],
+                           self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        add_dag_node(dag_node, [train_data_dag_node, train_labels_dag_node], estimator_backend_result)
         return self

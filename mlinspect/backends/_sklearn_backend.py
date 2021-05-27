@@ -5,11 +5,14 @@ from typing import List
 
 import numpy
 import pandas
+from pandas import DataFrame, Series
+from scipy.sparse import csr_matrix
 
 from ._backend import Backend, AnnotatedDfObject, BackendResult
-from ._pandas_backend import execute_inspection_visits_unary_operator
+from ._iter_creation import iter_input_annotation_output_sink_op
+from ._pandas_backend import execute_inspection_visits_unary_operator, store_inspection_outputs
 from ..instrumentation._dag_node import OperatorType
-from ..monkeypatching.numpy import MlinspectNdarray
+from ..instrumentation._pipeline_executor import singleton
 
 
 class SklearnBackend(Backend):
@@ -40,13 +43,53 @@ class SklearnBackend(Backend):
                                                                     True)
             input_infos[0].result_data.drop("mlinspect_index", axis=1, inplace=True)
         elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY,
-                                           OperatorType.TRANSFORMER}:
+                                           OperatorType.TRANSFORMER, OperatorType.TRAIN_DATA,
+                                           OperatorType.TRAIN_LABELS}:
             return_value = execute_inspection_visits_unary_operator(operator_context,
                                                                     input_infos[0].result_data,
                                                                     input_infos[0].result_annotation,
                                                                     return_value,
                                                                     False)
+        elif operator_context.operator == OperatorType.ESTIMATOR:
+            return_value = execute_inspection_visits_sink_op(operator_context,
+                                                             input_infos[0].result_data,
+                                                             input_infos[0].result_annotation,
+                                                             input_infos[1].result_data,
+                                                             input_infos[1].result_annotation)
         else:
             raise NotImplementedError("SklearnBackend doesn't know any operations of type '{}' yet!"
                                       .format(operator_context.operator))
         return return_value
+
+
+# -------------------------------------------------------
+# Execute inspections functions
+# -------------------------------------------------------
+
+def execute_inspection_visits_sink_op(operator_context, data, data_annotation, target,
+                                      target_annotation) -> BackendResult:
+    """ Execute inspections """
+    # pylint: disable=too-many-arguments
+    inspection_count = len(singleton.inspections)
+    iterators_for_inspections = iter_input_annotation_output_sink_op(inspection_count,
+                                                                     data,
+                                                                     data_annotation,
+                                                                     target,
+                                                                     target_annotation,
+                                                                     operator_context)
+    annotation_iterators = execute_visits(iterators_for_inspections)
+    return_value = store_inspection_outputs(annotation_iterators, None)
+    return return_value
+
+
+def execute_visits(iterators_for_inspections):
+    """
+    After creating the iterators we need depending on the operator type, we need to execute the
+    generic inspection visits
+    """
+    annotation_iterators = []
+    for inspection_index, inspection in enumerate(singleton.inspections):
+        iterator_for_inspection = iterators_for_inspections[inspection_index]
+        annotations_iterator = inspection.visit_operator(iterator_for_inspection)
+        annotation_iterators.append(annotations_iterator)
+    return annotation_iterators

@@ -95,7 +95,8 @@ class RowLineage(Inspection):
             for row in inspection_input.row_iterator:
                 current_count += 1
                 annotation = set.union(*row.annotation)
-                operator_lineage.append(annotation)
+                if current_count < self.row_count:
+                    operator_lineage.append(annotation)
                 yield annotation
         else:
             assert False

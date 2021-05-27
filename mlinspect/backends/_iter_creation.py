@@ -200,7 +200,8 @@ def iter_input_annotation_output_nary_op(inspection_count, transformer_data_with
     return inspection_iterators
 
 
-def iter_input_annotation_output_sink_op(inspection_count, data, target, operator_context):
+def iter_input_annotation_output_sink_op(inspection_count, data, data_annotation, target, target_annotation,
+                                         operator_context):
     """
     Create an efficient iterator for the inspection input when there is no output, e.g., estimators.
     """
@@ -217,8 +218,8 @@ def iter_input_annotation_output_sink_op(inspection_count, data, target, operato
     inspection_iterators = []
     for inspection_index in range(inspection_count):
         input_iterator = duplicated_input_iterators[inspection_index]
-        annotation_iterators = [get_annotation_rows(data.annotations, inspection_index),
-                                get_annotation_rows(target.annotations, inspection_index)]
+        annotation_iterators = [get_annotation_rows(data_annotation, inspection_index),
+                                get_annotation_rows(target_annotation, inspection_index)]
         annotation_rows = map(tuple, zip(*annotation_iterators))
         row_iterator = map(lambda input_tuple: InspectionRowSinkOperator(*input_tuple),
                            zip(input_iterator, annotation_rows))

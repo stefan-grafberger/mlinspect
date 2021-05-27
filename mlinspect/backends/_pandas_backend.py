@@ -95,7 +95,6 @@ def execute_inspection_visits_unary_operator(operator_context, input_data,
     """Execute inspections when the current operator has one parent in the DAG"""
     # pylint: disable=too-many-arguments, unused-argument
     assert not resampled or "mlinspect_index" in return_value_df.columns
-    assert isinstance(input_data, (pandas.DataFrame, pandas.Series))
     inspection_count = len(singleton.inspections)
     if resampled:
         iterators_for_inspections = iter_input_annotation_output_resampled(inspection_count,
