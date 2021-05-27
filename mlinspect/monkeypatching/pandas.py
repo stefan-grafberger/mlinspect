@@ -113,37 +113,35 @@ class DataFramePatching:
 
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            module = ('pandas.core.frame', '__getitem__')
-            input_info = get_input_info(self, caller_filename, lineno, module, optional_code_reference,
+            function_info = ('pandas.core.frame', '__getitem__')
+            input_info = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
                                         optional_source_code)
-            # if isinstance(args[0], str):  # Projection to Series
-            #     columns = [args[0]]
-            #     user_operation = LogicalProjection(1, columns)
-            #     dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.PROJECTION, module,
-            #                         "to {}".format(columns), columns, optional_code_reference, optional_source_code)
-            # elif isinstance(args[0], list) and isinstance(args[0][0], str):  # Projection to DF
-            #     columns = args[0]
-            #     user_operation = LogicalProjection(1, columns)
-            #     dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.PROJECTION, module,
-            #                         "to {}".format(columns), columns, optional_code_reference, optional_source_code)
-            # elif isinstance(args[0], pandas.Series):  # Selection
-            #     partial_select = lambda x: original(x, args[0])
-            #     user_operation = LogicalSelection(1, partial_select, DataframeType.PANDAS_DF)
-            #     columns = list(self.columns)  # pylint: disable=no-member
-            #     dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.SELECTION, module,
-            #                         "Select by Series", columns, optional_code_reference, optional_source_code)
-            # else:
-            #     raise NotImplementedError()
-            # engine_input = [input_info.engine_input]
-            # fallback = partial(original, self, *args, **kwargs)
-            # engine_result = _pipeline_executor.singleton.engine.run(engine_input, user_operation, fallback)
-            #
-            # if isinstance(args[0], str):
-            #     result = engine_result.user_op_result.to_pandas_series()
-            # else:
-            #     result = engine_result.user_op_result.to_pandas_df()
-            # add_dag_node(dag_node, [input_info.dag_node], result, engine_result)
-            # return result
+            if isinstance(args[0], str):  # Projection to Series
+                columns = [args[0]]
+                operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
+                dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.PROJECTION, function_info,
+                                   "to {}".format(columns), columns, optional_code_reference, optional_source_code)
+            elif isinstance(args[0], list) and isinstance(args[0][0], str):  # Projection to DF
+                columns = args[0]
+                operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
+                dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.PROJECTION, function_info,
+                                   "to {}".format(columns), columns, optional_code_reference, optional_source_code)
+            elif isinstance(args[0], pandas.Series):  # Selection
+                operator_context = OperatorContext(OperatorType.SELECTION, function_info)
+                columns = list(self.columns)  # pylint: disable=no-member
+                dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.SELECTION, function_info,
+                                   "Select by Series", columns, optional_code_reference, optional_source_code)
+            else:
+                raise NotImplementedError()
+            input_infos = PandasBackend.before_call(operator_context, [input_info.annotated_dfobject])
+            result = original(input_infos[0].result_data, *args, **kwargs)
+            backend_result = PandasBackend.after_call(operator_context,
+                                                      input_infos,
+                                                      result)
+            result = backend_result.annotated_dfobject.result_data
+            add_dag_node(dag_node, [input_info.dag_node], backend_result)
+
+            return result
 
         return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
 
