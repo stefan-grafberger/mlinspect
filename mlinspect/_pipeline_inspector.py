@@ -20,6 +20,7 @@ class PipelineInspectorBuilder:
                  python_path: str or None = None,
                  python_code: str or None = None
                  ) -> None:
+        self.track_code_references = True
         self.notebook_path = notebook_path
         self.python_path = python_path
         self.python_code = python_code
@@ -52,6 +53,13 @@ class PipelineInspectorBuilder:
         Add a list of inspections
         """
         self.checks.extend(checks)
+        return self
+
+    def set_code_reference_tracking(self, track_code_references: bool):
+        """
+        Set whether to track code references. The default is tracking them.
+        """
+        self.track_code_references = track_code_references
         return self
 
     def execute(self) -> InspectorResult:

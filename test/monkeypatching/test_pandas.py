@@ -96,7 +96,6 @@ def test_frame_dropna():
         df = df.dropna()
         assert len(df) == 4
         """)
-
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
                                                         inspections=[RowLineage(2)])
 
@@ -130,7 +129,6 @@ def test_frame__getitem__series():
             a = df['A']
             pd.testing.assert_series_equal(a, pd.Series([0, 2, 4, 8, None], name='A'))
             """)
-
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
                                                         inspections=[RowLineage(2)])
     inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[2])
@@ -168,7 +166,6 @@ def test_frame__getitem__frame():
                 df_expected = pd.DataFrame([[0, 2], [1, 3], [4, 2], [9, 3], [6, 2], [1, 3]], columns=['A', 'C'])
                 pd.testing.assert_frame_equal(df_projection, df_expected)
                 """)
-
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
                                                         inspections=[RowLineage(2)])
     inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[2])
@@ -207,7 +204,6 @@ def test_frame__getitem__selection():
                 df_expected = pd.DataFrame({'A': [4, 8, 5], 'B': [4, 11, None]})
                 pd.testing.assert_frame_equal(df_selection.reset_index(drop=True), df_expected.reset_index(drop=True))
                 """)
-
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
                                                         inspections=[RowLineage(2)])
     inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[3])
@@ -251,7 +247,6 @@ def test_frame_replace():
         df_expected = pd.DataFrame(['Low', 'Low', 'Low', 'High', None], columns=['A'])
         pd.testing.assert_frame_equal(df_replace.reset_index(drop=True), df_expected.reset_index(drop=True))
         """)
-
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
                                                         inspections=[RowLineage(2)])
     inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[2])
@@ -290,7 +285,6 @@ def test_frame_merge():
         df_expected = pd.DataFrame({'A': [0, 2, 4, 8], 'B': [1, 2, 4, 5], 'C': [1, 5, 11, None]})
         pd.testing.assert_frame_equal(df_merged.reset_index(drop=True), df_expected.reset_index(drop=True))
         """)
-
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
                                                         inspections=[RowLineage(2)])
     inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[3])
@@ -333,7 +327,6 @@ def test_groupby_agg():
         df_expected = pd.DataFrame({'group': ['A', 'B', 'C'], 'mean_value': [1, 3, 3]})
         pd.testing.assert_frame_equal(df_groupby_agg.reset_index(drop=False), df_expected.reset_index(drop=True))
         """)
-
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
                                                         inspections=[RowLineage(2)])
     inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[2])
@@ -370,7 +363,6 @@ def test_series__init__():
         pd_series = pd.Series([0, 2, 4, None], name='A')
         assert len(pd_series) == 4
         """)
-
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
                                                         inspections=[RowLineage(2)])
     extracted_node: DagNode = list(inspector_result.dag.nodes)[0]

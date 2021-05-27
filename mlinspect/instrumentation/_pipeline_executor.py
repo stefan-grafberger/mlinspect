@@ -38,6 +38,7 @@ class PipelineExecutor:
     inspection_results = InspectionResult(networkx.DiGraph(), dict())
     inspections = []
 
+
     def run(self, *,
             notebook_path: str or None = None,
             python_path: str or None = None,
@@ -51,6 +52,11 @@ class PipelineExecutor:
         Instrument and execute the pipeline and evaluate all checks
         """
         # pylint: disable=too-many-arguments
+        if reset_state:
+            # reset_state=False should only be used internally for performance experiments etc!
+            # It does not ensure the same inspections are still used as args etc.
+            self.reset()
+
         if inspections is None:
             inspections = []
         if checks is None:
@@ -61,11 +67,7 @@ class PipelineExecutor:
             check_inspections.update(check.required_inspections)
         all_inspections = list(set(inspections).union(check_inspections))
         self.inspections = all_inspections
-
-        if reset_state:
-            # reset_state=False should only be used internally for performance experiments etc!
-            # It does not ensure the same inspections are still used as args etc.
-            self.reset_singleton()
+        self.track_code_references = track_code_references
 
         self.run_inspections(notebook_path, python_code, python_path)
         check_to_results = dict((check, check.evaluate(self.inspection_results)) for check in checks)
@@ -98,6 +100,23 @@ class PipelineExecutor:
         current_missing_op_id = self.next_missing_op_id
         self.next_missing_op_id -= 1
         return current_missing_op_id
+
+    def reset(self):
+        """
+        Reset all attributes in the singleton object. This can be used when there are multiple repeated calls to mlinspect
+        """
+        self.source_code_path = None
+        self.source_code = None
+        self.script_scope = {}
+        self.lineno_next_call_or_subscript = -1
+        self.col_offset_next_call_or_subscript = -1
+        self.end_lineno_next_call_or_subscript = -1
+        self.end_col_offset_next_call_or_subscript = -1
+        self.next_op_id = 0
+        self.next_missing_op_id = -1
+        self.track_code_references = True
+        self.op_id_to_dag_node = dict()
+        self.inspection_results = InspectionResult(networkx.DiGraph(), dict())
 
     @staticmethod
     def instrument_pipeline(parsed_ast, track_code_references):
@@ -153,26 +172,6 @@ class PipelineExecutor:
         else:
             assert False
         return source_code, source_code_path
-
-    @staticmethod
-    def reset_singleton():
-        """
-        Reset all attributes in the singleton object. This can be used when there are multiple repeated calls to mlinspect
-        """
-        singleton.source_code_path = None
-        singleton.source_code = None
-        singleton.script_scope = {}
-        singleton.backends = []
-        singleton.lineno_next_call_or_subscript = -1
-        singleton.col_offset_next_call_or_subscript = -1
-        singleton.end_lineno_next_call_or_subscript = -1
-        singleton.end_col_offset_next_call_or_subscript = -1
-        singleton.next_op_id = 0
-        singleton.next_missing_op_id = -1
-        singleton.track_code_references = True
-        singleton.graph = networkx.DiGraph()
-        singleton.op_id_to_dag_node = dict()
-        singleton.dag_node_to_inspection_results = dict()
 
 
 # How we instrument the calls
