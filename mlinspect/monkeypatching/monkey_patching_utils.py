@@ -72,6 +72,37 @@ def execute_patched_func(original_func, execute_inspections_func, *args, **kwarg
     return result
 
 
+def execute_patched_func_no_op_id(original_func, execute_inspections_func, *args, **kwargs):
+    """
+    Detects whether the function call comes directly from user code and decides whether to execute the original
+    function or the patched variant.
+    """
+    caller_filename = sys._getframe(2).f_code.co_filename  # pylint: disable=protected-access
+
+    if caller_filename != singleton.source_code_path:
+        result = original_func(*args, **kwargs)
+    elif singleton.track_code_references:
+        call_ast_node = ast.Call(lineno=singleton.lineno_next_call_or_subscript,
+                                 col_offset=singleton.col_offset_next_call_or_subscript,
+                                 end_lineno=singleton.end_lineno_next_call_or_subscript,
+                                 end_col_offset=singleton.end_col_offset_next_call_or_subscript)
+        caller_source_code = ast.get_source_segment(singleton.source_code, node=call_ast_node)
+        caller_lineno = singleton.lineno_next_call_or_subscript
+        caller_code_reference = CodeReference(singleton.lineno_next_call_or_subscript,
+                                              singleton.col_offset_next_call_or_subscript,
+                                              singleton.end_lineno_next_call_or_subscript,
+                                              singleton.end_col_offset_next_call_or_subscript)
+        result = execute_inspections_func(0, caller_filename, caller_lineno, caller_code_reference,
+                                          caller_source_code)
+        # singleton.lineno_next_call_or_subscript = -1
+    else:
+        op_id = singleton.get_next_op_id()
+        caller_lineno = sys._getframe(2).f_lineno  # pylint: disable=protected-access
+        result = execute_inspections_func(op_id, caller_filename, caller_lineno, None, None)
+        # singleton.lineno_next_call_or_subscript = -1
+    return result
+
+
 def execute_patched_func_indirect_allowed(execute_inspections_func):
     """
     Detects whether the function call comes directly from user code and decides whether to execute the original
@@ -188,3 +219,11 @@ def add_dag_node(dag_node: DagNode, dag_node_parents: List[DagNode], backend_res
     singleton.op_id_to_dag_node[dag_node.node_id] = dag_node
     if annotated_df is not None:
         singleton.inspection_results.dag_node_to_inspection_results[dag_node] = backend_result.dag_node_annotation
+
+
+def get_dag_node_for_id(dag_node_id: int):
+    """
+    Get a DAG node by id
+    """
+    # pylint: disable=protected-access
+    return singleton.op_id_to_dag_node[dag_node_id]

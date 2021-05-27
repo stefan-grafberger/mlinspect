@@ -320,6 +320,46 @@ def test_frame_merge():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
+def test_groupby_agg():
+    """
+    Tests whether the monkey patching of ('pandas.core.frame', 'merge') works
+    """
+    test_code = cleandoc("""
+        import pandas as pd
+
+        df = pd.DataFrame({'group': ['A', 'B', 'A', 'C', 'B'], 'value': [1, 2, 1, 3, 4]})
+        df_groupby_agg = df.groupby('group').agg(mean_value=('value', 'mean'))
+        
+        df_expected = pd.DataFrame({'group': ['A', 'B', 'C'], 'mean_value': [1, 3, 3]})
+        pd.testing.assert_frame_equal(df_groupby_agg.reset_index(drop=False), df_expected.reset_index(drop=True))
+        """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(2)])
+    inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[2])
+
+    expected_dag = networkx.DiGraph()
+    expected_data = DagNode(0, "<string-source>", 3, OperatorType.DATA_SOURCE,
+                            ('pandas.core.frame', 'DataFrame'), description='', columns=['group', 'value'],
+                            optional_code_reference=CodeReference(3, 5, 3, 81),
+                            optional_source_code="pd.DataFrame({'group': ['A', 'B', 'A', 'C', 'B'], "
+                                                 "'value': [1, 2, 1, 3, 4]})")
+    expected_groupby_agg = DagNode(1, "<string-source>", 4, OperatorType.GROUP_BY_AGG,
+                                   module=('pandas.core.groupby.generic', 'agg'),
+                                   description="Groupby 'group', Aggregate: '{'mean_value': ('value', 'mean')}'",
+                                   columns=['group', 'mean_value'], optional_code_reference=CodeReference(4, 17, 4, 70),
+                                   optional_source_code="df.groupby('group').agg(mean_value=('value', 'mean'))")
+    expected_dag.add_edge(expected_data, expected_groupby_agg)
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_groupby_agg]
+    lineage_output = inspection_results_data_source[RowLineage(2)]
+    expected_lineage_df = DataFrame([["A", 1, {LineageId(1, 0)}],
+                                     ['B', 3, {LineageId(1, 1)}]],
+                                    columns=['group', 'mean_value', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
 def test_series__init__():
     """
     Tests whether the monkey patching of ('pandas.core.series', 'Series') works

@@ -9,7 +9,8 @@ import pandas
 from mlinspect import OperatorType, DagNode
 from mlinspect.backends._pandas_backend import PandasBackend
 from mlinspect.inspections._inspection_input import OperatorContext
-from mlinspect.monkeypatching.monkey_patching_utils import execute_patched_func, get_input_info, add_dag_node
+from mlinspect.monkeypatching.monkey_patching_utils import execute_patched_func, get_input_info, add_dag_node, \
+    get_dag_node_for_id, execute_patched_func_no_op_id
 
 
 @gorilla.patches(pandas)
@@ -229,6 +230,97 @@ class DataFramePatching:
             dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.JOIN, function_info,
                                description, list(result.columns), optional_code_reference, optional_source_code)
             add_dag_node(dag_node, [input_info_a.dag_node, input_info_b.dag_node], backend_result)
+
+            return result
+
+        return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
+
+    @gorilla.name('merge')
+    @gorilla.settings(allow_hit=True)
+    def patched_merge(self, *args, **kwargs):
+        """ Patch for ('pandas.core.frame', 'merge') """
+        original = gorilla.get_original_attribute(pandas.DataFrame, 'merge')
+
+        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            function_info = ('pandas.core.frame', 'merge')
+
+            input_info_a = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
+                                          optional_source_code)
+            input_info_b = get_input_info(args[0], caller_filename, lineno, function_info, optional_code_reference,
+                                          optional_source_code)
+            operator_context = OperatorContext(OperatorType.JOIN, function_info)
+            input_infos = PandasBackend.before_call(operator_context, [input_info_a.annotated_dfobject,
+                                                                       input_info_b.annotated_dfobject])
+            # No input_infos copy needed because it's only a selection and the rows not being removed don't change
+            result = original(input_infos[0].result_data, input_infos[1].result_data, *args[1:], **kwargs)
+            backend_result = PandasBackend.after_call(operator_context,
+                                                      input_infos,
+                                                      result)
+            result = backend_result.annotated_dfobject.result_data
+            description = "on '{}'".format(kwargs['on'])
+            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.JOIN, function_info,
+                               description, list(result.columns), optional_code_reference, optional_source_code)
+            add_dag_node(dag_node, [input_info_a.dag_node, input_info_b.dag_node], backend_result)
+
+            return result
+
+        return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
+
+    @gorilla.name('groupby')
+    @gorilla.settings(allow_hit=True)
+    def patched_merge(self, *args, **kwargs):
+        """ Patch for ('pandas.core.frame', 'groupby') """
+        original = gorilla.get_original_attribute(pandas.DataFrame, 'groupby')
+
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            function_info = ('pandas.core.frame', 'groupby')
+            # We ignore groupbys, we only do something with aggs
+
+            input_info = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
+                                        optional_source_code)
+            result = original(self, *args, **kwargs)
+            result._mlinspect_dag_node = input_info.dag_node.node_id
+
+            return result
+
+        return execute_patched_func_no_op_id(original, execute_inspections, self, *args, **kwargs)
+
+
+@gorilla.patches(pandas.core.groupby.generic.DataFrameGroupBy)
+class DataFrameGroupByPatching:
+    """ Patches for 'pandas.core.groupby.generic' """
+
+    @gorilla.name('agg')
+    @gorilla.settings(allow_hit=True)
+    def patched_agg(self, *args, **kwargs):
+        """ Patch for ('pandas.core.groupby.generic', 'agg') """
+        original = gorilla.get_original_attribute(pandas.core.groupby.generic.DataFrameGroupBy, 'agg')
+
+        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            function_info = ('pandas.core.groupby.generic', 'agg')
+            if not hasattr(self, '_mlinspect_dag_node'):
+                raise NotImplementedError("TODO: Support agg if groupby happened in external code")
+            input_dag_node = get_dag_node_for_id(self._mlinspect_dag_node)
+
+            operator_context = OperatorContext(OperatorType.GROUP_BY_AGG, function_info)
+
+            input_infos = PandasBackend.before_call(operator_context, [])
+            result = original(self, *args, **kwargs)
+            backend_result = PandasBackend.after_call(operator_context,
+                                                      input_infos,
+                                                      result)
+
+            if len(args) > 0:
+                description = "Groupby '{}', Aggregate: '{}'".format(result.index.name, args)
+            else:
+                description = "Groupby '{}', Aggregate: '{}'".format(result.index.name, kwargs)
+            columns = [result.index.name] + list(result.columns)
+            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.GROUP_BY_AGG, function_info, description,
+                               columns, optional_code_reference, optional_source_code)
+            add_dag_node(dag_node, [input_dag_node], backend_result)
 
             return result
 
