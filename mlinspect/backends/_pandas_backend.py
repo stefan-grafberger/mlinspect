@@ -10,7 +10,6 @@ from ._backend_utils import build_annotation_df_from_iters, \
     create_wrapper_with_annotations
 from ._iter_creation import iter_input_data_source, iter_input_annotation_output_resampled, \
     iter_input_annotation_output_map, iter_input_annotation_output_join
-from ..inspections._inspection_input import OperatorContext
 from ..instrumentation._dag_node import OperatorType
 from ..instrumentation._pipeline_executor import singleton
 
@@ -47,13 +46,10 @@ class PandasBackend(Backend):
         elif operator_context.operator == OperatorType.GROUP_BY_AGG:
             return_value = execute_inspection_visits_data_source(operator_context, return_value.reset_index())
         elif operator_context.operator == OperatorType.SELECTION:
-            return_value = execute_inspection_visits_unary_operator(operator_context,
-                                                                    input_infos[0].result_data,
-                                                                    input_infos[0].result_annotation,
-                                                                    return_value,
+            return_value = execute_inspection_visits_unary_operator(operator_context, input_infos[0].result_data,
+                                                                    input_infos[0].result_annotation, return_value,
                                                                     True)
             input_infos[0].result_data.drop("mlinspect_index", axis=1, inplace=True)
-
         elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY}:
             return_value = execute_inspection_visits_unary_operator(operator_context,
                                                                     input_infos[0].result_data,

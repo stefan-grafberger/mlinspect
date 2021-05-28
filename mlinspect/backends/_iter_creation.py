@@ -207,7 +207,7 @@ def iter_input_annotation_output_sink_op(inspection_count, data, data_annotation
     """
     Create an efficient iterator for the inspection input when there is no output, e.g., estimators.
     """
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals, too-many-arguments
     if inspection_count == 0:
         return []
 

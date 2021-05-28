@@ -3,10 +3,7 @@ The scikit-learn backend
 """
 from typing import List
 
-import numpy
 import pandas
-from pandas import DataFrame, Series
-from scipy.sparse import csr_matrix
 
 from ._backend import Backend, AnnotatedDfObject, BackendResult
 from ._iter_creation import iter_input_annotation_output_sink_op, iter_input_annotation_output_nary_op
@@ -45,10 +42,8 @@ class SklearnBackend(Backend):
         elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY,
                                            OperatorType.TRANSFORMER, OperatorType.TRAIN_DATA,
                                            OperatorType.TRAIN_LABELS}:
-            return_value = execute_inspection_visits_unary_operator(operator_context,
-                                                                    input_infos[0].result_data,
-                                                                    input_infos[0].result_annotation,
-                                                                    return_value,
+            return_value = execute_inspection_visits_unary_operator(operator_context, input_infos[0].result_data,
+                                                                    input_infos[0].result_annotation, return_value,
                                                                     False)
         elif operator_context.operator == OperatorType.ESTIMATOR:
             return_value = execute_inspection_visits_sink_op(operator_context,

@@ -167,7 +167,7 @@ class DataFramePatching:
                 backend_result = PandasBackend.after_call(operator_context,
                                                           input_infos,
                                                           self)
-                columns = list(self.columns)
+                columns = list(self.columns)  # pylint: disable=no-member
                 description = "modifies {}".format([args[0]])
             else:
                 raise NotImplementedError("TODO: Handling __setitem__ for key type {}".format(type(args[0])))
@@ -256,7 +256,7 @@ class DataFramePatching:
             input_info = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
                                         optional_source_code)
             result = original(self, *args, **kwargs)
-            result._mlinspect_dag_node = input_info.dag_node.node_id
+            result._mlinspect_dag_node = input_info.dag_node.node_id  # pylint: disable=protected-access
 
             return result
 
@@ -266,6 +266,7 @@ class DataFramePatching:
 @gorilla.patches(pandas.core.groupby.generic.DataFrameGroupBy)
 class DataFrameGroupByPatching:
     """ Patches for 'pandas.core.groupby.generic' """
+    # pylint: disable=too-few-public-methods
 
     @gorilla.name('agg')
     @gorilla.settings(allow_hit=True)
@@ -278,7 +279,7 @@ class DataFrameGroupByPatching:
             function_info = ('pandas.core.groupby.generic', 'agg')
             if not hasattr(self, '_mlinspect_dag_node'):
                 raise NotImplementedError("TODO: Support agg if groupby happened in external code")
-            input_dag_node = get_dag_node_for_id(self._mlinspect_dag_node)
+            input_dag_node = get_dag_node_for_id(self._mlinspect_dag_node)  # pylint: disable=no-member
 
             operator_context = OperatorContext(OperatorType.GROUP_BY_AGG, function_info)
 
@@ -319,7 +320,7 @@ class LocIndexerPatching:
             op_id = singleton.get_next_op_id()
             caller_filename = call_info_singleton.transformer_filename
             lineno = call_info_singleton.transformer_lineno
-            function_info = call_info_singleton.module
+            function_info = call_info_singleton.function_info
             optional_code_reference = call_info_singleton.transformer_optional_code_reference
             optional_source_code = call_info_singleton.transformer_optional_source_code
 
@@ -331,8 +332,8 @@ class LocIndexerPatching:
                 raise NotImplementedError()
 
             operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
-            input_info = get_input_info(self.obj, caller_filename, lineno, function_info, optional_code_reference,
-                                        optional_source_code)
+            input_info = get_input_info(self.obj, caller_filename,  # pylint: disable=no-member
+                                        lineno, function_info, optional_code_reference, optional_source_code)
             input_infos = PandasBackend.before_call(operator_context, [input_info.annotated_dfobject])
             result = original(self, *args, **kwargs)
             backend_result = PandasBackend.after_call(operator_context,
@@ -373,7 +374,7 @@ class SeriesPatching:
                                                       input_infos,
                                                       result)
 
-            if self.name:
+            if self.name:  # pylint: disable=no-member
                 columns = list(self.name)  # pylint: disable=no-member
             else:
                 columns = ["_1"]

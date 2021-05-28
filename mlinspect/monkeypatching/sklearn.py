@@ -1,14 +1,11 @@
 """
 Monkey patching for sklearn
 """
-from functools import partial
 
 import gorilla
 import numpy
-from scipy.sparse import csr_matrix
 from sklearn import preprocessing, compose, tree
 
-from mlinspect.backends._pandas_backend import execute_inspection_visits_unary_operator
 from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.inspections._inspection_input import OperatorContext
 from mlinspect.instrumentation import _pipeline_executor
@@ -21,7 +18,6 @@ from mlinspect.monkeypatching.numpy import MlinspectNdarray
 @gorilla.patches(preprocessing)
 class SklearnPreprocessingPatching:
     """ Patches for sklearn """
-
     # pylint: disable=too-few-public-methods
 
     @gorilla.name('label_binarize')
@@ -114,7 +110,7 @@ class SklearnComposePatching:
         # pylint: disable=no-method-argument
         call_info_singleton.transformer_filename = self.mlinspect_filename
         call_info_singleton.transformer_lineno = self.mlinspect_lineno
-        call_info_singleton.module = ('sklearn.compose._column_transformer', 'ColumnTransformer')
+        call_info_singleton.function_info = ('sklearn.compose._column_transformer', 'ColumnTransformer')
         call_info_singleton.transformer_optional_code_reference = self.mlinspect_optional_code_reference
         call_info_singleton.transformer_optional_source_code = self.mlinspect_optional_source_code
 

@@ -58,6 +58,7 @@ class NoBiasIntroducedFor(Check):
 
     def evaluate(self, inspection_result: InspectionResult) -> CheckResult:
         """Evaluate the check"""
+        # pylint: disable=too-many-locals
         dag = inspection_result.dag
         histograms = {}
         for dag_node, inspection_results in inspection_result.dag_node_to_inspection_results.items():

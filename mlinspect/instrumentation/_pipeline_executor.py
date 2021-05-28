@@ -23,6 +23,7 @@ class PipelineExecutor:
     """
     Internal class to instrument and execute pipelines
     """
+    # pylint: disable=too-many-instance-attributes
 
     source_code_path = None
     source_code = None
