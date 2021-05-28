@@ -62,7 +62,7 @@ def get_iterator_for_type(data, np_nditer_with_refs=False, columns=None):
     elif isinstance(data, list):
         iterator = get_list_row_iterator(data, columns)
     else:
-        assert False
+        raise NotImplementedError("TODO: Support type {}!".format(type(data)))
     return iterator
 
 

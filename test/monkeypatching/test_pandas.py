@@ -192,6 +192,60 @@ def test_frame__getitem__frame():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
+def test_frame__setitem__():
+    """
+    Tests whether the monkey patching of ('pandas.core.frame', '__setitem__') works for df arguments
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+
+                pandas_df = pd.DataFrame({'foo': ['one', 'one', 'one', 'two', 'two', 'two'],
+                              'bar': ['A', 'B', 'C', 'A', 'B', 'C'],
+                              'baz': [1, 2, 3, 4, 5, 6],
+                              'zoo': ['x', 'y', 'z', 'q', 'w', 't']})
+                pandas_df['baz'] = pandas_df['baz'] + 1
+                df_expected = pd.DataFrame({'foo': ['one', 'one', 'one', 'two', 'two', 'two'],
+                              'bar': ['A', 'B', 'C', 'A', 'B', 'C'],
+                              'baz': [2, 3, 4, 5, 6, 7],
+                              'zoo': ['x', 'y', 'z', 'q', 'w', 't']})
+                pd.testing.assert_frame_equal(pandas_df, df_expected)
+                """)
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(2)])
+    inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[3])
+
+    expected_dag = networkx.DiGraph()
+    expected_data_source = DagNode(0, "<string-source>", 3, OperatorType.DATA_SOURCE,
+                                   ('pandas.core.frame', 'DataFrame'), description='',
+                                   columns=['foo', 'bar', 'baz', 'zoo'],
+                                   optional_code_reference=CodeReference(3, 12, 6, 53),
+                                   optional_source_code="pd.DataFrame({'foo': ['one', 'one', 'one', 'two', "
+                                                        "'two', 'two'],\n"
+                                                        "              'bar': ['A', 'B', 'C', 'A', 'B', 'C'],\n"
+                                                        "              'baz': [1, 2, 3, 4, 5, 6],\n"
+                                                        "              'zoo': ['x', 'y', 'z', 'q', 'w', 't']})")
+    expected_project = DagNode(1, "<string-source>", 7, OperatorType.PROJECTION,
+                               module=('pandas.core.frame', '__getitem__'), description="to ['baz']",
+                               columns=['baz'], optional_code_reference=CodeReference(7, 19, 7, 35),
+                               optional_source_code="pandas_df['baz']")
+    expected_dag.add_edge(expected_data_source, expected_project)
+    expected_project_modify = DagNode(2, "<string-source>", 7, OperatorType.PROJECTION_MODIFY,
+                                      module=('pandas.core.frame', '__setitem__'), description="modifies ['baz']",
+                                      columns=['foo', 'bar', 'baz', 'zoo'],
+                                      optional_code_reference=CodeReference(7, 0, 7, 39),
+                                      optional_source_code="pandas_df['baz'] = pandas_df['baz'] + 1")
+    expected_dag.add_edge(expected_data_source, expected_project_modify)
+
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_project_modify]
+    lineage_output = inspection_results_data_source[RowLineage(2)]
+    expected_lineage_df = DataFrame([['one', 'A', 2, 'x', {LineageId(0, 0)}],
+                                     ['one', 'B', 3, 'y', {LineageId(0, 1)}]],
+                                    columns=['foo', 'bar', 'baz', 'zoo', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
 def test_frame__getitem__selection():
     """
     Tests whether the monkey patching of ('pandas.core.frame', '__getitem__') works for df arguments

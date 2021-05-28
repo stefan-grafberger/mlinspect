@@ -1,6 +1,7 @@
 """
 Monkey patching for pandas
 """
+import copy
 import os
 
 import gorilla
@@ -153,24 +154,28 @@ class DataFramePatching:
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             # pylint: disable=too-many-locals
-            module = ('pandas.core.frame', '__setitem__')
-            input_info = get_input_info(self, caller_filename, lineno, module, optional_code_reference,
+            function_info = ('pandas.core.frame', '__setitem__')
+            operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
+
+            input_info = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
                                         optional_source_code)
-            input_dag_node = input_info.dag_node
-            engine_input = [input_info.engine_input]
-            # if isinstance(args[0], str):
-            #     user_operation = LogicalProjectAssignColumn(1, args[0], args[1])
-            #     fallback = partial(original, self, *args, **kwargs)
-            #     engine_result = _pipeline_executor.singleton.engine.run(engine_input, user_operation, fallback)
-            #     result = engine_result.user_op_result.to_pandas_df()
-            #     columns = list(result.columns)
-            #     description = "modifies {}".format([args[0]])
-            # else:
-            #     raise NotImplementedError("TODO: Handling __setitem__ for key type {}".format(type(args[0])))
-            # dag_node = DagNode2(op_id, caller_filename, lineno, OperatorType2.PROJECTION_MODIFY, module,
-            #                     description, columns, optional_code_reference, optional_source_code)
-            # add_dag_node(dag_node, [input_dag_node], result, engine_result)
-            # return result
+
+            if isinstance(args[0], str):
+                input_infos = PandasBackend.before_call(operator_context, [input_info.annotated_dfobject])
+                input_infos = copy.deepcopy(input_infos)
+                result = original(self, *args, **kwargs)
+                backend_result = PandasBackend.after_call(operator_context,
+                                                          input_infos,
+                                                          self)
+                columns = list(self.columns)
+                description = "modifies {}".format([args[0]])
+            else:
+                raise NotImplementedError("TODO: Handling __setitem__ for key type {}".format(type(args[0])))
+            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.PROJECTION_MODIFY, function_info,
+                               description, columns, optional_code_reference, optional_source_code)
+            add_dag_node(dag_node, [input_info.dag_node], backend_result)
+            assert hasattr(self, "_mlinspect_annotation")
+            return result
 
         return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
 
