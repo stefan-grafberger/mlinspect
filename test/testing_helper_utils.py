@@ -7,7 +7,6 @@ from inspect import cleandoc
 
 import networkx
 from pandas import DataFrame
-from testfixtures import RangeComparison
 
 from demo.feature_overview.missing_embeddings import MissingEmbeddings
 from example_pipelines._pipelines import ADULT_SIMPLE_PY
@@ -30,7 +29,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
     # The line numbers differ slightly between the .py file and the.ipynb file
     expected_graph = networkx.DiGraph()
 
-    expected_data_source = DagNode(node_id=0, caller_filename=caller_filename, lineno=RangeComparison(12, 18),
+    expected_data_source = DagNode(node_id=0, caller_filename=caller_filename, lineno=12 + line_offset,
                                    operator_type=OperatorType.DATA_SOURCE,
                                    module=('pandas.io.parsers', 'read_csv'),
                                    description='adult_train.csv',

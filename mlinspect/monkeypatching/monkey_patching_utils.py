@@ -125,7 +125,6 @@ def execute_patched_func_indirect_allowed(execute_inspections_func):
     #    return
 
     frame = sys._getframe(2)  # pylint: disable=protected-access
-
     while frame.f_code.co_filename != singleton.source_code_path:
         frame = frame.f_back
 
