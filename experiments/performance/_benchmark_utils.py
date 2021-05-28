@@ -240,7 +240,7 @@ def prepare_benchmark_exec(benchmark_str, setup_str, inspections):
         get_estimator_train_data_str, get_decision_tree_str
 
     test_code_setup = {}
-    inspector_result = singleton.run(None, None, test_code_setup, {}, [])
+    inspector_result = singleton.run(python_code=test_code_setup, inspections={})
     test_code_benchmark = {}
     """.format(setup_str, inspections, benchmark_str))
     return setup
@@ -251,8 +251,7 @@ def trigger_benchmark_exec(inspections_str):
     Get the benchmark str for timeit
     """
     benchmark = cleandoc("""
-    inspector_result_two = singleton.run(None, None, test_code_benchmark, {}, [], 
-                                         False)
+    inspector_result_two = singleton.run(python_code=test_code_benchmark, inspections={}, reset_state=False)
     """.format(inspections_str))
     return benchmark
 
