@@ -1,7 +1,7 @@
 """
 Tests whether the MaterializeFirstOutputRows works
 """
-
+import pandas
 from numpy.ma import array
 from pandas import DataFrame
 from pandas._testing import assert_frame_equal
@@ -21,11 +21,76 @@ def test_materialize_first_rows_inspection():
         .on_pipeline_from_py_file(ADULT_SIMPLE_PY) \
         .add_required_inspection(MaterializeFirstOutputRows(2)) \
         .execute()
-    inspection_result = inspector_result.inspection_to_annotations
-    assert MaterializeFirstOutputRows(2) in inspection_result
-    result = inspection_result[MaterializeFirstOutputRows(2)]
 
-    assert_df_dicts_equal(result, get_expected_result())
+    dag_node_to_inspection_results = list(inspector_result.dag_node_to_inspection_results.items())
+
+    assert dag_node_to_inspection_results[0][0].optional_source_code == \
+           "pd.read_csv(train_file, na_values='?', index_col=0)"
+    actual_df = dag_node_to_inspection_results[0][1][MaterializeFirstOutputRows(2)]
+    expected_df = DataFrame([[46, 'Private', 128645, 'Some-college', 10, 'Divorced', 'Prof-specialty',
+                        'Not-in-family', 'White', 'Female', 0, 0, 40, 'United-States', '<=50K'],
+                       [29, 'Local-gov', 115585, 'Some-college', 10, 'Never-married', 'Handlers-cleaners',
+                        'Not-in-family', 'White', 'Male', 0, 0, 50, 'United-States', '<=50K']],
+                      columns=['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status',
+                               'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
+                               'hours-per-week', 'native-country', 'income-per-year'])
+    pandas.testing.assert_frame_equal(actual_df.reset_index(drop=True), expected_df.reset_index(drop=True))
+
+    assert dag_node_to_inspection_results[1][0].optional_source_code == 'raw_data.dropna()'
+    actual_df = dag_node_to_inspection_results[1][1][MaterializeFirstOutputRows(2)]
+    expected_df = DataFrame([[46, 'Private', 128645, 'Some-college', 10, 'Divorced', 'Prof-specialty',
+                        'Not-in-family', 'White', 'Female', 0, 0, 40, 'United-States', '<=50K'],
+                       [29, 'Local-gov', 115585, 'Some-college', 10, 'Never-married', 'Handlers-cleaners',
+                        'Not-in-family', 'White', 'Male', 0, 0, 50, 'United-States', '<=50K']],
+                      columns=['age', 'workclass', 'fnlwgt', 'education', 'education-num',
+                               'marital-status', 'occupation', 'relationship', 'race', 'sex',
+                               'capital-gain', 'capital-loss', 'hours-per-week',
+                               'native-country', 'income-per-year'])
+    pandas.testing.assert_frame_equal(actual_df.reset_index(drop=True), expected_df.reset_index(drop=True))
+
+    assert dag_node_to_inspection_results[2][0].optional_source_code == "data['income-per-year']"
+    actual_df = dag_node_to_inspection_results[2][1][MaterializeFirstOutputRows(2)]
+    expected_df = DataFrame([['<=50K'], ['<=50K']], columns=['income-per-year'])
+    pandas.testing.assert_frame_equal(actual_df.reset_index(drop=True), expected_df.reset_index(drop=True))
+
+    assert dag_node_to_inspection_results[3][0].optional_source_code == \
+           "preprocessing.label_binarize(data['income-per-year'], classes=['>50K', '<=50K'])"
+    actual_df = dag_node_to_inspection_results[3][1][MaterializeFirstOutputRows(2)]
+    expected_df = DataFrame([[array(1)], [array(1)]], columns=['array'])
+    pandas.testing.assert_frame_equal(actual_df.reset_index(drop=True), expected_df.reset_index(drop=True))
+
+    pipeline_str = "compose.ColumnTransformer(transformers=[\n" \
+                   "    ('categorical', preprocessing.OneHotEncoder(handle_unknown='ignore'), " \
+                   "['education', 'workclass']),\n" \
+                   "    ('numeric', preprocessing.StandardScaler(), ['age', 'hours-per-week'])\n" \
+                   "])"
+    assert dag_node_to_inspection_results[4][0].optional_source_code == pipeline_str
+    actual_df = dag_node_to_inspection_results[4][1][MaterializeFirstOutputRows(2)]
+    expected_df = DataFrame([['Some-college', 'Private'], ['Some-college', 'Local-gov']],
+                            columns=['education', 'workclass'])
+    pandas.testing.assert_frame_equal(actual_df.reset_index(drop=True), expected_df.reset_index(drop=True))
+
+    assert dag_node_to_inspection_results[5][0].optional_source_code == \
+           "preprocessing.OneHotEncoder(handle_unknown='ignore')"
+    actual_df = dag_node_to_inspection_results[5][1][MaterializeFirstOutputRows(2)]
+    expected_df = DataFrame([[([array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 1., 0.,
+                                       0., 0., 0.])])],
+                             [[array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 1., 0., 0.,
+                                      0., 0., 0.])]]],
+                            columns=['array'])
+    pandas.testing.assert_frame_equal(actual_df.reset_index(drop=True), expected_df.reset_index(drop=True))
+
+    assert dag_node_to_inspection_results[6][0].optional_source_code == pipeline_str
+    actual_df = dag_node_to_inspection_results[6][1][MaterializeFirstOutputRows(2)]
+    expected_df = DataFrame([[46, 40], [29, 50]], columns=['age', 'hours-per-week'])
+    pandas.testing.assert_frame_equal(actual_df.reset_index(drop=True), expected_df.reset_index(drop=True))
+
+    assert dag_node_to_inspection_results[7][0].optional_source_code == 'preprocessing.StandardScaler()'
+    actual_df = dag_node_to_inspection_results[7][1][MaterializeFirstOutputRows(2)]
+    expected_df = DataFrame([[array([RangeComparison(0.5, 0.6), RangeComparison(-0.1, -0.05)])],
+                             [array([RangeComparison(-0.8, -0.7), RangeComparison(0.7, 0.8)])]],
+                            columns=['array'])
+    pandas.testing.assert_frame_equal(actual_df.reset_index(drop=True), expected_df.reset_index(drop=True))
 
 
 def assert_df_dicts_equal(dict1, dict2):
@@ -53,60 +118,7 @@ def get_expected_result():
                    "('numeric', preprocessing.StandardScaler(), ['age', 'hours-per-week'])\n])"
 
     expected_result = {
-        DagNode(node_id=18, operator_type=OperatorType.DATA_SOURCE, module=('pandas.io.parsers', 'read_csv'),
-                code_reference=CodeReference(12, 11, 12, 62), description='adult_train.csv',
-                columns=['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status',
-                         'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
-                         'hours-per-week', 'native-country', 'income-per-year'],
-                source_code="pd.read_csv(train_file, na_values='?', index_col=0)"):
-            DataFrame([[46, 'Private', 128645, 'Some-college', 10, 'Divorced', 'Prof-specialty',
-                        'Not-in-family', 'White', 'Female', 0, 0, 40, 'United-States', '<=50K'],
-                       [29, 'Local-gov', 115585, 'Some-college', 10, 'Never-married', 'Handlers-cleaners',
-                        'Not-in-family', 'White', 'Male', 0, 0, 50, 'United-States', '<=50K']],
-                      columns=['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status',
-                               'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
-                               'hours-per-week', 'native-country', 'income-per-year']),
-        DagNode(node_id=20, operator_type=OperatorType.SELECTION, module=('pandas.core.frame', 'dropna'),
-                code_reference=CodeReference(14, 7, 14, 24), description='dropna',
-                columns=['age', 'workclass', 'fnlwgt', 'education', 'education-num',
-                         'marital-status', 'occupation', 'relationship', 'race', 'sex',
-                         'capital-gain', 'capital-loss', 'hours-per-week',
-                         'native-country', 'income-per-year'],
-                source_code='raw_data.dropna()'
-                ):
-            DataFrame([[46, 'Private', 128645, 'Some-college', 10, 'Divorced', 'Prof-specialty',
-                        'Not-in-family', 'White', 'Female', 0, 0, 40, 'United-States', '<=50K'],
-                       [29, 'Local-gov', 115585, 'Some-college', 10, 'Never-married', 'Handlers-cleaners',
-                        'Not-in-family', 'White', 'Male', 0, 0, 50, 'United-States', '<=50K']],
-                      columns=['age', 'workclass', 'fnlwgt', 'education', 'education-num',
-                               'marital-status', 'occupation', 'relationship', 'race', 'sex',
-                               'capital-gain', 'capital-loss', 'hours-per-week',
-                               'native-country', 'income-per-year']),
-        DagNode(node_id=23, operator_type=OperatorType.PROJECTION, module=('pandas.core.frame', '__getitem__',
-                                                                           'Projection'),
-                code_reference=CodeReference(16, 38, 16, 61), description="to ['income-per-year']",
-                columns=['income-per-year'], source_code="data['income-per-year']"):
-            DataFrame([['<=50K'], ['<=50K']], columns=['array']),
-        DagNode(node_id=28, operator_type=OperatorType.PROJECTION_MODIFY,
-                module=('sklearn.preprocessing._label', 'label_binarize'),
-                code_reference=CodeReference(16, 9, 16, 89),
-                description="label_binarize, classes: ['>50K', '<=50K']", columns=['array'],
-                source_code="preprocessing.label_binarize(data['income-per-year'], classes=['>50K', '<=50K'])"):
-            DataFrame([[array(1)], [array(1)]], columns=['array']),
-        DagNode(node_id=56, operator_type=OperatorType.TRAIN_DATA, module=('sklearn.pipeline', 'fit', 'Train Data'),
-                code_reference=CodeReference(24, 18, 26, 51), description=None,
-                columns=['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status',
-                         'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
-                         'hours-per-week', 'native-country', 'income-per-year'],
-                source_code='income_pipeline.fit(data, labels)'):
-            DataFrame([
-                [46, 'Private', 128645, 'Some-college', 10, 'Divorced', 'Prof-specialty',
-                 'Not-in-family', 'White', 'Female', 0, 0, 40, 'United-States', '<=50K'],
-                [29, 'Local-gov', 115585, 'Some-college', 10, 'Never-married', 'Handlers-cleaners',
-                 'Not-in-family', 'White', 'Male', 0, 0, 50, 'United-States', '<=50K']],
-                      columns=['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status',
-                               'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
-                               'hours-per-week', 'native-country', 'income-per-year']),
+
         DagNode(node_id=56, operator_type=OperatorType.TRAIN_LABELS, module=('sklearn.pipeline', 'fit', 'Train Labels'),
                 code_reference=CodeReference(24, 18, 26, 51), description=None, columns=['array'],
                 source_code='income_pipeline.fit(data, labels)'):
