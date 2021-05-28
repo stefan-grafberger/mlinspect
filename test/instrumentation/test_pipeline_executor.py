@@ -57,8 +57,6 @@ def test_pipeline_executor_nb_file(mocker):
     """
     Tests whether the PipelineExecutor works for .ipynb files
     """
-    _pipeline_executor.singleton = _pipeline_executor.PipelineExecutor()
-
     before_call_pandas_spy = mocker.spy(PandasBackend, 'before_call')
     after_call_pandas_spy = mocker.spy(PandasBackend, 'after_call')
     before_call_sklearn_spy = mocker.spy(SklearnBackend, 'before_call')
