@@ -2,7 +2,7 @@
 Tests whether the healthcare demo works
 """
 import ast
-from test.testing_helper_utils import run_and_assert_all_op_outputs_inspected
+from mlinspect.testing._testing_helper_utils import run_and_assert_all_op_outputs_inspected
 from example_pipelines import HEALTHCARE_PY, HEALTHCARE_PNG
 
 

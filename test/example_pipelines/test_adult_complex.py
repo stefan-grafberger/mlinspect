@@ -3,8 +3,8 @@ Tests whether the adult_easy test pipeline works
 """
 import ast
 
+from mlinspect.testing._testing_helper_utils import run_and_assert_all_op_outputs_inspected
 from example_pipelines import ADULT_COMPLEX_PY, ADULT_COMPLEX_PNG
-from test.testing_helper_utils import run_and_assert_all_op_outputs_inspected
 
 
 def test_py_pipeline_runs():

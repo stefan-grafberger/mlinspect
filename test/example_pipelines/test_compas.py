@@ -2,7 +2,7 @@
 Tests whether the adult_easy test pipeline works
 """
 import ast
-from test.testing_helper_utils import run_and_assert_all_op_outputs_inspected
+from mlinspect.testing._testing_helper_utils import run_and_assert_all_op_outputs_inspected
 from example_pipelines import COMPAS_PY, COMPAS_PNG
 
 

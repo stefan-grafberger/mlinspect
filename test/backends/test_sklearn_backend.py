@@ -2,7 +2,7 @@
 Tests whether the PipelineExecutor works
 """
 
-from test.testing_helper_utils import run_random_annotation_testing_analyzer, \
+from mlinspect.testing._testing_helper_utils import run_random_annotation_testing_analyzer, \
     run_row_index_annotation_testing_analyzer, run_multiple_test_analyzers
 from example_pipelines import ADULT_SIMPLE_PY
 

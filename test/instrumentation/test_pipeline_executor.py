@@ -12,7 +12,7 @@ from mlinspect.backends._pandas_backend import PandasBackend
 from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import CodeReference, DagNode
-from ..testing_helper_utils import get_expected_dag_adult_easy
+from mlinspect.testing._testing_helper_utils import get_expected_dag_adult_easy
 
 
 def test_pipeline_executor_py_file(mocker):

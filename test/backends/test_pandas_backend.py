@@ -1,8 +1,8 @@
 """
 Tests whether the PipelineExecutor works
 """
-from ..testing_helper_utils import get_pandas_read_csv_and_dropna_code, run_random_annotation_testing_analyzer, \
-    run_row_index_annotation_testing_analyzer, run_multiple_test_analyzers
+from mlinspect.testing._testing_helper_utils import get_pandas_read_csv_and_dropna_code, \
+    run_random_annotation_testing_analyzer, run_row_index_annotation_testing_analyzer, run_multiple_test_analyzers
 
 
 def test_pandas_backend_random_annotation_propagation():

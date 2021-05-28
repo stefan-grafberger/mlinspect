@@ -5,7 +5,7 @@ import os
 
 from mlinspect.utils import get_project_root
 from mlinspect.visualisation import save_fig_to_path, get_dag_as_pretty_string
-from ..testing_helper_utils import get_expected_dag_adult_easy
+from mlinspect.testing._testing_helper_utils import get_expected_dag_adult_easy
 
 
 def test_save_fig_to_path():

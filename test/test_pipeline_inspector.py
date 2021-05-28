@@ -8,8 +8,8 @@ from testfixtures import compare
 from mlinspect import PipelineInspector
 from mlinspect.checks import CheckStatus, NoBiasIntroducedFor, NoIllegalFeatures
 from mlinspect.inspections import HistogramForColumns, MaterializeFirstOutputRows
+from mlinspect.testing._testing_helper_utils import get_expected_dag_adult_easy
 from example_pipelines import ADULT_SIMPLE_PY, ADULT_SIMPLE_IPYNB
-from .testing_helper_utils import get_expected_dag_adult_easy
 
 
 def test_inspector_adult_easy_py_pipeline():

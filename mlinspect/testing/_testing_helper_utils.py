@@ -17,8 +17,8 @@ from mlinspect.inspections import HistogramForColumns
 from mlinspect.inspections._lineage import RowLineage
 from mlinspect.inspections._materialize_first_output_rows import MaterializeFirstOutputRows
 from mlinspect.instrumentation._dag_node import DagNode, OperatorType, CodeReference
+from mlinspect.testing._random_annotation_testing_inspection import RandomAnnotationTestingInspection
 from mlinspect.visualisation._visualisation import save_fig_to_path
-from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
 
 
 def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with_code_references=True):
