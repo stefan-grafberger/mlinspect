@@ -37,5 +37,4 @@ def test_instrumented_py_pipeline_runs():
     """
     Tests whether the pipeline works with instrumentation
     """
-
     run_and_assert_all_op_outputs_inspected(ADULT_SIMPLE_PY, ["race"], ADULT_SIMPLE_PNG)

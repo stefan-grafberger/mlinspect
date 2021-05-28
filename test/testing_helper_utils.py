@@ -13,6 +13,7 @@ from example_pipelines._pipelines import ADULT_SIMPLE_PY
 from mlinspect._pipeline_inspector import PipelineInspector
 from mlinspect.checks._no_bias_introduced_for import NoBiasIntroducedFor
 from mlinspect.checks._no_illegal_features import NoIllegalFeatures
+from mlinspect.inspections import HistogramForColumns
 from mlinspect.inspections._lineage import RowLineage
 from mlinspect.inspections._materialize_first_output_rows import MaterializeFirstOutputRows
 from mlinspect.instrumentation._dag_node import DagNode, OperatorType, CodeReference
@@ -331,8 +332,20 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
         .add_required_inspection(RowLineage(5)) \
         .add_required_inspection(MaterializeFirstOutputRows(5)) \
         .execute()
-    materialize_output = inspector_result.inspection_to_annotations[MaterializeFirstOutputRows(5)]
-    assert len(materialize_output) == (len(inspector_result.dag.nodes) - 1)  # Estimator does not have output
+
+    for dag_node, inspection_result in inspector_result.dag_node_to_inspection_results.items():
+        assert MaterializeFirstOutputRows(5) in inspection_result
+        assert RowLineage(5) in inspection_result
+        assert MissingEmbeddings(20) in inspection_result
+        assert HistogramForColumns(sensitive_columns) in inspection_result
+        if dag_node.operator_type != OperatorType.ESTIMATOR:  # Estimator does not have output
+            assert inspection_result[MaterializeFirstOutputRows(5)] is not None
+            assert inspection_result[RowLineage(5)] is not None
+            assert inspection_result[HistogramForColumns(sensitive_columns)] is not None
+        else:
+            assert inspection_result[MaterializeFirstOutputRows(5)] is None
+            assert inspection_result[RowLineage(5)] is not None
+            assert inspection_result[HistogramForColumns(sensitive_columns)] is None
 
     save_fig_to_path(inspector_result.dag, dag_png_path)
     assert os.path.isfile(dag_png_path)
