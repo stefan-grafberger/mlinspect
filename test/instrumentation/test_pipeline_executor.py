@@ -10,7 +10,7 @@ from example_pipelines import ADULT_SIMPLE_PY, ADULT_SIMPLE_IPYNB
 from mlinspect.backends._pandas_backend import PandasBackend
 from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import CodeReference
-from ..testing_helper_utils import get_pandas_read_csv_and_dropna_code, get_expected_dag_adult_easy_py, \
+from ..testing_helper_utils import get_pandas_read_csv_and_dropna_code, get_expected_dag_adult_easy, \
     get_expected_dag_adult_easy_ipynb
 
 
@@ -26,7 +26,7 @@ def test_pipeline_executor_py_file(mocker):
     after_call_used_spy = mocker.spy(_pipeline_executor, 'after_call_used')
 
     extracted_dag = _pipeline_executor.singleton.run(None, ADULT_SIMPLE_PY, None, [], []).dag
-    expected_dag = get_expected_dag_adult_easy_py()
+    expected_dag = get_expected_dag_adult_easy()
     assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
 
     assert before_call_used_value_spy.call_count == 11
