@@ -11,6 +11,7 @@ class OperatorType(Enum):
     The different operator types in our DAG
     """
     DATA_SOURCE = "Data Source"
+    MISSING_OP = "Encountered unsupported operation! Fallback: Data Source"
     SELECTION = "Selection"
     PROJECTION = "Projection"
     PROJECTION_MODIFY = "Projection (Modify)"

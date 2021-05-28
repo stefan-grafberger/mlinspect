@@ -6,6 +6,7 @@ import os
 from inspect import cleandoc
 
 import networkx
+from pandas import DataFrame
 from testfixtures import RangeComparison
 
 from demo.feature_overview.missing_embeddings import MissingEmbeddings
@@ -21,7 +22,7 @@ from mlinspect.visualisation._visualisation import save_fig_to_path
 from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
 
 
-def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0):
+def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with_code_references=True):
     """
     Get the expected DAG for the adult_easy pipeline
     """
@@ -170,6 +171,11 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0):
                                  optional_source_code='tree.DecisionTreeClassifier()')
     expected_graph.add_edge(expected_train_data, expected_estimator)
     expected_graph.add_edge(expected_train_labels, expected_estimator)
+
+    if not with_code_references:
+        for dag_node in expected_graph.nodes:
+            dag_node.optional_code_reference = None
+            dag_node.optional_source_code = None
 
     return expected_graph
 
@@ -334,6 +340,7 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
         .execute()
 
     for dag_node, inspection_result in inspector_result.dag_node_to_inspection_results.items():
+        assert dag_node.operator_type != OperatorType.MISSING_OP
         assert MaterializeFirstOutputRows(5) in inspection_result
         assert RowLineage(5) in inspection_result
         assert MissingEmbeddings(20) in inspection_result
@@ -349,3 +356,11 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
 
     save_fig_to_path(inspector_result.dag, dag_png_path)
     assert os.path.isfile(dag_png_path)
+
+
+def black_box_df_op():
+    """
+    Black box operation returning a dataframe
+    """
+    pandas_df = DataFrame([0, 1, 2, 3, 4], columns=['A'])
+    return pandas_df

@@ -185,7 +185,7 @@ def get_input_info(df_object, caller_filename, lineno, function_info, optional_c
         description = "Warning! Operator {}:{} {} encountered a DataFrame resulting from an operation " \
                       "without mlinspect support!".format(caller_filename, lineno, code_reference)
         missing_op_id = singleton.get_next_missing_op_id()
-        input_dag_node = DagNode(missing_op_id, caller_filename, lineno, OperatorType.DATA_SOURCE,
+        input_dag_node = DagNode(missing_op_id, caller_filename, lineno, OperatorType.MISSING_OP,
                                  description=description,
                                  columns=columns, optional_code_reference=optional_code_reference,
                                  optional_source_code=optional_source_code)
