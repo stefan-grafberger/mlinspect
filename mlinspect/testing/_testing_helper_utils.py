@@ -356,6 +356,8 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
     save_fig_to_path(inspector_result.dag, dag_png_path)
     assert os.path.isfile(dag_png_path)
 
+    return inspector_result.dag
+
 
 def black_box_df_op():
     """

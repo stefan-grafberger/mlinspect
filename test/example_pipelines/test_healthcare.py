@@ -20,4 +20,5 @@ def test_instrumented_py_pipeline_runs():
     """
     Tests whether the pipeline works with instrumentation
     """
-    run_and_assert_all_op_outputs_inspected(HEALTHCARE_PY, ["age_group", "race"], HEALTHCARE_PNG)
+    dag = run_and_assert_all_op_outputs_inspected(HEALTHCARE_PY, ["age_group", "race"], HEALTHCARE_PNG)
+    assert len(dag) == -1
