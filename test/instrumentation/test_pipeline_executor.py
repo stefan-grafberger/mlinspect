@@ -155,7 +155,7 @@ def test_black_box_operation():
     """
     test_code = cleandoc("""
         import pandas
-        from test.testing_helper_utils import black_box_df_op
+        from mlinspect.testing._testing_helper_utils import black_box_df_op
         
         df = black_box_df_op()
         df = df.dropna()
