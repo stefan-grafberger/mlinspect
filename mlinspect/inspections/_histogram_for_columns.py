@@ -19,6 +19,10 @@ class HistogramForColumns(Inspection):
         self._operator_type = None
         self.sensitive_columns = sensitive_columns
 
+    @property
+    def inspection_id(self):
+        return tuple(self.sensitive_columns)
+
     def visit_operator(self, inspection_input) -> Iterable[any]:
         """
         Visit an operator

@@ -47,8 +47,10 @@ class NoIllegalFeatures(Check):
         """Evaluate the check"""
         # TODO: Make this robust and add extensive testing
         dag = inspection_result.dag
-        train_data = [node for node in dag.nodes if node.operator_type == OperatorType.ESTIMATOR][0]
-        used_columns = self.get_used_columns(dag, train_data)
+        train_data_nodes = [node for node in dag.nodes if node.operator_type == OperatorType.TRAIN_DATA]
+        used_columns = []
+        for train_data_node in train_data_nodes:
+            used_columns.extend(self.get_used_columns(dag, train_data_node))
         forbidden_columns = {*ILLEGAL_FEATURES, *self.additional_illegal_feature_names}
         used_illegal_columns = list(set(used_columns).intersection(forbidden_columns))
         if used_illegal_columns:
