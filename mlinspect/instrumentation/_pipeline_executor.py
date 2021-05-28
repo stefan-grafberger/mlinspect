@@ -138,7 +138,8 @@ class PipelineExecutor:
         func_import_node = ast.ImportFrom(module='mlinspect.instrumentation._pipeline_executor',
                                           names=[ast.alias(name='set_code_reference_call', asname=None),
                                                  ast.alias(name='set_code_reference_subscript', asname=None),
-                                                 ast.alias(name='monkey_patch', asname=None)],
+                                                 ast.alias(name='monkey_patch', asname=None),
+                                                 ast.alias(name='undo_monkey_patch', asname=None)],
                                           level=0)
         parsed_ast.body.insert(0, func_import_node)
 
@@ -146,6 +147,11 @@ class PipelineExecutor:
         inspect_import_node = ast.Expr(value=ast.Call(
             func=ast.Name(id='monkey_patch', ctx=ast.Load()), args=[], keywords=[]))
         parsed_ast.body.insert(1, inspect_import_node)
+        # undo_monkey_patch()
+        inspect_import_node = ast.Expr(value=ast.Call(
+            func=ast.Name(id='undo_monkey_patch', ctx=ast.Load()), args=[], keywords=[]))
+        parsed_ast.body.append(inspect_import_node)
+
         parsed_ast = ast.fix_missing_locations(parsed_ast)
 
         return parsed_ast
@@ -213,3 +219,12 @@ def monkey_patch():
     patches = gorilla.find_patches([monkeypatching])
     for patch in patches:
         gorilla.apply(patch)
+
+
+def undo_monkey_patch():
+    """
+    Function that does the actual monkey patching
+    """
+    patches = gorilla.find_patches([monkeypatching])
+    for patch in patches:
+        gorilla.revert(patch)

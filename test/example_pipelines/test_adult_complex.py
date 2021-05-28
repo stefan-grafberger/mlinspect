@@ -15,9 +15,6 @@ def test_py_pipeline_runs():
     """
     Tests whether the .py version of the pipeline works
     """
-    importlib.reload(pandas)
-    # Need to undo monkeypatching. If there are failing tests, maybe context does not get reset properly?
-    importlib.reload(sklearn)
     with open(ADULT_COMPLEX_PY) as file:
         text = file.read()
         parsed_ast = ast.parse(text)
