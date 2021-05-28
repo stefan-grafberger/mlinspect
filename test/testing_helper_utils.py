@@ -277,10 +277,12 @@ def run_random_annotation_testing_analyzer(code):
         .on_pipeline_from_string(code) \
         .add_required_inspection(RandomAnnotationTestingInspection(10)) \
         .execute()
-    inspection_results = result.inspection_to_annotations
-    assert RandomAnnotationTestingInspection(10) in inspection_results
-    random_annotation_analyzer_result = inspection_results[RandomAnnotationTestingInspection(10)]
-    return random_annotation_analyzer_result
+    inspection_results = result.dag_node_to_inspection_results
+    dag_node_to_random_inspection = {}
+    for dag_node, inspection_result in inspection_results.items():
+        assert RandomAnnotationTestingInspection(10) in inspection_result
+        dag_node_to_random_inspection[dag_node] = inspection_result[RandomAnnotationTestingInspection(10)]
+    return dag_node_to_random_inspection
 
 
 def run_row_index_annotation_testing_analyzer(code):
@@ -291,10 +293,12 @@ def run_row_index_annotation_testing_analyzer(code):
         .on_pipeline_from_string(code) \
         .add_required_inspection(RowLineage(10)) \
         .execute()
-    inspection_results = result.inspection_to_annotations
-    assert RowLineage(10) in inspection_results
-    result = inspection_results[RowLineage(10)]
-    return result
+    inspection_results = result.dag_node_to_inspection_results
+    dag_node_to_lineage_inspection = {}
+    for dag_node, inspection_result in inspection_results.items():
+        assert RowLineage(10) in inspection_result
+        dag_node_to_lineage_inspection[dag_node] = inspection_result[RowLineage(10)]
+    return dag_node_to_lineage_inspection
 
 
 def run_multiple_test_analyzers(code):
@@ -308,8 +312,9 @@ def run_multiple_test_analyzers(code):
         .on_pipeline_from_string(code) \
         .add_required_inspections(analyzers) \
         .execute()
-    inspection_results = result.inspection_to_annotations
-    return inspection_results, analyzers
+    dag_node_to_inspection_results = result.dag_node_to_inspection_results
+
+    return dag_node_to_inspection_results, analyzers
 
 
 def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag_png_path):
