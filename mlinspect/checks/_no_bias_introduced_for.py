@@ -60,7 +60,7 @@ class NoBiasIntroducedFor(Check):
         """Evaluate the check"""
         dag = inspection_result.dag
         histograms = {}
-        for dag_node, inspection_results in inspection_result.inspection_to_annotations:
+        for dag_node, inspection_results in inspection_result.dag_node_to_inspection_results.items():
             histograms[dag_node] = inspection_results[HistogramForColumns(self.sensitive_columns)]
         relevant_nodes = [node for node in dag.nodes if node.operator_type in {OperatorType.JOIN,
                                                                                OperatorType.SELECTION} or

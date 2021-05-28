@@ -117,6 +117,7 @@ class PipelineExecutor:
         self.track_code_references = True
         self.op_id_to_dag_node = dict()
         self.inspection_results = InspectionResult(networkx.DiGraph(), dict())
+        self.inspections = []
 
     @staticmethod
     def instrument_pipeline(parsed_ast, track_code_references):
