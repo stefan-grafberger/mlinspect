@@ -5,22 +5,22 @@ import ast
 import os
 from inspect import cleandoc
 
-from testfixtures import StringComparison, RangeComparison
-
-from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
 import networkx
+from testfixtures import RangeComparison
+
 from demo.feature_overview.missing_embeddings import MissingEmbeddings
 from example_pipelines._pipelines import ADULT_SIMPLE_PY
+from mlinspect._pipeline_inspector import PipelineInspector
 from mlinspect.checks._no_bias_introduced_for import NoBiasIntroducedFor
 from mlinspect.checks._no_illegal_features import NoIllegalFeatures
-from mlinspect.visualisation._visualisation import save_fig_to_path
 from mlinspect.inspections._lineage import RowLineage
 from mlinspect.inspections._materialize_first_output_rows import MaterializeFirstOutputRows
 from mlinspect.instrumentation._dag_node import DagNode, OperatorType, CodeReference
-from mlinspect._pipeline_inspector import PipelineInspector
+from mlinspect.visualisation._visualisation import save_fig_to_path
+from test.backends.random_annotation_testing_inspection import RandomAnnotationTestingInspection
 
 
-def get_expected_dag_adult_easy(caller_filename: str):
+def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0):
     """
     Get the expected DAG for the adult_easy pipeline
     """
@@ -36,19 +36,19 @@ def get_expected_dag_adult_easy(caller_filename: str):
                                             'marital-status', 'occupation', 'relationship', 'race', 'sex',
                                             'capital-gain', 'capital-loss', 'hours-per-week', 'native-country',
                                             'income-per-year'],
-                                   optional_code_reference=CodeReference(RangeComparison(12, 18), 11,
-                                                                         RangeComparison(12, 18), 62),
+                                   optional_code_reference=CodeReference(12 + line_offset, 11,
+                                                                         12 + line_offset, 62),
                                    optional_source_code="pd.read_csv(train_file, na_values='?', index_col=0)")
     expected_graph.add_node(expected_data_source)
 
-    expected_select = DagNode(node_id=1, caller_filename=caller_filename, lineno=RangeComparison(14, 20),
+    expected_select = DagNode(node_id=1, caller_filename=caller_filename, lineno=14 + line_offset,
                               operator_type=OperatorType.SELECTION, module=('pandas.core.frame', 'dropna'),
                               description='dropna',
                               columns=['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status',
                                        'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
                                        'hours-per-week', 'native-country', 'income-per-year'],
-                              optional_code_reference=CodeReference(lineno=RangeComparison(14, 20), col_offset=7,
-                                                                    end_lineno=RangeComparison(14, 20),
+                              optional_code_reference=CodeReference(lineno=14 + line_offset, col_offset=7,
+                                                                    end_lineno=14 + line_offset,
                                                                     end_col_offset=24),
                               optional_source_code='raw_data.dropna()')
     expected_graph.add_edge(expected_data_source, expected_select)
@@ -59,114 +59,112 @@ def get_expected_dag_adult_easy(caller_filename: str):
                    "    ('numeric', preprocessing.StandardScaler(), ['age', 'hours-per-week'])\n" \
                    "])"
     expected_pipeline_project_one = DagNode(node_id=8, caller_filename=caller_filename,
-                                            lineno=RangeComparison(18, 24), operator_type=OperatorType.PROJECTION,
+                                            lineno=18 + line_offset, operator_type=OperatorType.PROJECTION,
                                             module=('sklearn.compose._column_transformer', 'ColumnTransformer'),
                                             description="to ['education', 'workclass']",
                                             columns=['education', 'workclass'],
-                                            optional_code_reference=CodeReference(lineno=RangeComparison(18, 24),
+                                            optional_code_reference=CodeReference(lineno=18 + line_offset,
                                                                                   col_offset=25,
-                                                                                  end_lineno=RangeComparison(21, 27),
+                                                                                  end_lineno=21 + line_offset,
                                                                                   end_col_offset=2),
                                             optional_source_code=pipeline_str)
     expected_graph.add_edge(expected_select, expected_pipeline_project_one)
     expected_pipeline_project_two = DagNode(node_id=9, caller_filename=caller_filename,
-                                            lineno=RangeComparison(18, 24), operator_type=OperatorType.PROJECTION,
+                                            lineno=18 + line_offset, operator_type=OperatorType.PROJECTION,
                                             module=('sklearn.compose._column_transformer', 'ColumnTransformer'),
                                             description="to ['age', 'hours-per-week']",
                                             columns=['age', 'hours-per-week'],
-                                            optional_code_reference=CodeReference(lineno=RangeComparison(18, 24),
+                                            optional_code_reference=CodeReference(lineno=18 + line_offset,
                                                                                   col_offset=25,
-                                                                                  end_lineno=RangeComparison(21, 27),
+                                                                                  end_lineno=21 + line_offset,
                                                                                   end_col_offset=2),
                                             optional_source_code=pipeline_str)
     expected_graph.add_edge(expected_select, expected_pipeline_project_two)
 
     expected_pipeline_transformer_one = DagNode(node_id=4, caller_filename=caller_filename,
-                                                lineno=RangeComparison(19, 25), operator_type=OperatorType.TRANSFORMER,
+                                                lineno=19 + line_offset, operator_type=OperatorType.TRANSFORMER,
                                                 module=('sklearn.preprocessing._encoders', 'OneHotEncoder'),
                                                 description='One-Hot Encoder', columns=['array'],
-                                                optional_code_reference=CodeReference(lineno=RangeComparison(19, 25),
+                                                optional_code_reference=CodeReference(lineno=19 + line_offset,
                                                                                       col_offset=20,
-                                                                                      end_lineno=RangeComparison(
-                                                                                          19, 25),
+                                                                                      end_lineno=19 + line_offset,
                                                                                       end_col_offset=72),
                                                 optional_source_code="preprocessing."
                                                                      "OneHotEncoder(handle_unknown='ignore')")
     expected_pipeline_transformer_two = DagNode(node_id=5, caller_filename=caller_filename,
-                                                lineno=RangeComparison(20, 26), operator_type=OperatorType.TRANSFORMER,
+                                                lineno=20 + line_offset, operator_type=OperatorType.TRANSFORMER,
                                                 module=('sklearn.preprocessing._data', 'StandardScaler'),
                                                 description='Standard Scaler', columns=['array'],
-                                                optional_code_reference=CodeReference(lineno=RangeComparison(20, 26),
+                                                optional_code_reference=CodeReference(lineno=20 + line_offset,
                                                                                       col_offset=16,
-                                                                                      end_lineno=RangeComparison(
-                                                                                          20, 26),
+                                                                                      end_lineno=20 + line_offset,
                                                                                       end_col_offset=46),
                                                 optional_source_code='preprocessing.StandardScaler()')
     expected_graph.add_edge(expected_pipeline_project_one, expected_pipeline_transformer_one)
     expected_graph.add_edge(expected_pipeline_project_two, expected_pipeline_transformer_two)
 
     expected_pipeline_concatenation = DagNode(node_id=6, caller_filename=caller_filename,
-                                              lineno=RangeComparison(18, 24), operator_type=OperatorType.CONCATENATION,
+                                              lineno=18 + line_offset, operator_type=OperatorType.CONCATENATION,
                                               module=('sklearn.compose._column_transformer', 'ColumnTransformer'),
                                               description='', columns=['array'],
-                                              optional_code_reference=CodeReference(lineno=RangeComparison(18, 24),
+                                              optional_code_reference=CodeReference(lineno=18 + line_offset,
                                                                                     col_offset=25,
-                                                                                    end_lineno=RangeComparison(21, 27),
+                                                                                    end_lineno=21 + line_offset,
                                                                                     end_col_offset=2),
                                               optional_source_code=pipeline_str)
     expected_graph.add_edge(expected_pipeline_transformer_one, expected_pipeline_concatenation)
     expected_graph.add_edge(expected_pipeline_transformer_two, expected_pipeline_concatenation)
 
-    expected_train_data = DagNode(node_id=10, caller_filename=caller_filename, lineno=RangeComparison(26, 32),
+    expected_train_data = DagNode(node_id=10, caller_filename=caller_filename, lineno=26 + line_offset,
                                   operator_type=OperatorType.TRAIN_DATA,
                                   module=('sklearn.tree._classes', 'DecisionTreeClassifier'), description='Train Data',
                                   columns=['array'],
-                                  optional_code_reference=CodeReference(lineno=RangeComparison(26, 32), col_offset=19,
-                                                                        end_lineno=RangeComparison(26, 32),
+                                  optional_code_reference=CodeReference(lineno=26 + line_offset, col_offset=19,
+                                                                        end_lineno=26 + line_offset,
                                                                         end_col_offset=48),
                                   optional_source_code='tree.DecisionTreeClassifier()')
     expected_graph.add_edge(expected_pipeline_concatenation, expected_train_data)
 
-    expected_project = DagNode(node_id=2, caller_filename=caller_filename, lineno=RangeComparison(16, 22),
+    expected_project = DagNode(node_id=2, caller_filename=caller_filename, lineno=16 + line_offset,
                                operator_type=OperatorType.PROJECTION, module=('pandas.core.frame', '__getitem__'),
                                description="to ['income-per-year']", columns=['income-per-year'],
-                               optional_code_reference=CodeReference(lineno=RangeComparison(16, 22), col_offset=38,
-                                                                     end_lineno=RangeComparison(16, 22),
+                               optional_code_reference=CodeReference(lineno=16 + line_offset, col_offset=38,
+                                                                     end_lineno=16 + line_offset,
                                                                      end_col_offset=61),
                                optional_source_code="data['income-per-year']")
     expected_graph.add_edge(expected_select, expected_project)
 
     expected_project_modify = DagNode(node_id=3, caller_filename=caller_filename,
-                                      lineno=RangeComparison(16, 22),
+                                      lineno=16 + line_offset,
                                       operator_type=OperatorType.PROJECTION_MODIFY,
                                       module=('sklearn.preprocessing._label', 'label_binarize'),
                                       description="label_binarize, classes: ['>50K', '<=50K']", columns=['array'],
-                                      optional_code_reference=CodeReference(lineno=RangeComparison(16, 22),
+                                      optional_code_reference=CodeReference(lineno=16 + line_offset,
                                                                             col_offset=9,
-                                                                            end_lineno=RangeComparison(16, 22),
+                                                                            end_lineno=16 + line_offset,
                                                                             end_col_offset=89),
                                       optional_source_code="preprocessing.label_binarize(data['income-per-year'], "
                                                            "classes=['>50K', '<=50K'])")
     expected_graph.add_edge(expected_project, expected_project_modify)
 
     expected_train_labels = DagNode(node_id=11, caller_filename=caller_filename,
-                                    lineno=RangeComparison(26, 32),
+                                    lineno=26 + line_offset,
                                     operator_type=OperatorType.TRAIN_LABELS,
                                     module=('sklearn.tree._classes', 'DecisionTreeClassifier'),
                                     description='Train Labels', columns=['array'],
-                                    optional_code_reference=CodeReference(lineno=RangeComparison(26, 32),
+                                    optional_code_reference=CodeReference(lineno=26 + line_offset,
                                                                           col_offset=19,
-                                                                          end_lineno=RangeComparison(26, 32),
+                                                                          end_lineno=26 + line_offset,
                                                                           end_col_offset=48),
                                     optional_source_code='tree.DecisionTreeClassifier()')
     expected_graph.add_edge(expected_project_modify, expected_train_labels)
 
     expected_estimator = DagNode(node_id=7, caller_filename=caller_filename,
-                                 lineno=RangeComparison(26, 32), operator_type=OperatorType.ESTIMATOR,
+                                 lineno=26 + line_offset, operator_type=OperatorType.ESTIMATOR,
                                  module=('sklearn.tree._classes', 'DecisionTreeClassifier'),
                                  description='Decision Tree', columns=[],
-                                 optional_code_reference=CodeReference(lineno=RangeComparison(26, 32), col_offset=19,
-                                                                       end_lineno=RangeComparison(26, 32),
+                                 optional_code_reference=CodeReference(lineno=26 + line_offset, col_offset=19,
+                                                                       end_lineno=26 + line_offset,
                                                                        end_col_offset=48),
                                  optional_source_code='tree.DecisionTreeClassifier()')
     expected_graph.add_edge(expected_train_data, expected_estimator)

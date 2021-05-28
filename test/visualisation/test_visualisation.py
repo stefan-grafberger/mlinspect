@@ -12,7 +12,7 @@ def test_save_fig_to_path():
     """
     Tests whether the .py version of the inspector works
     """
-    extracted_dag = get_expected_dag_adult_easy()
+    extracted_dag = get_expected_dag_adult_easy("<string-source>")
 
     filename = os.path.join(str(get_project_root()), "example_pipelines", "adult_simple", "adult_simple.png")
     save_fig_to_path(extracted_dag, filename)
@@ -24,7 +24,7 @@ def test_get_dag_as_pretty_string():
     """
     Tests whether the .py version of the inspector works
     """
-    extracted_dag = get_expected_dag_adult_easy()
+    extracted_dag = get_expected_dag_adult_easy("<string-source>")
 
     pretty_string = get_dag_as_pretty_string(extracted_dag)
 

@@ -55,7 +55,7 @@ def test_inspector_adult_easy_ipynb_pipeline():
         .add_check(NoIllegalFeatures()) \
         .execute()
     extracted_dag = inspector_result.dag
-    expected_dag = get_expected_dag_adult_easy(ADULT_SIMPLE_IPYNB)
+    expected_dag = get_expected_dag_adult_easy(ADULT_SIMPLE_IPYNB, 6)
     compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
 
     assert HistogramForColumns(['race']) in list(inspector_result.dag_node_to_inspection_results.values())[0]
