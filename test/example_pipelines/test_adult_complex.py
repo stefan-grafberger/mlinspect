@@ -2,6 +2,11 @@
 Tests whether the adult_easy test pipeline works
 """
 import ast
+import importlib
+
+import pandas
+import sklearn
+
 from test.testing_helper_utils import run_and_assert_all_op_outputs_inspected
 from example_pipelines import ADULT_COMPLEX_PY, ADULT_COMPLEX_PNG
 
@@ -10,6 +15,9 @@ def test_py_pipeline_runs():
     """
     Tests whether the .py version of the pipeline works
     """
+    importlib.reload(pandas)
+    # Need to undo monkeypatching. If there are failing tests, maybe context does not get reset properly?
+    importlib.reload(sklearn)
     with open(ADULT_COMPLEX_PY) as file:
         text = file.read()
         parsed_ast = ast.parse(text)
