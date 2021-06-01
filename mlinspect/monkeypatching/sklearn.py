@@ -4,7 +4,7 @@ Monkey patching for sklearn
 
 import gorilla
 import numpy
-from sklearn import preprocessing, compose, tree, impute, pipeline
+from sklearn import preprocessing, compose, tree, impute
 
 from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.inspections._inspection_input import OperatorContext
@@ -166,7 +166,7 @@ class SklearnStandardScalerPatching:
 
     @gorilla.name('__init__')
     @gorilla.settings(allow_hit=True)
-    def patched__init__(self, *, copy=True, with_mean=True, with_std=True, mlinspect_op_id=None,
+    def patched__init__(self, *, copy=True, with_mean=True, with_std=True,
                         mlinspect_caller_filename=None, mlinspect_lineno=None,
                         mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None):
         """ Patch for ('sklearn.preprocessing._data', 'StandardScaler') """
@@ -223,7 +223,7 @@ class SklearnKBinsDiscretizerPatching:
 
     @gorilla.name('__init__')
     @gorilla.settings(allow_hit=True)
-    def patched__init__(self, n_bins=5, *, encode='onehot', strategy='quantile', mlinspect_op_id=None,
+    def patched__init__(self, n_bins=5, *, encode='onehot', strategy='quantile',
                         mlinspect_caller_filename=None, mlinspect_lineno=None,
                         mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None):
         """ Patch for ('sklearn.preprocessing._discretization', 'KBinsDiscretizer') """
@@ -281,7 +281,7 @@ class SklearnOneHotEncoderPatching:
     @gorilla.name('__init__')
     @gorilla.settings(allow_hit=True)
     def patched__init__(self, *, categories='auto', drop=None, sparse=True,
-                        dtype=numpy.float64, handle_unknown='error', mlinspect_op_id=None,
+                        dtype=numpy.float64, handle_unknown='error',
                         mlinspect_caller_filename=None, mlinspect_lineno=None,
                         mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None):
         """ Patch for ('sklearn.preprocessing._encoders', 'OneHotEncoder') """
@@ -338,7 +338,7 @@ class SklearnSimpleImputerPatching:
     @gorilla.name('__init__')
     @gorilla.settings(allow_hit=True)
     def patched__init__(self, *, missing_values=numpy.nan, strategy="mean",
-                        fill_value=None, verbose=0, copy=True, add_indicator=False, mlinspect_op_id=None,
+                        fill_value=None, verbose=0, copy=True, add_indicator=False,
                         mlinspect_caller_filename=None, mlinspect_lineno=None,
                         mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None):
         """ Patch for ('sklearn.impute._base', 'SimpleImputer') """
@@ -399,7 +399,7 @@ class SklearnDecisionTreePatching:
     def patched__init__(self, *, criterion="gini", splitter="best", max_depth=None, min_samples_split=2,
                         min_samples_leaf=1, min_weight_fraction_leaf=0., max_features=None, random_state=None,
                         max_leaf_nodes=None, min_impurity_decrease=0., min_impurity_split=None, class_weight=None,
-                        presort='deprecated', ccp_alpha=0.0, mlinspect_op_id=None, mlinspect_caller_filename=None,
+                        presort='deprecated', ccp_alpha=0.0, mlinspect_caller_filename=None,
                         mlinspect_lineno=None, mlinspect_optional_code_reference=None,
                         mlinspect_optional_source_code=None):
         """ Patch for ('sklearn.tree._classes', 'DecisionTreeClassifier') """

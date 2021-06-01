@@ -59,7 +59,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
                    "['education', 'workclass']),\n" \
                    "    ('numeric', preprocessing.StandardScaler(), ['age', 'hours-per-week'])\n" \
                    "])"
-    expected_pipeline_project_one = DagNode(node_id=8, caller_filename=caller_filename,
+    expected_pipeline_project_one = DagNode(node_id=4, caller_filename=caller_filename,
                                             lineno=18 + line_offset, operator_type=OperatorType.PROJECTION,
                                             module=('sklearn.compose._column_transformer', 'ColumnTransformer'),
                                             description="to ['education', 'workclass']",
@@ -70,7 +70,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
                                                                                   end_col_offset=2),
                                             optional_source_code=pipeline_str)
     expected_graph.add_edge(expected_select, expected_pipeline_project_one)
-    expected_pipeline_project_two = DagNode(node_id=9, caller_filename=caller_filename,
+    expected_pipeline_project_two = DagNode(node_id=6, caller_filename=caller_filename,
                                             lineno=18 + line_offset, operator_type=OperatorType.PROJECTION,
                                             module=('sklearn.compose._column_transformer', 'ColumnTransformer'),
                                             description="to ['age', 'hours-per-week']",
@@ -82,7 +82,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
                                             optional_source_code=pipeline_str)
     expected_graph.add_edge(expected_select, expected_pipeline_project_two)
 
-    expected_pipeline_transformer_one = DagNode(node_id=4, caller_filename=caller_filename,
+    expected_pipeline_transformer_one = DagNode(node_id=5, caller_filename=caller_filename,
                                                 lineno=19 + line_offset, operator_type=OperatorType.TRANSFORMER,
                                                 module=('sklearn.preprocessing._encoders', 'OneHotEncoder'),
                                                 description='One-Hot Encoder', columns=['array'],
@@ -92,7 +92,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
                                                                                       end_col_offset=72),
                                                 optional_source_code="preprocessing."
                                                                      "OneHotEncoder(handle_unknown='ignore')")
-    expected_pipeline_transformer_two = DagNode(node_id=5, caller_filename=caller_filename,
+    expected_pipeline_transformer_two = DagNode(node_id=7, caller_filename=caller_filename,
                                                 lineno=20 + line_offset, operator_type=OperatorType.TRANSFORMER,
                                                 module=('sklearn.preprocessing._data', 'StandardScaler'),
                                                 description='Standard Scaler', columns=['array'],
@@ -104,7 +104,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
     expected_graph.add_edge(expected_pipeline_project_one, expected_pipeline_transformer_one)
     expected_graph.add_edge(expected_pipeline_project_two, expected_pipeline_transformer_two)
 
-    expected_pipeline_concatenation = DagNode(node_id=6, caller_filename=caller_filename,
+    expected_pipeline_concatenation = DagNode(node_id=8, caller_filename=caller_filename,
                                               lineno=18 + line_offset, operator_type=OperatorType.CONCATENATION,
                                               module=('sklearn.compose._column_transformer', 'ColumnTransformer'),
                                               description='', columns=['array'],
@@ -116,7 +116,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
     expected_graph.add_edge(expected_pipeline_transformer_one, expected_pipeline_concatenation)
     expected_graph.add_edge(expected_pipeline_transformer_two, expected_pipeline_concatenation)
 
-    expected_train_data = DagNode(node_id=10, caller_filename=caller_filename, lineno=26 + line_offset,
+    expected_train_data = DagNode(node_id=9, caller_filename=caller_filename, lineno=26 + line_offset,
                                   operator_type=OperatorType.TRAIN_DATA,
                                   module=('sklearn.tree._classes', 'DecisionTreeClassifier'), description='Train Data',
                                   columns=['array'],
@@ -148,7 +148,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
                                                            "classes=['>50K', '<=50K'])")
     expected_graph.add_edge(expected_project, expected_project_modify)
 
-    expected_train_labels = DagNode(node_id=11, caller_filename=caller_filename,
+    expected_train_labels = DagNode(node_id=10, caller_filename=caller_filename,
                                     lineno=26 + line_offset,
                                     operator_type=OperatorType.TRAIN_LABELS,
                                     module=('sklearn.tree._classes', 'DecisionTreeClassifier'),
@@ -160,7 +160,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
                                     optional_source_code='tree.DecisionTreeClassifier()')
     expected_graph.add_edge(expected_project_modify, expected_train_labels)
 
-    expected_estimator = DagNode(node_id=7, caller_filename=caller_filename,
+    expected_estimator = DagNode(node_id=11, caller_filename=caller_filename,
                                  lineno=26 + line_offset, operator_type=OperatorType.ESTIMATOR,
                                  module=('sklearn.tree._classes', 'DecisionTreeClassifier'),
                                  description='Decision Tree', columns=[],
