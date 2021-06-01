@@ -4,7 +4,7 @@ Monkey patching for sklearn
 
 import gorilla
 import numpy
-from sklearn import preprocessing, compose, tree, impute
+from sklearn import preprocessing, compose, tree, impute, linear_model
 
 from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.inspections._inspection_input import OperatorContext
@@ -487,6 +487,107 @@ class SklearnDecisionTreePatching:
 
         dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
                            OperatorType.ESTIMATOR, function_info, "Decision Tree", [],
+                           self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        add_dag_node(dag_node, [train_data_dag_node, train_labels_dag_node], estimator_backend_result)
+        return self
+
+
+@gorilla.patches(linear_model.LogisticRegression)
+class SklearnLogisticRegressionPatching:
+    """ Patches for sklearn LogisticRegression"""
+    # pylint: disable=too-few-public-methods
+
+    @gorilla.name('__init__')
+    @gorilla.settings(allow_hit=True)
+    def patched__init__(self, penalty='l2', *, dual=False, tol=1e-4, C=1.0,  # pylint: disable=invalid-name
+                        fit_intercept=True, intercept_scaling=1, class_weight=None,
+                        random_state=None, solver='lbfgs', max_iter=100,
+                        multi_class='auto', verbose=0, warm_start=False, n_jobs=None,
+                        l1_ratio=None, mlinspect_caller_filename=None,
+                        mlinspect_lineno=None, mlinspect_optional_code_reference=None,
+                        mlinspect_optional_source_code=None):
+        """ Patch for ('sklearn.linear_model._logistic', 'LogisticRegression') """
+        # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals
+        original = gorilla.get_original_attribute(linear_model.LogisticRegression, '__init__')
+
+        self.mlinspect_caller_filename = mlinspect_caller_filename
+        self.mlinspect_lineno = mlinspect_lineno
+        self.mlinspect_optional_code_reference = mlinspect_optional_code_reference
+        self.mlinspect_optional_source_code = mlinspect_optional_source_code
+
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            original(self, penalty=penalty, dual=dual, tol=tol, C=C,
+                     fit_intercept=fit_intercept, intercept_scaling=intercept_scaling, class_weight=class_weight,
+                     random_state=random_state, solver=solver, max_iter=max_iter,
+                     multi_class=multi_class, verbose=verbose, warm_start=warm_start, n_jobs=n_jobs,
+                     l1_ratio=l1_ratio)
+
+            self.mlinspect_caller_filename = caller_filename
+            self.mlinspect_lineno = lineno
+            self.mlinspect_optional_code_reference = optional_code_reference
+            self.mlinspect_optional_source_code = optional_source_code
+
+        return execute_patched_func_no_op_id(original, execute_inspections, self, penalty=penalty, dual=dual, tol=tol,
+                                             C=C, fit_intercept=fit_intercept, intercept_scaling=intercept_scaling,
+                                             class_weight=class_weight,
+                                             random_state=random_state, solver=solver, max_iter=max_iter,
+                                             multi_class=multi_class, verbose=verbose, warm_start=warm_start,
+                                             n_jobs=n_jobs,
+                                             l1_ratio=l1_ratio)
+
+    @gorilla.name('fit')
+    @gorilla.settings(allow_hit=True)
+    def patched_fit(self, *args, **kwargs):
+        """ Patch for ('sklearn.linear_model._logistic.LogisticRegression', 'fit') """
+        # pylint: disable=no-method-argument, too-many-locals
+        original = gorilla.get_original_attribute(linear_model.LogisticRegression, 'fit')
+        function_info = ('sklearn.linear_model._logistic', 'LogisticRegression')
+
+        # Train data
+        input_info_train_data = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno,
+                                               function_info, self.mlinspect_optional_code_reference,
+                                               self.mlinspect_optional_source_code)
+        train_data_op_id = _pipeline_executor.singleton.get_next_op_id()
+        train_data_dag_node = DagNode(train_data_op_id, self.mlinspect_caller_filename,
+                                      self.mlinspect_lineno, OperatorType.TRAIN_DATA, function_info, "Train Data",
+                                      ["array"], self.mlinspect_optional_code_reference,
+                                      self.mlinspect_optional_source_code)
+        operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
+        input_infos = SklearnBackend.before_call(operator_context, [input_info_train_data.annotated_dfobject])
+        data_backend_result = SklearnBackend.after_call(operator_context,
+                                                        input_infos,
+                                                        args[0])
+        add_dag_node(train_data_dag_node, [input_info_train_data.dag_node], data_backend_result)
+        train_data_result = data_backend_result.annotated_dfobject.result_data
+
+        # Train labels
+        operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
+        input_info_train_labels = get_input_info(args[1], self.mlinspect_caller_filename, self.mlinspect_lineno,
+                                                 function_info, self.mlinspect_optional_code_reference,
+                                                 self.mlinspect_optional_source_code)
+        train_label_op_id = _pipeline_executor.singleton.get_next_op_id()
+        train_labels_dag_node = DagNode(train_label_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
+                                        OperatorType.TRAIN_LABELS, function_info, "Train Labels", ["array"],
+                                        self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        input_infos = SklearnBackend.before_call(operator_context, [input_info_train_labels.annotated_dfobject])
+        label_backend_result = SklearnBackend.after_call(operator_context,
+                                                         input_infos,
+                                                         args[1])
+        add_dag_node(train_labels_dag_node, [input_info_train_labels.dag_node], label_backend_result)
+        train_labels_result = label_backend_result.annotated_dfobject.result_data
+
+        # Estimator
+        operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
+        input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+        input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+        original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
+        estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                             input_infos,
+                                                             None)
+
+        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
+                           OperatorType.ESTIMATOR, function_info, "Logistic Regression", [],
                            self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
         add_dag_node(dag_node, [train_data_dag_node, train_labels_dag_node], estimator_backend_result)
         return self
