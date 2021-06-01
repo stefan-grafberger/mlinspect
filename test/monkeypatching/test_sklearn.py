@@ -136,6 +136,48 @@ def test_kbins_discretizer():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
+def test_simple_imputer():
+    """
+    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+                from sklearn.impute import SimpleImputer
+                import numpy as np
+
+                df = pd.DataFrame({'A': ['cat_a', np.nan, 'cat_a', 'cat_c']})
+                imputer = SimpleImputer(missing_values=np.nan, strategy='most_frequent')
+                imputed_data = imputer.fit_transform(df)
+                print(imputed_data)
+                expected = np.array([['cat_a'], ['cat_a'], ['cat_a'], ['cat_c']])
+                assert np.array_equal(imputed_data, expected)
+                """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(3)])
+
+    expected_dag = networkx.DiGraph()
+    expected_missing_op = DagNode(0, "<string-source>", 5, OperatorType.DATA_SOURCE,
+                                  ('pandas.core.frame', 'DataFrame'), description='', columns=['A'],
+                                  optional_code_reference=CodeReference(5, 5, 5, 61),
+                                  optional_source_code="pd.DataFrame({'A': ['cat_a', np.nan, 'cat_a', 'cat_c']})")
+    expected_select = DagNode(1, "<string-source>", 6, OperatorType.TRANSFORMER,
+                              module=('sklearn.impute._base', 'SimpleImputer'),
+                              description='Simple Imputer', columns=['array'],
+                              optional_code_reference=CodeReference(6, 10, 6, 72),
+                              optional_source_code="SimpleImputer(missing_values=np.nan, strategy='most_frequent')")
+    expected_dag.add_edge(expected_missing_op, expected_select)
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array(['cat_a']), {LineageId(0, 0)}],
+                                     [numpy.array(['cat_a']), {LineageId(0, 1)}],
+                                     [numpy.array(['cat_a']), {LineageId(0, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
 def test_one_hot_encoder_not_sparse():
     """
     Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
