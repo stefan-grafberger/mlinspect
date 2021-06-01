@@ -4,20 +4,22 @@ Monkey patching for sklearn
 
 import gorilla
 import numpy
-from sklearn import preprocessing, compose, tree, impute
+from sklearn import preprocessing, compose, tree, impute, pipeline
 
 from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.inspections._inspection_input import OperatorContext
 from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import OperatorType, DagNode
+from mlinspect.instrumentation._pipeline_executor import singleton
 from mlinspect.monkeypatching.monkey_patching_utils import execute_patched_func, add_dag_node, \
-    execute_patched_func_indirect_allowed, get_input_info
+    execute_patched_func_indirect_allowed, get_input_info, execute_patched_func_no_op_id
 from mlinspect.monkeypatching.numpy import MlinspectNdarray
 
 
 @gorilla.patches(preprocessing)
 class SklearnPreprocessingPatching:
     """ Patches for sklearn """
+
     # pylint: disable=too-few-public-methods
 
     @gorilla.name('label_binarize')
@@ -54,11 +56,38 @@ class SklearnPreprocessingPatching:
         return execute_patched_func(original, execute_inspections, *args, **kwargs)
 
 
+@gorilla.patches(pipeline.Pipeline)
+class SklearnPipelinePatching:
+    """ Patches for sklearn Pipeline"""
+
+    # pylint: disable=too-few-public-methods
+
+    @gorilla.name('fit_transform')
+    @gorilla.settings(allow_hit=True)
+    def patched_fit_transform(self, *args, **kwargs):
+        """ Patch for ('pandas.core.frame', 'groupby') """
+        original = gorilla.get_original_attribute(pipeline.Pipeline, 'fit_transform')
+
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            function_info = ('pandas.core.frame', 'groupby')
+            # We ignore groupbys, we only do something with aggs
+
+            # input_info = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
+            #                            optional_source_code)
+            result = original(self, *args, **kwargs)
+            # result._mlinspect_dag_node = input_info.dag_node.node_id  # pylint: disable=protected-access
+            # result._mlinspect_annotation = input_info.dag_node.node_id  # pylint: disable=protected-access
+
+            return result
+
+        return execute_patched_func_indirect_allowed(execute_inspections)
+
+
 class SklearnCallInfo:
     """ Contains info like lineno from the current Transformer so indirect utility function calls can access it """
     # pylint: disable=too-few-public-methods
 
-    transformer_op_id = None
     transformer_filename = None
     transformer_lineno = None
     function_info = None
@@ -89,13 +118,12 @@ class SklearnComposePatching:
         # pylint: disable=no-method-argument
         original = gorilla.get_original_attribute(compose.ColumnTransformer, '__init__')
 
-        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             # pylint: disable=attribute-defined-outside-init
             original(self, transformers, remainder=remainder, sparse_threshold=sparse_threshold, n_jobs=n_jobs,
                      transformer_weights=transformer_weights, verbose=verbose)
 
-            self.mlinspect_op_id = op_id
             self.mlinspect_filename = caller_filename
             self.mlinspect_lineno = lineno
             self.mlinspect_optional_code_reference = optional_code_reference
@@ -145,7 +173,7 @@ class SklearnComposePatching:
                                                    result)
         result = backend_result.annotated_dfobject.result_data
 
-        dag_node = DagNode(self.mlinspect_op_id, self.mlinspect_filename, self.mlinspect_lineno,
+        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_filename, self.mlinspect_lineno,
                            OperatorType.CONCATENATION, function_info, "", ['array'],
                            self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
         input_dag_nodes = [input_info.dag_node for input_info in input_infos]
@@ -169,24 +197,22 @@ class SklearnStandardScalerPatching:
         # pylint: disable=no-method-argument, attribute-defined-outside-init
         original = gorilla.get_original_attribute(preprocessing.StandardScaler, '__init__')
 
-        self.mlinspect_op_id = mlinspect_op_id
         self.mlinspect_caller_filename = mlinspect_caller_filename
         self.mlinspect_lineno = mlinspect_lineno
         self.mlinspect_optional_code_reference = mlinspect_optional_code_reference
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
 
-        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             original(self, copy=copy, with_mean=with_mean, with_std=with_std)
 
-            self.mlinspect_op_id = op_id
             self.mlinspect_caller_filename = caller_filename
             self.mlinspect_lineno = lineno
             self.mlinspect_optional_code_reference = optional_code_reference
             self.mlinspect_optional_source_code = optional_source_code
 
-        return execute_patched_func(original, execute_inspections, self, copy=copy, with_mean=with_mean,
-                                    with_std=with_std)
+        return execute_patched_func_no_op_id(original, execute_inspections, self, copy=copy, with_mean=with_mean,
+                                             with_std=with_std)
 
     @gorilla.name('fit_transform')
     @gorilla.settings(allow_hit=True)
@@ -206,7 +232,7 @@ class SklearnStandardScalerPatching:
                                                    result)
         new_return_value = backend_result.annotated_dfobject.result_data
         assert isinstance(new_return_value, MlinspectNdarray)
-        dag_node = DagNode(self.mlinspect_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
+        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
                            OperatorType.TRANSFORMER, function_info, "Standard Scaler", ['array'],
                            self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
@@ -228,24 +254,22 @@ class SklearnKBinsDiscretizerPatching:
         # pylint: disable=no-method-argument, attribute-defined-outside-init
         original = gorilla.get_original_attribute(preprocessing.KBinsDiscretizer, '__init__')
 
-        self.mlinspect_op_id = mlinspect_op_id
         self.mlinspect_caller_filename = mlinspect_caller_filename
         self.mlinspect_lineno = mlinspect_lineno
         self.mlinspect_optional_code_reference = mlinspect_optional_code_reference
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
 
-        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             original(self, n_bins=n_bins, encode=encode, strategy=strategy)
 
-            self.mlinspect_op_id = op_id
             self.mlinspect_caller_filename = caller_filename
             self.mlinspect_lineno = lineno
             self.mlinspect_optional_code_reference = optional_code_reference
             self.mlinspect_optional_source_code = optional_source_code
 
-        return execute_patched_func(original, execute_inspections, self, n_bins=n_bins, encode=encode,
-                                    strategy=strategy)
+        return execute_patched_func_no_op_id(original, execute_inspections, self, n_bins=n_bins, encode=encode,
+                                             strategy=strategy)
 
     @gorilla.name('fit_transform')
     @gorilla.settings(allow_hit=True)
@@ -265,7 +289,7 @@ class SklearnKBinsDiscretizerPatching:
                                                    result)
         new_return_value = backend_result.annotated_dfobject.result_data
         assert isinstance(new_return_value, MlinspectNdarray)
-        dag_node = DagNode(self.mlinspect_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
+        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
                            OperatorType.TRANSFORMER, function_info, "K-Bins Discretizer", ['array'],
                            self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
@@ -288,24 +312,22 @@ class SklearnOneHotEncoderPatching:
         # pylint: disable=no-method-argument, attribute-defined-outside-init
         original = gorilla.get_original_attribute(preprocessing.OneHotEncoder, '__init__')
 
-        self.mlinspect_op_id = mlinspect_op_id
         self.mlinspect_caller_filename = mlinspect_caller_filename
         self.mlinspect_lineno = mlinspect_lineno
         self.mlinspect_optional_code_reference = mlinspect_optional_code_reference
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
 
-        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             original(self, categories=categories, drop=drop, sparse=sparse, dtype=dtype, handle_unknown=handle_unknown)
 
-            self.mlinspect_op_id = op_id
             self.mlinspect_caller_filename = caller_filename
             self.mlinspect_lineno = lineno
             self.mlinspect_optional_code_reference = optional_code_reference
             self.mlinspect_optional_source_code = optional_source_code
 
-        return execute_patched_func(original, execute_inspections, self, categories=categories, drop=drop,
-                                    sparse=sparse, dtype=dtype, handle_unknown=handle_unknown)
+        return execute_patched_func_no_op_id(original, execute_inspections, self, categories=categories, drop=drop,
+                                             sparse=sparse, dtype=dtype, handle_unknown=handle_unknown)
 
     @gorilla.name('fit_transform')
     @gorilla.settings(allow_hit=True)
@@ -324,7 +346,7 @@ class SklearnOneHotEncoderPatching:
                                                    input_infos,
                                                    result)
         new_return_value = backend_result.annotated_dfobject.result_data
-        dag_node = DagNode(self.mlinspect_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
+        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
                            OperatorType.TRANSFORMER, function_info, "One-Hot Encoder", ['array'],
                            self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
@@ -347,26 +369,24 @@ class SklearnSimpleImputerPatching:
         # pylint: disable=no-method-argument, attribute-defined-outside-init
         original = gorilla.get_original_attribute(impute.SimpleImputer, '__init__')
 
-        self.mlinspect_op_id = mlinspect_op_id
         self.mlinspect_caller_filename = mlinspect_caller_filename
         self.mlinspect_lineno = mlinspect_lineno
         self.mlinspect_optional_code_reference = mlinspect_optional_code_reference
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
 
-        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             original(self, missing_values=missing_values, strategy=strategy, fill_value=fill_value, verbose=verbose,
                      copy=copy, add_indicator=add_indicator)
 
-            self.mlinspect_op_id = op_id
             self.mlinspect_caller_filename = caller_filename
             self.mlinspect_lineno = lineno
             self.mlinspect_optional_code_reference = optional_code_reference
             self.mlinspect_optional_source_code = optional_source_code
 
-        return execute_patched_func(original, execute_inspections, self, missing_values=missing_values,
-                                    strategy=strategy, fill_value=fill_value, verbose=verbose, copy=copy,
-                                    add_indicator=add_indicator)
+        return execute_patched_func_no_op_id(original, execute_inspections, self, missing_values=missing_values,
+                                             strategy=strategy, fill_value=fill_value, verbose=verbose, copy=copy,
+                                             add_indicator=add_indicator)
 
     @gorilla.name('fit_transform')
     @gorilla.settings(allow_hit=True)
@@ -385,7 +405,7 @@ class SklearnSimpleImputerPatching:
                                                    input_infos,
                                                    result)
         new_return_value = backend_result.annotated_dfobject.result_data
-        dag_node = DagNode(self.mlinspect_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
+        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
                            OperatorType.TRANSFORMER, function_info, "Simple Imputer", ['array'],
                            self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
@@ -410,13 +430,12 @@ class SklearnDecisionTreePatching:
         # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals
         original = gorilla.get_original_attribute(tree.DecisionTreeClassifier, '__init__')
 
-        self.mlinspect_op_id = mlinspect_op_id
         self.mlinspect_caller_filename = mlinspect_caller_filename
         self.mlinspect_lineno = mlinspect_lineno
         self.mlinspect_optional_code_reference = mlinspect_optional_code_reference
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
 
-        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             original(self, criterion=criterion, splitter=splitter, max_depth=max_depth,
                      min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf,
@@ -425,19 +444,20 @@ class SklearnDecisionTreePatching:
                      min_impurity_decrease=min_impurity_decrease, min_impurity_split=min_impurity_split,
                      class_weight=class_weight, presort=presort, ccp_alpha=ccp_alpha)
 
-            self.mlinspect_op_id = op_id
             self.mlinspect_caller_filename = caller_filename
             self.mlinspect_lineno = lineno
             self.mlinspect_optional_code_reference = optional_code_reference
             self.mlinspect_optional_source_code = optional_source_code
 
-        return execute_patched_func(original, execute_inspections, self, criterion=criterion, splitter=splitter,
-                                    max_depth=max_depth, min_samples_split=min_samples_split,
-                                    min_samples_leaf=min_samples_leaf,
-                                    min_weight_fraction_leaf=min_weight_fraction_leaf, max_features=max_features,
-                                    random_state=random_state, max_leaf_nodes=max_leaf_nodes,
-                                    min_impurity_decrease=min_impurity_decrease, min_impurity_split=min_impurity_split,
-                                    class_weight=class_weight, presort=presort, ccp_alpha=ccp_alpha)
+        return execute_patched_func_no_op_id(original, execute_inspections, self, criterion=criterion,
+                                             splitter=splitter, max_depth=max_depth,
+                                             min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf,
+                                             min_weight_fraction_leaf=min_weight_fraction_leaf,
+                                             max_features=max_features,
+                                             random_state=random_state, max_leaf_nodes=max_leaf_nodes,
+                                             min_impurity_decrease=min_impurity_decrease,
+                                             min_impurity_split=min_impurity_split,
+                                             class_weight=class_weight, presort=presort, ccp_alpha=ccp_alpha)
 
     @gorilla.name('fit')
     @gorilla.settings(allow_hit=True)
@@ -489,7 +509,7 @@ class SklearnDecisionTreePatching:
                                                              input_infos,
                                                              None)
 
-        dag_node = DagNode(self.mlinspect_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
+        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
                            OperatorType.ESTIMATOR, function_info, "Decision Tree", [],
                            self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
         add_dag_node(dag_node, [train_data_dag_node, train_labels_dag_node], estimator_backend_result)

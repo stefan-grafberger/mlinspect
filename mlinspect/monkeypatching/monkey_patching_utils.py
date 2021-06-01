@@ -138,18 +138,16 @@ def execute_patched_func_indirect_allowed(execute_inspections_func):
                                  end_col_offset=singleton.end_col_offset_next_call_or_subscript)
         caller_source_code = ast.get_source_segment(singleton.source_code, node=call_ast_node)
         caller_lineno = singleton.lineno_next_call_or_subscript
-        op_id = singleton.get_next_op_id()
         caller_code_reference = CodeReference(singleton.lineno_next_call_or_subscript,
                                                singleton.col_offset_next_call_or_subscript,
                                                singleton.end_lineno_next_call_or_subscript,
                                                singleton.end_col_offset_next_call_or_subscript)
-        result = execute_inspections_func(op_id, caller_filename, caller_lineno, caller_code_reference,
+        result = execute_inspections_func(-1, caller_filename, caller_lineno, caller_code_reference,
                                           caller_source_code)
         # singleton.lineno_next_call_or_subscript = -1
     else:
-        op_id = singleton.get_next_op_id()
         caller_lineno = sys._getframe(2).f_lineno  # pylint: disable=protected-access
-        result = execute_inspections_func(op_id, caller_filename, caller_lineno, None, None)
+        result = execute_inspections_func(-1, caller_filename, caller_lineno, None, None)
         # singleton.lineno_next_call_or_subscript = -1
     return result
 
