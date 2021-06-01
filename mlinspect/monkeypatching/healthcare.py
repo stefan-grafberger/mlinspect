@@ -3,25 +3,20 @@ Monkey patching for sklearn
 """
 
 import gorilla
-import numpy
-from sklearn import preprocessing, compose, tree, impute, linear_model, model_selection
-from example_pipelines.healthcare import healthcare_utils
 
-from mlinspect.backends._backend import BackendResult
+from example_pipelines.healthcare import healthcare_utils
 from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.inspections._inspection_input import OperatorContext
-from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import OperatorType, DagNode
 from mlinspect.instrumentation._pipeline_executor import singleton
-from mlinspect.monkeypatching.monkey_patching_utils import execute_patched_func, add_dag_node, \
-    execute_patched_func_indirect_allowed, get_input_info, execute_patched_func_no_op_id
+from mlinspect.monkeypatching.monkey_patching_utils import add_dag_node, \
+    get_input_info, execute_patched_func_no_op_id
 from mlinspect.monkeypatching.numpy import MlinspectNdarray
 
 
 @gorilla.patches(healthcare_utils.MyW2VTransformer)
 class SklearnMyW2VTransformerPatching:
     """ Patches for sklearn StandardScaler"""
-
     # pylint: disable=too-few-public-methods
 
     @gorilla.name('__init__')

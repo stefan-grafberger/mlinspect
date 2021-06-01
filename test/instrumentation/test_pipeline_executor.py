@@ -26,7 +26,7 @@ def test_pipeline_executor_py_file(mocker):
 
     extracted_dag = _pipeline_executor.singleton.run(python_path=ADULT_SIMPLE_PY).dag
     expected_dag = get_expected_dag_adult_easy(ADULT_SIMPLE_PY)
-    assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
+    compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
 
     assert before_call_pandas_spy.call_count == 5
     assert after_call_pandas_spy.call_count == 5
@@ -45,7 +45,7 @@ def test_pipeline_executor_py_file_without_code_reference_tracking(mocker):
 
     extracted_dag = _pipeline_executor.singleton.run(python_path=ADULT_SIMPLE_PY, track_code_references=False).dag
     expected_dag = get_expected_dag_adult_easy(ADULT_SIMPLE_PY, with_code_references=False)
-    assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
+    compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
 
     assert before_call_pandas_spy.call_count == 5
     assert after_call_pandas_spy.call_count == 5
