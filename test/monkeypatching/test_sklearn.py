@@ -177,27 +177,6 @@ def test_simple_imputer():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
-def test_pipeline():
-    """
-    Tests whether Pipeline forwards annotations
-    """
-    test_code = cleandoc("""
-        import pandas as pd
-        from sklearn.impute import SimpleImputer
-        from sklearn.pipeline import Pipeline
-        import numpy as np
-
-        df = pd.DataFrame({'A': ['cat_a', np.nan, 'cat_a', 'cat_c']})
-        pipeline = Pipeline([('impute', SimpleImputer(missing_values=np.nan, strategy='most_frequent'))])
-        imputed_data = pipeline.fit_transform(df)
-        expected = np.array([['cat_a'], ['cat_a'], ['cat_a'], ['cat_c']])
-        assert np.array_equal(imputed_data, expected)
-        assert df._mlinspect_annotation is not None
-        """)
-
-    _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True)
-
-
 def test_one_hot_encoder_not_sparse():
     """
     Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments

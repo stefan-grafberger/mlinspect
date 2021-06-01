@@ -56,34 +56,6 @@ class SklearnPreprocessingPatching:
         return execute_patched_func(original, execute_inspections, *args, **kwargs)
 
 
-@gorilla.patches(pipeline.Pipeline)
-class SklearnPipelinePatching:
-    """ Patches for sklearn Pipeline"""
-
-    # pylint: disable=too-few-public-methods
-
-    @gorilla.name('fit_transform')
-    @gorilla.settings(allow_hit=True)
-    def patched_fit_transform(self, *args, **kwargs):
-        """ Patch for ('pandas.core.frame', 'groupby') """
-        original = gorilla.get_original_attribute(pipeline.Pipeline, 'fit_transform')
-
-        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
-            """ Execute inspections, add DAG node """
-            function_info = ('pandas.core.frame', 'groupby')
-            # We ignore groupbys, we only do something with aggs
-
-            # input_info = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
-            #                            optional_source_code)
-            result = original(self, *args, **kwargs)
-            # result._mlinspect_dag_node = input_info.dag_node.node_id  # pylint: disable=protected-access
-            # result._mlinspect_annotation = input_info.dag_node.node_id  # pylint: disable=protected-access
-
-            return result
-
-        return execute_patched_func_indirect_allowed(execute_inspections)
-
-
 class SklearnCallInfo:
     """ Contains info like lineno from the current Transformer so indirect utility function calls can access it """
     # pylint: disable=too-few-public-methods
@@ -155,6 +127,10 @@ class SklearnComposePatching:
         """ Patch for ('sklearn.compose._column_transformer', 'ColumnTransformer') """
         # pylint: disable=no-method-argument, unused-argument, too-many-locals
         original = gorilla.get_original_attribute(compose.ColumnTransformer, '_hstack')
+
+        if not call_info_singleton.column_transformer_active:
+            return original(self, *args, **kwargs)
+
         input_tuple = args[0]
         function_info = ('sklearn.compose._column_transformer', 'ColumnTransformer')
         input_infos = []
