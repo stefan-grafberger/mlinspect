@@ -20,6 +20,8 @@ class BackendResult:
     """ The annotated dataframe and the annotations for the current DAG node """
     annotated_dfobject: AnnotatedDfObject
     dag_node_annotation: Dict[Inspection, any]
+    optional_second_annotated_dfobject: AnnotatedDfObject = None
+    optional_second_dag_node_annotation: Dict[Inspection, any] = None
 
 
 class Backend(metaclass=abc.ABCMeta):

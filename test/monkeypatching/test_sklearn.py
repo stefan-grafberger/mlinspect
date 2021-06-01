@@ -54,6 +54,63 @@ def test_label_binarize():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
+def test_train_test_split():
+    """
+    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+                from sklearn.model_selection import train_test_split
+
+                pandas_df = pd.DataFrame({'A': [1, 2, 10, 5]})
+                train_data, test_data = train_test_split(pandas_df, random_state=0)
+                
+                expected_train = pd.DataFrame({'A': [5, 2, 1]})
+                expected_test = pd.DataFrame({'A': [10]})
+                
+                pd.testing.assert_frame_equal(train_data.reset_index(drop=True), expected_train.reset_index(drop=True))
+                pd.testing.assert_frame_equal(test_data.reset_index(drop=True), expected_test.reset_index(drop=True))
+                """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(3)])
+    inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[4])
+    inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[3])
+
+    expected_dag = networkx.DiGraph()
+    expected_source = DagNode(0, "<string-source>", 4, OperatorType.DATA_SOURCE,
+                              ('pandas.core.frame', 'DataFrame'), description='', columns=['A'],
+                              optional_code_reference=CodeReference(4, 12, 4, 46),
+                              optional_source_code="pd.DataFrame({'A': [1, 2, 10, 5]})")
+    expected_train = DagNode(1, "<string-source>", 5, OperatorType.TRAIN_TEST_SPLIT,
+                             module=('sklearn.model_selection._split', 'train_test_split'),
+                             description='(Train Data)', columns=['A'],
+                             optional_code_reference=CodeReference(5, 24, 5, 67),
+                             optional_source_code='train_test_split(pandas_df, random_state=0)')
+    expected_dag.add_edge(expected_source, expected_train)
+    expected_test = DagNode(2, "<string-source>", 5, OperatorType.TRAIN_TEST_SPLIT,
+                            module=('sklearn.model_selection._split', 'train_test_split'),
+                            description='(Test Data)', columns=['A'],
+                            optional_code_reference=CodeReference(5, 24, 5, 67),
+                            optional_source_code='train_test_split(pandas_df, random_state=0)')
+    expected_dag.add_edge(expected_source, expected_test)
+
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[1, {LineageId(0, 0)}],
+                                     [2, {LineageId(0, 1)}],
+                                     [5, {LineageId(0, 3)}]],
+                                    columns=['A', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[10, {LineageId(0, 2)}]], columns=['A', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
 def test_standard_scaler():
     """
     Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
@@ -116,14 +173,14 @@ def test_kbins_discretizer():
 
     expected_dag = networkx.DiGraph()
     expected_data_source = DagNode(0, "<string-source>", 5, OperatorType.DATA_SOURCE,
-                                  ('pandas.core.frame', 'DataFrame'), description='', columns=['A'],
-                                  optional_code_reference=CodeReference(5, 5, 5, 39),
-                                  optional_source_code="pd.DataFrame({'A': [1, 2, 10, 5]})")
+                                   ('pandas.core.frame', 'DataFrame'), description='', columns=['A'],
+                                   optional_code_reference=CodeReference(5, 5, 5, 39),
+                                   optional_source_code="pd.DataFrame({'A': [1, 2, 10, 5]})")
     expected_discretizer = DagNode(1, "<string-source>", 6, OperatorType.TRANSFORMER,
-                              module=('sklearn.preprocessing._discretization', 'KBinsDiscretizer'),
-                              description='K-Bins Discretizer', columns=['array'],
-                              optional_code_reference=CodeReference(6, 14, 6, 78),
-                              optional_source_code="KBinsDiscretizer(n_bins=3, encode='ordinal', strategy='uniform')")
+                                   module=('sklearn.preprocessing._discretization', 'KBinsDiscretizer'),
+                                   description='K-Bins Discretizer', columns=['array'],
+                                   optional_code_reference=CodeReference(6, 14, 6, 78),
+                                   optional_source_code="KBinsDiscretizer(n_bins=3, encode='ordinal', strategy='uniform')")
     expected_dag.add_edge(expected_data_source, expected_discretizer)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 

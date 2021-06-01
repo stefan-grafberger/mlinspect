@@ -33,12 +33,24 @@ class SklearnBackend(Backend):
         """The return value of some function"""
         # pylint: disable=too-many-arguments
         if operator_context.operator == OperatorType.TRAIN_TEST_SPLIT:
-            return_value = execute_inspection_visits_unary_operator(operator_context,
-                                                                    input_infos[0].result_data,
-                                                                    input_infos[0].result_annotation,
-                                                                    return_value,
-                                                                    True)
+            train_data, test_data = return_value
+            train_return_value = execute_inspection_visits_unary_operator(operator_context,
+                                                                          input_infos[0].result_data,
+                                                                          input_infos[0].result_annotation,
+                                                                          train_data,
+                                                                          True)
+            test_return_value = execute_inspection_visits_unary_operator(operator_context,
+                                                                         input_infos[0].result_data,
+                                                                         input_infos[0].result_annotation,
+                                                                         test_data,
+                                                                         True)
             input_infos[0].result_data.drop("mlinspect_index", axis=1, inplace=True)
+            train_data.drop("mlinspect_index", axis=1, inplace=True)
+            test_data.drop("mlinspect_index", axis=1, inplace=True)
+            return_value = BackendResult(train_return_value.annotated_dfobject,
+                                         train_return_value.dag_node_annotation,
+                                         test_return_value.annotated_dfobject,
+                                         test_return_value.dag_node_annotation)
         elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY,
                                            OperatorType.TRANSFORMER, OperatorType.TRAIN_DATA,
                                            OperatorType.TRAIN_LABELS}:

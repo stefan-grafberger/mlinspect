@@ -4,8 +4,9 @@ Monkey patching for sklearn
 
 import gorilla
 import numpy
-from sklearn import preprocessing, compose, tree, impute, linear_model
+from sklearn import preprocessing, compose, tree, impute, linear_model, model_selection
 
+from mlinspect.backends._backend import BackendResult
 from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.inspections._inspection_input import OperatorContext
 from mlinspect.instrumentation import _pipeline_executor
@@ -50,6 +51,57 @@ class SklearnPreprocessingPatching:
                                description,
                                ["array"], optional_code_reference, optional_source_code)
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
+
+            return new_return_value
+
+        return execute_patched_func(original, execute_inspections, *args, **kwargs)
+
+
+@gorilla.patches(model_selection)
+class SklearnModelSelectionPatching:
+    """ Patches for sklearn """
+
+    # pylint: disable=too-few-public-methods
+
+    @gorilla.name('train_test_split')
+    @gorilla.settings(allow_hit=True)
+    def patched_train_test_split(*args, **kwargs):
+        """ Patch for ('sklearn.model_selection._split', 'train_test_split') """
+        # pylint: disable=no-method-argument
+        original = gorilla.get_original_attribute(model_selection, 'train_test_split')
+
+        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            # pylint: disable=too-many-locals
+            function_info = ('sklearn.model_selection._split', 'train_test_split')
+            input_info = get_input_info(args[0], caller_filename, lineno, function_info, optional_code_reference,
+                                        optional_source_code)
+
+            operator_context = OperatorContext(OperatorType.TRAIN_TEST_SPLIT, function_info)
+            input_infos = SklearnBackend.before_call(operator_context, [input_info.annotated_dfobject])
+            result = original(input_infos[0].result_data, *args[1:], **kwargs)
+            backend_result = SklearnBackend.after_call(operator_context,
+                                                       input_infos,
+                                                       result)  # We ignore the test set for now
+            train_backend_result = BackendResult(backend_result.annotated_dfobject,
+                                                 backend_result.dag_node_annotation)
+            test_backend_result = BackendResult(backend_result.optional_second_annotated_dfobject,
+                                                backend_result.optional_second_dag_node_annotation)
+
+            description = "(Train Data)"
+            columns = list(result[0].columns)
+            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.TRAIN_TEST_SPLIT, function_info,
+                               description, columns, optional_code_reference, optional_source_code)
+            add_dag_node(dag_node, [input_info.dag_node], train_backend_result)
+
+            description = "(Test Data)"
+            columns = list(result[1].columns)
+            dag_node = DagNode(singleton.get_next_op_id(), caller_filename, lineno, OperatorType.TRAIN_TEST_SPLIT,
+                               function_info, description, columns, optional_code_reference, optional_source_code)
+            add_dag_node(dag_node, [input_info.dag_node], test_backend_result)
+
+            new_return_value = (train_backend_result.annotated_dfobject.result_data,
+                                test_backend_result.annotated_dfobject.result_data)
 
             return new_return_value
 
@@ -495,6 +547,7 @@ class SklearnDecisionTreePatching:
 @gorilla.patches(linear_model.LogisticRegression)
 class SklearnLogisticRegressionPatching:
     """ Patches for sklearn LogisticRegression"""
+
     # pylint: disable=too-few-public-methods
 
     @gorilla.name('__init__')

@@ -297,8 +297,9 @@ class DataFrameGroupByPatching:
             dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.GROUP_BY_AGG, function_info, description,
                                columns, optional_code_reference, optional_source_code)
             add_dag_node(dag_node, [input_dag_node], backend_result)
+            new_return_value = backend_result.annotated_dfobject.result_data
 
-            return result
+            return new_return_value
 
         return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
 
