@@ -9,9 +9,9 @@ from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.inspections._inspection_input import OperatorContext
 from mlinspect.instrumentation._dag_node import OperatorType, DagNode
 from mlinspect.instrumentation._pipeline_executor import singleton
-from mlinspect.monkeypatching.monkey_patching_utils import add_dag_node, \
+from mlinspect.monkeypatching._monkey_patching_utils import add_dag_node, \
     get_input_info, execute_patched_func_no_op_id
-from mlinspect.monkeypatching.numpy import MlinspectNdarray
+from mlinspect.monkeypatching._patch_numpy import MlinspectNdarray
 
 
 @gorilla.patches(healthcare_utils.MyW2VTransformer)

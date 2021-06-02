@@ -11,9 +11,9 @@ from mlinspect import OperatorType, DagNode
 from mlinspect.backends._pandas_backend import PandasBackend
 from mlinspect.inspections._inspection_input import OperatorContext
 from mlinspect.instrumentation._pipeline_executor import singleton
-from mlinspect.monkeypatching.monkey_patching_utils import execute_patched_func, get_input_info, add_dag_node, \
+from mlinspect.monkeypatching._monkey_patching_utils import execute_patched_func, get_input_info, add_dag_node, \
     get_dag_node_for_id, execute_patched_func_no_op_id
-from mlinspect.monkeypatching.sklearn import call_info_singleton
+from mlinspect.monkeypatching._patch_sklearn import call_info_singleton
 
 
 @gorilla.patches(pandas)
