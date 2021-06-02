@@ -5,6 +5,8 @@ Monkey patching for sklearn
 import gorilla
 import numpy
 from sklearn import preprocessing, compose, tree, impute, linear_model, model_selection
+from tensorflow.keras.wrappers import scikit_learn as keras_sklearn_external
+from tensorflow.python.keras.wrappers import scikit_learn as keras_sklearn_internal
 
 from mlinspect.backends._backend import BackendResult
 from mlinspect.backends._sklearn_backend import SklearnBackend
@@ -641,6 +643,90 @@ class SklearnLogisticRegressionPatching:
 
         dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
                            OperatorType.ESTIMATOR, function_info, "Logistic Regression", [],
+                           self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        add_dag_node(dag_node, [train_data_dag_node, train_labels_dag_node], estimator_backend_result)
+        return self
+
+
+class SklearnKerasClassifierPatching:
+    """ Patches for tensorflow KerasClassifier"""
+
+    # pylint: disable=too-few-public-methods
+    @gorilla.patch(keras_sklearn_internal.BaseWrapper, name='__init__', settings=gorilla.Settings(allow_hit=True))
+    def patched__init__(self, build_fn=None, mlinspect_caller_filename=None, mlinspect_lineno=None,
+                        mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None,
+                        **sk_params):
+        """ Patch for ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier') """
+        # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals
+        original = gorilla.get_original_attribute(keras_sklearn_internal.BaseWrapper, '__init__')
+
+        self.mlinspect_caller_filename = mlinspect_caller_filename
+        self.mlinspect_lineno = mlinspect_lineno
+        self.mlinspect_optional_code_reference = mlinspect_optional_code_reference
+        self.mlinspect_optional_source_code = mlinspect_optional_source_code
+
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            original(self, build_fn=build_fn, **sk_params)
+
+            self.mlinspect_caller_filename = caller_filename
+            self.mlinspect_lineno = lineno
+            self.mlinspect_optional_code_reference = optional_code_reference
+            self.mlinspect_optional_source_code = optional_source_code
+
+        return execute_patched_func_no_op_id(original, execute_inspections, self, build_fn=build_fn, **sk_params)
+
+    @gorilla.patch(keras_sklearn_external.KerasClassifier, name='fit', settings=gorilla.Settings(allow_hit=True))
+    def patched_fit(self, *args, **kwargs):
+        """ Patch for ('tensorflow.python.keras.wrappers.scikit_learn.KerasClassifier', 'fit') """
+        # pylint: disable=no-method-argument, too-many-locals
+        original = gorilla.get_original_attribute(keras_sklearn_external.KerasClassifier, 'fit')
+        function_info = ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')
+
+        # Train data
+        input_info_train_data = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno,
+                                               function_info, self.mlinspect_optional_code_reference,
+                                               self.mlinspect_optional_source_code)
+        train_data_op_id = singleton.get_next_op_id()
+        train_data_dag_node = DagNode(train_data_op_id, self.mlinspect_caller_filename,
+                                      self.mlinspect_lineno, OperatorType.TRAIN_DATA, function_info, "Train Data",
+                                      ["array"], self.mlinspect_optional_code_reference,
+                                      self.mlinspect_optional_source_code)
+        operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
+        input_infos = SklearnBackend.before_call(operator_context, [input_info_train_data.annotated_dfobject])
+        data_backend_result = SklearnBackend.after_call(operator_context,
+                                                        input_infos,
+                                                        args[0])
+        add_dag_node(train_data_dag_node, [input_info_train_data.dag_node], data_backend_result)
+        train_data_result = data_backend_result.annotated_dfobject.result_data
+
+        # Train labels
+        operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
+        input_info_train_labels = get_input_info(args[1], self.mlinspect_caller_filename, self.mlinspect_lineno,
+                                                 function_info, self.mlinspect_optional_code_reference,
+                                                 self.mlinspect_optional_source_code)
+        train_label_op_id = singleton.get_next_op_id()
+        train_labels_dag_node = DagNode(train_label_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
+                                        OperatorType.TRAIN_LABELS, function_info, "Train Labels", ["array"],
+                                        self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        input_infos = SklearnBackend.before_call(operator_context, [input_info_train_labels.annotated_dfobject])
+        label_backend_result = SklearnBackend.after_call(operator_context,
+                                                         input_infos,
+                                                         args[1])
+        add_dag_node(train_labels_dag_node, [input_info_train_labels.dag_node], label_backend_result)
+        train_labels_result = label_backend_result.annotated_dfobject.result_data
+
+        # Estimator
+        operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
+        input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+        input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+        original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
+        estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                             input_infos,
+                                                             None)
+
+        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
+                           OperatorType.ESTIMATOR, function_info, "Neural Network", [],
                            self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
         add_dag_node(dag_node, [train_data_dag_node, train_labels_dag_node], estimator_backend_result)
         return self
