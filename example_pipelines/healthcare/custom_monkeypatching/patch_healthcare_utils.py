@@ -3,6 +3,7 @@ Monkey patching for healthcare_utils
 """
 import gorilla
 from example_pipelines.healthcare import healthcare_utils
+from gensim import sklearn_api
 from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.inspections._inspection_input import OperatorContext
 from mlinspect.instrumentation._dag_node import OperatorType, DagNode
@@ -12,13 +13,11 @@ from mlinspect.monkeypatching._monkey_patching_utils import add_dag_node, \
 from mlinspect.monkeypatching._patch_numpy import MlinspectNdarray
 
 
-@gorilla.patches(healthcare_utils.MyW2VTransformer)
 class SklearnMyW2VTransformerPatching:
     """ Patches for healthcare_utils.MyW2VTransformer"""
     # pylint: disable=too-few-public-methods
 
-    @gorilla.name('__init__')
-    @gorilla.settings(allow_hit=True)
+    @gorilla.patch(sklearn_api.W2VTransformer, name='__init__', settings=gorilla.Settings(allow_hit=True))
     def patched__init__(self, *, size=100, alpha=0.025, window=5, min_count=5, max_vocab_size=None, sample=1e-3, seed=1,
                         workers=3, min_alpha=0.0001, sg=0, hs=0, negative=5, cbow_mean=1, hashfxn=hash, iter=5,
                         null_word=0, trim_rule=None, sorted_vocab=1, batch_words=10000,
@@ -26,7 +25,7 @@ class SklearnMyW2VTransformerPatching:
                         mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None):
         """ Patch for ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer') """
         # pylint: disable=no-method-argument, attribute-defined-outside-init
-        original = gorilla.get_original_attribute(healthcare_utils.MyW2VTransformer, '__init__')
+        original = gorilla.get_original_attribute(sklearn_api.W2VTransformer, '__init__')
 
         self.mlinspect_caller_filename = mlinspect_caller_filename
         self.mlinspect_lineno = mlinspect_lineno
@@ -54,8 +53,7 @@ class SklearnMyW2VTransformerPatching:
                                              null_word=null_word, trim_rule=trim_rule, sorted_vocab=sorted_vocab,
                                              batch_words=batch_words)
 
-    @gorilla.name('fit_transform')
-    @gorilla.settings(allow_hit=True)
+    @gorilla.patch(healthcare_utils.MyW2VTransformer, name='fit_transform', settings=gorilla.Settings(allow_hit=True))
     def patched_fit_transform(self, *args, **kwargs):
         """ Patch for ('example_pipelines.healthcare.healthcare_utils.MyW2VTransformer', 'fit_transform') """
         # pylint: disable=no-method-argument

@@ -6,8 +6,8 @@ import gorilla
 import numpy
 import pandas
 from sklearn import preprocessing, compose, tree, impute, linear_model, model_selection
-from tensorflow.keras.wrappers import scikit_learn as keras_sklearn_external
-from tensorflow.python.keras.wrappers import scikit_learn as keras_sklearn_internal
+from tensorflow.keras.wrappers import scikit_learn as keras_sklearn_external  # pylint: disable=no-name-in-module
+from tensorflow.python.keras.wrappers import scikit_learn as keras_sklearn_internal  # pylint: disable=no-name-in-module
 
 from mlinspect.backends._backend import BackendResult
 from mlinspect.backends._sklearn_backend import SklearnBackend
@@ -663,7 +663,7 @@ class SklearnKerasClassifierPatching:
                         mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None,
                         **sk_params):
         """ Patch for ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier') """
-        # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals
+        # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals, too-many-arguments
         original = gorilla.get_original_attribute(keras_sklearn_internal.BaseWrapper, '__init__')
 
         self.mlinspect_caller_filename = mlinspect_caller_filename

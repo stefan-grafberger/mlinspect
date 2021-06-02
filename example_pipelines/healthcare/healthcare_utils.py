@@ -13,16 +13,6 @@ from tensorflow.python.keras.wrappers.scikit_learn import KerasClassifier  # pyl
 class MyW2VTransformer(W2VTransformer):
     """Some custom w2v transformer."""
 
-    def __init__(self, size=100, alpha=0.025, window=5, min_count=5, max_vocab_size=None, sample=1e-3, seed=1,
-                 workers=3, min_alpha=0.0001, sg=0, hs=0, negative=5, cbow_mean=1, hashfxn=hash, iter=5,
-                 null_word=0, trim_rule=None, sorted_vocab=1, batch_words=10000):
-        super().__init__(size=size, alpha=alpha, window=window,
-                         min_count=min_count, max_vocab_size=max_vocab_size, sample=sample,
-                         seed=seed, workers=workers, min_alpha=min_alpha, sg=sg, hs=hs,
-                         negative=negative, cbow_mean=cbow_mean, hashfxn=hashfxn, iter=iter,
-                         null_word=null_word, trim_rule=trim_rule, sorted_vocab=sorted_vocab,
-                         batch_words=batch_words)
-
     def partial_fit(self, X):
         # pylint: disable=useless-super-delegation
         super().partial_fit([X])

@@ -7,17 +7,17 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 from example_pipelines.healthcare import custom_monkeypatching
 from example_pipelines.healthcare.healthcare_utils import MyKerasClassifier, create_model, MyW2VTransformer
-from mlinspect.testing._testing_helper_utils import run_and_assert_all_op_outputs_inspected
 from example_pipelines import HEALTHCARE_PY, HEALTHCARE_PNG
+from mlinspect.testing._testing_helper_utils import run_and_assert_all_op_outputs_inspected
 
 
 def test_my_word_to_vec_transformer():
     """
     Tests whether MyW2VTransformer works
     """
-    df = pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})
+    pandas_df = pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})
     word_to_vec = MyW2VTransformer(min_count=2, size=2, workers=1)
-    encoded_data = word_to_vec.fit_transform(df)
+    encoded_data = word_to_vec.fit_transform(pandas_df)
     assert encoded_data.shape == (4, 2)
 
 
@@ -25,10 +25,10 @@ def test_my_keras_classifier():
     """
     Tests whether MyKerasClassifier works
     """
-    df = pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], 'target': ['no', 'no', 'yes', 'yes']})
+    pandas_df = pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], 'target': ['no', 'no', 'yes', 'yes']})
 
-    train = StandardScaler().fit_transform(df[['A', 'B']])
-    target = OneHotEncoder(sparse=False).fit_transform(df[['target']])
+    train = StandardScaler().fit_transform(pandas_df[['A', 'B']])
+    target = OneHotEncoder(sparse=False).fit_transform(pandas_df[['target']])
 
     clf = MyKerasClassifier(build_fn=create_model, epochs=2, batch_size=1, verbose=0)
     clf.fit(train, target)

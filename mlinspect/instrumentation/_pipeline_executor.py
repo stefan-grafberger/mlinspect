@@ -4,7 +4,6 @@ Instrument and executes the pipeline
 import ast
 from typing import Iterable, List
 
-import astunparse
 import gorilla
 import nbformat
 import networkx

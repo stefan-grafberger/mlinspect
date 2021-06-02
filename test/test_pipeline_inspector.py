@@ -6,11 +6,11 @@ import networkx
 from testfixtures import compare
 
 from example_pipelines.healthcare import custom_monkeypatching
+from example_pipelines import ADULT_SIMPLE_PY, ADULT_SIMPLE_IPYNB, HEALTHCARE_PY
 from mlinspect import PipelineInspector, OperatorType
 from mlinspect.checks import CheckStatus, NoBiasIntroducedFor, NoIllegalFeatures
 from mlinspect.inspections import HistogramForColumns, MaterializeFirstOutputRows
 from mlinspect.testing._testing_helper_utils import get_expected_dag_adult_easy
-from example_pipelines import ADULT_SIMPLE_PY, ADULT_SIMPLE_IPYNB, HEALTHCARE_PY
 
 
 def test_inspector_adult_easy_py_pipeline():
