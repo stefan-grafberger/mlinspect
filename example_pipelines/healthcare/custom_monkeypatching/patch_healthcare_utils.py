@@ -1,9 +1,7 @@
 """
-Monkey patching for sklearn
+Monkey patching for healthcare_utils
 """
-
 import gorilla
-
 from example_pipelines.healthcare import healthcare_utils
 from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.inspections._inspection_input import OperatorContext
@@ -16,7 +14,7 @@ from mlinspect.monkeypatching._patch_numpy import MlinspectNdarray
 
 @gorilla.patches(healthcare_utils.MyW2VTransformer)
 class SklearnMyW2VTransformerPatching:
-    """ Patches for sklearn StandardScaler"""
+    """ Patches for healthcare_utils.MyW2VTransformer"""
     # pylint: disable=too-few-public-methods
 
     @gorilla.name('__init__')

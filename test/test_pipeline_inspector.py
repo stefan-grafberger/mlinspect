@@ -5,11 +5,12 @@ Tests whether the fluent API works
 import networkx
 from testfixtures import compare
 
-from mlinspect import PipelineInspector
+from example_pipelines.healthcare import custom_monkeypatching
+from mlinspect import PipelineInspector, OperatorType
 from mlinspect.checks import CheckStatus, NoBiasIntroducedFor, NoIllegalFeatures
 from mlinspect.inspections import HistogramForColumns, MaterializeFirstOutputRows
 from mlinspect.testing._testing_helper_utils import get_expected_dag_adult_easy
-from example_pipelines import ADULT_SIMPLE_PY, ADULT_SIMPLE_IPYNB
+from example_pipelines import ADULT_SIMPLE_PY, ADULT_SIMPLE_IPYNB, HEALTHCARE_PY
 
 
 def test_inspector_adult_easy_py_pipeline():
@@ -85,3 +86,41 @@ def test_inspector_adult_easy_str_pipeline():
         check_to_check_results = inspector_result.check_to_check_results
         assert check_to_check_results[NoBiasIntroducedFor(['race'])].status == CheckStatus.SUCCESS
         assert check_to_check_results[NoIllegalFeatures()].status == CheckStatus.FAILURE
+
+
+def test_inspector_additional_module():
+    """
+    Tests whether the str version of the inspector works
+    """
+    inspector_result = PipelineInspector \
+        .on_pipeline_from_py_file(HEALTHCARE_PY) \
+        .add_required_inspection(MaterializeFirstOutputRows(5)) \
+        .add_custom_monkey_patching_module(custom_monkeypatching) \
+        .execute()
+
+    assert_healthcare_pipeline_output_complete(inspector_result)
+
+
+def test_inspector_additional_modules():
+    """
+    Tests whether the str version of the inspector works
+    """
+    inspector_result = PipelineInspector \
+        .on_pipeline_from_py_file(HEALTHCARE_PY) \
+        .add_required_inspection(MaterializeFirstOutputRows(5)) \
+        .add_custom_monkey_patching_modules([custom_monkeypatching]) \
+        .execute()
+
+    assert_healthcare_pipeline_output_complete(inspector_result)
+
+
+def assert_healthcare_pipeline_output_complete(inspector_result):
+    """ Assert that the healthcare DAG was extracted completely """
+    for dag_node, inspection_result in inspector_result.dag_node_to_inspection_results.items():
+        assert dag_node.operator_type != OperatorType.MISSING_OP
+        assert MaterializeFirstOutputRows(5) in inspection_result
+        if dag_node.operator_type != OperatorType.ESTIMATOR:  # Estimator does not have output
+            assert inspection_result[MaterializeFirstOutputRows(5)] is not None
+        else:
+            assert inspection_result[MaterializeFirstOutputRows(5)] is None
+    assert len(inspector_result.dag) == 26

@@ -4,6 +4,8 @@ Tests whether the healthcare demo works
 import ast
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
+
+from example_pipelines.healthcare import custom_monkeypatching
 from example_pipelines.healthcare.healthcare_utils import MyKerasClassifier, create_model, MyW2VTransformer
 from mlinspect.testing._testing_helper_utils import run_and_assert_all_op_outputs_inspected
 from example_pipelines import HEALTHCARE_PY, HEALTHCARE_PNG
@@ -49,5 +51,6 @@ def test_instrumented_py_pipeline_runs():
     """
     Tests whether the pipeline works with instrumentation
     """
-    dag = run_and_assert_all_op_outputs_inspected(HEALTHCARE_PY, ["age_group", "race"], HEALTHCARE_PNG)
+    dag = run_and_assert_all_op_outputs_inspected(HEALTHCARE_PY, ["age_group", "race"], HEALTHCARE_PNG,
+                                                  [custom_monkeypatching])
     assert len(dag) == 26

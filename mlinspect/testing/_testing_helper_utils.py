@@ -323,11 +323,13 @@ def run_multiple_test_analyzers(code):
     return dag_node_to_inspection_results, analyzers
 
 
-def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag_png_path):
+def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag_png_path, custom_monkey_patching=None):
     """
     Execute the pipeline with a few checks and inspections.
     Assert that mlinspect properly lets inspections inspect all DAG nodes
     """
+    if custom_monkey_patching is None:
+        custom_monkey_patching = []
 
     inspector_result = PipelineInspector \
         .on_pipeline_from_py_file(py_file_path) \
@@ -336,6 +338,7 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
         .add_required_inspection(MissingEmbeddings(20)) \
         .add_required_inspection(RowLineage(5)) \
         .add_required_inspection(MaterializeFirstOutputRows(5)) \
+        .add_custom_monkey_patching_modules(custom_monkey_patching) \
         .execute()
 
     for dag_node, inspection_result in inspector_result.dag_node_to_inspection_results.items():

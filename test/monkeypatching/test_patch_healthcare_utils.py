@@ -12,6 +12,7 @@ from testfixtures import compare
 from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import DagNode, OperatorType, CodeReference
 from mlinspect.inspections._lineage import RowLineage, LineageId
+from example_pipelines.healthcare import custom_monkeypatching
 
 
 def test_my_word_to_vec_transformer():
@@ -29,7 +30,8 @@ def test_my_word_to_vec_transformer():
                 assert encoded_data.shape == (4, 2)
                 """)
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
-                                                        inspections=[RowLineage(3)])
+                                                        inspections=[RowLineage(3)],
+                                                        custom_monkey_patching=[custom_monkeypatching])
 
     expected_dag = networkx.DiGraph()
     expected_missing_op = DagNode(0, "<string-source>", 5, OperatorType.DATA_SOURCE,

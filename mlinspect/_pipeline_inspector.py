@@ -1,7 +1,7 @@
 """
 User-facing API for inspecting the pipeline
 """
-from typing import Iterable, Dict
+from typing import Iterable, Dict, List
 
 from pandas import DataFrame
 
@@ -21,6 +21,7 @@ class PipelineInspectorBuilder:
                  python_code: str or None = None
                  ) -> None:
         self.track_code_references = True
+        self.monkey_patching_modules = []
         self.notebook_path = notebook_path
         self.python_path = python_path
         self.python_code = python_code
@@ -62,6 +63,20 @@ class PipelineInspectorBuilder:
         self.track_code_references = track_code_references
         return self
 
+    def add_custom_monkey_patching_modules(self, module_list: List):
+        """
+        Add additional monkey patching modules.
+        """
+        self.monkey_patching_modules.extend(module_list)
+        return self
+
+    def add_custom_monkey_patching_module(self, module: any):
+        """
+        Add an additional monkey patching module.
+        """
+        self.monkey_patching_modules.append(module)
+        return self
+
     def execute(self) -> InspectorResult:
         """
         Instrument and execute the pipeline
@@ -70,7 +85,8 @@ class PipelineInspectorBuilder:
                              python_path=self.python_path,
                              python_code=self.python_code,
                              inspections=self.inspections,
-                             checks=self.checks)
+                             checks=self.checks,
+                             custom_monkey_patching=self.monkey_patching_modules)
 
 
 class PipelineInspector:

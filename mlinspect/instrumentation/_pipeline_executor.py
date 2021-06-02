@@ -2,7 +2,7 @@
 Instrument and executes the pipeline
 """
 import ast
-from typing import Iterable
+from typing import Iterable, List
 
 import astunparse
 import gorilla
@@ -38,7 +38,7 @@ class PipelineExecutor:
     op_id_to_dag_node = dict()
     inspection_results = InspectionResult(networkx.DiGraph(), dict())
     inspections = []
-
+    custom_monkey_patching = []
 
     def run(self, *,
             notebook_path: str or None = None,
@@ -47,7 +47,8 @@ class PipelineExecutor:
             inspections: Iterable[Inspection] or None = None,
             checks: Iterable[Check] or None = None,
             reset_state: bool = True,
-            track_code_references: bool = True
+            track_code_references: bool = True,
+            custom_monkey_patching: List[any] = None
             ) -> InspectorResult:
         """
         Instrument and execute the pipeline and evaluate all checks
@@ -62,6 +63,8 @@ class PipelineExecutor:
             inspections = []
         if checks is None:
             checks = []
+        if custom_monkey_patching is None:
+            custom_monkey_patching = []
 
         check_inspections = set()
         for check in checks:
@@ -69,6 +72,7 @@ class PipelineExecutor:
         all_inspections = list(set(inspections).union(check_inspections))
         self.inspections = all_inspections
         self.track_code_references = track_code_references
+        self.custom_monkey_patching = custom_monkey_patching
 
         self.run_inspections(notebook_path, python_code, python_path)
         check_to_results = dict((check, check.evaluate(self.inspection_results)) for check in checks)
@@ -119,6 +123,7 @@ class PipelineExecutor:
         self.op_id_to_dag_node = dict()
         self.inspection_results = InspectionResult(networkx.DiGraph(), dict())
         self.inspections = []
+        self.custom_monkey_patching = []
 
     @staticmethod
     def instrument_pipeline(parsed_ast, track_code_references):
@@ -217,7 +222,8 @@ def monkey_patch():
     """
     Function that does the actual monkey patching
     """
-    patches = gorilla.find_patches([monkeypatching])
+    patch_sources = get_monkey_patching_patch_sources()
+    patches = gorilla.find_patches(patch_sources)
     for patch in patches:
         gorilla.apply(patch)
 
@@ -226,6 +232,16 @@ def undo_monkey_patch():
     """
     Function that does the actual monkey patching
     """
-    patches = gorilla.find_patches([monkeypatching])
+    patch_sources = get_monkey_patching_patch_sources()
+    patches = gorilla.find_patches(patch_sources)
     for patch in patches:
         gorilla.revert(patch)
+
+
+def get_monkey_patching_patch_sources():
+    """
+    Get monkey patches provided by mlinspect and custom patches provided by the user
+    """
+    patch_sources = [monkeypatching]
+    patch_sources.extend(singleton.custom_monkey_patching)
+    return patch_sources
