@@ -129,8 +129,12 @@ class DataFramePatching:
             elif isinstance(args[0], pandas.Series):  # Selection
                 operator_context = OperatorContext(OperatorType.SELECTION, function_info)
                 columns = list(self.columns)  # pylint: disable=no-member
+                if optional_source_code:
+                    description = "Select by Series: {}".format(optional_source_code)
+                else:
+                    description = "Select by Series"
                 dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.SELECTION, function_info,
-                                   "Select by Series", columns, optional_code_reference, optional_source_code)
+                                   description, columns, optional_code_reference, optional_source_code)
             else:
                 raise NotImplementedError()
             input_infos = PandasBackend.before_call(operator_context, [input_info.annotated_dfobject])

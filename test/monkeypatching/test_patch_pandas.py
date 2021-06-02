@@ -274,7 +274,8 @@ def test_frame__getitem__selection():
                                   optional_source_code="df['A']")
     expected_dag.add_edge(expected_data_source, expected_projection)
     expected_selection = DagNode(2, "<string-source>", 4, OperatorType.SELECTION,
-                                 module=('pandas.core.frame', '__getitem__'), description='Select by Series',
+                                 module=('pandas.core.frame', '__getitem__'),
+                                 description="Select by Series: df[df['A'] > 3]",
                                  columns=['A', 'B'], optional_code_reference=CodeReference(4, 15, 4, 30),
                                  optional_source_code="df[df['A'] > 3]")
     expected_dag.add_edge(expected_data_source, expected_selection)
