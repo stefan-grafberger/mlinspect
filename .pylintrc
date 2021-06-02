@@ -141,7 +141,12 @@ disable=print-statement,
         comprehension-escape,
         exec-used,
         fixme,
-        eval-used
+        eval-used,
+        duplicate-code  # TODO: Maybe we can enable this again with more refactoring. However, some code duplication
+                        #  in our monkey patching is sadly natural due to us having to do similar yet different argument
+                        #  mapping many times. It is possible to refactor some of that code into new functions, but we
+                        #  have be careful not to introduce unnecessary complexity. Sadly, disabling this rule only
+                        #  for specific files is not possible currently, see https://github.com/PyCQA/pylint/issues/214
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
