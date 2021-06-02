@@ -44,7 +44,12 @@ class PandasBackend(Backend):
         if operator_context.operator == OperatorType.DATA_SOURCE:
             return_value = execute_inspection_visits_data_source(operator_context, return_value)
         elif operator_context.operator == OperatorType.GROUP_BY_AGG:
-            return_value = execute_inspection_visits_data_source(operator_context, return_value.reset_index())
+            df_reset_index = return_value.reset_index()
+            reset_index_return_value = execute_inspection_visits_data_source(operator_context, df_reset_index)
+            annotated_result_object = AnnotatedDfObject(return_value,
+                                                        reset_index_return_value.annotated_dfobject.result_annotation)
+            return_value = BackendResult(annotated_result_object, reset_index_return_value.dag_node_annotation)
+
         elif operator_context.operator == OperatorType.SELECTION:
             return_value = execute_inspection_visits_unary_operator(operator_context, input_infos[0].result_data,
                                                                     input_infos[0].result_annotation, return_value,
