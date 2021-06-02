@@ -51,9 +51,6 @@ class MyW2VTransformer(W2VTransformer):
 class MyKerasClassifier(KerasClassifier):
     """A Keras Wrapper that sets input_dim on fit"""
 
-    def __init__(self, build_fn=None, **sk_params):
-        super().__init__(build_fn, **sk_params)
-
     def fit(self, x, y, **kwargs):
         """Create and fit a simple neural network"""
         self.sk_params['input_dim'] = x.shape[1]

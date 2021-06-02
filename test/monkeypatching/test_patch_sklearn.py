@@ -830,7 +830,7 @@ def test_logistic_regression():
 
 def test_keras_wrapper():
     """
-    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
+    Tests whether the monkey patching of ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier') works
     """
     test_code = cleandoc("""
                 import pandas as pd
