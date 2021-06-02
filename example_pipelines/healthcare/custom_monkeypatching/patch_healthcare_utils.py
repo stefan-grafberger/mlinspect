@@ -2,8 +2,8 @@
 Monkey patching for healthcare_utils
 """
 import gorilla
-from example_pipelines.healthcare import healthcare_utils
 from gensim import sklearn_api
+from example_pipelines.healthcare import healthcare_utils
 from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.inspections._inspection_input import OperatorContext
 from mlinspect.instrumentation._dag_node import OperatorType, DagNode
@@ -24,7 +24,8 @@ class SklearnMyW2VTransformerPatching:
                         mlinspect_caller_filename=None, mlinspect_lineno=None,
                         mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None):
         """ Patch for ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer') """
-        # pylint: disable=no-method-argument, attribute-defined-outside-init
+        # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals, redefined-builtin,
+        # pylint: disable=invalid-name
         original = gorilla.get_original_attribute(sklearn_api.W2VTransformer, '__init__')
 
         self.mlinspect_caller_filename = mlinspect_caller_filename

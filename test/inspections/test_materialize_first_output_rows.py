@@ -60,16 +60,13 @@ def assert_output_looks_as_expected(dag_node_to_inspection_results):
     actual_df = dag_node_to_inspection_results[3][1][MaterializeFirstOutputRows(2)]
     expected_df = DataFrame([[array(1)], [array(1)]], columns=['array'])
     pandas.testing.assert_frame_equal(actual_df.reset_index(drop=True), expected_df.reset_index(drop=True))
-    pipeline_str = "compose.ColumnTransformer(transformers=[\n" \
-                   "    ('categorical', preprocessing.OneHotEncoder(handle_unknown='ignore'), " \
-                   "['education', 'workclass']),\n" \
-                   "    ('numeric', preprocessing.StandardScaler(), ['age', 'hours-per-week'])\n" \
-                   "])"
-    assert dag_node_to_inspection_results[4][0].optional_source_code == pipeline_str
+
+    assert dag_node_to_inspection_results[4][0].lineno == 18
     actual_df = dag_node_to_inspection_results[4][1][MaterializeFirstOutputRows(2)]
     expected_df = DataFrame([['Some-college', 'Private'], ['Some-college', 'Local-gov']],
                             columns=['education', 'workclass'])
     pandas.testing.assert_frame_equal(actual_df.reset_index(drop=True), expected_df.reset_index(drop=True))
+
     assert dag_node_to_inspection_results[5][0].optional_source_code == \
            "preprocessing.OneHotEncoder(handle_unknown='ignore')"
     actual_df = dag_node_to_inspection_results[5][1][MaterializeFirstOutputRows(2)]
@@ -79,7 +76,8 @@ def assert_output_looks_as_expected(dag_node_to_inspection_results):
                                       0., 0., 0.])]]],
                             columns=['array'])
     pandas.testing.assert_frame_equal(actual_df.reset_index(drop=True), expected_df.reset_index(drop=True))
-    assert dag_node_to_inspection_results[6][0].optional_source_code == pipeline_str
+
+    assert dag_node_to_inspection_results[6][0].lineno == 18
     actual_df = dag_node_to_inspection_results[6][1][MaterializeFirstOutputRows(2)]
     expected_df = DataFrame([[46, 40], [29, 50]], columns=['age', 'hours-per-week'])
     pandas.testing.assert_frame_equal(actual_df.reset_index(drop=True), expected_df.reset_index(drop=True))
@@ -89,7 +87,8 @@ def assert_output_looks_as_expected(dag_node_to_inspection_results):
                              [array([RangeComparison(-0.8, -0.7), RangeComparison(0.7, 0.8)])]],
                             columns=['array'])
     pandas.testing.assert_frame_equal(actual_df.reset_index(drop=True), expected_df.reset_index(drop=True))
-    assert dag_node_to_inspection_results[8][0].optional_source_code == pipeline_str
+
+    assert dag_node_to_inspection_results[8][0].lineno == 18
     actual_df = dag_node_to_inspection_results[8][1][MaterializeFirstOutputRows(2)]
     expected_df = DataFrame([[array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
                                      0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, RangeComparison(0.5, 0.6),
@@ -109,6 +108,7 @@ def assert_output_looks_as_expected(dag_node_to_inspection_results):
                                      RangeComparison(0.7, 0.8)])]],
                             columns=['array'])
     pandas.testing.assert_frame_equal(actual_df.reset_index(drop=True), expected_df.reset_index(drop=True))
+
     assert dag_node_to_inspection_results[10][0].optional_source_code == 'tree.DecisionTreeClassifier()'
     actual_df = dag_node_to_inspection_results[10][1][MaterializeFirstOutputRows(2)]
     expected_df = DataFrame([[array([1])], [array([1])]], columns=['array'])
