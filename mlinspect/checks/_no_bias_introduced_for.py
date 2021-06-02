@@ -65,8 +65,8 @@ class NoBiasIntroducedFor(Check):
             histograms[dag_node] = inspection_results[HistogramForColumns(self.sensitive_columns)]
         relevant_nodes = [node for node in dag.nodes if node.operator_type in {OperatorType.JOIN,
                                                                                OperatorType.SELECTION} or
-                          (node.module == ('sklearn.impute._base', 'SimpleImputer', 'Pipeline') and
-                           node.columns[0] in self.sensitive_columns)]
+                          (node.module == ('sklearn.impute._base', 'SimpleImputer') and
+                           set(node.columns).intersection(self.sensitive_columns))]
         check_status = CheckStatus.SUCCESS
         bias_distribution_change = collections.OrderedDict()
         issue_list = []

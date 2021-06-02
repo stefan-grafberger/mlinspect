@@ -4,6 +4,7 @@ Monkey patching for sklearn
 
 import gorilla
 import numpy
+import pandas
 from sklearn import preprocessing, compose, tree, impute, linear_model, model_selection
 from tensorflow.keras.wrappers import scikit_learn as keras_sklearn_external
 from tensorflow.python.keras.wrappers import scikit_learn as keras_sklearn_internal
@@ -435,8 +436,13 @@ class SklearnSimpleImputerPatching:
                                                    input_infos,
                                                    result)
         new_return_value = backend_result.annotated_dfobject.result_data
+        if isinstance(input_infos[0].result_data, pandas.DataFrame):
+            columns = list(input_infos[0].result_data.columns)
+        else:
+            columns = ['array']
+
         dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
-                           OperatorType.TRANSFORMER, function_info, "Simple Imputer", ['array'],
+                           OperatorType.TRANSFORMER, function_info, "Simple Imputer", columns,
                            self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
         return new_return_value

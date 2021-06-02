@@ -87,7 +87,7 @@ class PipelineExecutor:
         self.source_code, self.source_code_path = self.load_source_code(notebook_path, python_path, python_code)
         parsed_ast = ast.parse(self.source_code)
         parsed_modified_ast = self.instrument_pipeline(parsed_ast, self.track_code_references)
-        print(astunparse.unparse(parsed_modified_ast))
+        # print(astunparse.unparse(parsed_modified_ast))
         exec(compile(parsed_modified_ast, filename=self.source_code_path, mode="exec"), PipelineExecutor.script_scope)
 
     def get_next_op_id(self):

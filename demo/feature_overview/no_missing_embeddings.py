@@ -3,7 +3,7 @@ The NoMissingEmbeddings Check
 """
 import collections
 import dataclasses
-from typing import Iterable, OrderedDict
+from typing import Iterable, Dict
 
 from demo.feature_overview.missing_embeddings import MissingEmbeddings, MissingEmbeddingsInfo
 from mlinspect import DagNode
@@ -19,7 +19,7 @@ class NoMissingEmbeddingsResult(CheckResult):
     """
     Does the pipeline use illegal features?
     """
-    dag_node_to_missing_embeddings: OrderedDict[DagNode, MissingEmbeddingsInfo]
+    dag_node_to_missing_embeddings: Dict[DagNode, MissingEmbeddingsInfo]
 
 
 class NoMissingEmbeddings(Check):
@@ -45,7 +45,7 @@ class NoMissingEmbeddings(Check):
         """Evaluate the check"""
         dag_node_to_missing_embeddings = dict()
         for dag_node, dag_node_inspection_result in inspection_result.dag_node_to_inspection_results.items():
-            if MissingEmbeddings(self.example_threshold) in inspection_result:
+            if MissingEmbeddings(self.example_threshold) in dag_node_inspection_result:
                 missing_embedding_info = dag_node_inspection_result[MissingEmbeddings(self.example_threshold)]
                 assert missing_embedding_info is None or isinstance(missing_embedding_info, MissingEmbeddingsInfo)
                 if missing_embedding_info is not None and missing_embedding_info.missing_embedding_count > 0:

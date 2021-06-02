@@ -219,7 +219,7 @@ def test_simple_imputer():
                                   optional_source_code="pd.DataFrame({'A': ['cat_a', np.nan, 'cat_a', 'cat_c']})")
     expected_select = DagNode(1, "<string-source>", 6, OperatorType.TRANSFORMER,
                               module=('sklearn.impute._base', 'SimpleImputer'),
-                              description='Simple Imputer', columns=['array'],
+                              description='Simple Imputer', columns=['A'],
                               optional_code_reference=CodeReference(6, 10, 6, 72),
                               optional_source_code="SimpleImputer(missing_values=np.nan, strategy='most_frequent')")
     expected_dag.add_edge(expected_missing_op, expected_select)

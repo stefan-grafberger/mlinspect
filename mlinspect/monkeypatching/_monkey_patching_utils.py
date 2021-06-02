@@ -5,6 +5,7 @@ import ast
 import dataclasses
 import sys
 from typing import List
+import warnings
 
 import numpy
 from pandas import DataFrame, Series
@@ -196,16 +197,17 @@ def add_dag_node(dag_node: DagNode, dag_node_parents: List[DagNode], backend_res
     Inserts a new node into the DAG
     """
     # pylint: disable=protected-access
-    print("")
-    print("{}:{}: {}".format(dag_node.caller_filename, dag_node.lineno, dag_node.module))
+    # print("")
+    # print("{}:{}: {}".format(dag_node.caller_filename, dag_node.lineno, dag_node.module))
 
-    print("source code: {}".format(dag_node.optional_source_code))
+    # print("source code: {}".format(dag_node.optional_source_code))
     annotated_df = backend_result.annotated_dfobject
 
     if annotated_df.result_data is not None:
         annotated_df.result_data._mlinspect_dag_node = dag_node.node_id
         if annotated_df.result_annotation is not None:
             # TODO: Remove this branching once we support all operators with DAG node mapping
+            warnings.simplefilter(action='ignore', category=UserWarning)
             annotated_df.result_data._mlinspect_annotation = annotated_df.result_annotation
     if dag_node_parents:
         for parent in dag_node_parents:
