@@ -107,5 +107,3 @@ def test_row_lineage_concat():
                                      [np.array([-0.7142857142857143, 0., 1., 0.]), {LineageId(0, 1)}]],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
-
-
