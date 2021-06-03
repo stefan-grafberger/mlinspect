@@ -8,7 +8,7 @@ from typing import List, Iterable
 
 from mlinspect.checks._check import Check, CheckStatus, CheckResult
 from mlinspect.inspections._inspection import Inspection
-from mlinspect.instrumentation._dag_node import OperatorType
+from mlinspect.inspections._inspection_input import OperatorType
 from mlinspect.inspections._inspection_result import InspectionResult
 
 ILLEGAL_FEATURES = {"race", "gender", "age"}
@@ -47,7 +47,7 @@ class NoIllegalFeatures(Check):
         """Evaluate the check"""
         # TODO: Make this robust and add extensive testing
         dag = inspection_result.dag
-        train_data_nodes = [node for node in dag.nodes if node.operator_type == OperatorType.TRAIN_DATA]
+        train_data_nodes = [node for node in dag.nodes if node.operator_info.operator == OperatorType.TRAIN_DATA]
         used_columns = []
         for train_data_node in train_data_nodes:
             used_columns.extend(self.get_used_columns(dag, train_data_node))
@@ -65,7 +65,7 @@ class NoIllegalFeatures(Check):
         Get the output column of the current dag node. If the current dag node is, e.g., a concatenation,
         check the parents of the current dag node.
         """
-        columns = current_node.columns
+        columns = current_node.details.columns
         if columns is not None and columns != ["array"]:
             result = columns
         else:

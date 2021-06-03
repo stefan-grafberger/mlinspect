@@ -7,12 +7,12 @@ import os
 import gorilla
 import pandas
 
-from mlinspect import OperatorType, DagNode
+from mlinspect import OperatorType, DagNode, BasicCodeLocation, DagNodeDetails
 from mlinspect.backends._pandas_backend import PandasBackend
-from mlinspect.inspections._inspection_input import OperatorContext
+from mlinspect.inspections._inspection_input import OperatorContext, FunctionInfo
 from mlinspect.instrumentation._pipeline_executor import singleton
 from mlinspect.monkeypatching._monkey_patching_utils import execute_patched_func, get_input_info, add_dag_node, \
-    get_dag_node_for_id, execute_patched_func_no_op_id
+    get_dag_node_for_id, execute_patched_func_no_op_id, get_optional_code_info_or_none
 from mlinspect.monkeypatching._patch_sklearn import call_info_singleton
 
 
@@ -31,7 +31,7 @@ class PandasPatching:
 
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            function_info = ('pandas.io.parsers', 'read_csv')
+            function_info = FunctionInfo('pandas.io.parsers', 'read_csv')
 
             operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
             input_infos = PandasBackend.before_call(operator_context, [])
@@ -41,8 +41,11 @@ class PandasPatching:
                                                       result)
 
             description = "{}".format(args[0].split(os.path.sep)[-1])
-            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.DATA_SOURCE, function_info, description,
-                               list(result.columns), optional_code_reference, optional_source_code)
+            dag_node = DagNode(op_id,
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails(description, list(result.columns)),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             add_dag_node(dag_node, [], backend_result)
             return result
 
@@ -61,7 +64,7 @@ class DataFramePatching:
 
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            function_info = ('pandas.core.frame', 'DataFrame')
+            function_info = FunctionInfo('pandas.core.frame', 'DataFrame')
             operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
             input_infos = PandasBackend.before_call(operator_context, [])
             original(self, *args, **kwargs)
@@ -69,8 +72,11 @@ class DataFramePatching:
             backend_result = PandasBackend.after_call(operator_context, input_infos, result)
 
             columns = list(self.columns)  # pylint: disable=no-member
-            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.DATA_SOURCE, function_info,
-                               "", columns, optional_code_reference, optional_source_code)
+            dag_node = DagNode(op_id,
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails(None, columns),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             add_dag_node(dag_node, [], backend_result)
 
         execute_patched_func(original, execute_inspections, self, *args, **kwargs)
@@ -83,7 +89,7 @@ class DataFramePatching:
 
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            function_info = ('pandas.core.frame', 'dropna')
+            function_info = FunctionInfo('pandas.core.frame', 'dropna')
 
             input_info = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
                                         optional_source_code)
@@ -97,8 +103,11 @@ class DataFramePatching:
                                                       input_infos,
                                                       result)
             result = backend_result.annotated_dfobject.result_data
-            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.SELECTION, function_info,
-                               "dropna", list(result.columns), optional_code_reference, optional_source_code)
+            dag_node = DagNode(op_id,
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails("dropna", list(result.columns)),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
 
             return result
@@ -113,19 +122,25 @@ class DataFramePatching:
 
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            function_info = ('pandas.core.frame', '__getitem__')
+            function_info = FunctionInfo('pandas.core.frame', '__getitem__')
             input_info = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
                                         optional_source_code)
             if isinstance(args[0], str):  # Projection to Series
                 columns = [args[0]]
                 operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
-                dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.PROJECTION, function_info,
-                                   "to {}".format(columns), columns, optional_code_reference, optional_source_code)
+                dag_node = DagNode(op_id,
+                                   BasicCodeLocation(caller_filename, lineno),
+                                   operator_context,
+                                   DagNodeDetails("to {}".format(columns), columns),
+                                   get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             elif isinstance(args[0], list) and isinstance(args[0][0], str):  # Projection to DF
                 columns = args[0]
                 operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
-                dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.PROJECTION, function_info,
-                                   "to {}".format(columns), columns, optional_code_reference, optional_source_code)
+                dag_node = DagNode(op_id,
+                                   BasicCodeLocation(caller_filename, lineno),
+                                   operator_context,
+                                   DagNodeDetails("to {}".format(columns), columns),
+                                   get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             elif isinstance(args[0], pandas.Series):  # Selection
                 operator_context = OperatorContext(OperatorType.SELECTION, function_info)
                 columns = list(self.columns)  # pylint: disable=no-member
@@ -133,8 +148,11 @@ class DataFramePatching:
                     description = "Select by Series: {}".format(optional_source_code)
                 else:
                     description = "Select by Series"
-                dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.SELECTION, function_info,
-                                   description, columns, optional_code_reference, optional_source_code)
+                dag_node = DagNode(op_id,
+                                   BasicCodeLocation(caller_filename, lineno),
+                                   operator_context,
+                                   DagNodeDetails(description, columns),
+                                   get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             else:
                 raise NotImplementedError()
             input_infos = PandasBackend.before_call(operator_context, [input_info.annotated_dfobject])
@@ -158,7 +176,7 @@ class DataFramePatching:
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             # pylint: disable=too-many-locals
-            function_info = ('pandas.core.frame', '__setitem__')
+            function_info = FunctionInfo('pandas.core.frame', '__setitem__')
             operator_context = OperatorContext(OperatorType.PROJECTION_MODIFY, function_info)
 
             input_info = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
@@ -175,8 +193,11 @@ class DataFramePatching:
                 description = "modifies {}".format([args[0]])
             else:
                 raise NotImplementedError("TODO: Handling __setitem__ for key type {}".format(type(args[0])))
-            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.PROJECTION_MODIFY, function_info,
-                               description, columns, optional_code_reference, optional_source_code)
+            dag_node = DagNode(op_id,
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails(description, columns),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
             assert hasattr(self, "_mlinspect_annotation")
             return result
@@ -191,7 +212,7 @@ class DataFramePatching:
 
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            function_info = ('pandas.core.frame', 'replace')
+            function_info = FunctionInfo('pandas.core.frame', 'replace')
 
             input_info = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
                                         optional_source_code)
@@ -206,8 +227,11 @@ class DataFramePatching:
             if isinstance(args[0], dict):
                 raise NotImplementedError("TODO: Add support for replace with dicts")
             description = "Replace '{}' with '{}'".format(args[0], args[1])
-            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.PROJECTION_MODIFY, function_info,
-                               description, list(result.columns), optional_code_reference, optional_source_code)
+            dag_node = DagNode(op_id,
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails(description, list(result.columns)),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
 
             return result
@@ -222,7 +246,7 @@ class DataFramePatching:
 
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            function_info = ('pandas.core.frame', 'merge')
+            function_info = FunctionInfo('pandas.core.frame', 'merge')
 
             input_info_a = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
                                           optional_source_code)
@@ -238,8 +262,11 @@ class DataFramePatching:
                                                       result)
             result = backend_result.annotated_dfobject.result_data
             description = "on '{}'".format(kwargs['on'])
-            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.JOIN, function_info,
-                               description, list(result.columns), optional_code_reference, optional_source_code)
+            dag_node = DagNode(op_id,
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails(description, list(result.columns)),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             add_dag_node(dag_node, [input_info_a.dag_node, input_info_b.dag_node], backend_result)
 
             return result
@@ -254,7 +281,7 @@ class DataFramePatching:
 
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            function_info = ('pandas.core.frame', 'groupby')
+            function_info = FunctionInfo('pandas.core.frame', 'groupby')
             # We ignore groupbys, we only do something with aggs
 
             input_info = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
@@ -280,7 +307,7 @@ class DataFrameGroupByPatching:
 
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            function_info = ('pandas.core.groupby.generic', 'agg')
+            function_info = FunctionInfo('pandas.core.groupby.generic', 'agg')
             if not hasattr(self, '_mlinspect_dag_node'):
                 raise NotImplementedError("TODO: Support agg if groupby happened in external code")
             input_dag_node = get_dag_node_for_id(self._mlinspect_dag_node)  # pylint: disable=no-member
@@ -298,8 +325,11 @@ class DataFrameGroupByPatching:
             else:
                 description = "Groupby '{}', Aggregate: '{}'".format(result.index.name, kwargs)
             columns = [result.index.name] + list(result.columns)
-            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.GROUP_BY_AGG, function_info, description,
-                               columns, optional_code_reference, optional_source_code)
+            dag_node = DagNode(op_id,
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails(description, columns),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             add_dag_node(dag_node, [input_dag_node], backend_result)
             new_return_value = backend_result.annotated_dfobject.result_data
 
@@ -325,7 +355,7 @@ class LocIndexerPatching:
             op_id = singleton.get_next_op_id()
             caller_filename = call_info_singleton.transformer_filename
             lineno = call_info_singleton.transformer_lineno
-            function_info = call_info_singleton.function_info
+            function_info = call_info_singleton.transformer_function_info
             optional_code_reference = call_info_singleton.transformer_optional_code_reference
             optional_source_code = call_info_singleton.transformer_optional_source_code
 
@@ -346,8 +376,11 @@ class LocIndexerPatching:
                                                       result)
             result = backend_result.annotated_dfobject.result_data
 
-            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.PROJECTION, function_info,
-                               "to {}".format(columns), columns, optional_code_reference, optional_source_code)
+            dag_node = DagNode(op_id,
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails("to {}".format(columns), columns),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
         else:
             result = original(self, *args, **kwargs)
@@ -369,7 +402,7 @@ class SeriesPatching:
 
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            function_info = ('pandas.core.series', 'Series')
+            function_info = FunctionInfo('pandas.core.series', 'Series')
 
             operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
             input_infos = PandasBackend.before_call(operator_context, [])
@@ -383,8 +416,11 @@ class SeriesPatching:
                 columns = list(self.name)  # pylint: disable=no-member
             else:
                 columns = ["_1"]
-            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.DATA_SOURCE, function_info,
-                               "", columns, optional_code_reference, optional_source_code)
+            dag_node = DagNode(op_id,
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails(None, columns),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             add_dag_node(dag_node, [], backend_result)
 
         execute_patched_func(original, execute_inspections, self, *args, **kwargs)

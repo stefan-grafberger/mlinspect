@@ -6,8 +6,7 @@ from typing import Iterable
 from pandas import DataFrame
 
 from ._inspection import Inspection
-from ._inspection_input import InspectionInputSinkOperator
-from ..instrumentation._dag_node import OperatorType
+from ._inspection_input import InspectionInputSinkOperator, OperatorType
 
 
 class MaterializeFirstOutputRows(Inspection):

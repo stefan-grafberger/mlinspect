@@ -3,13 +3,14 @@ Monkey patching for healthcare_utils
 """
 import gorilla
 from gensim import sklearn_api
+
 from example_pipelines.healthcare import healthcare_utils
 from mlinspect.backends._sklearn_backend import SklearnBackend
-from mlinspect.inspections._inspection_input import OperatorContext
-from mlinspect.instrumentation._dag_node import OperatorType, DagNode
+from mlinspect.inspections._inspection_input import OperatorContext, FunctionInfo, OperatorType
+from mlinspect.instrumentation._dag_node import DagNode, BasicCodeLocation, DagNodeDetails
 from mlinspect.instrumentation._pipeline_executor import singleton
 from mlinspect.monkeypatching._monkey_patching_utils import add_dag_node, \
-    get_input_info, execute_patched_func_no_op_id
+    get_input_info, execute_patched_func_no_op_id, get_optional_code_info_or_none
 from mlinspect.monkeypatching._patch_numpy import MlinspectNdarray
 
 
@@ -59,7 +60,7 @@ class SklearnMyW2VTransformerPatching:
         """ Patch for ('example_pipelines.healthcare.healthcare_utils.MyW2VTransformer', 'fit_transform') """
         # pylint: disable=no-method-argument
         original = gorilla.get_original_attribute(healthcare_utils.MyW2VTransformer, 'fit_transform')
-        function_info = ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer')
+        function_info = FunctionInfo('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer')
         input_info = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno, function_info,
                                     self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
 
@@ -71,8 +72,11 @@ class SklearnMyW2VTransformerPatching:
                                                    result)
         new_return_value = backend_result.annotated_dfobject.result_data
         assert isinstance(new_return_value, MlinspectNdarray)
-        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
-                           OperatorType.TRANSFORMER, function_info, "Word2Vec", ['array'],
-                           self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        dag_node = DagNode(singleton.get_next_op_id(),
+                           BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                           operator_context,
+                           DagNodeDetails("Word2Vec", ['array']),
+                           get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                          self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
         return new_return_value

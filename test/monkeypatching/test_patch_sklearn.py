@@ -1,6 +1,7 @@
 """
 Tests whether the monkey patching works for all patched sklearn methods
 """
+# pylint: disable=too-many-lines
 from inspect import cleandoc
 
 import networkx
@@ -9,8 +10,10 @@ import pandas
 from pandas import DataFrame
 from testfixtures import compare
 
+from mlinspect import OperatorType, OperatorContext, FunctionInfo
 from mlinspect.instrumentation import _pipeline_executor
-from mlinspect.instrumentation._dag_node import DagNode, OperatorType, CodeReference
+from mlinspect.instrumentation._dag_node import DagNode, CodeReference, BasicCodeLocation, DagNodeDetails, \
+    OptionalCodeInfo
 from mlinspect.inspections._lineage import RowLineage, LineageId
 
 
@@ -33,15 +36,20 @@ def test_label_binarize():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0, "<string-source>", 5, OperatorType.DATA_SOURCE,
-                                  ('pandas.core.series', 'Series'), description='', columns=['A'],
-                                  optional_code_reference=CodeReference(5, 12, 5, 59),
-                                  optional_source_code="pd.Series(['yes', 'no', 'no', 'yes'], name='A')")
-    expected_select = DagNode(1, "<string-source>", 6, OperatorType.PROJECTION_MODIFY,
-                              module=('sklearn.preprocessing._label', 'label_binarize'),
-                              description="label_binarize, classes: ['no', 'yes']", columns=['array'],
-                              optional_code_reference=CodeReference(6, 12, 6, 60),
-                              optional_source_code="label_binarize(pd_series, classes=['no', 'yes'])")
+    expected_missing_op = DagNode(0,
+                                  BasicCodeLocation("<string-source>", 5),
+                                  OperatorContext(OperatorType.DATA_SOURCE,
+                                                  FunctionInfo('pandas.core.series', 'Series')),
+                                  DagNodeDetails(None, ['A']),
+                                  OptionalCodeInfo(CodeReference(5, 12, 5, 59),
+                                                   "pd.Series(['yes', 'no', 'no', 'yes'], name='A')"))
+    expected_select = DagNode(1,
+                              BasicCodeLocation("<string-source>", 6),
+                              OperatorContext(OperatorType.PROJECTION_MODIFY,
+                                              FunctionInfo('sklearn.preprocessing._label', 'label_binarize')),
+                              DagNodeDetails("label_binarize, classes: ['no', 'yes']", ['array']),
+                              OptionalCodeInfo(CodeReference(6, 12, 6, 60),
+                                               "label_binarize(pd_series, classes=['no', 'yes'])"))
     expected_dag.add_edge(expected_missing_op, expected_select)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
@@ -78,21 +86,26 @@ def test_train_test_split():
     inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[3])
 
     expected_dag = networkx.DiGraph()
-    expected_source = DagNode(0, "<string-source>", 4, OperatorType.DATA_SOURCE,
-                              ('pandas.core.frame', 'DataFrame'), description='', columns=['A'],
-                              optional_code_reference=CodeReference(4, 12, 4, 46),
-                              optional_source_code="pd.DataFrame({'A': [1, 2, 10, 5]})")
-    expected_train = DagNode(1, "<string-source>", 5, OperatorType.TRAIN_TEST_SPLIT,
-                             module=('sklearn.model_selection._split', 'train_test_split'),
-                             description='(Train Data)', columns=['A'],
-                             optional_code_reference=CodeReference(5, 24, 5, 67),
-                             optional_source_code='train_test_split(pandas_df, random_state=0)')
+    expected_source = DagNode(0,
+                              BasicCodeLocation("<string-source>", 4),
+                              OperatorContext(OperatorType.DATA_SOURCE, FunctionInfo('pandas.core.frame', 'DataFrame')),
+                              DagNodeDetails(None, ['A']),
+                              OptionalCodeInfo(CodeReference(4, 12, 4, 46), "pd.DataFrame({'A': [1, 2, 10, 5]})"))
+    expected_train = DagNode(1,
+                             BasicCodeLocation("<string-source>", 5),
+                             OperatorContext(OperatorType.TRAIN_TEST_SPLIT,
+                                             FunctionInfo('sklearn.model_selection._split', 'train_test_split')),
+                             DagNodeDetails('(Train Data)', ['A']),
+                             OptionalCodeInfo(CodeReference(5, 24, 5, 67),
+                                              'train_test_split(pandas_df, random_state=0)'))
     expected_dag.add_edge(expected_source, expected_train)
-    expected_test = DagNode(2, "<string-source>", 5, OperatorType.TRAIN_TEST_SPLIT,
-                            module=('sklearn.model_selection._split', 'train_test_split'),
-                            description='(Test Data)', columns=['A'],
-                            optional_code_reference=CodeReference(5, 24, 5, 67),
-                            optional_source_code='train_test_split(pandas_df, random_state=0)')
+    expected_test = DagNode(2,
+                            BasicCodeLocation("<string-source>", 5),
+                            OperatorContext(OperatorType.TRAIN_TEST_SPLIT,
+                                            FunctionInfo('sklearn.model_selection._split', 'train_test_split')),
+                            DagNodeDetails('(Test Data)', ['A']),
+                            OptionalCodeInfo(CodeReference(5, 24, 5, 67),
+                                             'train_test_split(pandas_df, random_state=0)'))
     expected_dag.add_edge(expected_source, expected_test)
 
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
@@ -131,15 +144,18 @@ def test_standard_scaler():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0, "<string-source>", 5, OperatorType.DATA_SOURCE,
-                                  ('pandas.core.frame', 'DataFrame'), description='', columns=['A'],
-                                  optional_code_reference=CodeReference(5, 5, 5, 39),
-                                  optional_source_code="pd.DataFrame({'A': [1, 2, 10, 5]})")
-    expected_select = DagNode(1, "<string-source>", 6, OperatorType.TRANSFORMER,
-                              module=('sklearn.preprocessing._data', 'StandardScaler'),
-                              description='Standard Scaler', columns=['array'],
-                              optional_code_reference=CodeReference(6, 18, 6, 34),
-                              optional_source_code='StandardScaler()')
+    expected_missing_op = DagNode(0,
+                                  BasicCodeLocation("<string-source>", 5),
+                                  OperatorContext(OperatorType.DATA_SOURCE,
+                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                  DagNodeDetails(None, ['A']),
+                                  OptionalCodeInfo(CodeReference(5, 5, 5, 39), "pd.DataFrame({'A': [1, 2, 10, 5]})"))
+    expected_select = DagNode(1,
+                              BasicCodeLocation("<string-source>", 6),
+                              OperatorContext(OperatorType.TRANSFORMER,
+                                              FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
+                              DagNodeDetails('Standard Scaler', ['array']),
+                              OptionalCodeInfo(CodeReference(6, 18, 6, 34), 'StandardScaler()'))
     expected_dag.add_edge(expected_missing_op, expected_select)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
@@ -172,15 +188,20 @@ def test_kbins_discretizer():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_data_source = DagNode(0, "<string-source>", 5, OperatorType.DATA_SOURCE,
-                                   ('pandas.core.frame', 'DataFrame'), description='', columns=['A'],
-                                   optional_code_reference=CodeReference(5, 5, 5, 39),
-                                   optional_source_code="pd.DataFrame({'A': [1, 2, 10, 5]})")
-    expected_discretizer = DagNode(1, "<string-source>", 6, OperatorType.TRANSFORMER,
-                                   module=('sklearn.preprocessing._discretization', 'KBinsDiscretizer'),
-                                   description='K-Bins Discretizer', columns=['array'],
-                                   optional_code_reference=CodeReference(6, 14, 6, 78),
-                                   optional_source_code="KBinsDiscretizer(n_bins=3, encode='ordinal', strategy='uniform')")
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 5),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A']),
+                                   OptionalCodeInfo(CodeReference(5, 5, 5, 39), "pd.DataFrame({'A': [1, 2, 10, 5]})"))
+    expected_discretizer = DagNode(1,
+                                   BasicCodeLocation("<string-source>", 6),
+                                   OperatorContext(OperatorType.TRANSFORMER,
+                                                   FunctionInfo('sklearn.preprocessing._discretization',
+                                                                'KBinsDiscretizer')),
+                                   DagNodeDetails('K-Bins Discretizer', ['array']),
+                                   OptionalCodeInfo(CodeReference(6, 14, 6, 78),
+                                                    "KBinsDiscretizer(n_bins=3, encode='ordinal', strategy='uniform')"))
     expected_dag.add_edge(expected_data_source, expected_discretizer)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
@@ -213,15 +234,20 @@ def test_simple_imputer():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0, "<string-source>", 5, OperatorType.DATA_SOURCE,
-                                  ('pandas.core.frame', 'DataFrame'), description='', columns=['A'],
-                                  optional_code_reference=CodeReference(5, 5, 5, 61),
-                                  optional_source_code="pd.DataFrame({'A': ['cat_a', np.nan, 'cat_a', 'cat_c']})")
-    expected_select = DagNode(1, "<string-source>", 6, OperatorType.TRANSFORMER,
-                              module=('sklearn.impute._base', 'SimpleImputer'),
-                              description='Simple Imputer', columns=['A'],
-                              optional_code_reference=CodeReference(6, 10, 6, 72),
-                              optional_source_code="SimpleImputer(missing_values=np.nan, strategy='most_frequent')")
+    expected_missing_op = DagNode(0,
+                                  BasicCodeLocation("<string-source>", 5),
+                                  OperatorContext(OperatorType.DATA_SOURCE,
+                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                  DagNodeDetails(None, ['A']),
+                                  OptionalCodeInfo(CodeReference(5, 5, 5, 61),
+                                                   "pd.DataFrame({'A': ['cat_a', np.nan, 'cat_a', 'cat_c']})"))
+    expected_select = DagNode(1,
+                              BasicCodeLocation("<string-source>", 6),
+                              OperatorContext(OperatorType.TRANSFORMER,
+                                              FunctionInfo('sklearn.impute._base', 'SimpleImputer')),
+                              DagNodeDetails('Simple Imputer', ['A']),
+                              OptionalCodeInfo(CodeReference(6, 10, 6, 72),
+                                               "SimpleImputer(missing_values=np.nan, strategy='most_frequent')"))
     expected_dag.add_edge(expected_missing_op, expected_select)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
@@ -255,15 +281,19 @@ def test_one_hot_encoder_not_sparse():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0, "<string-source>", 5, OperatorType.DATA_SOURCE,
-                                  ('pandas.core.frame', 'DataFrame'), description='', columns=['A'],
-                                  optional_code_reference=CodeReference(5, 5, 5, 62),
-                                  optional_source_code="pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})")
-    expected_select = DagNode(1, "<string-source>", 6, OperatorType.TRANSFORMER,
-                              module=('sklearn.preprocessing._encoders', 'OneHotEncoder'),
-                              description='One-Hot Encoder', columns=['array'],
-                              optional_code_reference=CodeReference(6, 18, 6, 45),
-                              optional_source_code='OneHotEncoder(sparse=False)')
+    expected_missing_op = DagNode(0,
+                                  BasicCodeLocation("<string-source>", 5),
+                                  OperatorContext(OperatorType.DATA_SOURCE,
+                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                  DagNodeDetails(None, ['A']),
+                                  OptionalCodeInfo(CodeReference(5, 5, 5, 62),
+                                                   "pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
+    expected_select = DagNode(1,
+                              BasicCodeLocation("<string-source>", 6),
+                              OperatorContext(OperatorType.TRANSFORMER,
+                                              FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
+                              DagNodeDetails('One-Hot Encoder', ['array']),
+                              OptionalCodeInfo(CodeReference(6, 18, 6, 45), 'OneHotEncoder(sparse=False)'))
     expected_dag.add_edge(expected_missing_op, expected_select)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
@@ -297,15 +327,19 @@ def test_one_hot_encoder_sparse():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0, "<string-source>", 6, OperatorType.DATA_SOURCE,
-                                  ('pandas.core.frame', 'DataFrame'), description='', columns=['A'],
-                                  optional_code_reference=CodeReference(6, 5, 6, 62),
-                                  optional_source_code="pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})")
-    expected_select = DagNode(1, "<string-source>", 7, OperatorType.TRANSFORMER,
-                              module=('sklearn.preprocessing._encoders', 'OneHotEncoder'),
-                              description='One-Hot Encoder', columns=['array'],
-                              optional_code_reference=CodeReference(7, 18, 7, 33),
-                              optional_source_code='OneHotEncoder()')
+    expected_missing_op = DagNode(0,
+                                  BasicCodeLocation("<string-source>", 6),
+                                  OperatorContext(OperatorType.DATA_SOURCE,
+                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                  DagNodeDetails(None, ['A']),
+                                  OptionalCodeInfo(CodeReference(6, 5, 6, 62),
+                                                   "pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
+    expected_select = DagNode(1,
+                              BasicCodeLocation("<string-source>", 7),
+                              OperatorContext(OperatorType.TRANSFORMER,
+                                              FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
+                              DagNodeDetails('One-Hot Encoder', ['array']),
+                              OptionalCodeInfo(CodeReference(7, 18, 7, 33), 'OneHotEncoder()'))
     expected_dag.add_edge(expected_missing_op, expected_select)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
@@ -342,29 +376,38 @@ def test_column_transformer_one_transformer():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0, "<string-source>", 7, OperatorType.DATA_SOURCE,
-                                  ('pandas.core.frame', 'DataFrame'), description='', columns=['A', 'B'],
-                                  optional_code_reference=CodeReference(7, 5, 7, 59),
-                                  optional_source_code="pd.DataFrame({'A': [1, 2, 10, 5], 'B': [1, 2, 10, 5]})")
-    expected_projection = DagNode(1, "<string-source>", 8, OperatorType.PROJECTION,
-                                  module=('sklearn.compose._column_transformer', 'ColumnTransformer'),
-                                  description="to ['A', 'B']", columns=['A', 'B'],
-                                  optional_code_reference=CodeReference(8, 21, 10, 2),
-                                  optional_source_code="ColumnTransformer(transformers=[\n    "
-                                                       "('numeric', StandardScaler(), ['A', 'B'])\n])")
+    expected_missing_op = DagNode(0,
+                                  BasicCodeLocation("<string-source>", 7),
+                                  OperatorContext(OperatorType.DATA_SOURCE,
+                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                  DagNodeDetails(None, columns=['A', 'B']),
+                                  OptionalCodeInfo(CodeReference(7, 5, 7, 59),
+                                                   "pd.DataFrame({'A': [1, 2, 10, 5], 'B': [1, 2, 10, 5]})"))
+    expected_projection = DagNode(1,
+                                  BasicCodeLocation("<string-source>", 8),
+                                  OperatorContext(OperatorType.PROJECTION,
+                                                  FunctionInfo('sklearn.compose._column_transformer',
+                                                               'ColumnTransformer')),
+                                  DagNodeDetails("to ['A', 'B']", ['A', 'B']),
+                                  OptionalCodeInfo(CodeReference(8, 21, 10, 2),
+                                                   "ColumnTransformer(transformers=[\n"
+                                                   "    ('numeric', StandardScaler(), ['A', 'B'])\n])"))
     expected_dag.add_edge(expected_missing_op, expected_projection)
-    expected_standard_scaler = DagNode(2, "<string-source>", 9, OperatorType.TRANSFORMER,
-                                       module=('sklearn.preprocessing._data', 'StandardScaler'),
-                                       description='Standard Scaler', columns=['array'],
-                                       optional_code_reference=CodeReference(9, 16, 9, 32),
-                                       optional_source_code='StandardScaler()')
+    expected_standard_scaler = DagNode(2,
+                                       BasicCodeLocation("<string-source>", 9),
+                                       OperatorContext(OperatorType.TRANSFORMER,
+                                                       FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
+                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       OptionalCodeInfo(CodeReference(9, 16, 9, 32), 'StandardScaler()'))
     expected_dag.add_edge(expected_projection, expected_standard_scaler)
-    expected_concat = DagNode(3, "<string-source>", 8, OperatorType.CONCATENATION,
-                              module=('sklearn.compose._column_transformer', 'ColumnTransformer'),
-                              description='', columns=['array'],
-                              optional_code_reference=CodeReference(8, 21, 10, 2),
-                              optional_source_code="ColumnTransformer(transformers=[\n    "
-                                                   "('numeric', StandardScaler(), ['A', 'B'])\n])")
+    expected_concat = DagNode(3,
+                              BasicCodeLocation("<string-source>", 8),
+                              OperatorContext(OperatorType.CONCATENATION,
+                                              FunctionInfo('sklearn.compose._column_transformer', 'ColumnTransformer')),
+                              DagNodeDetails(None, ['array']),
+                              OptionalCodeInfo(CodeReference(8, 21, 10, 2),
+                                               "ColumnTransformer(transformers=[\n"
+                                               "    ('numeric', StandardScaler(), ['A', 'B'])\n])"))
     expected_dag.add_edge(expected_standard_scaler, expected_concat)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
@@ -421,46 +464,59 @@ def test_column_transformer_multiple_transformers_all_dense():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0, "<string-source>", 7, OperatorType.DATA_SOURCE,
-                                  ('pandas.core.frame', 'DataFrame'), description='', columns=['A', 'B'],
-                                  optional_code_reference=CodeReference(7, 5, 7, 82),
-                                  optional_source_code="pd.DataFrame({'A': [1, 2, 10, 5], "
-                                                       "'B': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})")
-    expected_projection_1 = DagNode(1, "<string-source>", 8, OperatorType.PROJECTION,
-                                    module=('sklearn.compose._column_transformer', 'ColumnTransformer'),
-                                    description="to ['A']", columns=['A'],
-                                    optional_code_reference=CodeReference(8, 21, 11, 2),
-                                    optional_source_code="ColumnTransformer(transformers=[\n"
-                                                         "    ('numeric', StandardScaler(), ['A']),\n"
-                                                         "    ('categorical', OneHotEncoder(sparse=False), ['B'])\n])")
+    expected_missing_op = DagNode(0,
+                                  BasicCodeLocation("<string-source>", 7),
+                                  OperatorContext(OperatorType.DATA_SOURCE,
+                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                  DagNodeDetails(None, ['A', 'B']),
+                                  OptionalCodeInfo(CodeReference(7, 5, 7, 82),
+                                                   "pd.DataFrame({'A': [1, 2, 10, 5], "
+                                                   "'B': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
+    expected_projection_1 = DagNode(1,
+                                    BasicCodeLocation("<string-source>", 8),
+                                    OperatorContext(OperatorType.PROJECTION,
+                                                    FunctionInfo('sklearn.compose._column_transformer',
+                                                                 'ColumnTransformer')),
+                                    DagNodeDetails("to ['A']", ['A']),
+                                    OptionalCodeInfo(CodeReference(8, 21, 11, 2),
+                                                     "ColumnTransformer(transformers=[\n"
+                                                     "    ('numeric', StandardScaler(), ['A']),\n"
+                                                     "    ('categorical', OneHotEncoder(sparse=False), ['B'])\n])"))
     expected_dag.add_edge(expected_missing_op, expected_projection_1)
-    expected_projection_2 = DagNode(3, "<string-source>", 8, OperatorType.PROJECTION,
-                                    module=('sklearn.compose._column_transformer', 'ColumnTransformer'),
-                                    description="to ['B']", columns=['B'],
-                                    optional_code_reference=CodeReference(8, 21, 11, 2),
-                                    optional_source_code="ColumnTransformer(transformers=[\n"
-                                                         "    ('numeric', StandardScaler(), ['A']),\n"
-                                                         "    ('categorical', OneHotEncoder(sparse=False), ['B'])\n])")
+    expected_projection_2 = DagNode(3,
+                                    BasicCodeLocation("<string-source>", 8),
+                                    OperatorContext(OperatorType.PROJECTION,
+                                                    FunctionInfo('sklearn.compose._column_transformer',
+                                                                 'ColumnTransformer')),
+                                    DagNodeDetails("to ['B']", ['B']),
+                                    OptionalCodeInfo(CodeReference(8, 21, 11, 2),
+                                                     "ColumnTransformer(transformers=[\n"
+                                                     "    ('numeric', StandardScaler(), ['A']),\n"
+                                                     "    ('categorical', OneHotEncoder(sparse=False), ['B'])\n])"))
     expected_dag.add_edge(expected_missing_op, expected_projection_2)
-    expected_standard_scaler = DagNode(2, "<string-source>", 9, OperatorType.TRANSFORMER,
-                                       module=('sklearn.preprocessing._data', 'StandardScaler'),
-                                       description='Standard Scaler', columns=['array'],
-                                       optional_code_reference=CodeReference(9, 16, 9, 32),
-                                       optional_source_code='StandardScaler()')
+    expected_standard_scaler = DagNode(2,
+                                       BasicCodeLocation("<string-source>", 9),
+                                       OperatorContext(OperatorType.TRANSFORMER,
+                                                       FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
+                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       OptionalCodeInfo(CodeReference(9, 16, 9, 32), 'StandardScaler()'))
     expected_dag.add_edge(expected_projection_1, expected_standard_scaler)
-    expected_one_hot = DagNode(4, "<string-source>", 10, OperatorType.TRANSFORMER,
-                               module=('sklearn.preprocessing._encoders', 'OneHotEncoder'),
-                               description='One-Hot Encoder', columns=['array'],
-                               optional_code_reference=CodeReference(10, 20, 10, 47),
-                               optional_source_code='OneHotEncoder(sparse=False)')
+    expected_one_hot = DagNode(4,
+                               BasicCodeLocation("<string-source>", 10),
+                               OperatorContext(OperatorType.TRANSFORMER,
+                                               FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
+                               DagNodeDetails('One-Hot Encoder', ['array']),
+                               OptionalCodeInfo(CodeReference(10, 20, 10, 47), 'OneHotEncoder(sparse=False)'))
     expected_dag.add_edge(expected_projection_2, expected_one_hot)
-    expected_concat = DagNode(5, "<string-source>", 8, OperatorType.CONCATENATION,
-                              module=('sklearn.compose._column_transformer', 'ColumnTransformer'),
-                              description='', columns=['array'],
-                              optional_code_reference=CodeReference(8, 21, 11, 2),
-                              optional_source_code="ColumnTransformer(transformers=[\n"
-                                                   "    ('numeric', StandardScaler(), ['A']),\n"
-                                                   "    ('categorical', OneHotEncoder(sparse=False), ['B'])\n])")
+    expected_concat = DagNode(5,
+                              BasicCodeLocation("<string-source>", 8),
+                              OperatorContext(OperatorType.CONCATENATION,
+                                              FunctionInfo('sklearn.compose._column_transformer', 'ColumnTransformer')),
+                              DagNodeDetails(None, ['array']),
+                              OptionalCodeInfo(CodeReference(8, 21, 11, 2),
+                                               "ColumnTransformer(transformers=[\n"
+                                               "    ('numeric', StandardScaler(), ['A']),\n"
+                                               "    ('categorical', OneHotEncoder(sparse=False), ['B'])\n])"))
     expected_dag.add_edge(expected_standard_scaler, expected_concat)
     expected_dag.add_edge(expected_one_hot, expected_concat)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
@@ -534,46 +590,59 @@ def test_column_transformer_multiple_transformers_sparse_dense():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0, "<string-source>", 7, OperatorType.DATA_SOURCE,
-                                  ('pandas.core.frame', 'DataFrame'), description='', columns=['A', 'B'],
-                                  optional_code_reference=CodeReference(7, 5, 7, 82),
-                                  optional_source_code="pd.DataFrame({'A': [1, 2, 10, 5], "
-                                                       "'B': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})")
-    expected_projection_1 = DagNode(1, "<string-source>", 8, OperatorType.PROJECTION,
-                                    module=('sklearn.compose._column_transformer', 'ColumnTransformer'),
-                                    description="to ['A']", columns=['A'],
-                                    optional_code_reference=CodeReference(8, 21, 11, 2),
-                                    optional_source_code="ColumnTransformer(transformers=[\n"
-                                                         "    ('numeric', StandardScaler(), ['A']),\n"
-                                                         "    ('categorical', OneHotEncoder(sparse=True), ['B'])\n])")
+    expected_missing_op = DagNode(0,
+                                  BasicCodeLocation("<string-source>", 7),
+                                  OperatorContext(OperatorType.DATA_SOURCE,
+                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                  DagNodeDetails(None, ['A', 'B']),
+                                  OptionalCodeInfo(CodeReference(7, 5, 7, 82),
+                                                   "pd.DataFrame({'A': [1, 2, 10, 5], "
+                                                   "'B': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
+    expected_projection_1 = DagNode(1,
+                                    BasicCodeLocation("<string-source>", 8),
+                                    OperatorContext(OperatorType.PROJECTION,
+                                                    FunctionInfo('sklearn.compose._column_transformer',
+                                                                 'ColumnTransformer')),
+                                    DagNodeDetails("to ['A']", ['A']),
+                                    OptionalCodeInfo(CodeReference(8, 21, 11, 2),
+                                                     "ColumnTransformer(transformers=[\n"
+                                                     "    ('numeric', StandardScaler(), ['A']),\n"
+                                                     "    ('categorical', OneHotEncoder(sparse=True), ['B'])\n])"))
     expected_dag.add_edge(expected_missing_op, expected_projection_1)
-    expected_projection_2 = DagNode(3, "<string-source>", 8, OperatorType.PROJECTION,
-                                    module=('sklearn.compose._column_transformer', 'ColumnTransformer'),
-                                    description="to ['B']", columns=['B'],
-                                    optional_code_reference=CodeReference(8, 21, 11, 2),
-                                    optional_source_code="ColumnTransformer(transformers=[\n"
-                                                         "    ('numeric', StandardScaler(), ['A']),\n"
-                                                         "    ('categorical', OneHotEncoder(sparse=True), ['B'])\n])")
+    expected_projection_2 = DagNode(3,
+                                    BasicCodeLocation("<string-source>", 8),
+                                    OperatorContext(OperatorType.PROJECTION,
+                                                    FunctionInfo('sklearn.compose._column_transformer',
+                                                                 'ColumnTransformer')),
+                                    DagNodeDetails("to ['B']", ['B']),
+                                    OptionalCodeInfo(CodeReference(8, 21, 11, 2),
+                                                     "ColumnTransformer(transformers=[\n"
+                                                     "    ('numeric', StandardScaler(), ['A']),\n"
+                                                     "    ('categorical', OneHotEncoder(sparse=True), ['B'])\n])"))
     expected_dag.add_edge(expected_missing_op, expected_projection_2)
-    expected_standard_scaler = DagNode(2, "<string-source>", 9, OperatorType.TRANSFORMER,
-                                       module=('sklearn.preprocessing._data', 'StandardScaler'),
-                                       description='Standard Scaler', columns=['array'],
-                                       optional_code_reference=CodeReference(9, 16, 9, 32),
-                                       optional_source_code='StandardScaler()')
+    expected_standard_scaler = DagNode(2,
+                                       BasicCodeLocation("<string-source>", 9),
+                                       OperatorContext(OperatorType.TRANSFORMER,
+                                                       FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
+                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       OptionalCodeInfo(CodeReference(9, 16, 9, 32), 'StandardScaler()'))
     expected_dag.add_edge(expected_projection_1, expected_standard_scaler)
-    expected_one_hot = DagNode(4, "<string-source>", 10, OperatorType.TRANSFORMER,
-                               module=('sklearn.preprocessing._encoders', 'OneHotEncoder'),
-                               description='One-Hot Encoder', columns=['array'],
-                               optional_code_reference=CodeReference(10, 20, 10, 46),
-                               optional_source_code='OneHotEncoder(sparse=True)')
+    expected_one_hot = DagNode(4,
+                               BasicCodeLocation("<string-source>", 10),
+                               OperatorContext(OperatorType.TRANSFORMER,
+                                               FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
+                               DagNodeDetails('One-Hot Encoder', ['array']),
+                               OptionalCodeInfo(CodeReference(10, 20, 10, 46), 'OneHotEncoder(sparse=True)'))
     expected_dag.add_edge(expected_projection_2, expected_one_hot)
-    expected_concat = DagNode(5, "<string-source>", 8, OperatorType.CONCATENATION,
-                              module=('sklearn.compose._column_transformer', 'ColumnTransformer'),
-                              description='', columns=['array'],
-                              optional_code_reference=CodeReference(8, 21, 11, 2),
-                              optional_source_code="ColumnTransformer(transformers=[\n"
-                                                   "    ('numeric', StandardScaler(), ['A']),\n"
-                                                   "    ('categorical', OneHotEncoder(sparse=True), ['B'])\n])")
+    expected_concat = DagNode(5,
+                              BasicCodeLocation("<string-source>", 8),
+                              OperatorContext(OperatorType.CONCATENATION,
+                                              FunctionInfo('sklearn.compose._column_transformer', 'ColumnTransformer')),
+                              DagNodeDetails(None, ['array']),
+                              OptionalCodeInfo(CodeReference(8, 21, 11, 2),
+                                               "ColumnTransformer(transformers=[\n"
+                                               "    ('numeric', StandardScaler(), ['A']),\n"
+                                               "    ('categorical', OneHotEncoder(sparse=True), ['B'])\n])"))
     expected_dag.add_edge(expected_standard_scaler, expected_concat)
     expected_dag.add_edge(expected_one_hot, expected_concat)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
@@ -647,52 +716,63 @@ def test_decision_tree():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_data_source = DagNode(0, "<string-source>", 6, OperatorType.DATA_SOURCE,
-                                   ('pandas.core.frame', 'DataFrame'), description='', columns=['A', 'B', 'target'],
-                                   optional_code_reference=CodeReference(6, 5, 6, 95),
-                                   optional_source_code="pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], "
-                                                        "'target': ['no', 'no', 'yes', 'yes']})")
-    expected_standard_scaler = DagNode(2, "<string-source>", 8, OperatorType.TRANSFORMER,
-                                       module=('sklearn.preprocessing._data', 'StandardScaler'),
-                                       description='Standard Scaler', columns=['array'],
-                                       optional_code_reference=CodeReference(8, 8, 8, 24),
-                                       optional_source_code='StandardScaler()')
-    expected_data_projection = DagNode(1, "<string-source>", 8, OperatorType.PROJECTION,
-                                       module=('pandas.core.frame', '__getitem__'),
-                                       description="to ['A', 'B']", columns=['A', 'B'],
-                                       optional_code_reference=CodeReference(8, 39, 8, 53),
-                                       optional_source_code="df[['A', 'B']]")
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 6),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A', 'B', 'target']),
+                                   OptionalCodeInfo(CodeReference(6, 5, 6, 95),
+                                                    "pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], "
+                                                    "'target': ['no', 'no', 'yes', 'yes']})"))
+    expected_standard_scaler = DagNode(2,
+                                       BasicCodeLocation("<string-source>", 8),
+                                       OperatorContext(OperatorType.TRANSFORMER,
+                                                       FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
+                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       OptionalCodeInfo(CodeReference(8, 8, 8, 24), 'StandardScaler()'))
+    expected_data_projection = DagNode(1,
+                                       BasicCodeLocation("<string-source>", 8),
+                                       OperatorContext(OperatorType.PROJECTION,
+                                                       FunctionInfo('pandas.core.frame', '__getitem__')),
+                                       DagNodeDetails("to ['A', 'B']", ['A', 'B']),
+                                       OptionalCodeInfo(CodeReference(8, 39, 8, 53), "df[['A', 'B']]"))
     expected_dag.add_edge(expected_data_source, expected_data_projection)
     expected_dag.add_edge(expected_data_projection, expected_standard_scaler)
-    expected_label_projection = DagNode(3, "<string-source>", 9, OperatorType.PROJECTION,
-                                        module=('pandas.core.frame', '__getitem__'),
-                                        description="to ['target']", columns=['target'],
-                                        optional_code_reference=CodeReference(9, 24, 9, 36),
-                                        optional_source_code="df['target']")
+    expected_label_projection = DagNode(3,
+                                        BasicCodeLocation("<string-source>", 9),
+                                        OperatorContext(OperatorType.PROJECTION,
+                                                        FunctionInfo('pandas.core.frame', '__getitem__')),
+                                        DagNodeDetails("to ['target']", ['target']),
+                                        OptionalCodeInfo(CodeReference(9, 24, 9, 36), "df['target']"))
     expected_dag.add_edge(expected_data_source, expected_label_projection)
-    expected_label_encode = DagNode(4, "<string-source>", 9, OperatorType.PROJECTION_MODIFY,
-                                    module=('sklearn.preprocessing._label', 'label_binarize'),
-                                    description="label_binarize, classes: ['no', 'yes']", columns=['array'],
-                                    optional_code_reference=CodeReference(9, 9, 9, 60),
-                                    optional_source_code="label_binarize(df['target'], classes=['no', 'yes'])")
+    expected_label_encode = DagNode(4,
+                                    BasicCodeLocation("<string-source>", 9),
+                                    OperatorContext(OperatorType.PROJECTION_MODIFY,
+                                                    FunctionInfo('sklearn.preprocessing._label', 'label_binarize')),
+                                    DagNodeDetails("label_binarize, classes: ['no', 'yes']", ['array']),
+                                    OptionalCodeInfo(CodeReference(9, 9, 9, 60),
+                                                     "label_binarize(df['target'], classes=['no', 'yes'])"))
     expected_dag.add_edge(expected_label_projection, expected_label_encode)
-    expected_train_data = DagNode(5, "<string-source>", 11, OperatorType.TRAIN_DATA,
-                                  module=('sklearn.tree._classes', 'DecisionTreeClassifier'),
-                                  description='Train Data', columns=['array'],
-                                  optional_code_reference=CodeReference(11, 6, 11, 30),
-                                  optional_source_code='DecisionTreeClassifier()')
+    expected_train_data = DagNode(5,
+                                  BasicCodeLocation("<string-source>", 11),
+                                  OperatorContext(OperatorType.TRAIN_DATA,
+                                                  FunctionInfo('sklearn.tree._classes', 'DecisionTreeClassifier')),
+                                  DagNodeDetails('Train Data', ['array']),
+                                  OptionalCodeInfo(CodeReference(11, 6, 11, 30), 'DecisionTreeClassifier()'))
     expected_dag.add_edge(expected_standard_scaler, expected_train_data)
-    expected_train_labels = DagNode(6, "<string-source>", 11, OperatorType.TRAIN_LABELS,
-                                    module=('sklearn.tree._classes', 'DecisionTreeClassifier'),
-                                    description='Train Labels', columns=['array'],
-                                    optional_code_reference=CodeReference(11, 6, 11, 30),
-                                    optional_source_code='DecisionTreeClassifier()')
+    expected_train_labels = DagNode(6,
+                                    BasicCodeLocation("<string-source>", 11),
+                                    OperatorContext(OperatorType.TRAIN_LABELS,
+                                                    FunctionInfo('sklearn.tree._classes', 'DecisionTreeClassifier')),
+                                    DagNodeDetails('Train Labels', ['array']),
+                                    OptionalCodeInfo(CodeReference(11, 6, 11, 30), 'DecisionTreeClassifier()'))
     expected_dag.add_edge(expected_label_encode, expected_train_labels)
-    expected_decision_tree = DagNode(7, "<string-source>", 11, OperatorType.ESTIMATOR,
-                                     module=('sklearn.tree._classes', 'DecisionTreeClassifier'),
-                                     description='Decision Tree', columns=[],
-                                     optional_code_reference=CodeReference(11, 6, 11, 30),
-                                     optional_source_code='DecisionTreeClassifier()')
+    expected_decision_tree = DagNode(7,
+                                     BasicCodeLocation("<string-source>", 11),
+                                     OperatorContext(OperatorType.ESTIMATOR,
+                                                     FunctionInfo('sklearn.tree._classes', 'DecisionTreeClassifier')),
+                                     DagNodeDetails('Decision Tree', []),
+                                     OptionalCodeInfo(CodeReference(11, 6, 11, 30), 'DecisionTreeClassifier()'))
     expected_dag.add_edge(expected_train_data, expected_decision_tree)
     expected_dag.add_edge(expected_train_labels, expected_decision_tree)
 
@@ -751,52 +831,65 @@ def test_logistic_regression():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_data_source = DagNode(0, "<string-source>", 6, OperatorType.DATA_SOURCE,
-                                   ('pandas.core.frame', 'DataFrame'), description='', columns=['A', 'B', 'target'],
-                                   optional_code_reference=CodeReference(6, 5, 6, 95),
-                                   optional_source_code="pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], "
-                                                        "'target': ['no', 'no', 'yes', 'yes']})")
-    expected_standard_scaler = DagNode(2, "<string-source>", 8, OperatorType.TRANSFORMER,
-                                       module=('sklearn.preprocessing._data', 'StandardScaler'),
-                                       description='Standard Scaler', columns=['array'],
-                                       optional_code_reference=CodeReference(8, 8, 8, 24),
-                                       optional_source_code='StandardScaler()')
-    expected_data_projection = DagNode(1, "<string-source>", 8, OperatorType.PROJECTION,
-                                       module=('pandas.core.frame', '__getitem__'),
-                                       description="to ['A', 'B']", columns=['A', 'B'],
-                                       optional_code_reference=CodeReference(8, 39, 8, 53),
-                                       optional_source_code="df[['A', 'B']]")
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 6),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A', 'B', 'target']),
+                                   OptionalCodeInfo(CodeReference(6, 5, 6, 95),
+                                                    "pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], "
+                                                    "'target': ['no', 'no', 'yes', 'yes']})"))
+    expected_standard_scaler = DagNode(2,
+                                       BasicCodeLocation("<string-source>", 8),
+                                       OperatorContext(OperatorType.TRANSFORMER,
+                                                       FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
+                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       OptionalCodeInfo(CodeReference(8, 8, 8, 24), 'StandardScaler()'))
+    expected_data_projection = DagNode(1,
+                                       BasicCodeLocation("<string-source>", 8),
+                                       OperatorContext(OperatorType.PROJECTION,
+                                                       FunctionInfo('pandas.core.frame', '__getitem__')),
+                                       DagNodeDetails("to ['A', 'B']", ['A', 'B']),
+                                       OptionalCodeInfo(CodeReference(8, 39, 8, 53), "df[['A', 'B']]"))
     expected_dag.add_edge(expected_data_source, expected_data_projection)
     expected_dag.add_edge(expected_data_projection, expected_standard_scaler)
-    expected_label_projection = DagNode(3, "<string-source>", 9, OperatorType.PROJECTION,
-                                        module=('pandas.core.frame', '__getitem__'),
-                                        description="to ['target']", columns=['target'],
-                                        optional_code_reference=CodeReference(9, 24, 9, 36),
-                                        optional_source_code="df['target']")
+    expected_label_projection = DagNode(3,
+                                        BasicCodeLocation("<string-source>", 9),
+                                        OperatorContext(OperatorType.PROJECTION,
+                                                        FunctionInfo('pandas.core.frame', '__getitem__')),
+                                        DagNodeDetails("to ['target']", ['target']),
+                                        OptionalCodeInfo(CodeReference(9, 24, 9, 36), "df['target']"))
     expected_dag.add_edge(expected_data_source, expected_label_projection)
-    expected_label_encode = DagNode(4, "<string-source>", 9, OperatorType.PROJECTION_MODIFY,
-                                    module=('sklearn.preprocessing._label', 'label_binarize'),
-                                    description="label_binarize, classes: ['no', 'yes']", columns=['array'],
-                                    optional_code_reference=CodeReference(9, 9, 9, 60),
-                                    optional_source_code="label_binarize(df['target'], classes=['no', 'yes'])")
+    expected_label_encode = DagNode(4,
+                                    BasicCodeLocation("<string-source>", 9),
+                                    OperatorContext(OperatorType.PROJECTION_MODIFY,
+                                                    FunctionInfo('sklearn.preprocessing._label', 'label_binarize')),
+                                    DagNodeDetails("label_binarize, classes: ['no', 'yes']", ['array']),
+                                    OptionalCodeInfo(CodeReference(9, 9, 9, 60),
+                                                     "label_binarize(df['target'], classes=['no', 'yes'])"))
     expected_dag.add_edge(expected_label_projection, expected_label_encode)
-    expected_train_data = DagNode(5, "<string-source>", 11, OperatorType.TRAIN_DATA,
-                                  module=('sklearn.linear_model._logistic', 'LogisticRegression'),
-                                  description='Train Data', columns=['array'],
-                                  optional_code_reference=CodeReference(11, 6, 11, 26),
-                                  optional_source_code='LogisticRegression()')
+    expected_train_data = DagNode(5,
+                                  BasicCodeLocation("<string-source>", 11),
+                                  OperatorContext(OperatorType.TRAIN_DATA,
+                                                  FunctionInfo('sklearn.linear_model._logistic', 'LogisticRegression')),
+                                  DagNodeDetails('Train Data', ['array']),
+                                  OptionalCodeInfo(CodeReference(11, 6, 11, 26), 'LogisticRegression()'))
     expected_dag.add_edge(expected_standard_scaler, expected_train_data)
-    expected_train_labels = DagNode(6, "<string-source>", 11, OperatorType.TRAIN_LABELS,
-                                    module=('sklearn.linear_model._logistic', 'LogisticRegression'),
-                                    description='Train Labels', columns=['array'],
-                                    optional_code_reference=CodeReference(11, 6, 11, 26),
-                                    optional_source_code='LogisticRegression()')
+    expected_train_labels = DagNode(6,
+                                    BasicCodeLocation("<string-source>", 11),
+                                    OperatorContext(OperatorType.TRAIN_LABELS,
+                                                    FunctionInfo('sklearn.linear_model._logistic',
+                                                                 'LogisticRegression')),
+                                    DagNodeDetails('Train Labels', ['array']),
+                                    OptionalCodeInfo(CodeReference(11, 6, 11, 26), 'LogisticRegression()'))
     expected_dag.add_edge(expected_label_encode, expected_train_labels)
-    expected_decision_tree = DagNode(7, "<string-source>", 11, OperatorType.ESTIMATOR,
-                                     module=('sklearn.linear_model._logistic', 'LogisticRegression'),
-                                     description='Logistic Regression', columns=[],
-                                     optional_code_reference=CodeReference(11, 6, 11, 26),
-                                     optional_source_code='LogisticRegression()')
+    expected_decision_tree = DagNode(7,
+                                     BasicCodeLocation("<string-source>", 11),
+                                     OperatorContext(OperatorType.ESTIMATOR,
+                                                     FunctionInfo('sklearn.linear_model._logistic',
+                                                                  'LogisticRegression')),
+                                     DagNodeDetails('Logistic Regression', []),
+                                     OptionalCodeInfo(CodeReference(11, 6, 11, 26), 'LogisticRegression()'))
     expected_dag.add_edge(expected_train_data, expected_decision_tree)
     expected_dag.add_edge(expected_train_labels, expected_decision_tree)
 
@@ -865,55 +958,71 @@ def test_keras_wrapper():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_data_source = DagNode(0, "<string-source>", 9, OperatorType.DATA_SOURCE,
-                                   ('pandas.core.frame', 'DataFrame'), description='', columns=['A', 'B', 'target'],
-                                   optional_code_reference=CodeReference(9, 5, 9, 95),
-                                   optional_source_code="pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], "
-                                                        "'target': ['no', 'no', 'yes', 'yes']})")
-    expected_standard_scaler = DagNode(2, "<string-source>", 11, OperatorType.TRANSFORMER,
-                                       module=('sklearn.preprocessing._data', 'StandardScaler'),
-                                       description='Standard Scaler', columns=['array'],
-                                       optional_code_reference=CodeReference(11, 8, 11, 24),
-                                       optional_source_code='StandardScaler()')
-    expected_data_projection = DagNode(1, "<string-source>", 11, OperatorType.PROJECTION,
-                                       module=('pandas.core.frame', '__getitem__'),
-                                       description="to ['A', 'B']", columns=['A', 'B'],
-                                       optional_code_reference=CodeReference(11, 39, 11, 53),
-                                       optional_source_code="df[['A', 'B']]")
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 9),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A', 'B', 'target']),
+                                   OptionalCodeInfo(CodeReference(9, 5, 9, 95),
+                                                    "pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], "
+                                                    "'target': ['no', 'no', 'yes', 'yes']})"))
+    expected_standard_scaler = DagNode(2,
+                                       BasicCodeLocation("<string-source>", 11),
+                                       OperatorContext(OperatorType.TRANSFORMER,
+                                                       FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
+                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       OptionalCodeInfo(CodeReference(11, 8, 11, 24), 'StandardScaler()'))
+    expected_data_projection = DagNode(1,
+                                       BasicCodeLocation("<string-source>", 11),
+                                       OperatorContext(OperatorType.PROJECTION,
+                                                       FunctionInfo('pandas.core.frame', '__getitem__')),
+                                       DagNodeDetails("to ['A', 'B']", ['A', 'B']),
+                                       OptionalCodeInfo(CodeReference(11, 39, 11, 53), "df[['A', 'B']]"))
     expected_dag.add_edge(expected_data_source, expected_data_projection)
     expected_dag.add_edge(expected_data_projection, expected_standard_scaler)
-    expected_label_projection = DagNode(3, "<string-source>", 12, OperatorType.PROJECTION,
-                                        module=('pandas.core.frame', '__getitem__'),
-                                        description="to ['target']", columns=['target'],
-                                        optional_code_reference=CodeReference(12, 51, 12, 65),
-                                        optional_source_code="df[['target']]")
+    expected_label_projection = DagNode(3,
+                                        BasicCodeLocation("<string-source>", 12),
+                                        OperatorContext(OperatorType.PROJECTION,
+                                                        FunctionInfo('pandas.core.frame', '__getitem__')),
+                                        DagNodeDetails("to ['target']", ['target']),
+                                        OptionalCodeInfo(CodeReference(12, 51, 12, 65), "df[['target']]"))
     expected_dag.add_edge(expected_data_source, expected_label_projection)
-    expected_label_encode = DagNode(4, "<string-source>", 12, OperatorType.TRANSFORMER,
-                                    module=('sklearn.preprocessing._encoders', 'OneHotEncoder'),
-                                    description='One-Hot Encoder', columns=['array'],
-                                    optional_code_reference=CodeReference(12, 9, 12, 36),
-                                    optional_source_code='OneHotEncoder(sparse=False)')
+    expected_label_encode = DagNode(4,
+                                    BasicCodeLocation("<string-source>", 12),
+                                    OperatorContext(OperatorType.TRANSFORMER,
+                                                    FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
+                                    DagNodeDetails('One-Hot Encoder', ['array']),
+                                    OptionalCodeInfo(CodeReference(12, 9, 12, 36), 'OneHotEncoder(sparse=False)'))
     expected_dag.add_edge(expected_label_projection, expected_label_encode)
-    expected_train_data = DagNode(5, "<string-source>", 22, OperatorType.TRAIN_DATA,
-                                  module=('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
-                                  description='Train Data', columns=['array'],
-                                  optional_code_reference=CodeReference(22, 6, 22, 92),
-                                  optional_source_code='KerasClassifier(build_fn=create_model, epochs=2, '
-                                                       'batch_size=1, verbose=0, input_dim=2)')
+    expected_train_data = DagNode(5,
+                                  BasicCodeLocation("<string-source>", 22),
+                                  OperatorContext(OperatorType.TRAIN_DATA,
+                                                  FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn',
+                                                               'KerasClassifier')),
+                                  DagNodeDetails('Train Data', ['array']),
+                                  OptionalCodeInfo(CodeReference(22, 6, 22, 92),
+                                                   'KerasClassifier(build_fn=create_model, epochs=2, '
+                                                   'batch_size=1, verbose=0, input_dim=2)'))
     expected_dag.add_edge(expected_standard_scaler, expected_train_data)
-    expected_train_labels = DagNode(6, "<string-source>", 22, OperatorType.TRAIN_LABELS,
-                                    module=('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
-                                    description='Train Labels', columns=['array'],
-                                    optional_code_reference=CodeReference(22, 6, 22, 92),
-                                    optional_source_code='KerasClassifier(build_fn=create_model, epochs=2, '
-                                                         'batch_size=1, verbose=0, input_dim=2)')
+    expected_train_labels = DagNode(6,
+                                    BasicCodeLocation("<string-source>", 22),
+                                    OperatorContext(OperatorType.TRAIN_LABELS,
+                                                    FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn',
+                                                                 'KerasClassifier')),
+                                    DagNodeDetails('Train Labels', ['array']),
+                                    OptionalCodeInfo(CodeReference(22, 6, 22, 92),
+                                                     'KerasClassifier(build_fn=create_model, epochs=2, '
+                                                     'batch_size=1, verbose=0, input_dim=2)'))
     expected_dag.add_edge(expected_label_encode, expected_train_labels)
-    expected_classifier = DagNode(7, "<string-source>", 22, OperatorType.ESTIMATOR,
-                                  module=('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
-                                  description='Neural Network', columns=[],
-                                  optional_code_reference=CodeReference(22, 6, 22, 92),
-                                  optional_source_code='KerasClassifier(build_fn=create_model, epochs=2, '
-                                                       'batch_size=1, verbose=0, input_dim=2)')
+    expected_classifier = DagNode(7,
+                                  BasicCodeLocation("<string-source>", 22),
+                                  OperatorContext(OperatorType.ESTIMATOR,
+                                                  FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn',
+                                                               'KerasClassifier')),
+                                  DagNodeDetails('Neural Network', []),
+                                  OptionalCodeInfo(CodeReference(22, 6, 22, 92),
+                                                   'KerasClassifier(build_fn=create_model, epochs=2, '
+                                                   'batch_size=1, verbose=0, input_dim=2)'))
     expected_dag.add_edge(expected_train_data, expected_classifier)
     expected_dag.add_edge(expected_train_labels, expected_classifier)
 

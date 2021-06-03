@@ -8,8 +8,7 @@ from pandas import DataFrame, Series
 
 from mlinspect.inspections._inspection import Inspection
 from mlinspect.inspections._inspection_input import InspectionInputUnaryOperator, \
-    InspectionInputSinkOperator, InspectionInputDataSource, InspectionInputNAryOperator
-from mlinspect.instrumentation._dag_node import OperatorType
+    InspectionInputSinkOperator, InspectionInputDataSource, InspectionInputNAryOperator, OperatorType
 
 
 @dataclasses.dataclass(frozen=True)

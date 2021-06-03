@@ -4,7 +4,7 @@ The NoBiasIntroducedFor check
 from __future__ import annotations
 
 import dataclasses
-from typing import Iterable, OrderedDict
+from typing import Iterable, Dict
 import collections
 from matplotlib import pyplot
 from pandas import DataFrame
@@ -12,7 +12,8 @@ from pandas import DataFrame
 from mlinspect.checks._check import Check, CheckStatus, CheckResult
 from mlinspect.inspections._histogram_for_columns import HistogramForColumns
 from mlinspect.inspections._inspection import Inspection
-from mlinspect.instrumentation._dag_node import OperatorType, DagNode
+from mlinspect.inspections._inspection_input import OperatorType, FunctionInfo
+from mlinspect.instrumentation._dag_node import DagNode
 from mlinspect.inspections._inspection_result import InspectionResult
 
 
@@ -32,7 +33,7 @@ class NoBiasIntroducedForResult(CheckResult):
     """
     Did the histogram change too much for some operations?
     """
-    bias_distribution_change: OrderedDict[DagNode, OrderedDict[str, BiasDistributionChange]]
+    bias_distribution_change: Dict[DagNode, Dict[str, BiasDistributionChange]]
 
 
 class NoBiasIntroducedFor(Check):
@@ -63,10 +64,10 @@ class NoBiasIntroducedFor(Check):
         histograms = {}
         for dag_node, inspection_results in inspection_result.dag_node_to_inspection_results.items():
             histograms[dag_node] = inspection_results[HistogramForColumns(self.sensitive_columns)]
-        relevant_nodes = [node for node in dag.nodes if node.operator_type in {OperatorType.JOIN,
-                                                                               OperatorType.SELECTION} or
-                          (node.module == ('sklearn.impute._base', 'SimpleImputer') and
-                           set(node.columns).intersection(self.sensitive_columns))]
+        relevant_nodes = [node for node in dag.nodes if node.operator_info.operator in {OperatorType.JOIN,
+                                                                                        OperatorType.SELECTION} or
+                          (node.operator_info.function_info == FunctionInfo('sklearn.impute._base', 'SimpleImputer')
+                           and set(node.details.columns).intersection(self.sensitive_columns))]
         check_status = CheckStatus.SUCCESS
         bias_distribution_change = collections.OrderedDict()
         issue_list = []
@@ -79,7 +80,7 @@ class NoBiasIntroducedFor(Check):
                 if not column_result.acceptable_change:
                     issue = "A {} causes a min_relative_ratio_change of '{}' by {}, a value below the " \
                             "configured minimum threshold {}!" \
-                        .format(node.operator_type.value, column, column_result.min_relative_ratio_change,
+                        .format(node.operator_info.operator.value, column, column_result.min_relative_ratio_change,
                                 self.min_allowed_relative_ratio_change)
                     issue_list.append(issue)
                     check_status = CheckStatus.FAILURE
@@ -171,7 +172,7 @@ class NoBiasIntroducedFor(Check):
         """
         operator_types = []
         code_references = []
-        modules = []
+        function_infos = []
         code_snippets = []
         descriptions = []
         assert isinstance(no_bias_check_result.check, NoBiasIntroducedFor)
@@ -182,17 +183,20 @@ class NoBiasIntroducedFor(Check):
         for _ in range(len(sensitive_column_names)):
             sensitive_columns.append([])
         for dag_node, distribution_change in no_bias_check_result.bias_distribution_change.items():
-            operator_types.append(dag_node.operator_type)
-            if dag_node.optional_code_reference is not None:
-                code_references.append(dag_node.optional_code_reference)
+            operator_types.append(dag_node.operator_info.operator)
+            if dag_node.optional_code_info is not None:
+                code_references.append(dag_node.optional_code_info.code_reference)
+                code_snippets.append(dag_node.optional_code_info.source_code)
             else:
-                code_references.append(dag_node.lineno)
-            modules.append(dag_node.module)
-            code_snippets.append(dag_node.optional_source_code)
-            descriptions.append(dag_node.description)
+                code_references.append(dag_node.code_location.lineno)
+                code_snippets.append("You can enable code reference tracking for more details.")
+            function_infos.append(dag_node.operator_info.function_info)
+
+            descriptions.append(dag_node.details.description or "")
             for index, change_info in enumerate(distribution_change.values()):
                 sensitive_columns[index].append(not change_info.acceptable_change)
-        return DataFrame(zip(operator_types, descriptions, code_references, code_snippets, modules, *sensitive_columns),
+        return DataFrame(zip(operator_types, descriptions, code_references, code_snippets, function_infos,
+                             *sensitive_columns),
                          columns=[
                              "operator_type",
                              "description",

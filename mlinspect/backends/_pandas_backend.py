@@ -10,7 +10,7 @@ from ._backend_utils import build_annotation_df_from_iters, \
     create_wrapper_with_annotations
 from ._iter_creation import iter_input_data_source, iter_input_annotation_output_resampled, \
     iter_input_annotation_output_map, iter_input_annotation_output_join
-from ..instrumentation._dag_node import OperatorType
+from .. import OperatorType, FunctionInfo
 from ..instrumentation._pipeline_executor import singleton
 
 
@@ -27,7 +27,7 @@ class PandasBackend(Backend):
             pandas_df = input_infos[0].result_data
             assert isinstance(pandas_df, pandas.DataFrame)
             pandas_df['mlinspect_index'] = range(0, len(pandas_df))
-        elif operator_context.function_info == ('pandas.core.frame', 'merge'):
+        elif operator_context.function_info == FunctionInfo('pandas.core.frame', 'merge'):
             first_pandas_df = input_infos[0].result_data
             assert isinstance(first_pandas_df, pandas.DataFrame)
             first_pandas_df['mlinspect_index_x'] = range(0, len(first_pandas_df))

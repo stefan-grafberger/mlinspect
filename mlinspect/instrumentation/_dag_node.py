@@ -2,28 +2,9 @@
 The Nodes used in the DAG as nodes for the networkx.DiGraph
 """
 import dataclasses
-from enum import Enum
-from typing import Tuple, List
+from typing import List
 
-
-class OperatorType(Enum):
-    """
-    The different operator types in our DAG
-    """
-    DATA_SOURCE = "Data Source"
-    MISSING_OP = "Encountered unsupported operation! Fallback: Data Source"
-    SELECTION = "Selection"
-    PROJECTION = "Projection"
-    PROJECTION_MODIFY = "Projection (Modify)"
-    TRANSFORMER = "Transformer"
-    CONCATENATION = "Concatenation"
-    ESTIMATOR = "Estimator"
-    FIT = "Fit Transformers and Estimators"
-    TRAIN_DATA = "Train Data"
-    TRAIN_LABELS = "Train Labels"
-    JOIN = "Join"
-    GROUP_BY_AGG = "Groupby and Aggregate"
-    TRAIN_TEST_SPLIT = "Train Test Split"
+from mlinspect.inspections._inspection_input import OperatorContext
 
 
 @dataclasses.dataclass(frozen=True)
@@ -38,21 +19,43 @@ class CodeReference:
 
 
 @dataclasses.dataclass
+class BasicCodeLocation:
+    """
+    Basic information that can be collected even if `set_code_reference_tracking` is disabled
+    """
+    caller_filename: str
+    lineno: int
+
+
+@dataclasses.dataclass
+class OptionalCodeInfo:
+    """
+    The additional information collected by mlinspect if `set_code_reference_tracking` is enabled
+    """
+    code_reference: CodeReference
+    source_code: str
+
+
+@dataclasses.dataclass
+class DagNodeDetails:
+    """
+    Additional info about the DAG node
+    """
+    description: str or None = None
+    columns: List[str] = None
+
+
+@dataclasses.dataclass
 class DagNode:
     """
     A DAG Node
     """
-    # pylint: disable=too-many-instance-attributes
 
     node_id: int
-    caller_filename: str
-    lineno: int
-    operator_type: OperatorType or None = None
-    module: Tuple or None = None
-    description: str or None = None
-    columns: List[str] = None
-    optional_code_reference: CodeReference or None = None
-    optional_source_code: str or None = None
+    code_location: BasicCodeLocation
+    operator_info: OperatorContext
+    details: DagNodeDetails
+    optional_code_info: OptionalCodeInfo or None = None
 
     def __hash__(self):
         return hash(self.node_id)

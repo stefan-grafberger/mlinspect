@@ -11,12 +11,12 @@ from tensorflow.python.keras.wrappers import scikit_learn as keras_sklearn_inter
 
 from mlinspect.backends._backend import BackendResult
 from mlinspect.backends._sklearn_backend import SklearnBackend
-from mlinspect.inspections._inspection_input import OperatorContext
+from mlinspect.inspections._inspection_input import OperatorContext, FunctionInfo, OperatorType
 from mlinspect.instrumentation import _pipeline_executor
-from mlinspect.instrumentation._dag_node import OperatorType, DagNode
+from mlinspect.instrumentation._dag_node import DagNode, BasicCodeLocation, DagNodeDetails, CodeReference
 from mlinspect.instrumentation._pipeline_executor import singleton
 from mlinspect.monkeypatching._monkey_patching_utils import execute_patched_func, add_dag_node, \
-    execute_patched_func_indirect_allowed, get_input_info, execute_patched_func_no_op_id
+    execute_patched_func_indirect_allowed, get_input_info, execute_patched_func_no_op_id, get_optional_code_info_or_none
 from mlinspect.monkeypatching._patch_numpy import MlinspectNdarray
 
 
@@ -36,7 +36,7 @@ class SklearnPreprocessingPatching:
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             # pylint: disable=too-many-locals
-            function_info = ('sklearn.preprocessing._label', 'label_binarize')
+            function_info = FunctionInfo('sklearn.preprocessing._label', 'label_binarize')
             input_info = get_input_info(args[0], caller_filename, lineno, function_info, optional_code_reference,
                                         optional_source_code)
 
@@ -50,9 +50,11 @@ class SklearnPreprocessingPatching:
 
             classes = kwargs['classes']
             description = "label_binarize, classes: {}".format(classes)
-            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.PROJECTION_MODIFY, function_info,
-                               description,
-                               ["array"], optional_code_reference, optional_source_code)
+            dag_node = DagNode(op_id,
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails(description, ["array"]),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
 
             return new_return_value
@@ -76,7 +78,7 @@ class SklearnModelSelectionPatching:
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             # pylint: disable=too-many-locals
-            function_info = ('sklearn.model_selection._split', 'train_test_split')
+            function_info = FunctionInfo('sklearn.model_selection._split', 'train_test_split')
             input_info = get_input_info(args[0], caller_filename, lineno, function_info, optional_code_reference,
                                         optional_source_code)
 
@@ -93,14 +95,20 @@ class SklearnModelSelectionPatching:
 
             description = "(Train Data)"
             columns = list(result[0].columns)
-            dag_node = DagNode(op_id, caller_filename, lineno, OperatorType.TRAIN_TEST_SPLIT, function_info,
-                               description, columns, optional_code_reference, optional_source_code)
+            dag_node = DagNode(op_id,
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails(description, columns),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], train_backend_result)
 
             description = "(Test Data)"
             columns = list(result[1].columns)
-            dag_node = DagNode(singleton.get_next_op_id(), caller_filename, lineno, OperatorType.TRAIN_TEST_SPLIT,
-                               function_info, description, columns, optional_code_reference, optional_source_code)
+            dag_node = DagNode(singleton.get_next_op_id(),
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails(description, columns),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], test_backend_result)
 
             new_return_value = (train_backend_result.annotated_dfobject.result_data,
@@ -115,12 +123,12 @@ class SklearnCallInfo:
     """ Contains info like lineno from the current Transformer so indirect utility function calls can access it """
     # pylint: disable=too-few-public-methods
 
-    transformer_filename = None
-    transformer_lineno = None
-    function_info = None
-    transformer_optional_code_reference = None
-    transformer_optional_source_code = None
-    column_transformer_active = False
+    transformer_filename: str or None = None
+    transformer_lineno: int or None = None
+    transformer_function_info: FunctionInfo or None = None
+    transformer_optional_code_reference: CodeReference or None = None
+    transformer_optional_source_code: str or None = None
+    column_transformer_active: bool = False
 
 
 call_info_singleton = SklearnCallInfo()
@@ -165,7 +173,8 @@ class SklearnComposePatching:
         # pylint: disable=no-method-argument
         call_info_singleton.transformer_filename = self.mlinspect_filename
         call_info_singleton.transformer_lineno = self.mlinspect_lineno
-        call_info_singleton.function_info = ('sklearn.compose._column_transformer', 'ColumnTransformer')
+        call_info_singleton.transformer_function_info = FunctionInfo('sklearn.compose._column_transformer',
+                                                                     'ColumnTransformer')
         call_info_singleton.transformer_optional_code_reference = self.mlinspect_optional_code_reference
         call_info_singleton.transformer_optional_source_code = self.mlinspect_optional_source_code
 
@@ -187,7 +196,7 @@ class SklearnComposePatching:
             return original(self, *args, **kwargs)
 
         input_tuple = args[0]
-        function_info = ('sklearn.compose._column_transformer', 'ColumnTransformer')
+        function_info = FunctionInfo('sklearn.compose._column_transformer', 'ColumnTransformer')
         input_infos = []
         for input_df_obj in input_tuple:
             input_info = get_input_info(input_df_obj, self.mlinspect_filename, self.mlinspect_lineno, function_info,
@@ -204,9 +213,12 @@ class SklearnComposePatching:
                                                    result)
         result = backend_result.annotated_dfobject.result_data
 
-        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_filename, self.mlinspect_lineno,
-                           OperatorType.CONCATENATION, function_info, "", ['array'],
-                           self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        dag_node = DagNode(singleton.get_next_op_id(),
+                           BasicCodeLocation(self.mlinspect_filename, self.mlinspect_lineno),
+                           operator_context,
+                           DagNodeDetails(None, ['array']),
+                           get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                          self.mlinspect_optional_source_code))
         input_dag_nodes = [input_info.dag_node for input_info in input_infos]
         add_dag_node(dag_node, input_dag_nodes, backend_result)
 
@@ -251,7 +263,7 @@ class SklearnStandardScalerPatching:
         """ Patch for ('sklearn.preprocessing._data.StandardScaler', 'fit_transform') """
         # pylint: disable=no-method-argument
         original = gorilla.get_original_attribute(preprocessing.StandardScaler, 'fit_transform')
-        function_info = ('sklearn.preprocessing._data', 'StandardScaler')
+        function_info = FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')
         input_info = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno, function_info,
                                     self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
 
@@ -263,9 +275,12 @@ class SklearnStandardScalerPatching:
                                                    result)
         new_return_value = backend_result.annotated_dfobject.result_data
         assert isinstance(new_return_value, MlinspectNdarray)
-        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
-                           OperatorType.TRANSFORMER, function_info, "Standard Scaler", ['array'],
-                           self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        dag_node = DagNode(singleton.get_next_op_id(),
+                           BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                           operator_context,
+                           DagNodeDetails("Standard Scaler", ['array']),
+                           get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                          self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
         return new_return_value
 
@@ -308,7 +323,7 @@ class SklearnKBinsDiscretizerPatching:
         """ Patch for ('sklearn.preprocessing._discretization.KBinsDiscretizer', 'fit_transform') """
         # pylint: disable=no-method-argument
         original = gorilla.get_original_attribute(preprocessing.KBinsDiscretizer, 'fit_transform')
-        function_info = ('sklearn.preprocessing._discretization', 'KBinsDiscretizer')
+        function_info = FunctionInfo('sklearn.preprocessing._discretization', 'KBinsDiscretizer')
         input_info = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno, function_info,
                                     self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
 
@@ -320,9 +335,12 @@ class SklearnKBinsDiscretizerPatching:
                                                    result)
         new_return_value = backend_result.annotated_dfobject.result_data
         assert isinstance(new_return_value, MlinspectNdarray)
-        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
-                           OperatorType.TRANSFORMER, function_info, "K-Bins Discretizer", ['array'],
-                           self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        dag_node = DagNode(singleton.get_next_op_id(),
+                           BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                           operator_context,
+                           DagNodeDetails("K-Bins Discretizer", ['array']),
+                           get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                          self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
         return new_return_value
 
@@ -366,7 +384,7 @@ class SklearnOneHotEncoderPatching:
         """ Patch for ('sklearn.preprocessing._encoders.OneHotEncoder', 'fit_transform') """
         # pylint: disable=no-method-argument
         original = gorilla.get_original_attribute(preprocessing.OneHotEncoder, 'fit_transform')
-        function_info = ('sklearn.preprocessing._encoders', 'OneHotEncoder')
+        function_info = FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')
         input_info = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno, function_info,
                                     self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
 
@@ -377,9 +395,12 @@ class SklearnOneHotEncoderPatching:
                                                    input_infos,
                                                    result)
         new_return_value = backend_result.annotated_dfobject.result_data
-        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
-                           OperatorType.TRANSFORMER, function_info, "One-Hot Encoder", ['array'],
-                           self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        dag_node = DagNode(singleton.get_next_op_id(),
+                           BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                           operator_context,
+                           DagNodeDetails("One-Hot Encoder", ['array']),
+                           get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                          self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
         return new_return_value
 
@@ -425,7 +446,7 @@ class SklearnSimpleImputerPatching:
         """ Patch for ('sklearn.preprocessing._encoders.OneHotEncoder', 'fit_transform') """
         # pylint: disable=no-method-argument
         original = gorilla.get_original_attribute(impute.SimpleImputer, 'fit_transform')
-        function_info = ('sklearn.impute._base', 'SimpleImputer')
+        function_info = FunctionInfo('sklearn.impute._base', 'SimpleImputer')
         input_info = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno, function_info,
                                     self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
 
@@ -441,9 +462,12 @@ class SklearnSimpleImputerPatching:
         else:
             columns = ['array']
 
-        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
-                           OperatorType.TRANSFORMER, function_info, "Simple Imputer", columns,
-                           self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        dag_node = DagNode(singleton.get_next_op_id(),
+                           BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                           operator_context,
+                           DagNodeDetails("Simple Imputer", columns),
+                           get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                          self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
         return new_return_value
 
@@ -501,18 +525,20 @@ class SklearnDecisionTreePatching:
         """ Patch for ('sklearn.tree._classes.DecisionTreeClassifier', 'fit') """
         # pylint: disable=no-method-argument, too-many-locals
         original = gorilla.get_original_attribute(tree.DecisionTreeClassifier, 'fit')
-        function_info = ('sklearn.tree._classes', 'DecisionTreeClassifier')
+        function_info = FunctionInfo('sklearn.tree._classes', 'DecisionTreeClassifier')
 
         # Train data
         input_info_train_data = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno,
                                                function_info, self.mlinspect_optional_code_reference,
                                                self.mlinspect_optional_source_code)
         train_data_op_id = _pipeline_executor.singleton.get_next_op_id()
-        train_data_dag_node = DagNode(train_data_op_id, self.mlinspect_caller_filename,
-                                      self.mlinspect_lineno, OperatorType.TRAIN_DATA, function_info, "Train Data",
-                                      ["array"], self.mlinspect_optional_code_reference,
-                                      self.mlinspect_optional_source_code)
         operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
+        train_data_dag_node = DagNode(train_data_op_id,
+                                      BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                                      operator_context,
+                                      DagNodeDetails("Train Data", ["array"]),
+                                      get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                                     self.mlinspect_optional_source_code))
         input_infos = SklearnBackend.before_call(operator_context, [input_info_train_data.annotated_dfobject])
         data_backend_result = SklearnBackend.after_call(operator_context,
                                                         input_infos,
@@ -526,9 +552,12 @@ class SklearnDecisionTreePatching:
                                                  function_info, self.mlinspect_optional_code_reference,
                                                  self.mlinspect_optional_source_code)
         train_label_op_id = _pipeline_executor.singleton.get_next_op_id()
-        train_labels_dag_node = DagNode(train_label_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
-                                        OperatorType.TRAIN_LABELS, function_info, "Train Labels", ["array"],
-                                        self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        train_labels_dag_node = DagNode(train_label_op_id,
+                                        BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                                        operator_context,
+                                        DagNodeDetails("Train Labels", ["array"]),
+                                        get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                                       self.mlinspect_optional_source_code))
         input_infos = SklearnBackend.before_call(operator_context, [input_info_train_labels.annotated_dfobject])
         label_backend_result = SklearnBackend.after_call(operator_context,
                                                          input_infos,
@@ -545,9 +574,12 @@ class SklearnDecisionTreePatching:
                                                              input_infos,
                                                              None)
 
-        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
-                           OperatorType.ESTIMATOR, function_info, "Decision Tree", [],
-                           self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        dag_node = DagNode(singleton.get_next_op_id(),
+                           BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                           operator_context,
+                           DagNodeDetails("Decision Tree", []),
+                           get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                          self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [train_data_dag_node, train_labels_dag_node], estimator_backend_result)
         return self
 
@@ -603,18 +635,20 @@ class SklearnLogisticRegressionPatching:
         """ Patch for ('sklearn.linear_model._logistic.LogisticRegression', 'fit') """
         # pylint: disable=no-method-argument, too-many-locals
         original = gorilla.get_original_attribute(linear_model.LogisticRegression, 'fit')
-        function_info = ('sklearn.linear_model._logistic', 'LogisticRegression')
+        function_info = FunctionInfo('sklearn.linear_model._logistic', 'LogisticRegression')
 
         # Train data
         input_info_train_data = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno,
                                                function_info, self.mlinspect_optional_code_reference,
                                                self.mlinspect_optional_source_code)
         train_data_op_id = _pipeline_executor.singleton.get_next_op_id()
-        train_data_dag_node = DagNode(train_data_op_id, self.mlinspect_caller_filename,
-                                      self.mlinspect_lineno, OperatorType.TRAIN_DATA, function_info, "Train Data",
-                                      ["array"], self.mlinspect_optional_code_reference,
-                                      self.mlinspect_optional_source_code)
         operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
+        train_data_dag_node = DagNode(train_data_op_id,
+                                      BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                                      operator_context,
+                                      DagNodeDetails("Train Data", ["array"]),
+                                      get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                                     self.mlinspect_optional_source_code))
         input_infos = SklearnBackend.before_call(operator_context, [input_info_train_data.annotated_dfobject])
         data_backend_result = SklearnBackend.after_call(operator_context,
                                                         input_infos,
@@ -628,9 +662,12 @@ class SklearnLogisticRegressionPatching:
                                                  function_info, self.mlinspect_optional_code_reference,
                                                  self.mlinspect_optional_source_code)
         train_label_op_id = _pipeline_executor.singleton.get_next_op_id()
-        train_labels_dag_node = DagNode(train_label_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
-                                        OperatorType.TRAIN_LABELS, function_info, "Train Labels", ["array"],
-                                        self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        train_labels_dag_node = DagNode(train_label_op_id,
+                                        BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                                        operator_context,
+                                        DagNodeDetails("Train Labels", ["array"]),
+                                        get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                                       self.mlinspect_optional_source_code))
         input_infos = SklearnBackend.before_call(operator_context, [input_info_train_labels.annotated_dfobject])
         label_backend_result = SklearnBackend.after_call(operator_context,
                                                          input_infos,
@@ -647,9 +684,12 @@ class SklearnLogisticRegressionPatching:
                                                              input_infos,
                                                              None)
 
-        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
-                           OperatorType.ESTIMATOR, function_info, "Logistic Regression", [],
-                           self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        dag_node = DagNode(singleton.get_next_op_id(),
+                           BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                           operator_context,
+                           DagNodeDetails("Logistic Regression", []),
+                           get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                          self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [train_data_dag_node, train_labels_dag_node], estimator_backend_result)
         return self
 
@@ -687,18 +727,20 @@ class SklearnKerasClassifierPatching:
         """ Patch for ('tensorflow.python.keras.wrappers.scikit_learn.KerasClassifier', 'fit') """
         # pylint: disable=no-method-argument, too-many-locals
         original = gorilla.get_original_attribute(keras_sklearn_external.KerasClassifier, 'fit')
-        function_info = ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')
+        function_info = FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')
 
         # Train data
         input_info_train_data = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno,
                                                function_info, self.mlinspect_optional_code_reference,
                                                self.mlinspect_optional_source_code)
         train_data_op_id = singleton.get_next_op_id()
-        train_data_dag_node = DagNode(train_data_op_id, self.mlinspect_caller_filename,
-                                      self.mlinspect_lineno, OperatorType.TRAIN_DATA, function_info, "Train Data",
-                                      ["array"], self.mlinspect_optional_code_reference,
-                                      self.mlinspect_optional_source_code)
         operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
+        train_data_dag_node = DagNode(train_data_op_id,
+                                      BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                                      operator_context,
+                                      DagNodeDetails("Train Data", ["array"]),
+                                      get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                                     self.mlinspect_optional_source_code))
         input_infos = SklearnBackend.before_call(operator_context, [input_info_train_data.annotated_dfobject])
         data_backend_result = SklearnBackend.after_call(operator_context,
                                                         input_infos,
@@ -712,9 +754,12 @@ class SklearnKerasClassifierPatching:
                                                  function_info, self.mlinspect_optional_code_reference,
                                                  self.mlinspect_optional_source_code)
         train_label_op_id = singleton.get_next_op_id()
-        train_labels_dag_node = DagNode(train_label_op_id, self.mlinspect_caller_filename, self.mlinspect_lineno,
-                                        OperatorType.TRAIN_LABELS, function_info, "Train Labels", ["array"],
-                                        self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        train_labels_dag_node = DagNode(train_label_op_id,
+                                        BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                                        operator_context,
+                                        DagNodeDetails("Train Labels", ["array"]),
+                                        get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                                       self.mlinspect_optional_source_code))
         input_infos = SklearnBackend.before_call(operator_context, [input_info_train_labels.annotated_dfobject])
         label_backend_result = SklearnBackend.after_call(operator_context,
                                                          input_infos,
@@ -731,8 +776,11 @@ class SklearnKerasClassifierPatching:
                                                              input_infos,
                                                              None)
 
-        dag_node = DagNode(singleton.get_next_op_id(), self.mlinspect_caller_filename, self.mlinspect_lineno,
-                           OperatorType.ESTIMATOR, function_info, "Neural Network", [],
-                           self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
+        dag_node = DagNode(singleton.get_next_op_id(),
+                           BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                           operator_context,
+                           DagNodeDetails("Neural Network", []),
+                           get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                          self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [train_data_dag_node, train_labels_dag_node], estimator_backend_result)
         return self

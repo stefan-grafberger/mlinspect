@@ -8,7 +8,7 @@ import pandas
 from ._backend import Backend, AnnotatedDfObject, BackendResult
 from ._iter_creation import iter_input_annotation_output_sink_op, iter_input_annotation_output_nary_op
 from ._pandas_backend import execute_inspection_visits_unary_operator, store_inspection_outputs
-from ..instrumentation._dag_node import OperatorType
+from .. import OperatorType
 from ..instrumentation._pipeline_executor import singleton
 
 

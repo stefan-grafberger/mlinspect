@@ -13,8 +13,9 @@ from scipy.sparse import csr_matrix
 
 from mlinspect.backends._backend import AnnotatedDfObject, BackendResult
 from mlinspect.backends._pandas_backend import execute_inspection_visits_data_source
-from mlinspect.inspections._inspection_input import OperatorContext
-from mlinspect.instrumentation._dag_node import DagNode, OperatorType, CodeReference
+from mlinspect.inspections._inspection_input import OperatorContext, OperatorType
+from mlinspect.instrumentation._dag_node import DagNode, CodeReference, BasicCodeLocation, DagNodeDetails, \
+    OptionalCodeInfo
 from mlinspect.instrumentation._pipeline_executor import singleton
 
 
@@ -139,9 +140,9 @@ def execute_patched_func_indirect_allowed(execute_inspections_func):
         caller_source_code = ast.get_source_segment(singleton.source_code, node=call_ast_node)
         caller_lineno = singleton.lineno_next_call_or_subscript
         caller_code_reference = CodeReference(singleton.lineno_next_call_or_subscript,
-                                               singleton.col_offset_next_call_or_subscript,
-                                               singleton.end_lineno_next_call_or_subscript,
-                                               singleton.end_col_offset_next_call_or_subscript)
+                                              singleton.col_offset_next_call_or_subscript,
+                                              singleton.end_lineno_next_call_or_subscript,
+                                              singleton.end_col_offset_next_call_or_subscript)
         result = execute_inspections_func(-1, caller_filename, caller_lineno, caller_code_reference,
                                           caller_source_code)
         # singleton.lineno_next_call_or_subscript = -1
@@ -182,10 +183,11 @@ def get_input_info(df_object, caller_filename, lineno, function_info, optional_c
         description = "Warning! Operator {}:{} {} encountered a DataFrame resulting from an operation " \
                       "without mlinspect support!".format(caller_filename, lineno, code_reference)
         missing_op_id = singleton.get_next_missing_op_id()
-        input_dag_node = DagNode(missing_op_id, caller_filename, lineno, OperatorType.MISSING_OP,
-                                 description=description,
-                                 columns=columns, optional_code_reference=optional_code_reference,
-                                 optional_source_code=optional_source_code)
+        input_dag_node = DagNode(missing_op_id,
+                                 BasicCodeLocation(caller_filename, lineno),
+                                 OperatorContext(OperatorType.MISSING_OP, None),
+                                 DagNodeDetails(description, columns),
+                                 OptionalCodeInfo(optional_code_reference, optional_source_code))
         add_dag_node(input_dag_node, [], backend_result)
         annotation_df = backend_result.annotated_dfobject.result_annotation
         input_info = InputInfo(input_dag_node, AnnotatedDfObject(df_object, annotation_df))
@@ -225,3 +227,19 @@ def get_dag_node_for_id(dag_node_id: int):
     """
     # pylint: disable=protected-access
     return singleton.op_id_to_dag_node[dag_node_id]
+
+
+def get_optional_code_info_or_none(optional_code_reference: CodeReference or None,
+                                   optional_source_code: str or None) -> OptionalCodeInfo or None:
+    """
+    If code reference tracking is enabled, return OptionalCodeInfo, otherwise None
+    """
+    if singleton.track_code_references:
+        assert optional_code_reference is not None
+        assert optional_source_code is not None
+        code_info_or_none = OptionalCodeInfo(optional_code_reference, optional_source_code)
+    else:
+        assert optional_code_reference is None
+        assert optional_source_code is None
+        code_info_or_none = None
+    return code_info_or_none

@@ -5,8 +5,7 @@ from typing import Iterable
 
 from mlinspect.inspections._inspection import Inspection
 from mlinspect.inspections._inspection_input import InspectionInputDataSource, \
-    InspectionInputUnaryOperator, InspectionInputNAryOperator
-from mlinspect.instrumentation._dag_node import OperatorType
+    InspectionInputUnaryOperator, InspectionInputNAryOperator, OperatorType, FunctionInfo
 
 
 class HistogramForColumns(Inspection):
@@ -44,7 +43,7 @@ class HistogramForColumns(Inspection):
                 sensitive_columns_present.append(column_present)
                 column_index = inspection_input.input_columns.get_index_of_column(column)
                 sensitive_columns_index.append(column_index)
-            if inspection_input.operator_context.function_info == ('sklearn.impute._base', 'SimpleImputer'):
+            if inspection_input.operator_context.function_info == FunctionInfo('sklearn.impute._base', 'SimpleImputer'):
                 for row in inspection_input.row_iterator:
                     current_count += 1
                     column_values = []
