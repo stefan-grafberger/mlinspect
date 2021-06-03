@@ -3,7 +3,7 @@ Tests whether NoMissingEmbeddings works
 """
 from inspect import cleandoc
 
-from testfixtures import compare
+from testfixtures import compare, SequenceComparison, StringComparison
 
 from mlinspect._pipeline_inspector import PipelineInspector
 from mlinspect.checks import NoIllegalFeatures, CheckStatus, NoIllegalFeaturesResult
@@ -42,6 +42,8 @@ def test_no_illegal_features():
         .execute()
 
     check_result = inspector_result.check_to_check_results[NoIllegalFeatures(['C'])]
+    # pylint: disable=anomalous-backslash-in-string
     expected_result = NoIllegalFeaturesResult(NoIllegalFeatures(['C']), CheckStatus.FAILURE,
-                                              "Used illegal columns: ['C', 'age']", ['C', 'age'])
+                                              StringComparison("Used illegal columns\: .*"),
+                                              SequenceComparison('C', 'age', ordered=False))
     compare(check_result, expected_result)
