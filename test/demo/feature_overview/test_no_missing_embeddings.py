@@ -17,7 +17,7 @@ from mlinspect.instrumentation._dag_node import CodeReference
 
 def test_no_missing_embeddings():
     """
-    Tests whether RowLineage works for joins
+    Tests whether NoMissingEmbeddings works for joins
     """
     test_code = cleandoc("""
             import pandas as pd

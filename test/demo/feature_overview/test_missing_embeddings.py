@@ -12,7 +12,7 @@ from mlinspect._pipeline_inspector import PipelineInspector
 
 def test_missing_embeddings():
     """
-    Tests whether RowLineage works for joins
+    Tests whether MissingEmbeddings works for joins
     """
     test_code = cleandoc("""
             import pandas as pd

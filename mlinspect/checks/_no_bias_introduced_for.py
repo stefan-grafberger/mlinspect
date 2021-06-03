@@ -17,7 +17,7 @@ from mlinspect.instrumentation._dag_node import DagNode
 from mlinspect.inspections._inspection_result import InspectionResult
 
 
-@dataclasses.dataclass(eq=True, frozen=True)
+@dataclasses.dataclass(eq=False, frozen=True)
 class BiasDistributionChange:
     """
     Did the histogram change too much for one given operation?
@@ -26,6 +26,13 @@ class BiasDistributionChange:
     acceptable_change: bool
     min_relative_ratio_change: float
     before_and_after_df: DataFrame
+
+    def __eq__(self, other):
+        return (isinstance(other, self.__class__) and
+                self.dag_node == other.dag_node and
+                self.acceptable_change == other.acceptable_change and
+                self.min_relative_ratio_change == other.min_relative_ratio_change and
+                self.before_and_after_df.equals(other.before_and_after_df))
 
 
 @dataclasses.dataclass

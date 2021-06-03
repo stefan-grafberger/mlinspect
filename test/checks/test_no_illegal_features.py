@@ -11,7 +11,7 @@ from mlinspect.checks import NoIllegalFeatures, CheckStatus, NoIllegalFeaturesRe
 
 def test_no_illegal_features():
     """
-    Tests whether RowLineage works for joins
+    Tests whether NoIllegalFeatures works for joins
     """
     test_code = cleandoc("""
             import pandas as pd
