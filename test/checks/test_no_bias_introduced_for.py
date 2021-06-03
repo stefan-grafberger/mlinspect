@@ -41,31 +41,20 @@ def get_expected_check_result_merge():
     """ Expected result for the code snippet in test_no_bias_introduced_for_merge"""
     failing_dag_node = DagNode(2,
                                BasicCodeLocation('<string-source>', 5),
-                               OperatorContext(OperatorType.JOIN,
-                                               FunctionInfo('pandas.core.frame',
-                                                            'merge')),
+                               OperatorContext(OperatorType.JOIN, FunctionInfo('pandas.core.frame', 'merge')),
                                DagNodeDetails("on 'B'", ['A', 'B', 'C']),
-                               OptionalCodeInfo(CodeReference(5, 12, 5, 36),
-                                                "df_a.merge(df_b, on='B')"))
-    exptected_distribution_change = BiasDistributionChange(failing_dag_node,
-                                                           False,
-                                                           (.25 - 0.4) / 0.4,
-                                                           DataFrame({'sensitive_column_value': [
-                                                               'cat_a', 'cat_b', 'cat_c'],
-                                                               'count_before': [2, 2, 1],
-                                                               'count_after': [2, 1, 1],
-                                                               'ratio_before': [0.4, 0.4, 0.2],
-                                                               'ratio_after': [0.5, 0.25, 0.25],
-                                                               'relative_ratio_change': [(0.5 - 0.4) / 0.4,
-                                                                                         (.25 - 0.4) / 0.4,
-                                                                                         (0.25 - 0.2) / 0.2]}),
+                               OptionalCodeInfo(CodeReference(5, 12, 5, 36), "df_a.merge(df_b, on='B')"))
 
-                                                           )
-    expected_dag_node_to_change = {failing_dag_node: {'A': exptected_distribution_change}}
-    expected_result = NoBiasIntroducedForResult(NoBiasIntroducedFor(['A']),
-                                                CheckStatus.FAILURE,
-                                                'A Join causes a min_relative_ratio_change of \'A\' '
-                                                'by -0.37500000000000006, a value below the configured minimum '
-                                                'threshold -0.3!',
+    change_df = DataFrame({'sensitive_column_value': ['cat_a', 'cat_b', 'cat_c'],
+                           'count_before': [2, 2, 1],
+                           'count_after': [2, 1, 1],
+                           'ratio_before': [0.4, 0.4, 0.2],
+                           'ratio_after': [0.5, 0.25, 0.25],
+                           'relative_ratio_change': [(0.5 - 0.4) / 0.4, (.25 - 0.4) / 0.4, (0.25 - 0.2) / 0.2]})
+    expected_distribution_change = BiasDistributionChange(failing_dag_node, False, (.25 - 0.4) / 0.4, change_df)
+    expected_dag_node_to_change = {failing_dag_node: {'A': expected_distribution_change}}
+    failure_message = 'A Join causes a min_relative_ratio_change of \'A\' by -0.37500000000000006, a value below the ' \
+                      'configured minimum threshold -0.3!'
+    expected_result = NoBiasIntroducedForResult(NoBiasIntroducedFor(['A']), CheckStatus.FAILURE, failure_message,
                                                 expected_dag_node_to_change)
     return expected_result
