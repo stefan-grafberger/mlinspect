@@ -1,5 +1,5 @@
 """
-Tests whether the MaterializeFirstOutputRows works
+Tests whether MaterializeFirstOutputRows works
 """
 import pandas
 from numpy.ma import array

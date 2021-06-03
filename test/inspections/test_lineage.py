@@ -1,5 +1,5 @@
 """
-Tests whether the MaterializeFirstOutputRows works
+Tests whether RowLineage works
 """
 from inspect import cleandoc
 
@@ -14,7 +14,7 @@ from mlinspect.inspections._lineage import LineageId
 
 def test_row_lineage_merge():
     """
-    Tests whether the MaterializeFirstOutputRows works
+    Tests whether RowLineage works for joins
     """
     test_code = cleandoc("""
             import pandas as pd
@@ -51,7 +51,7 @@ def test_row_lineage_merge():
 
 def test_row_lineage_concat():
     """
-    Tests whether the MaterializeFirstOutputRows works
+    Tests whether RowLineage works for concats
     """
     test_code = cleandoc("""
             import pandas as pd
