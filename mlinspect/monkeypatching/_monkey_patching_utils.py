@@ -32,20 +32,10 @@ def execute_patched_func(original_func, execute_inspections_func, *args, **kwarg
     function or the patched variant.
     """
     # Performance aspects: https://gist.github.com/JettJones/c236494013f22723c1822126df944b12
-    # We have to do this max once unnecessarily per user function call as long as we always set the singleton
-    #  lineno to -1 at the end of every patched function
-    # We will have to think about indirect calls. E.g. pandas functions use other pandas functions internally
-    #  For pandas, maybe we only want to consider pandas functions directly called by the user
-    #  For sklearn, we might want to consider all indirect fit/transform calls
-
     # CPython implementation detail: This function should be used for internal and specialized purposes only.
     #  It is not guaranteed to exist in all implementations of Python.
     #  inspect.getcurrentframe() also only does return `sys._getframe(1) if hasattr(sys, "_getframe") else None`
     #  We can execute one hasattr check right at the beginning of the mlinspect execution
-
-    # if singleton.track_code_references and singleton.lineno_next_call_or_subscript == -1:
-    #    original_func(self_obj, *args, **kwargs)
-    #    return
 
     caller_filename = sys._getframe(2).f_code.co_filename  # pylint: disable=protected-access
 
@@ -65,12 +55,10 @@ def execute_patched_func(original_func, execute_inspections_func, *args, **kwarg
                                               singleton.end_col_offset_next_call_or_subscript)
         result = execute_inspections_func(op_id, caller_filename, caller_lineno, caller_code_reference,
                                           caller_source_code)
-        # singleton.lineno_next_call_or_subscript = -1
     else:
         op_id = singleton.get_next_op_id()
         caller_lineno = sys._getframe(2).f_lineno  # pylint: disable=protected-access
         result = execute_inspections_func(op_id, caller_filename, caller_lineno, None, None)
-        # singleton.lineno_next_call_or_subscript = -1
     return result
 
 
@@ -96,11 +84,9 @@ def execute_patched_func_no_op_id(original_func, execute_inspections_func, *args
                                               singleton.end_col_offset_next_call_or_subscript)
         result = execute_inspections_func(-1, caller_filename, caller_lineno, caller_code_reference,
                                           caller_source_code)
-        # singleton.lineno_next_call_or_subscript = -1
     else:
         caller_lineno = sys._getframe(2).f_lineno  # pylint: disable=protected-access
         result = execute_inspections_func(-1, caller_filename, caller_lineno, None, None)
-        # singleton.lineno_next_call_or_subscript = -1
     return result
 
 
@@ -110,27 +96,16 @@ def execute_patched_func_indirect_allowed(execute_inspections_func):
     function or the patched variant.
     """
     # Performance aspects: https://gist.github.com/JettJones/c236494013f22723c1822126df944b12
-    # We have to do this max once unnecessarily per user function call as long as we always set the singleton
-    #  lineno to -1 at the end of every patched function
-    # We will have to think about indirect calls. E.g. pandas functions use other pandas functions internally
-    #  For pandas, maybe we only want to consider pandas functions directly called by the user
-    #  For sklearn, we might want to consider all indirect fit/transform calls
-
     # CPython implementation detail: This function should be used for internal and specialized purposes only.
     #  It is not guaranteed to exist in all implementations of Python.
     #  inspect.getcurrentframe() also only does return `sys._getframe(1) if hasattr(sys, "_getframe") else None`
     #  We can execute one hasattr check right at the beginning of the mlinspect execution
-
-    # if singleton.track_code_references and singleton.lineno_next_call_or_subscript == -1:
-    #    original_func(self_obj, *args, **kwargs)
-    #    return
 
     frame = sys._getframe(2)  # pylint: disable=protected-access
     while frame.f_code.co_filename != singleton.source_code_path:
         frame = frame.f_back
 
     caller_filename = frame.f_code.co_filename
-    caller_lineno = frame.f_lineno
 
     if singleton.track_code_references:
         call_ast_node = ast.Call(lineno=singleton.lineno_next_call_or_subscript,
@@ -145,11 +120,9 @@ def execute_patched_func_indirect_allowed(execute_inspections_func):
                                               singleton.end_col_offset_next_call_or_subscript)
         result = execute_inspections_func(-1, caller_filename, caller_lineno, caller_code_reference,
                                           caller_source_code)
-        # singleton.lineno_next_call_or_subscript = -1
     else:
         caller_lineno = sys._getframe(2).f_lineno  # pylint: disable=protected-access
         result = execute_inspections_func(-1, caller_filename, caller_lineno, None, None)
-        # singleton.lineno_next_call_or_subscript = -1
     return result
 
 
