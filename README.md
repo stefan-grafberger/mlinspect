@@ -48,7 +48,7 @@ inspector_result = PipelineInspector\
         .execute()
 
 extracted_dag = inspector_result.dag
-inspection_to_annotations = inspector_result.inspection_to_annotations
+dag_node_to_inspection_results = inspector_result.dag_node_to_inspection_results
 check_to_check_results = inspector_result.check_to_check_results
 ```
 
