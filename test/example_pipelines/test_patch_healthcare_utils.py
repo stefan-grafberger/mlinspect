@@ -36,14 +36,14 @@ def test_my_word_to_vec_transformer():
                                                         custom_monkey_patching=[custom_monkeypatching])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0,
-                                  BasicCodeLocation("<string-source>", 5),
-                                  OperatorContext(OperatorType.DATA_SOURCE,
-                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
-                                  DagNodeDetails(None, ['A']),
-                                  OptionalCodeInfo(CodeReference(5, 5, 5, 62),
-                                                   "pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
-    expected_select = DagNode(1,
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 5),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A']),
+                                   OptionalCodeInfo(CodeReference(5, 5, 5, 62),
+                                                    "pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
+    expected_estimator = DagNode(1,
                               BasicCodeLocation("<string-source>", 6),
                               OperatorContext(OperatorType.TRANSFORMER,
                                               FunctionInfo('example_pipelines.healthcare.healthcare_utils',
@@ -51,10 +51,10 @@ def test_my_word_to_vec_transformer():
                               DagNodeDetails('Word2Vec', ['array']),
                               OptionalCodeInfo(CodeReference(6, 14, 6, 62),
                                                'MyW2VTransformer(min_count=2, size=2, workers=1)'))
-    expected_dag.add_edge(expected_missing_op, expected_select)
+    expected_dag.add_edge(expected_data_source, expected_estimator)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
-    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_estimator]
     lineage_output = inspection_results_data_source[RowLineage(3)]
     expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0]), {LineageId(0, 0)}],
                                      [numpy.array([0.0, 0.0, 0.0]), {LineageId(0, 1)}],

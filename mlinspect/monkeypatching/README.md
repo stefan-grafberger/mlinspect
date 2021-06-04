@@ -50,6 +50,7 @@ compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expe
 | ------------- |:-------------:|
 | `('pandas.io.parsers', 'read_csv')`      | Data Source | 
 | `('pandas.core.frame', 'DataFrame')`      | Data Source      | 
+| `('pandas.core.series', 'Series')`      | Data Source      | 
 | `('pandas.core.frame', '__getitem__')`, arg type: strings | Projection|
 | `('pandas.core.frame', '__getitem__')`, arg type: series | Selection |
 | `('pandas.core.frame', 'dropna')` | Selection      |

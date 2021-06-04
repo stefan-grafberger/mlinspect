@@ -17,7 +17,7 @@ from mlinspect.inspections._lineage import RowLineage, LineageId
 
 def test_read_csv():
     """
-    Tests whether the monkey patching of ('pandas.core.frame', '__getitem__') works
+    Tests whether the monkey patching of ('pandas.io.parsers', 'read_csv') works
     """
     test_code = cleandoc("""
         import os
@@ -63,7 +63,7 @@ def test_read_csv():
 
 def test_frame__init__():
     """
-    Tests whether the monkey patching of ('pandas.core.frame', '__getitem__') works
+    Tests whether the monkey patching of ('pandas.core.frame', 'DataFrame') works
     """
     test_code = cleandoc("""
         import pandas as pd
@@ -107,19 +107,19 @@ def test_frame_dropna():
                                                         inspections=[RowLineage(2)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0,
-                                  BasicCodeLocation("<string-source>", 3),
-                                  OperatorContext(OperatorType.DATA_SOURCE,
-                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
-                                  DagNodeDetails(None, ['A']),
-                                  OptionalCodeInfo(CodeReference(3, 5, 3, 52),
-                                                   "pd.DataFrame([0, 2, 4, 5, None], columns=['A'])"))
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 3),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A']),
+                                   OptionalCodeInfo(CodeReference(3, 5, 3, 52),
+                                                    "pd.DataFrame([0, 2, 4, 5, None], columns=['A'])"))
     expected_select = DagNode(1,
                               BasicCodeLocation("<string-source>", 5),
                               OperatorContext(OperatorType.SELECTION, FunctionInfo('pandas.core.frame', 'dropna')),
                               DagNodeDetails('dropna', ['A']),
                               OptionalCodeInfo(CodeReference(5, 5, 5, 16), 'df.dropna()'))
-    expected_dag.add_edge(expected_missing_op, expected_select)
+    expected_dag.add_edge(expected_data_source, expected_select)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
@@ -132,7 +132,7 @@ def test_frame_dropna():
 
 def test_frame__getitem__series():
     """
-    Tests whether the monkey patching of ('pandas.core.frame', '__getitem__') works for series arguments
+    Tests whether the monkey patching of ('pandas.core.frame', '__getitem__') works for a single string argument
     """
     test_code = cleandoc("""
             import pandas as pd
@@ -146,20 +146,20 @@ def test_frame__getitem__series():
     inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[2])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0,
-                                  BasicCodeLocation("<string-source>", 3),
-                                  OperatorContext(OperatorType.DATA_SOURCE,
-                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
-                                  DagNodeDetails(None, ['A']),
-                                  OptionalCodeInfo(CodeReference(3, 5, 3, 52),
-                                                   "pd.DataFrame([0, 2, 4, 8, None], columns=['A'])"))
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 3),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A']),
+                                   OptionalCodeInfo(CodeReference(3, 5, 3, 52),
+                                                    "pd.DataFrame([0, 2, 4, 8, None], columns=['A'])"))
     expected_project = DagNode(1,
                                BasicCodeLocation("<string-source>", 4),
                                OperatorContext(OperatorType.PROJECTION,
                                                FunctionInfo('pandas.core.frame', '__getitem__')),
                                DagNodeDetails("to ['A']", ['A']),
                                OptionalCodeInfo(CodeReference(4, 4, 4, 11), "df['A']"))
-    expected_dag.add_edge(expected_missing_op, expected_project)
+    expected_dag.add_edge(expected_data_source, expected_project)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_project]
@@ -172,7 +172,7 @@ def test_frame__getitem__series():
 
 def test_frame__getitem__frame():
     """
-    Tests whether the monkey patching of ('pandas.core.frame', '__getitem__') works for df arguments
+    Tests whether the monkey patching of ('pandas.core.frame', '__getitem__') works for multiple string arguments
     """
     test_code = cleandoc("""
                 import pandas as pd
@@ -188,22 +188,22 @@ def test_frame__getitem__frame():
     inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[2])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0,
-                                  BasicCodeLocation("<string-source>", 3),
-                                  OperatorContext(OperatorType.DATA_SOURCE,
-                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
-                                  DagNodeDetails(None, ['A', 'B', 'C']),
-                                  OptionalCodeInfo(CodeReference(3, 5, 4, 28),
-                                                   "pd.DataFrame([[0, None, 2], [1, 2, 3], [4, None, 2], "
-                                                   "[9, 2, 3], [6, 1, 2], [1, 2, 3]], \n"
-                                                   "    columns=['A', 'B', 'C'])"))
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 3),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A', 'B', 'C']),
+                                   OptionalCodeInfo(CodeReference(3, 5, 4, 28),
+                                                    "pd.DataFrame([[0, None, 2], [1, 2, 3], [4, None, 2], "
+                                                    "[9, 2, 3], [6, 1, 2], [1, 2, 3]], \n"
+                                                    "    columns=['A', 'B', 'C'])"))
     expected_project = DagNode(1,
                                BasicCodeLocation("<string-source>", 5),
                                OperatorContext(OperatorType.PROJECTION,
                                                FunctionInfo('pandas.core.frame', '__getitem__')),
                                DagNodeDetails("to ['A', 'C']", ['A', 'C']),
                                OptionalCodeInfo(CodeReference(5, 16, 5, 30), "df[['A', 'C']]"))
-    expected_dag.add_edge(expected_missing_op, expected_project)
+    expected_dag.add_edge(expected_data_source, expected_project)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_project]
@@ -214,9 +214,58 @@ def test_frame__getitem__frame():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
+def test_frame__getitem__selection():
+    """
+    Tests whether the monkey patching of ('pandas.core.frame', '__getitem__') works for filtering
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+
+                df = pd.DataFrame({'A': [0, 2, 4, 8, 5], 'B': [1, 5, 4, 11, None]})
+                df_selection = df[df['A'] > 3]
+                df_expected = pd.DataFrame({'A': [4, 8, 5], 'B': [4, 11, None]})
+                pd.testing.assert_frame_equal(df_selection.reset_index(drop=True), df_expected.reset_index(drop=True))
+                """)
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(2)])
+    inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[3])
+
+    expected_dag = networkx.DiGraph()
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 3),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A', 'B']),
+                                   OptionalCodeInfo(CodeReference(3, 5, 3, 67),
+                                                    "pd.DataFrame({'A': [0, 2, 4, 8, 5], 'B': [1, 5, 4, 11, None]})"))
+    expected_projection = DagNode(1,
+                                  BasicCodeLocation("<string-source>", 4),
+                                  OperatorContext(OperatorType.PROJECTION,
+                                                  FunctionInfo('pandas.core.frame', '__getitem__')),
+                                  DagNodeDetails("to ['A']", ['A']),
+                                  OptionalCodeInfo(CodeReference(4, 18, 4, 25), "df['A']"))
+    expected_dag.add_edge(expected_data_source, expected_projection)
+    expected_selection = DagNode(2,
+                                 BasicCodeLocation("<string-source>", 4),
+                                 OperatorContext(OperatorType.SELECTION,
+                                                 FunctionInfo('pandas.core.frame', '__getitem__')),
+                                 DagNodeDetails("Select by Series: df[df['A'] > 3]", ['A', 'B']),
+                                 OptionalCodeInfo(CodeReference(4, 15, 4, 30), "df[df['A'] > 3]"))
+    expected_dag.add_edge(expected_data_source, expected_selection)
+
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_selection]
+    lineage_output = inspection_results_data_source[RowLineage(2)]
+    expected_lineage_df = DataFrame([[4, 4., {LineageId(0, 2)}],
+                                     [8, 11., {LineageId(0, 3)}]],
+                                    columns=['A', 'B', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
 def test_frame__setitem__():
     """
-    Tests whether the monkey patching of ('pandas.core.frame', '__setitem__') works for df arguments
+    Tests whether the monkey patching of ('pandas.core.frame', '__setitem__') works
     """
     test_code = cleandoc("""
                 import pandas as pd
@@ -274,55 +323,6 @@ def test_frame__setitem__():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
-def test_frame__getitem__selection():
-    """
-    Tests whether the monkey patching of ('pandas.core.frame', '__getitem__') works for df arguments
-    """
-    test_code = cleandoc("""
-                import pandas as pd
-
-                df = pd.DataFrame({'A': [0, 2, 4, 8, 5], 'B': [1, 5, 4, 11, None]})
-                df_selection = df[df['A'] > 3]
-                df_expected = pd.DataFrame({'A': [4, 8, 5], 'B': [4, 11, None]})
-                pd.testing.assert_frame_equal(df_selection.reset_index(drop=True), df_expected.reset_index(drop=True))
-                """)
-    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
-                                                        inspections=[RowLineage(2)])
-    inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[3])
-
-    expected_dag = networkx.DiGraph()
-    expected_data_source = DagNode(0,
-                                   BasicCodeLocation("<string-source>", 3),
-                                   OperatorContext(OperatorType.DATA_SOURCE,
-                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
-                                   DagNodeDetails(None, ['A', 'B']),
-                                   OptionalCodeInfo(CodeReference(3, 5, 3, 67),
-                                                    "pd.DataFrame({'A': [0, 2, 4, 8, 5], 'B': [1, 5, 4, 11, None]})"))
-    expected_projection = DagNode(1,
-                                  BasicCodeLocation("<string-source>", 4),
-                                  OperatorContext(OperatorType.PROJECTION,
-                                                  FunctionInfo('pandas.core.frame', '__getitem__')),
-                                  DagNodeDetails("to ['A']", ['A']),
-                                  OptionalCodeInfo(CodeReference(4, 18, 4, 25), "df['A']"))
-    expected_dag.add_edge(expected_data_source, expected_projection)
-    expected_selection = DagNode(2,
-                                 BasicCodeLocation("<string-source>", 4),
-                                 OperatorContext(OperatorType.SELECTION,
-                                                 FunctionInfo('pandas.core.frame', '__getitem__')),
-                                 DagNodeDetails("Select by Series: df[df['A'] > 3]", ['A', 'B']),
-                                 OptionalCodeInfo(CodeReference(4, 15, 4, 30), "df[df['A'] > 3]"))
-    expected_dag.add_edge(expected_data_source, expected_selection)
-
-    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
-
-    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_selection]
-    lineage_output = inspection_results_data_source[RowLineage(2)]
-    expected_lineage_df = DataFrame([[4, 4., {LineageId(0, 2)}],
-                                     [8, 11., {LineageId(0, 3)}]],
-                                    columns=['A', 'B', 'mlinspect_lineage'])
-    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
-
-
 def test_frame_replace():
     """
     Tests whether the monkey patching of ('pandas.core.frame', 'replace') works
@@ -340,21 +340,21 @@ def test_frame_replace():
     inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[2])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0,
-                                  BasicCodeLocation("<string-source>", 3),
-                                  OperatorContext(OperatorType.DATA_SOURCE,
-                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
-                                  DagNodeDetails(None, ['A']),
-                                  OptionalCodeInfo(CodeReference(3, 5, 3, 72),
-                                                   "pd.DataFrame(['Low', 'Medium', 'Low', 'High', None], "
-                                                   "columns=['A'])"))
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 3),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A']),
+                                   OptionalCodeInfo(CodeReference(3, 5, 3, 72),
+                                                    "pd.DataFrame(['Low', 'Medium', 'Low', 'High', None], "
+                                                    "columns=['A'])"))
     expected_select = DagNode(1,
                               BasicCodeLocation("<string-source>", 4),
                               OperatorContext(OperatorType.PROJECTION_MODIFY,
                                               FunctionInfo('pandas.core.frame', 'replace')),
                               DagNodeDetails("Replace 'Medium' with 'Low'", ['A']),
                               OptionalCodeInfo(CodeReference(4, 13, 4, 40), "df.replace('Medium', 'Low')"))
-    expected_dag.add_edge(expected_missing_op, expected_select)
+    expected_dag.add_edge(expected_data_source, expected_select)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
@@ -414,7 +414,8 @@ def test_frame_merge():
 
 def test_groupby_agg():
     """
-    Tests whether the monkey patching of ('pandas.core.frame', 'merge') works
+    Tests whether the monkey patching of ('pandas.core.frame', 'groupby') and ('pandas.core.groupbygeneric', 'agg')
+    works.
     """
     test_code = cleandoc("""
         import pandas as pd

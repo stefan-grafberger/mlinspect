@@ -19,7 +19,7 @@ from mlinspect.inspections._lineage import RowLineage, LineageId
 
 def test_label_binarize():
     """
-    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
+    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works
     """
     test_code = cleandoc("""
                 import pandas as pd
@@ -36,13 +36,13 @@ def test_label_binarize():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0,
-                                  BasicCodeLocation("<string-source>", 5),
-                                  OperatorContext(OperatorType.DATA_SOURCE,
-                                                  FunctionInfo('pandas.core.series', 'Series')),
-                                  DagNodeDetails(None, ['A']),
-                                  OptionalCodeInfo(CodeReference(5, 12, 5, 59),
-                                                   "pd.Series(['yes', 'no', 'no', 'yes'], name='A')"))
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 5),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.series', 'Series')),
+                                   DagNodeDetails(None, ['A']),
+                                   OptionalCodeInfo(CodeReference(5, 12, 5, 59),
+                                                    "pd.Series(['yes', 'no', 'no', 'yes'], name='A')"))
     expected_select = DagNode(1,
                               BasicCodeLocation("<string-source>", 6),
                               OperatorContext(OperatorType.PROJECTION_MODIFY,
@@ -50,7 +50,7 @@ def test_label_binarize():
                               DagNodeDetails("label_binarize, classes: ['no', 'yes']", ['array']),
                               OptionalCodeInfo(CodeReference(6, 12, 6, 60),
                                                "label_binarize(pd_series, classes=['no', 'yes'])"))
-    expected_dag.add_edge(expected_missing_op, expected_select)
+    expected_dag.add_edge(expected_data_source, expected_select)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
@@ -64,7 +64,7 @@ def test_label_binarize():
 
 def test_train_test_split():
     """
-    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
+    Tests whether the monkey patching of ('sklearn.model_selection._split', 'train_test_split') works
     """
     test_code = cleandoc("""
                 import pandas as pd
@@ -126,7 +126,7 @@ def test_train_test_split():
 
 def test_standard_scaler():
     """
-    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
+    Tests whether the monkey patching of ('sklearn.preprocessing._data', 'StandardScaler') works
     """
     test_code = cleandoc("""
                 import pandas as pd
@@ -144,19 +144,19 @@ def test_standard_scaler():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0,
-                                  BasicCodeLocation("<string-source>", 5),
-                                  OperatorContext(OperatorType.DATA_SOURCE,
-                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
-                                  DagNodeDetails(None, ['A']),
-                                  OptionalCodeInfo(CodeReference(5, 5, 5, 39), "pd.DataFrame({'A': [1, 2, 10, 5]})"))
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 5),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A']),
+                                   OptionalCodeInfo(CodeReference(5, 5, 5, 39), "pd.DataFrame({'A': [1, 2, 10, 5]})"))
     expected_select = DagNode(1,
                               BasicCodeLocation("<string-source>", 6),
                               OperatorContext(OperatorType.TRANSFORMER,
                                               FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
                               DagNodeDetails('Standard Scaler', ['array']),
                               OptionalCodeInfo(CodeReference(6, 18, 6, 34), 'StandardScaler()'))
-    expected_dag.add_edge(expected_missing_op, expected_select)
+    expected_dag.add_edge(expected_data_source, expected_select)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
@@ -170,7 +170,7 @@ def test_standard_scaler():
 
 def test_kbins_discretizer():
     """
-    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
+    Tests whether the monkey patching of ('sklearn.preprocessing._discretization', 'KBinsDiscretizer') works
     """
     test_code = cleandoc("""
                 import pandas as pd
@@ -216,7 +216,7 @@ def test_kbins_discretizer():
 
 def test_simple_imputer():
     """
-    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
+    Tests whether the monkey patching of ('sklearn.impute._base’, 'SimpleImputer') works
     """
     test_code = cleandoc("""
                 import pandas as pd
@@ -234,13 +234,13 @@ def test_simple_imputer():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0,
-                                  BasicCodeLocation("<string-source>", 5),
-                                  OperatorContext(OperatorType.DATA_SOURCE,
-                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
-                                  DagNodeDetails(None, ['A']),
-                                  OptionalCodeInfo(CodeReference(5, 5, 5, 61),
-                                                   "pd.DataFrame({'A': ['cat_a', np.nan, 'cat_a', 'cat_c']})"))
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 5),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A']),
+                                   OptionalCodeInfo(CodeReference(5, 5, 5, 61),
+                                                    "pd.DataFrame({'A': ['cat_a', np.nan, 'cat_a', 'cat_c']})"))
     expected_select = DagNode(1,
                               BasicCodeLocation("<string-source>", 6),
                               OperatorContext(OperatorType.TRANSFORMER,
@@ -248,7 +248,7 @@ def test_simple_imputer():
                               DagNodeDetails('Simple Imputer', ['A']),
                               OptionalCodeInfo(CodeReference(6, 10, 6, 72),
                                                "SimpleImputer(missing_values=np.nan, strategy='most_frequent')"))
-    expected_dag.add_edge(expected_missing_op, expected_select)
+    expected_dag.add_edge(expected_data_source, expected_select)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
@@ -262,7 +262,7 @@ def test_simple_imputer():
 
 def test_one_hot_encoder_not_sparse():
     """
-    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
+    Tests whether the monkey patching of ('sklearn.preprocessing._encoders', 'OneHotEncoder') with dense output
     """
     test_code = cleandoc("""
                 import pandas as pd
@@ -281,20 +281,20 @@ def test_one_hot_encoder_not_sparse():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0,
-                                  BasicCodeLocation("<string-source>", 5),
-                                  OperatorContext(OperatorType.DATA_SOURCE,
-                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
-                                  DagNodeDetails(None, ['A']),
-                                  OptionalCodeInfo(CodeReference(5, 5, 5, 62),
-                                                   "pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 5),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A']),
+                                   OptionalCodeInfo(CodeReference(5, 5, 5, 62),
+                                                    "pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
     expected_select = DagNode(1,
                               BasicCodeLocation("<string-source>", 6),
                               OperatorContext(OperatorType.TRANSFORMER,
                                               FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
                               DagNodeDetails('One-Hot Encoder', ['array']),
                               OptionalCodeInfo(CodeReference(6, 18, 6, 45), 'OneHotEncoder(sparse=False)'))
-    expected_dag.add_edge(expected_missing_op, expected_select)
+    expected_dag.add_edge(expected_data_source, expected_select)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
@@ -308,7 +308,7 @@ def test_one_hot_encoder_not_sparse():
 
 def test_one_hot_encoder_sparse():
     """
-    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
+    Tests whether the monkey patching of ('sklearn.preprocessing._encoders', 'OneHotEncoder') works for sparse output
     """
     test_code = cleandoc("""
                 import pandas as pd
@@ -327,20 +327,20 @@ def test_one_hot_encoder_sparse():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0,
-                                  BasicCodeLocation("<string-source>", 6),
-                                  OperatorContext(OperatorType.DATA_SOURCE,
-                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
-                                  DagNodeDetails(None, ['A']),
-                                  OptionalCodeInfo(CodeReference(6, 5, 6, 62),
-                                                   "pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 6),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A']),
+                                   OptionalCodeInfo(CodeReference(6, 5, 6, 62),
+                                                    "pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
     expected_select = DagNode(1,
                               BasicCodeLocation("<string-source>", 7),
                               OperatorContext(OperatorType.TRANSFORMER,
                                               FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
                               DagNodeDetails('One-Hot Encoder', ['array']),
                               OptionalCodeInfo(CodeReference(7, 18, 7, 33), 'OneHotEncoder()'))
-    expected_dag.add_edge(expected_missing_op, expected_select)
+    expected_dag.add_edge(expected_data_source, expected_select)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
@@ -354,7 +354,8 @@ def test_one_hot_encoder_sparse():
 
 def test_column_transformer_one_transformer():
     """
-    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
+    Tests whether the monkey patching of ('sklearn.compose._column_transformer', 'ColumnTransformer') works with
+    one transformer
     """
     test_code = cleandoc("""
                 import pandas as pd
@@ -376,13 +377,13 @@ def test_column_transformer_one_transformer():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0,
-                                  BasicCodeLocation("<string-source>", 7),
-                                  OperatorContext(OperatorType.DATA_SOURCE,
-                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
-                                  DagNodeDetails(None, columns=['A', 'B']),
-                                  OptionalCodeInfo(CodeReference(7, 5, 7, 59),
-                                                   "pd.DataFrame({'A': [1, 2, 10, 5], 'B': [1, 2, 10, 5]})"))
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 7),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, columns=['A', 'B']),
+                                   OptionalCodeInfo(CodeReference(7, 5, 7, 59),
+                                                    "pd.DataFrame({'A': [1, 2, 10, 5], 'B': [1, 2, 10, 5]})"))
     expected_projection = DagNode(1,
                                   BasicCodeLocation("<string-source>", 8),
                                   OperatorContext(OperatorType.PROJECTION,
@@ -392,7 +393,7 @@ def test_column_transformer_one_transformer():
                                   OptionalCodeInfo(CodeReference(8, 21, 10, 2),
                                                    "ColumnTransformer(transformers=[\n"
                                                    "    ('numeric', StandardScaler(), ['A', 'B'])\n])"))
-    expected_dag.add_edge(expected_missing_op, expected_projection)
+    expected_dag.add_edge(expected_data_source, expected_projection)
     expected_standard_scaler = DagNode(2,
                                        BasicCodeLocation("<string-source>", 9),
                                        OperatorContext(OperatorType.TRANSFORMER,
@@ -439,7 +440,8 @@ def test_column_transformer_one_transformer():
 
 def test_column_transformer_multiple_transformers_all_dense():
     """
-    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
+    Tests whether the monkey patching of ('sklearn.compose._column_transformer', 'ColumnTransformer') works with
+    multiple transformers with dense output
     """
     test_code = cleandoc("""
                 import pandas as pd
@@ -464,14 +466,14 @@ def test_column_transformer_multiple_transformers_all_dense():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0,
-                                  BasicCodeLocation("<string-source>", 7),
-                                  OperatorContext(OperatorType.DATA_SOURCE,
-                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
-                                  DagNodeDetails(None, ['A', 'B']),
-                                  OptionalCodeInfo(CodeReference(7, 5, 7, 82),
-                                                   "pd.DataFrame({'A': [1, 2, 10, 5], "
-                                                   "'B': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 7),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A', 'B']),
+                                   OptionalCodeInfo(CodeReference(7, 5, 7, 82),
+                                                    "pd.DataFrame({'A': [1, 2, 10, 5], "
+                                                    "'B': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
     expected_projection_1 = DagNode(1,
                                     BasicCodeLocation("<string-source>", 8),
                                     OperatorContext(OperatorType.PROJECTION,
@@ -482,7 +484,7 @@ def test_column_transformer_multiple_transformers_all_dense():
                                                      "ColumnTransformer(transformers=[\n"
                                                      "    ('numeric', StandardScaler(), ['A']),\n"
                                                      "    ('categorical', OneHotEncoder(sparse=False), ['B'])\n])"))
-    expected_dag.add_edge(expected_missing_op, expected_projection_1)
+    expected_dag.add_edge(expected_data_source, expected_projection_1)
     expected_projection_2 = DagNode(3,
                                     BasicCodeLocation("<string-source>", 8),
                                     OperatorContext(OperatorType.PROJECTION,
@@ -493,7 +495,7 @@ def test_column_transformer_multiple_transformers_all_dense():
                                                      "ColumnTransformer(transformers=[\n"
                                                      "    ('numeric', StandardScaler(), ['A']),\n"
                                                      "    ('categorical', OneHotEncoder(sparse=False), ['B'])\n])"))
-    expected_dag.add_edge(expected_missing_op, expected_projection_2)
+    expected_dag.add_edge(expected_data_source, expected_projection_2)
     expected_standard_scaler = DagNode(2,
                                        BasicCodeLocation("<string-source>", 9),
                                        OperatorContext(OperatorType.TRANSFORMER,
@@ -565,8 +567,8 @@ def test_column_transformer_multiple_transformers_all_dense():
 
 def test_column_transformer_multiple_transformers_sparse_dense():
     """
-    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
-    """
+    Tests whether the monkey patching of ('sklearn.compose._column_transformer', 'ColumnTransformer') works with
+    multiple transformers with sparse and dense mixed output    """
     test_code = cleandoc("""
                 import pandas as pd
                 from sklearn.preprocessing import label_binarize, StandardScaler, OneHotEncoder
@@ -590,14 +592,14 @@ def test_column_transformer_multiple_transformers_sparse_dense():
                                                         inspections=[RowLineage(3)])
 
     expected_dag = networkx.DiGraph()
-    expected_missing_op = DagNode(0,
-                                  BasicCodeLocation("<string-source>", 7),
-                                  OperatorContext(OperatorType.DATA_SOURCE,
-                                                  FunctionInfo('pandas.core.frame', 'DataFrame')),
-                                  DagNodeDetails(None, ['A', 'B']),
-                                  OptionalCodeInfo(CodeReference(7, 5, 7, 82),
-                                                   "pd.DataFrame({'A': [1, 2, 10, 5], "
-                                                   "'B': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 7),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A', 'B']),
+                                   OptionalCodeInfo(CodeReference(7, 5, 7, 82),
+                                                    "pd.DataFrame({'A': [1, 2, 10, 5], "
+                                                    "'B': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
     expected_projection_1 = DagNode(1,
                                     BasicCodeLocation("<string-source>", 8),
                                     OperatorContext(OperatorType.PROJECTION,
@@ -608,7 +610,7 @@ def test_column_transformer_multiple_transformers_sparse_dense():
                                                      "ColumnTransformer(transformers=[\n"
                                                      "    ('numeric', StandardScaler(), ['A']),\n"
                                                      "    ('categorical', OneHotEncoder(sparse=True), ['B'])\n])"))
-    expected_dag.add_edge(expected_missing_op, expected_projection_1)
+    expected_dag.add_edge(expected_data_source, expected_projection_1)
     expected_projection_2 = DagNode(3,
                                     BasicCodeLocation("<string-source>", 8),
                                     OperatorContext(OperatorType.PROJECTION,
@@ -619,7 +621,7 @@ def test_column_transformer_multiple_transformers_sparse_dense():
                                                      "ColumnTransformer(transformers=[\n"
                                                      "    ('numeric', StandardScaler(), ['A']),\n"
                                                      "    ('categorical', OneHotEncoder(sparse=True), ['B'])\n])"))
-    expected_dag.add_edge(expected_missing_op, expected_projection_2)
+    expected_dag.add_edge(expected_data_source, expected_projection_2)
     expected_standard_scaler = DagNode(2,
                                        BasicCodeLocation("<string-source>", 9),
                                        OperatorContext(OperatorType.TRANSFORMER,
@@ -691,7 +693,7 @@ def test_column_transformer_multiple_transformers_sparse_dense():
 
 def test_decision_tree():
     """
-    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
+    Tests whether the monkey patching of ('sklearn.tree._classes', 'DecisionTreeClassifier') works
     """
     test_code = cleandoc("""
                 import pandas as pd
@@ -806,7 +808,7 @@ def test_decision_tree():
 
 def test_logistic_regression():
     """
-    Tests whether the monkey patching of ('sklearn.preprocessing._label', 'label_binarize') works for df arguments
+    Tests whether the monkey patching of ('sklearn.linear_model._logistic', 'LogisticRegression') works
     """
     test_code = cleandoc("""
                 import pandas as pd
