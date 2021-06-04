@@ -3,7 +3,7 @@
 ## Handling of unknown functions
 * Extending mlinspect to support more and more API functions and libraries will be an ongoing effort. External contributions are very welcome! 
 * However, mlinspect doesn't just crash when it encounters unknown functions.
-* mlinspect just ignores functions it doesn't recognize. If a function it does recognize encounters the input from a relevant unknown function, it will create a `MISSING_OP` node for single or multiple unknown function calls. The inspections also get to see this unknown input, from their perspective it's just a new data source.
+* mlinspect just ignores functions it doesn't recognize. If a function it does recognize encounters the input from a relevant unknown function, it will create a `MISSING_OP` node for a single or multiple unknown function calls. The inspections also get to see this unknown input, from their perspective it's just a new data source.
 * Example:
 ```python
 import networkx
