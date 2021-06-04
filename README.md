@@ -32,7 +32,7 @@ Prerequisite: Python 3.9
 
     `python setup.py test` <br>
     
-## How it works
+## How to use mlinspect
 mlinspect makes it easy to analyze your pipeline and automatically check for common issues.
 ```python
 from mlinspect import PipelineInspector
