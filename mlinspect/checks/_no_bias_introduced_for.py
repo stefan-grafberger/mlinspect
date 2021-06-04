@@ -115,8 +115,8 @@ class NoBiasIntroducedFor(Check):
 
         joined_df = before_df.merge(after_df, on="sensitive_column_value", how="outer")
         joined_df = joined_df.sort_values(by=['sensitive_column_value']).reset_index(drop=True)
-        joined_df["count_before"] = joined_df["count_before"].fillna(0)
-        joined_df["count_after"] = joined_df["count_after"].fillna(0)
+        joined_df["count_before"] = joined_df["count_before"].fillna(0, downcast='infer')
+        joined_df["count_after"] = joined_df["count_after"].fillna(0, downcast='infer')
 
         # TODO: What information is useful/what is confusing?
         # joined_df["absolute_change"] = joined_df["count_after"] - joined_df["count_before"]
