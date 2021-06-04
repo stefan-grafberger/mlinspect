@@ -2,9 +2,11 @@
 Functions to create the iterators for the inspections
 """
 import itertools
+from typing import List
 
 import pandas
 
+from mlinspect.backends._backend import AnnotatedDfObject
 from mlinspect.backends._backend_utils import get_df_row_iterator, get_iterator_for_type, get_annotation_rows
 from mlinspect.inspections._inspection_input import InspectionInputDataSource, InspectionInputUnaryOperator, \
     InspectionInputNAryOperator, InspectionInputSinkOperator, InspectionRowDataSource, InspectionRowUnaryOperator, \
@@ -17,7 +19,7 @@ def iter_input_data_source(inspection_count, output, operator_context):
     """
     if inspection_count == 0:
         return []
-    output_columns, output_rows = get_df_row_iterator(output)
+    output_columns, output_rows = get_iterator_for_type(output)
     duplicated_output_iterators = itertools.tee(output_rows, inspection_count)
     inspection_iterators = []
     for inspection_index in range(inspection_count):
@@ -161,7 +163,7 @@ def iter_input_annotation_output_join(inspection_count, x_data, x_annotations, y
     return inspection_iterators
 
 
-def iter_input_annotation_output_nary_op(inspection_count, transformer_data_with_annotations, output_data,
+def iter_input_annotation_output_nary_op(inspection_count, annotated_inputs: List[AnnotatedDfObject], output_data,
                                          operator_context):
     """
     Create an efficient iterator for the inspection input for operators with multiple parents that do
@@ -173,8 +175,8 @@ def iter_input_annotation_output_nary_op(inspection_count, transformer_data_with
 
     input_iterators = []
     inputs_columns = []
-    for input_data, _ in transformer_data_with_annotations:
-        column_info, row_iterator = get_iterator_for_type(input_data, True)
+    for annotated_input in annotated_inputs:
+        column_info, row_iterator = get_iterator_for_type(annotated_input.result_data, True)
         inputs_columns.append(column_info)
         input_iterators.append(row_iterator)
     input_rows = map(list, zip(*input_iterators))
@@ -186,8 +188,8 @@ def iter_input_annotation_output_nary_op(inspection_count, transformer_data_with
     inspection_iterators = []
     for inspection_index in range(inspection_count):
         annotation_iterators = []
-        for _, annotations in transformer_data_with_annotations:
-            annotation_iterators.append(get_annotation_rows(annotations, inspection_index))
+        for annotated_input in annotated_inputs:
+            annotation_iterators.append(get_annotation_rows(annotated_input.result_annotation, inspection_index))
         annotation_rows = map(list, zip(*annotation_iterators))
         input_iterator = duplicated_input_iterators[inspection_index]
         output_iterator = duplicated_output_iterators[inspection_index]
@@ -200,11 +202,12 @@ def iter_input_annotation_output_nary_op(inspection_count, transformer_data_with
     return inspection_iterators
 
 
-def iter_input_annotation_output_sink_op(inspection_count, data, target, operator_context):
+def iter_input_annotation_output_sink_op(inspection_count, data, data_annotation, target, target_annotation,
+                                         operator_context):
     """
     Create an efficient iterator for the inspection input when there is no output, e.g., estimators.
     """
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals, too-many-arguments
     if inspection_count == 0:
         return []
 
@@ -217,8 +220,8 @@ def iter_input_annotation_output_sink_op(inspection_count, data, target, operato
     inspection_iterators = []
     for inspection_index in range(inspection_count):
         input_iterator = duplicated_input_iterators[inspection_index]
-        annotation_iterators = [get_annotation_rows(data.annotations, inspection_index),
-                                get_annotation_rows(target.annotations, inspection_index)]
+        annotation_iterators = [get_annotation_rows(data_annotation, inspection_index),
+                                get_annotation_rows(target_annotation, inspection_index)]
         annotation_rows = map(tuple, zip(*annotation_iterators))
         row_iterator = map(lambda input_tuple: InspectionRowSinkOperator(*input_tuple),
                            zip(input_iterator, annotation_rows))

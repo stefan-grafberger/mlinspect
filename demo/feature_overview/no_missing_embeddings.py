@@ -3,7 +3,7 @@ The NoMissingEmbeddings Check
 """
 import collections
 import dataclasses
-from typing import Iterable, OrderedDict
+from typing import Iterable, Dict
 
 from demo.feature_overview.missing_embeddings import MissingEmbeddings, MissingEmbeddingsInfo
 from mlinspect import DagNode
@@ -19,7 +19,7 @@ class NoMissingEmbeddingsResult(CheckResult):
     """
     Does the pipeline use illegal features?
     """
-    dag_node_to_missing_embeddings: OrderedDict[DagNode, MissingEmbeddingsInfo]
+    dag_node_to_missing_embeddings: Dict[DagNode, MissingEmbeddingsInfo]
 
 
 class NoMissingEmbeddings(Check):
@@ -43,14 +43,12 @@ class NoMissingEmbeddings(Check):
 
     def evaluate(self, inspection_result: InspectionResult) -> CheckResult:
         """Evaluate the check"""
-        dag = inspection_result.dag
-        embedding_inspection_result = inspection_result.inspection_to_annotations[
-            MissingEmbeddings(self.example_threshold)]
-        dag_node_to_missing_embeddings = collections.OrderedDict()
-        for dag_node in dag.nodes:
-            if dag_node in embedding_inspection_result and embedding_inspection_result[dag_node] is not None:
-                missing_embedding_info = embedding_inspection_result[dag_node]
-                if missing_embedding_info.missing_embedding_count > 0:
+        dag_node_to_missing_embeddings = dict()
+        for dag_node, dag_node_inspection_result in inspection_result.dag_node_to_inspection_results.items():
+            if MissingEmbeddings(self.example_threshold) in dag_node_inspection_result:
+                missing_embedding_info = dag_node_inspection_result[MissingEmbeddings(self.example_threshold)]
+                assert missing_embedding_info is None or isinstance(missing_embedding_info, MissingEmbeddingsInfo)
+                if missing_embedding_info is not None and missing_embedding_info.missing_embedding_count > 0:
                     dag_node_to_missing_embeddings[dag_node] = missing_embedding_info
         if dag_node_to_missing_embeddings:
             description = "Missing embeddings were found!"

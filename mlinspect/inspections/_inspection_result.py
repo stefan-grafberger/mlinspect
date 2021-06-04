@@ -2,10 +2,11 @@
 Data class used as result of the PipelineExecutor
 """
 import dataclasses
-from typing import Tuple, OrderedDict
+from typing import Dict
 
 import networkx
 
+from mlinspect.instrumentation._dag_node import DagNode
 from mlinspect.inspections._inspection import Inspection
 
 
@@ -15,4 +16,4 @@ class InspectionResult:
     The class the PipelineExecutor returns
     """
     dag: networkx.DiGraph
-    inspection_to_annotations: OrderedDict[Inspection, OrderedDict[Tuple[int, int], any]]
+    dag_node_to_inspection_results: Dict[DagNode, Dict[Inspection, any]]

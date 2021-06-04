@@ -5,8 +5,7 @@ from typing import Iterable
 
 from mlinspect.inspections._inspection import Inspection
 from mlinspect.inspections._inspection_input import InspectionInputDataSource, \
-    InspectionInputUnaryOperator, InspectionInputNAryOperator
-from mlinspect.instrumentation._dag_node import OperatorType
+    InspectionInputUnaryOperator, InspectionInputNAryOperator, OperatorType, FunctionInfo
 
 
 class HistogramForColumns(Inspection):
@@ -18,6 +17,10 @@ class HistogramForColumns(Inspection):
         self._histogram_op_output = None
         self._operator_type = None
         self.sensitive_columns = sensitive_columns
+
+    @property
+    def inspection_id(self):
+        return tuple(self.sensitive_columns)
 
     def visit_operator(self, inspection_input) -> Iterable[any]:
         """
@@ -40,13 +43,13 @@ class HistogramForColumns(Inspection):
                 sensitive_columns_present.append(column_present)
                 column_index = inspection_input.input_columns.get_index_of_column(column)
                 sensitive_columns_index.append(column_index)
-            if inspection_input.operator_context.function_info == ('sklearn.impute._base', 'fit_transform'):
+            if inspection_input.operator_context.function_info == FunctionInfo('sklearn.impute._base', 'SimpleImputer'):
                 for row in inspection_input.row_iterator:
                     current_count += 1
                     column_values = []
                     for check_index, _ in enumerate(self.sensitive_columns):
                         if sensitive_columns_present[check_index]:
-                            column_value = row.output[sensitive_columns_index[check_index]][0]
+                            column_value = row.output[0][sensitive_columns_index[check_index]]
                         else:
                             column_value = row.annotation[check_index]
                         column_values.append(column_value)

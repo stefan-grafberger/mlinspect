@@ -3,10 +3,10 @@ Tests whether the adult_easy test pipeline works
 """
 import ast
 
-from test.testing_helper_utils import run_and_assert_all_op_outputs_inspected
 import nbformat
 from nbconvert import PythonExporter
 
+from mlinspect.testing._testing_helper_utils import run_and_assert_all_op_outputs_inspected
 from example_pipelines import ADULT_SIMPLE_PY, ADULT_SIMPLE_IPYNB, ADULT_SIMPLE_PNG
 
 
@@ -37,5 +37,5 @@ def test_instrumented_py_pipeline_runs():
     """
     Tests whether the pipeline works with instrumentation
     """
-
-    run_and_assert_all_op_outputs_inspected(ADULT_SIMPLE_PY, ["race"], ADULT_SIMPLE_PNG)
+    dag = run_and_assert_all_op_outputs_inspected(ADULT_SIMPLE_PY, ["race"], ADULT_SIMPLE_PNG)
+    assert len(dag) == 12

@@ -4,6 +4,7 @@ The MissingEmbedding Inspection
 import dataclasses
 from typing import Iterable, List
 
+from mlinspect import FunctionInfo
 from mlinspect.inspections import Inspection, InspectionInputUnaryOperator
 
 
@@ -34,7 +35,7 @@ class MissingEmbeddings(Inspection):
         # pylint: disable=too-many-branches, too-many-statements
         if isinstance(inspection_input, InspectionInputUnaryOperator) and \
                 inspection_input.operator_context.function_info == \
-                ('example_pipelines.healthcare.healthcare_utils', 'fit_transform'):
+                FunctionInfo('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer'):
             # TODO: Are there existing word embedding transformers for sklearn we can use this for?
             self._is_embedding_operator = True
             for row in inspection_input.row_iterator:

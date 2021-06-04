@@ -1,99 +1,227 @@
 """
 Tests whether the PipelineExecutor works
 """
+import ast
 from inspect import cleandoc
 
+import astunparse
 import networkx
 from testfixtures import compare
 
 from example_pipelines import ADULT_SIMPLE_PY, ADULT_SIMPLE_IPYNB
+from mlinspect import OperatorType, OperatorContext, FunctionInfo
 from mlinspect.backends._pandas_backend import PandasBackend
+from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.instrumentation import _pipeline_executor
-from mlinspect.instrumentation._dag_node import CodeReference
-from ..testing_helper_utils import get_pandas_read_csv_and_dropna_code, get_expected_dag_adult_easy_py, \
-    get_expected_dag_adult_easy_ipynb
+from mlinspect.instrumentation._dag_node import CodeReference, DagNode, BasicCodeLocation, DagNodeDetails, \
+    OptionalCodeInfo
+from mlinspect.instrumentation._pipeline_executor import singleton
+from mlinspect.testing._testing_helper_utils import get_expected_dag_adult_easy, \
+    get_test_code_with_function_def_and_for_loop
 
 
 def test_pipeline_executor_py_file(mocker):
     """
     Tests whether the PipelineExecutor works for .py files
     """
-    _pipeline_executor.singleton = _pipeline_executor.PipelineExecutor()
+    before_call_pandas_spy = mocker.spy(PandasBackend, 'before_call')
+    after_call_pandas_spy = mocker.spy(PandasBackend, 'after_call')
+    before_call_sklearn_spy = mocker.spy(SklearnBackend, 'before_call')
+    after_call_sklearn_spy = mocker.spy(SklearnBackend, 'after_call')
 
-    before_call_used_value_spy = mocker.spy(_pipeline_executor, 'before_call_used_value')
-    before_call_used_args_spy = mocker.spy(_pipeline_executor, 'before_call_used_args')
-    before_call_used_kwargs_spy = mocker.spy(_pipeline_executor, 'before_call_used_kwargs')
-    after_call_used_spy = mocker.spy(_pipeline_executor, 'after_call_used')
+    extracted_dag = _pipeline_executor.singleton.run(python_path=ADULT_SIMPLE_PY).dag
+    expected_dag = get_expected_dag_adult_easy(ADULT_SIMPLE_PY)
+    compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
 
-    extracted_dag = _pipeline_executor.singleton.run(None, ADULT_SIMPLE_PY, None, [], []).dag
-    expected_dag = get_expected_dag_adult_easy_py()
-    assert networkx.to_dict_of_dicts(extracted_dag) == networkx.to_dict_of_dicts(expected_dag)
+    assert before_call_pandas_spy.call_count == 5
+    assert after_call_pandas_spy.call_count == 5
+    assert before_call_sklearn_spy.call_count == 7
+    assert after_call_sklearn_spy.call_count == 7
 
-    assert before_call_used_value_spy.call_count == 11
-    assert before_call_used_args_spy.call_count == 15
-    assert before_call_used_kwargs_spy.call_count == 14
-    assert after_call_used_spy.call_count == 15
+
+def test_pipeline_executor_py_file_without_code_reference_tracking(mocker):
+    """
+    Tests whether the PipelineExecutor works for .py files
+    """
+    before_call_pandas_spy = mocker.spy(PandasBackend, 'before_call')
+    after_call_pandas_spy = mocker.spy(PandasBackend, 'after_call')
+    before_call_sklearn_spy = mocker.spy(SklearnBackend, 'before_call')
+    after_call_sklearn_spy = mocker.spy(SklearnBackend, 'after_call')
+
+    extracted_dag = _pipeline_executor.singleton.run(python_path=ADULT_SIMPLE_PY, track_code_references=False).dag
+    expected_dag = get_expected_dag_adult_easy(ADULT_SIMPLE_PY, with_code_references=False)
+    compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
+
+    assert before_call_pandas_spy.call_count == 5
+    assert after_call_pandas_spy.call_count == 5
+    assert before_call_sklearn_spy.call_count == 7
+    assert after_call_sklearn_spy.call_count == 7
 
 
 def test_pipeline_executor_nb_file(mocker):
     """
     Tests whether the PipelineExecutor works for .ipynb files
     """
-    _pipeline_executor.singleton = _pipeline_executor.PipelineExecutor()
+    before_call_pandas_spy = mocker.spy(PandasBackend, 'before_call')
+    after_call_pandas_spy = mocker.spy(PandasBackend, 'after_call')
+    before_call_sklearn_spy = mocker.spy(SklearnBackend, 'before_call')
+    after_call_sklearn_spy = mocker.spy(SklearnBackend, 'after_call')
 
-    before_call_used_value_spy = mocker.spy(_pipeline_executor, 'before_call_used_value')
-    before_call_used_args_spy = mocker.spy(_pipeline_executor, 'before_call_used_args')
-    before_call_used_kwargs_spy = mocker.spy(_pipeline_executor, 'before_call_used_kwargs')
-    after_call_used_spy = mocker.spy(_pipeline_executor, 'after_call_used')
-
-    extracted_dag = _pipeline_executor.singleton.run(ADULT_SIMPLE_IPYNB, None, None, [], []).dag
-    expected_dag = get_expected_dag_adult_easy_ipynb()
+    extracted_dag = _pipeline_executor.singleton.run(notebook_path=ADULT_SIMPLE_IPYNB).dag
+    expected_dag = get_expected_dag_adult_easy(ADULT_SIMPLE_IPYNB, 6)
     compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
 
-    assert before_call_used_value_spy.call_count == 11
-    assert before_call_used_args_spy.call_count == 15
-    assert before_call_used_kwargs_spy.call_count == 14
-    assert after_call_used_spy.call_count == 15
+    assert before_call_pandas_spy.call_count == 5
+    assert after_call_pandas_spy.call_count == 5
+    assert before_call_sklearn_spy.call_count == 7
+    assert after_call_sklearn_spy.call_count == 7
 
 
-def test_pipeline_executor_function_call_info_extraction():
+def test_func_defs_and_loops():
     """
-    Tests whether the capturing of module information works
+    Tests whether the monkey patching of pandas function works
     """
-    test_code = get_pandas_read_csv_and_dropna_code()
+    test_code = get_test_code_with_function_def_and_for_loop()
 
-    _pipeline_executor.singleton = _pipeline_executor.PipelineExecutor()
-    _pipeline_executor.singleton.run(None, None, test_code, [], [])
-    expected_module_info = {CodeReference(6, 11, 6, 34): ('pandas.io.parsers', 'read_csv'),
-                            CodeReference(7, 7, 7, 24): ('pandas.core.frame', 'dropna'),
-                            CodeReference(8, 16, 8, 55): ('pandas.core.frame', '__getitem__')}
+    extracted_dag = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True).dag
 
-    pandas_backend = [backend for backend in _pipeline_executor.singleton.backends
-                      if isinstance(backend, PandasBackend)][0]
-    compare(pandas_backend.code_reference_to_module, expected_module_info)
+    expected_dag = networkx.DiGraph()
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 4),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A']),
+                                   OptionalCodeInfo(CodeReference(4, 9, 4, 44), "pd.DataFrame([0, 1], columns=['A'])"))
+    expected_select_1 = DagNode(1,
+                                BasicCodeLocation("<string-source>", 8),
+                                OperatorContext(OperatorType.SELECTION, FunctionInfo('pandas.core.frame', 'dropna')),
+                                DagNodeDetails('dropna', ['A']),
+                                OptionalCodeInfo(CodeReference(8, 9, 8, 20), 'df.dropna()'))
+    expected_dag.add_edge(expected_data_source, expected_select_1)
+    expected_select_2 = DagNode(2,
+                                BasicCodeLocation("<string-source>", 8),
+                                OperatorContext(OperatorType.SELECTION, FunctionInfo('pandas.core.frame', 'dropna')),
+                                DagNodeDetails('dropna', ['A']),
+                                OptionalCodeInfo(CodeReference(8, 9, 8, 20), 'df.dropna()'))
+    expected_dag.add_edge(expected_select_1, expected_select_2)
+    compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
 
 
-def test_pipeline_executor_function_subscript_index_info_extraction():
+def test_func_defs_and_loops_without_code_reference_tracking():
     """
-    Tests whether the capturing of module information works
+    Tests whether the monkey patching of pandas function works
+    """
+    test_code = get_test_code_with_function_def_and_for_loop()
+
+    extracted_dag = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=False).dag
+
+    expected_dag = networkx.DiGraph()
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 4),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A']))
+    expected_select_1 = DagNode(1,
+                                BasicCodeLocation("<string-source>", 8),
+                                OperatorContext(OperatorType.SELECTION, FunctionInfo('pandas.core.frame', 'dropna')),
+                                DagNodeDetails('dropna', ['A']))
+    expected_dag.add_edge(expected_data_source, expected_select_1)
+    expected_select_2 = DagNode(2,
+                                BasicCodeLocation("<string-source>", 8),
+                                OperatorContext(OperatorType.SELECTION, FunctionInfo('pandas.core.frame', 'dropna')),
+                                DagNodeDetails('dropna', ['A']))
+    expected_dag.add_edge(expected_select_1, expected_select_2)
+    compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
+
+
+def test_annotation_storage():
+    """
+    Tests whether the monkey patching of pandas function works
     """
     test_code = cleandoc("""
-            import os
+        import pandas
+        df = pandas.DataFrame([["x", "y"], ["2", "3"]], columns=["a", "b"])
+        assert df._mlinspect_annotation is not None
+        """)
+
+    _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True)
+
+
+def test_black_box_operation():
+    """
+    Tests whether the monkey patching of pandas function works
+    """
+    test_code = cleandoc("""
+        import pandas
+        from mlinspect.testing._testing_helper_utils import black_box_df_op
+        
+        df = black_box_df_op()
+        df = df.dropna()
+        print("df")
+        """)
+
+    extracted_dag = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True).dag
+
+    expected_dag = networkx.DiGraph()
+    expected_missing_op = DagNode(-1,
+                                  BasicCodeLocation("<string-source>", 5),
+                                  OperatorContext(OperatorType.MISSING_OP, None),
+                                  DagNodeDetails('Warning! Operator <string-source>:5 (df.dropna()) encountered a '
+                                                 'DataFrame resulting from an operation without mlinspect support!',
+                                                 ['A']),
+                                  OptionalCodeInfo(CodeReference(5, 5, 5, 16), 'df.dropna()'))
+    expected_select = DagNode(0,
+                              BasicCodeLocation("<string-source>", 5),
+                              OperatorContext(OperatorType.SELECTION, FunctionInfo('pandas.core.frame', 'dropna')),
+                              DagNodeDetails('dropna', ['A']),
+                              OptionalCodeInfo(CodeReference(5, 5, 5, 16), 'df.dropna()'))
+    expected_dag.add_edge(expected_missing_op, expected_select)
+    compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expected_dag))
+
+
+def test_instrument_pipeline_with_code_reference_tracking():
+    """
+    Tests whether the instrumentation modifies user code as expected with code reference tracking
+    """
+    test_code = get_test_code_with_function_def_and_for_loop()
+    parsed_ast = ast.parse(test_code)
+    parsed_modified_ast = singleton.instrument_pipeline(parsed_ast, True)
+    instrumented_code = astunparse.unparse(parsed_modified_ast)
+    expected_code = cleandoc("""
+            from mlinspect.instrumentation._pipeline_executor import set_code_reference_call, set_code_reference_subscript, monkey_patch, undo_monkey_patch
+            monkey_patch()
             import pandas as pd
-            from mlinspect.utils import get_project_root
-
-            train_file = os.path.join(str(get_project_root()), "example_pipelines", "adult_complex", "adult_train.csv")
-            raw_data = pd.read_csv(train_file, na_values='?', index_col=0)
-            data = raw_data.dropna()
-            data['income-per-year']
+            
+            def black_box_df_op():
+                df = pd.DataFrame([0, 1], **set_code_reference_call(4, 9, 4, 44, columns=['A']))
+                return df
+            df = black_box_df_op(**set_code_reference_call(6, 5, 6, 22))
+            for _ in range(2, **set_code_reference_call(7, 9, 7, 17)):
+                df = df.dropna(**set_code_reference_call(8, 9, 8, 20))
+            undo_monkey_patch()
             """)
+    compare(cleandoc(instrumented_code), expected_code)
 
-    _pipeline_executor.singleton = _pipeline_executor.PipelineExecutor()
-    _pipeline_executor.singleton.run(None, None, test_code, [], [])
-    expected_module_info = {CodeReference(6, 11, 6, 62): ('pandas.io.parsers', 'read_csv'),
-                            CodeReference(7, 7, 7, 24): ('pandas.core.frame', 'dropna'),
-                            CodeReference(8, 0, 8, 23): ('pandas.core.frame', '__getitem__')}
 
-    pandas_backend = [backend for backend in _pipeline_executor.singleton.backends
-                      if isinstance(backend, PandasBackend)][0]
-    compare(pandas_backend.code_reference_to_module, expected_module_info)
+def test_instrument_pipeline_without_code_reference_tracking():
+    """
+    Tests whether the instrumentation modifies user code as expected without code reference tracking
+    """
+    test_code = get_test_code_with_function_def_and_for_loop()
+    parsed_ast = ast.parse(test_code)
+    parsed_modified_ast = singleton.instrument_pipeline(parsed_ast, False)
+    instrumented_code = astunparse.unparse(parsed_modified_ast)
+    expected_code = cleandoc("""
+            from mlinspect.instrumentation._pipeline_executor import set_code_reference_call, set_code_reference_subscript, monkey_patch, undo_monkey_patch
+            monkey_patch()
+            import pandas as pd
+
+            def black_box_df_op():
+                df = pd.DataFrame([0, 1], columns=['A'])
+                return df
+            df = black_box_df_op()
+            for _ in range(2):
+                df = df.dropna()
+            undo_monkey_patch()
+            """)
+    compare(cleandoc(instrumented_code), expected_code)

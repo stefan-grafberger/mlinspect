@@ -2,9 +2,8 @@
 Data classes used as input for the inspections
 """
 import dataclasses
+from enum import Enum
 from typing import Tuple, List, Iterable
-
-from ..instrumentation._dag_node import OperatorType
 
 
 @dataclasses.dataclass(frozen=True)
@@ -28,12 +27,41 @@ class ColumnInfo:
 
 
 @dataclasses.dataclass(frozen=True)
+class FunctionInfo:
+    """
+    Contains the function name and its path
+    """
+    module: str
+    function_name: str
+
+
+class OperatorType(Enum):
+    """
+    The different operator types in our DAG
+    """
+    DATA_SOURCE = "Data Source"
+    MISSING_OP = "Encountered unsupported operation! Fallback: Data Source"
+    SELECTION = "Selection"
+    PROJECTION = "Projection"
+    PROJECTION_MODIFY = "Projection (Modify)"
+    TRANSFORMER = "Transformer"
+    CONCATENATION = "Concatenation"
+    ESTIMATOR = "Estimator"
+    FIT = "Fit Transformers and Estimators"
+    TRAIN_DATA = "Train Data"
+    TRAIN_LABELS = "Train Labels"
+    JOIN = "Join"
+    GROUP_BY_AGG = "Groupby and Aggregate"
+    TRAIN_TEST_SPLIT = "Train Test Split"
+
+
+@dataclasses.dataclass(frozen=True)
 class OperatorContext:
     """
     Additional context for the inspection. Contains, most importantly, the operator type.
     """
     operator: OperatorType
-    function_info: Tuple[str, str]
+    function_info: FunctionInfo or None
 
 
 @dataclasses.dataclass(frozen=True)

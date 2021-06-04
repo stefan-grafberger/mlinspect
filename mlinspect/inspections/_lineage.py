@@ -8,8 +8,7 @@ from pandas import DataFrame, Series
 
 from mlinspect.inspections._inspection import Inspection
 from mlinspect.inspections._inspection_input import InspectionInputUnaryOperator, \
-    InspectionInputSinkOperator, InspectionInputDataSource, InspectionInputNAryOperator
-from mlinspect.instrumentation._dag_node import OperatorType
+    InspectionInputSinkOperator, InspectionInputDataSource, InspectionInputNAryOperator, OperatorType
 
 
 @dataclasses.dataclass(frozen=True)
@@ -95,7 +94,8 @@ class RowLineage(Inspection):
             for row in inspection_input.row_iterator:
                 current_count += 1
                 annotation = set.union(*row.annotation)
-                operator_lineage.append(annotation)
+                if current_count < self.row_count:
+                    operator_lineage.append(annotation)
                 yield annotation
         else:
             assert False

@@ -1,7 +1,7 @@
 """
 User-facing API for inspecting the pipeline
 """
-from typing import Iterable, Dict
+from typing import Iterable, Dict, List
 
 from pandas import DataFrame
 
@@ -20,6 +20,8 @@ class PipelineInspectorBuilder:
                  python_path: str or None = None,
                  python_code: str or None = None
                  ) -> None:
+        self.track_code_references = True
+        self.monkey_patching_modules = []
         self.notebook_path = notebook_path
         self.python_path = python_path
         self.python_code = python_code
@@ -54,11 +56,37 @@ class PipelineInspectorBuilder:
         self.checks.extend(checks)
         return self
 
+    def set_code_reference_tracking(self, track_code_references: bool):
+        """
+        Set whether to track code references. The default is tracking them.
+        """
+        self.track_code_references = track_code_references
+        return self
+
+    def add_custom_monkey_patching_modules(self, module_list: List):
+        """
+        Add additional monkey patching modules.
+        """
+        self.monkey_patching_modules.extend(module_list)
+        return self
+
+    def add_custom_monkey_patching_module(self, module: any):
+        """
+        Add an additional monkey patching module.
+        """
+        self.monkey_patching_modules.append(module)
+        return self
+
     def execute(self) -> InspectorResult:
         """
         Instrument and execute the pipeline
         """
-        return singleton.run(self.notebook_path, self.python_path, self.python_code, self.inspections, self.checks)
+        return singleton.run(notebook_path=self.notebook_path,
+                             python_path=self.python_path,
+                             python_code=self.python_code,
+                             inspections=self.inspections,
+                             checks=self.checks,
+                             custom_monkey_patching=self.monkey_patching_modules)
 
 
 class PipelineInspector:

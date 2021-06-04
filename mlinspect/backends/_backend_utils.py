@@ -7,10 +7,9 @@ import numpy
 from pandas import DataFrame, Series
 from scipy.sparse import csr_matrix
 
-from ._pandas_backend_frame_wrapper import MlinspectDataFrame, MlinspectSeries
-from ._sklearn_backend_csr_matrx_wrapper import MlinspectCsrMatrix
-from ._sklearn_backend_ndarray_wrapper import MlinspectNdarray
+from ._backend import AnnotatedDfObject
 from ..inspections._inspection_input import ColumnInfo
+from ..monkeypatching._patch_numpy import MlinspectNdarray
 
 
 def get_annotation_rows(input_annotations, inspection_index):
@@ -63,27 +62,18 @@ def get_iterator_for_type(data, np_nditer_with_refs=False, columns=None):
     elif isinstance(data, list):
         iterator = get_list_row_iterator(data, columns)
     else:
-        assert False
+        raise NotImplementedError("TODO: Support type {}!".format(type(data)))
     return iterator
 
 
-def create_wrapper_with_annotations(annotations_df, return_value, pandas_backend=None):
+def create_wrapper_with_annotations(annotations_df, return_value) -> AnnotatedDfObject:
     """
     Create a wrapper based on the data type of the return value and store the annotations in it.
     """
     if isinstance(return_value, numpy.ndarray):
         return_value = MlinspectNdarray(return_value)
-        return_value.annotations = annotations_df
-        new_return_value = return_value
-    elif isinstance(return_value, (DataFrame, MlinspectDataFrame)):
-        if not pandas_backend:
-            pandas_backend = return_value.backend
-        return_value = MlinspectDataFrame(return_value)
-        return_value.annotations = annotations_df
-
-        assert pandas_backend  # This is needed to deal with ops like adding new columns
-        return_value.backend = pandas_backend
-
+        new_return_value = AnnotatedDfObject(return_value, annotations_df)
+    elif isinstance(return_value, DataFrame):
         # Remove index columns that may have been created
         if "mlinspect_index" in return_value.columns:
             return_value = return_value.drop("mlinspect_index", axis=1)
@@ -92,17 +82,14 @@ def create_wrapper_with_annotations(annotations_df, return_value, pandas_backend
         assert "mlinspect_index" not in return_value.columns
         assert "mlinspect_index_x" not in return_value.columns
 
-        new_return_value = return_value
-    elif isinstance(return_value, Series):
-        return_value = MlinspectSeries(return_value)
+        new_return_value = AnnotatedDfObject(return_value, annotations_df)
+    elif isinstance(return_value, (Series, csr_matrix)):
         return_value.annotations = annotations_df
-        new_return_value = return_value
-    elif isinstance(return_value, csr_matrix):
-        return_value = MlinspectCsrMatrix(return_value)
-        return_value.annotations = annotations_df
-        new_return_value = return_value
+        new_return_value = AnnotatedDfObject(return_value, annotations_df)
+    elif return_value is None:
+        new_return_value = AnnotatedDfObject(None, annotations_df)
     else:
-        assert False
+        raise NotImplementedError("A type that is still unsupported was found: {}".format(return_value))
     return new_return_value
 
 
@@ -127,6 +114,8 @@ def get_series_row_iterator(series, columns=None):
     """
     if columns:
         column_info = ColumnInfo(columns)
+    elif series.name:
+        column_info = ColumnInfo([series.name])
     else:
         column_info = ColumnInfo(["array"])
     numpy_iterator = series.__iter__()
