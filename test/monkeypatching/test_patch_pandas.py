@@ -348,16 +348,16 @@ def test_frame_replace():
                                    OptionalCodeInfo(CodeReference(3, 5, 3, 72),
                                                     "pd.DataFrame(['Low', 'Medium', 'Low', 'High', None], "
                                                     "columns=['A'])"))
-    expected_select = DagNode(1,
+    expected_modify = DagNode(1,
                               BasicCodeLocation("<string-source>", 4),
                               OperatorContext(OperatorType.PROJECTION_MODIFY,
                                               FunctionInfo('pandas.core.frame', 'replace')),
                               DagNodeDetails("Replace 'Medium' with 'Low'", ['A']),
                               OptionalCodeInfo(CodeReference(4, 13, 4, 40), "df.replace('Medium', 'Low')"))
-    expected_dag.add_edge(expected_data_source, expected_select)
+    expected_dag.add_edge(expected_data_source, expected_modify)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
-    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_modify]
     lineage_output = inspection_results_data_source[RowLineage(2)]
     expected_lineage_df = DataFrame([['Low', {LineageId(0, 0)}],
                                      ['Low', {LineageId(0, 1)}]],

@@ -43,17 +43,17 @@ def test_label_binarize():
                                    DagNodeDetails(None, ['A']),
                                    OptionalCodeInfo(CodeReference(5, 12, 5, 59),
                                                     "pd.Series(['yes', 'no', 'no', 'yes'], name='A')"))
-    expected_select = DagNode(1,
-                              BasicCodeLocation("<string-source>", 6),
-                              OperatorContext(OperatorType.PROJECTION_MODIFY,
-                                              FunctionInfo('sklearn.preprocessing._label', 'label_binarize')),
-                              DagNodeDetails("label_binarize, classes: ['no', 'yes']", ['array']),
-                              OptionalCodeInfo(CodeReference(6, 12, 6, 60),
-                                               "label_binarize(pd_series, classes=['no', 'yes'])"))
-    expected_dag.add_edge(expected_data_source, expected_select)
+    expected_binarize = DagNode(1,
+                                BasicCodeLocation("<string-source>", 6),
+                                OperatorContext(OperatorType.PROJECTION_MODIFY,
+                                                FunctionInfo('sklearn.preprocessing._label', 'label_binarize')),
+                                DagNodeDetails("label_binarize, classes: ['no', 'yes']", ['array']),
+                                OptionalCodeInfo(CodeReference(6, 12, 6, 60),
+                                                 "label_binarize(pd_series, classes=['no', 'yes'])"))
+    expected_dag.add_edge(expected_data_source, expected_binarize)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
-    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_binarize]
     lineage_output = inspection_results_data_source[RowLineage(3)]
     expected_lineage_df = DataFrame([[numpy.array([1]), {LineageId(0, 0)}],
                                      [numpy.array([0]), {LineageId(0, 1)}],
@@ -150,16 +150,16 @@ def test_standard_scaler():
                                                    FunctionInfo('pandas.core.frame', 'DataFrame')),
                                    DagNodeDetails(None, ['A']),
                                    OptionalCodeInfo(CodeReference(5, 5, 5, 39), "pd.DataFrame({'A': [1, 2, 10, 5]})"))
-    expected_select = DagNode(1,
-                              BasicCodeLocation("<string-source>", 6),
-                              OperatorContext(OperatorType.TRANSFORMER,
-                                              FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
-                              DagNodeDetails('Standard Scaler', ['array']),
-                              OptionalCodeInfo(CodeReference(6, 18, 6, 34), 'StandardScaler()'))
-    expected_dag.add_edge(expected_data_source, expected_select)
+    expected_transformer = DagNode(1,
+                                   BasicCodeLocation("<string-source>", 6),
+                                   OperatorContext(OperatorType.TRANSFORMER,
+                                                   FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
+                                   DagNodeDetails('Standard Scaler', ['array']),
+                                   OptionalCodeInfo(CodeReference(6, 18, 6, 34), 'StandardScaler()'))
+    expected_dag.add_edge(expected_data_source, expected_transformer)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
-    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
     lineage_output = inspection_results_data_source[RowLineage(3)]
     expected_lineage_df = DataFrame([[numpy.array([-1.0]), {LineageId(0, 0)}],
                                      [numpy.array([-0.7142857142857143]), {LineageId(0, 1)}],
@@ -194,7 +194,7 @@ def test_kbins_discretizer():
                                                    FunctionInfo('pandas.core.frame', 'DataFrame')),
                                    DagNodeDetails(None, ['A']),
                                    OptionalCodeInfo(CodeReference(5, 5, 5, 39), "pd.DataFrame({'A': [1, 2, 10, 5]})"))
-    expected_discretizer = DagNode(1,
+    expected_transformer = DagNode(1,
                                    BasicCodeLocation("<string-source>", 6),
                                    OperatorContext(OperatorType.TRANSFORMER,
                                                    FunctionInfo('sklearn.preprocessing._discretization',
@@ -202,10 +202,10 @@ def test_kbins_discretizer():
                                    DagNodeDetails('K-Bins Discretizer', ['array']),
                                    OptionalCodeInfo(CodeReference(6, 14, 6, 78),
                                                     "KBinsDiscretizer(n_bins=3, encode='ordinal', strategy='uniform')"))
-    expected_dag.add_edge(expected_data_source, expected_discretizer)
+    expected_dag.add_edge(expected_data_source, expected_transformer)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
-    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_discretizer]
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
     lineage_output = inspection_results_data_source[RowLineage(3)]
     expected_lineage_df = DataFrame([[numpy.array([0.]), {LineageId(0, 0)}],
                                      [numpy.array([0.]), {LineageId(0, 1)}],
@@ -241,17 +241,17 @@ def test_simple_imputer():
                                    DagNodeDetails(None, ['A']),
                                    OptionalCodeInfo(CodeReference(5, 5, 5, 61),
                                                     "pd.DataFrame({'A': ['cat_a', np.nan, 'cat_a', 'cat_c']})"))
-    expected_select = DagNode(1,
-                              BasicCodeLocation("<string-source>", 6),
-                              OperatorContext(OperatorType.TRANSFORMER,
-                                              FunctionInfo('sklearn.impute._base', 'SimpleImputer')),
-                              DagNodeDetails('Simple Imputer', ['A']),
-                              OptionalCodeInfo(CodeReference(6, 10, 6, 72),
-                                               "SimpleImputer(missing_values=np.nan, strategy='most_frequent')"))
-    expected_dag.add_edge(expected_data_source, expected_select)
+    expected_transformer = DagNode(1,
+                                   BasicCodeLocation("<string-source>", 6),
+                                   OperatorContext(OperatorType.TRANSFORMER,
+                                                   FunctionInfo('sklearn.impute._base', 'SimpleImputer')),
+                                   DagNodeDetails('Simple Imputer', ['A']),
+                                   OptionalCodeInfo(CodeReference(6, 10, 6, 72),
+                                                    "SimpleImputer(missing_values=np.nan, strategy='most_frequent')"))
+    expected_dag.add_edge(expected_data_source, expected_transformer)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
-    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
     lineage_output = inspection_results_data_source[RowLineage(3)]
     expected_lineage_df = DataFrame([[numpy.array(['cat_a']), {LineageId(0, 0)}],
                                      [numpy.array(['cat_a']), {LineageId(0, 1)}],
@@ -288,16 +288,16 @@ def test_one_hot_encoder_not_sparse():
                                    DagNodeDetails(None, ['A']),
                                    OptionalCodeInfo(CodeReference(5, 5, 5, 62),
                                                     "pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
-    expected_select = DagNode(1,
-                              BasicCodeLocation("<string-source>", 6),
-                              OperatorContext(OperatorType.TRANSFORMER,
-                                              FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
-                              DagNodeDetails('One-Hot Encoder', ['array']),
-                              OptionalCodeInfo(CodeReference(6, 18, 6, 45), 'OneHotEncoder(sparse=False)'))
-    expected_dag.add_edge(expected_data_source, expected_select)
+    expected_transformer = DagNode(1,
+                                   BasicCodeLocation("<string-source>", 6),
+                                   OperatorContext(OperatorType.TRANSFORMER,
+                                                   FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
+                                   DagNodeDetails('One-Hot Encoder', ['array']),
+                                   OptionalCodeInfo(CodeReference(6, 18, 6, 45), 'OneHotEncoder(sparse=False)'))
+    expected_dag.add_edge(expected_data_source, expected_transformer)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
-    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
     lineage_output = inspection_results_data_source[RowLineage(3)]
     expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), {LineageId(0, 0)}],
                                      [numpy.array([0.0, 1.0, 0.0]), {LineageId(0, 1)}],
@@ -334,16 +334,16 @@ def test_one_hot_encoder_sparse():
                                    DagNodeDetails(None, ['A']),
                                    OptionalCodeInfo(CodeReference(6, 5, 6, 62),
                                                     "pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
-    expected_select = DagNode(1,
-                              BasicCodeLocation("<string-source>", 7),
-                              OperatorContext(OperatorType.TRANSFORMER,
-                                              FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
-                              DagNodeDetails('One-Hot Encoder', ['array']),
-                              OptionalCodeInfo(CodeReference(7, 18, 7, 33), 'OneHotEncoder()'))
-    expected_dag.add_edge(expected_data_source, expected_select)
+    expected_transformer = DagNode(1,
+                                   BasicCodeLocation("<string-source>", 7),
+                                   OperatorContext(OperatorType.TRANSFORMER,
+                                                   FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
+                                   DagNodeDetails('One-Hot Encoder', ['array']),
+                                   OptionalCodeInfo(CodeReference(7, 18, 7, 33), 'OneHotEncoder()'))
+    expected_dag.add_edge(expected_data_source, expected_transformer)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
-    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
     lineage_output = inspection_results_data_source[RowLineage(3)]
     expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), {LineageId(0, 0)}],
                                      [numpy.array([0.0, 1.0, 0.0]), {LineageId(0, 1)}],
@@ -885,15 +885,15 @@ def test_logistic_regression():
                                     DagNodeDetails('Train Labels', ['array']),
                                     OptionalCodeInfo(CodeReference(11, 6, 11, 26), 'LogisticRegression()'))
     expected_dag.add_edge(expected_label_encode, expected_train_labels)
-    expected_decision_tree = DagNode(7,
-                                     BasicCodeLocation("<string-source>", 11),
-                                     OperatorContext(OperatorType.ESTIMATOR,
-                                                     FunctionInfo('sklearn.linear_model._logistic',
-                                                                  'LogisticRegression')),
-                                     DagNodeDetails('Logistic Regression', []),
-                                     OptionalCodeInfo(CodeReference(11, 6, 11, 26), 'LogisticRegression()'))
-    expected_dag.add_edge(expected_train_data, expected_decision_tree)
-    expected_dag.add_edge(expected_train_labels, expected_decision_tree)
+    expected_estimator = DagNode(7,
+                                 BasicCodeLocation("<string-source>", 11),
+                                 OperatorContext(OperatorType.ESTIMATOR,
+                                                 FunctionInfo('sklearn.linear_model._logistic',
+                                                              'LogisticRegression')),
+                                 DagNodeDetails('Logistic Regression', []),
+                                 OptionalCodeInfo(CodeReference(11, 6, 11, 26), 'LogisticRegression()'))
+    expected_dag.add_edge(expected_train_data, expected_estimator)
+    expected_dag.add_edge(expected_train_labels, expected_estimator)
 
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
@@ -913,7 +913,7 @@ def test_logistic_regression():
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
-    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_decision_tree]
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_estimator]
     lineage_output = inspection_results_data_source[RowLineage(3)]
     expected_lineage_df = DataFrame([[{LineageId(0, 0)}],
                                      [{LineageId(0, 1)}],
