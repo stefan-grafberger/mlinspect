@@ -77,4 +77,3 @@ compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expe
 | `('sklearn.linear_model._logistic', 'LogisticRegression')` | Estimator      |
 | `('sklearn.model_selection._split', 'train_test_split')` | Split (Train/Test)      |
 | `('sklearn.preprocessing._label', 'label_binarize')` | Projection (Mod)      |
-| `('sklearn.linear_model._logistic', 'LogisticRegression')` | Estimator      |
