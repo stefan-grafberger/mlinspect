@@ -130,6 +130,52 @@ def test_frame_dropna():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
+def test_frame_sample():
+    """
+    Tests whether the monkey patching of ('pandas.core.frame', 'dropna') works
+    """
+    test_code = cleandoc("""
+        import pandas as pd
+
+        df = pd.DataFrame([0, 2, 4, 5, 10, 15], columns=['A'])
+        assert len(df) == 6
+        df = df.sample(n=3, random_state=1337)
+        assert len(df) == 3
+        
+        expected = pd.DataFrame([5, 4, 2], columns=['A'], index=[3, 2, 1])
+        
+        pd.testing.assert_frame_equal(df, expected)
+        """)
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(6)])
+
+    inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[2])
+
+    expected_dag = networkx.DiGraph()
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 3),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A']),
+                                   OptionalCodeInfo(CodeReference(3, 5, 3, 54),
+                                                    "pd.DataFrame([0, 2, 4, 5, 10, 15], columns=['A'])"))
+    expected_select = DagNode(1,
+                              BasicCodeLocation("<string-source>", 5),
+                              OperatorContext(OperatorType.SELECTION, FunctionInfo('pandas.core.frame', 'sample')),
+                              DagNodeDetails('sample', ['A']),
+                              OptionalCodeInfo(CodeReference(5, 5, 5, 38), 'df.sample(n=3, random_state=1337)'))
+    expected_dag.add_edge(expected_data_source, expected_select)
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
+    lineage_output = inspection_results_data_source[RowLineage(6)]
+    expected_lineage_df = DataFrame([[5, {LineageId(0, 3)}],
+                                     [4, {LineageId(0, 2)}],
+                                     [2, {LineageId(0, 1)}]],
+                                    columns=['A', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
 def test_frame__getitem__series():
     """
     Tests whether the monkey patching of ('pandas.core.frame', '__getitem__') works for a single string argument

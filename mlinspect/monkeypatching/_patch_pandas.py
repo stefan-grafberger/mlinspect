@@ -114,6 +114,39 @@ class DataFramePatching:
 
         return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
 
+    @gorilla.name('sample')
+    @gorilla.settings(allow_hit=True)
+    def patched_sample(self, *args, **kwargs):
+        """ Patch for ('pandas.core.frame', 'sample') """
+        original = gorilla.get_original_attribute(pandas.DataFrame, 'sample')
+
+        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            function_info = FunctionInfo('pandas.core.frame', 'sample')
+
+            input_info = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
+                                        optional_source_code)
+            operator_context = OperatorContext(OperatorType.SELECTION, function_info)
+            input_infos = PandasBackend.before_call(operator_context, [input_info.annotated_dfobject])
+            # No input_infos copy needed because it's only a selection and the rows not being removed don't change
+            result = original(input_infos[0].result_data, *args[1:], **kwargs)
+            if result is None:
+                raise NotImplementedError("TODO: Support inplace sample")
+            backend_result = PandasBackend.after_call(operator_context,
+                                                      input_infos,
+                                                      result)
+            result = backend_result.annotated_dfobject.result_data
+            dag_node = DagNode(op_id,
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails("sample", list(result.columns)),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
+            add_dag_node(dag_node, [input_info.dag_node], backend_result)
+
+            return result
+
+        return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
+
     @gorilla.name('__getitem__')
     @gorilla.settings(allow_hit=True)
     def patched__getitem__(self, *args, **kwargs):
