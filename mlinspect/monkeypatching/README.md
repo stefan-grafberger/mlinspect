@@ -54,6 +54,7 @@ compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expe
 | `('pandas.core.frame', '__getitem__')`, arg type: strings | Projection|
 | `('pandas.core.frame', '__getitem__')`, arg type: series | Selection |
 | `('pandas.core.frame', 'dropna')` | Selection      |
+| `('pandas.core.frame', 'sample')` | Selection      |
 | `('pandas.core.frame', 'replace')` | Projection (Mod)      |
 | `('pandas.core.frame', '__setitem__')` | Projection (Mod)      |
 | `('pandas.core.frame', 'merge')` | Join      |
