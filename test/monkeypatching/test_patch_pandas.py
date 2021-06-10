@@ -162,7 +162,7 @@ def test_frame_sample():
     expected_select = DagNode(1,
                               BasicCodeLocation("<string-source>", 5),
                               OperatorContext(OperatorType.SELECTION, FunctionInfo('pandas.core.frame', 'sample')),
-                              DagNodeDetails('sample', ['A']),
+                              DagNodeDetails('Sample n=3 without replacement', ['A']),
                               OptionalCodeInfo(CodeReference(5, 5, 5, 38), 'df.sample(n=3, random_state=1337)'))
     expected_dag.add_edge(expected_data_source, expected_select)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))

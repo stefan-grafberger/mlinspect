@@ -130,16 +130,27 @@ class DataFramePatching:
             input_infos = PandasBackend.before_call(operator_context, [input_info.annotated_dfobject])
             # No input_infos copy needed because it's only a selection and the rows not being removed don't change
             result = original(input_infos[0].result_data, *args[1:], **kwargs)
-            if result is None:
-                raise NotImplementedError("TODO: Support inplace sample")
             backend_result = PandasBackend.after_call(operator_context,
                                                       input_infos,
                                                       result)
             result = backend_result.annotated_dfobject.result_data
+
+            description_text = "Sample"
+            if 'n' in kwargs:
+                description_text += f" n={kwargs['n']}"
+            elif 'frac' in kwargs:
+                description_text += f" frac={kwargs['frac']}"
+            else:
+                description_text += " n=1"
+            if 'replace' in kwargs and kwargs['replace']:
+                description_text += " with replacement"
+            else:
+                description_text += " without replacement"
+
             dag_node = DagNode(op_id,
                                BasicCodeLocation(caller_filename, lineno),
                                operator_context,
-                               DagNodeDetails("sample", list(result.columns)),
+                               DagNodeDetails(description_text, list(result.columns)),
                                get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
 
