@@ -41,7 +41,7 @@ def iter_input_annotation_output_map(inspection_count, input_data, input_annotat
     if inspection_count == 0:
         return []
 
-    input_columns, input_rows = get_iterator_for_type(input_data, True)
+    input_columns, input_rows = get_iterator_for_type(input_data, True, columns)
     output_columns, output_rows = get_iterator_for_type(output, False, columns)
     duplicated_input_iterators = itertools.tee(input_rows, inspection_count)
     duplicated_output_iterators = itertools.tee(output_rows, inspection_count)
