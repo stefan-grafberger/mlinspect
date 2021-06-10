@@ -1,6 +1,7 @@
 """
 Tests whether the monkey patching works for all patched pandas methods
 """
+import math
 from inspect import cleandoc
 
 import networkx
@@ -408,6 +409,55 @@ def test_frame_merge():
     lineage_output = inspection_results_data_source[RowLineage(2)]
     expected_lineage_df = DataFrame([[0, 1, 1., {LineageId(0, 0), LineageId(1, 0)}],
                                      [2, 2, 5., {LineageId(0, 1), LineageId(1, 1)}]],
+                                    columns=['A', 'B', 'C', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
+def test_frame_merge_sorted():
+    """
+    Tests whether the monkey patching of ('pandas.core.frame', 'merge') works if the sort option is set to True
+    """
+    test_code = cleandoc("""
+        import pandas as pd
+
+        df_a = pd.DataFrame({'A': [0, 2, 4, 8, 5], 'B': [7, 5, 4, 2, 1]})
+        df_b = pd.DataFrame({'B': [1, 4, 3, 2, 5], 'C': [1, 5, 4, 11, None]})
+        df_merged = df_a.merge(df_b, on='B', sort=True)
+        df_expected = pd.DataFrame({'A': [5, 8, 4, 2], 'B': [1, 2, 4, 5], 'C': [1, 11, 5, None]})
+        pd.testing.assert_frame_equal(df_merged, df_expected)
+        """)
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(5)])
+    inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[3])
+
+    expected_dag = networkx.DiGraph()
+    expected_a = DagNode(0,
+                         BasicCodeLocation("<string-source>", 3),
+                         OperatorContext(OperatorType.DATA_SOURCE, FunctionInfo('pandas.core.frame', 'DataFrame')),
+                         DagNodeDetails(None, ['A', 'B']),
+                         OptionalCodeInfo(CodeReference(3, 7, 3, 65),
+                                          "pd.DataFrame({'A': [0, 2, 4, 8, 5], 'B': [7, 5, 4, 2, 1]})"))
+    expected_b = DagNode(1,
+                         BasicCodeLocation("<string-source>", 4),
+                         OperatorContext(OperatorType.DATA_SOURCE, FunctionInfo('pandas.core.frame', 'DataFrame')),
+                         DagNodeDetails(None, ['B', 'C']),
+                         OptionalCodeInfo(CodeReference(4, 7, 4, 69),
+                                          "pd.DataFrame({'B': [1, 4, 3, 2, 5], 'C': [1, 5, 4, 11, None]})"))
+    expected_join = DagNode(2,
+                            BasicCodeLocation("<string-source>", 5),
+                            OperatorContext(OperatorType.JOIN, FunctionInfo('pandas.core.frame', 'merge')),
+                            DagNodeDetails("on 'B'", ['A', 'B', 'C']),
+                            OptionalCodeInfo(CodeReference(5, 12, 5, 47), "df_a.merge(df_b, on='B', sort=True)"))
+    expected_dag.add_edge(expected_a, expected_join)
+    expected_dag.add_edge(expected_b, expected_join)
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_join]
+    lineage_output = inspection_results_data_source[RowLineage(5)]
+    expected_lineage_df = DataFrame([[5, 1, 1.,       {LineageId(0, 4), LineageId(1, 0)}],
+                                     [8, 2, 11.,      {LineageId(0, 3), LineageId(1, 3)}],
+                                     [4, 4, 5.,       {LineageId(0, 2), LineageId(1, 1)}],
+                                     [2, 5, math.nan, {LineageId(0, 1), LineageId(1, 4)}]],
                                     columns=['A', 'B', 'C', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
