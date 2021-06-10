@@ -73,16 +73,22 @@ def iter_input_annotation_output_resampled(inspection_count, input_data, input_a
     joined_df = output.merge(data_before_with_annotations, left_on="mlinspect_index",
                              right_on="mlinspect_index")
 
+    # After these operations, joined_df contains the following columns from left to right:
+    # output columns
+    # mlinspect_index
+    # input_data columns
+    # input_annotations columns
+
     column_index_output_end = len(output.columns)
-    output_df_view = joined_df.iloc[:, 0:column_index_output_end - 1]
-    output_df_view.columns = output.columns[0:-1]
+    output_df_view = joined_df.iloc[:, 0:column_index_output_end - 1]  # -1 excludes the mlinspect_index
+    output_df_view.columns = output.columns[0:-1] # -1 excludes the mlinspect_index
     output_columns, output_rows = get_df_row_iterator(output_df_view)
     duplicated_output_iterators = itertools.tee(output_rows, inspection_count)
 
-    column_index_input_end = column_index_output_end + len(input_data.columns) - 1
+    column_index_input_end = column_index_output_end + len(input_data.columns) - 1  # -1 excludes the mlinspect_index
 
     input_df_view = joined_df.iloc[:, column_index_output_end:column_index_input_end]
-    input_df_view.columns = input_data.columns[0:-1]
+    input_df_view.columns = input_data.columns[0:-1]  # -1 excludes the mlinspect_index
     input_columns, input_rows = get_df_row_iterator(input_df_view)
     duplicated_input_iterators = itertools.tee(input_rows, inspection_count)
 
@@ -118,18 +124,25 @@ def iter_input_annotation_output_join(inspection_count, x_data, x_annotations, y
 
     df_x_output_y = df_x_output_y.drop(['mlinspect_index_y', 'mlinspect_index_x'], axis=1)
 
+    # After these operations, df_x_output_y contains the following columns from left to right:
+    # output columns
+    # x_data columns
+    # x_annotations columns
+    # y_data columns
+    # y_annotations columns
+
     column_index_output_start = 0
-    column_index_output_end = len(output.columns) - 2
+    column_index_output_end = len(output.columns) - 2  # -2 accounts for the index columns
 
     column_index_x_start = column_index_output_end
-    column_index_x_end = column_index_x_start + len(x_data.columns) - 1
+    column_index_x_end = column_index_x_start + len(x_data.columns) - 1  # -1 accounts for mlinspect_index_x
     column_index_y_start = column_index_x_end + inspection_count
-    column_index_y_end = column_index_y_start + len(y_data.columns) - 1
+    column_index_y_end = column_index_y_start + len(y_data.columns) - 1  # -1 accounts for mlinspect_index_y
 
     input_x_view = df_x_output_y.iloc[:, column_index_x_start:column_index_x_end]
-    input_x_view.columns = x_data.columns[0:-1]
+    input_x_view.columns = x_data.columns[0:-1]  # -1 accounts for mlinspect_index_x
     input_y_view = df_x_output_y.iloc[:, column_index_y_start:column_index_y_end]
-    input_y_view.columns = y_data.columns[0:-1]
+    input_y_view.columns = y_data.columns[0:-1]  # -1 accounts for mlinspect_index_y
     input_x_columns, input_x_iterator = get_df_row_iterator(input_x_view)
     assert isinstance(input_x_columns, ColumnInfo)
     input_y_columns, input_y_iterator = get_df_row_iterator(input_y_view)
