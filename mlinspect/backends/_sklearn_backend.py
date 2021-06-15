@@ -36,9 +36,9 @@ class SklearnBackend(Backend):
         ('sklearn.pipeline', 'fit', 'Train Labels'): OperatorType.TRAIN_LABELS,
         ('sklearn.model_selection._split', 'train_test_split'): OperatorType.TRAIN_TEST_SPLIT,
         # TODO: We  can remove this later by checking if subclass of transformer/estimator
-        ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer', 'Pipeline'): OperatorType.TRANSFORMER,
+        ('mlinspect.utils._utils', 'MyW2VTransformer', 'Pipeline'): OperatorType.TRANSFORMER,
         ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier', 'Pipeline'): OperatorType.ESTIMATOR,
-        ('example_pipelines.healthcare.healthcare_utils', 'MyKerasClassifier', 'Pipeline'): OperatorType.ESTIMATOR,
+        ('mlinspect.utils._utils', 'MyKerasClassifier', 'Pipeline'): OperatorType.ESTIMATOR,
     }
 
     def is_responsible_for_call(self, function_info, function_prefix, value=None):
@@ -129,8 +129,8 @@ class SklearnBackend(Backend):
                                ('sklearn.preprocessing._data', 'StandardScaler'),
                                ('sklearn.tree._classes', 'DecisionTreeClassifier'),
                                ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
-                               ('example_pipelines.healthcare.healthcare_utils', 'MyKerasClassifier'),
-                               ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer'),
+                               ('mlinspect.utils._utils', 'MyKerasClassifier'),
+                               ('mlinspect.utils._utils', 'MyW2VTransformer'),
                                ('sklearn.impute._base', 'SimpleImputer'),
                                ('sklearn.compose._column_transformer', 'ColumnTransformer'),
                                ('sklearn.pipeline', 'Pipeline'),

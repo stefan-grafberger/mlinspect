@@ -27,9 +27,9 @@ transformer_names = {
         ('sklearn.linear_model._logistic', 'LogisticRegression'): "Logistic Regression",
         ('sklearn.preprocessing._discretization', 'KBinsDiscretizer'): "Numerical Encoder (KBinsDiscretizer)",
         # TODO: We  can remove this later by checking if subclass of transformer/estimator
-        ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer'): "Word2Vec",
+        ('mlinspect.utils._utils', 'MyW2VTransformer'): "Word2Vec",
         ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'): "Neural Network",
-        ('example_pipelines.healthcare.healthcare_utils', 'MyKerasClassifier'): "Neural Network"
+        ('mlinspect.utils._utils', 'MyKerasClassifier'): "Neural Network"
     }
 
 
@@ -69,7 +69,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
         elif self.call_function_info in {('sklearn.tree._classes', 'DecisionTreeClassifier'),
                                          ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier'),
                                          ('sklearn.linear_model._logistic', 'LogisticRegression'),
-                                         ('example_pipelines.healthcare.healthcare_utils', 'MyKerasClassifier')}:
+                                         ('mlinspect.utils._utils', 'MyKerasClassifier')}:
             self.estimator_visits(X, y)
             self.transformer.fit(X, y)
         else:
@@ -100,7 +100,7 @@ class MlinspectEstimatorTransformer(BaseEstimator):
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [1 for _ in range(result.shape[1])]
             result = self.normal_transformer_visit(X, y, result)
-        elif self.call_function_info == ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer'):
+        elif self.call_function_info == ('mlinspect.utils._utils', 'MyW2VTransformer'):
             result = self.transformer.fit_transform(X, y)
             self.output_dimensions = [result.shape[1]]
             result = self.normal_transformer_visit(X, y, result)

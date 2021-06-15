@@ -5,9 +5,8 @@ from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from example_pipelines.healthcare.healthcare_utils import MyW2VTransformer, MyKerasClassifier, \
-    create_model
-from mlinspect.utils import get_project_root
+from example_pipelines.healthcare.healthcare_utils import create_model
+from mlinspect.utils import get_project_root, MyW2VTransformer, MyKerasClassifier
 
 patients = pd.read_csv("{}/example_pipelines/healthcare/patients.csv".format(get_project_root()),
                        na_values='?')

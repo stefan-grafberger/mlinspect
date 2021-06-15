@@ -5,6 +5,10 @@ import ast
 from pathlib import Path
 
 import networkx
+import numpy
+from sklearn.exceptions import NotFittedError
+from gensim.sklearn_api import W2VTransformer
+from tensorflow.python.keras.wrappers.scikit_learn import KerasClassifier
 
 
 def get_project_root() -> Path:
@@ -62,3 +66,40 @@ def traverse_graph_and_process_nodes(graph: networkx.DiGraph, func, start_nodes=
 
         func(node, processed_nodes)
     return graph
+
+
+class MyW2VTransformer(W2VTransformer):
+    """Some custom w2v transformer."""
+
+    def partial_fit(self, X):
+        # pylint: disable=useless-super-delegation
+        super().partial_fit([X])
+
+    def fit(self, X, y=None):
+        X = X.iloc[:, 0].tolist()
+        return super().fit([X], y)
+
+    def transform(self, words):
+        words = words.iloc[:, 0].tolist()
+        if self.gensim_model is None:
+            raise NotFittedError(
+                "This model has not been fitted yet. Call 'fit' with appropriate arguments before using this method."
+            )
+
+        # The input as array of array
+        vectors = []
+        for word in words:
+            if word in self.gensim_model.wv:
+                vectors.append(self.gensim_model.wv[word])
+            else:
+                vectors.append(numpy.zeros(self.size))
+        return numpy.reshape(numpy.array(vectors), (len(words), self.size))
+
+
+class MyKerasClassifier(KerasClassifier):
+    """A Keras Wrapper that sets input_dim on fit"""
+
+    def fit(self, x, y, **kwargs):
+        """Create and fit a simple neural network"""
+        self.sk_params['input_dim'] = x.shape[1]
+        super().fit(x, y, **kwargs)

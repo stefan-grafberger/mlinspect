@@ -25,7 +25,7 @@ class SklearnDagPostprocessor:
             if node.module in {('sklearn.compose._column_transformer', 'ColumnTransformer', 'Projection'),
                                ('sklearn.preprocessing._data', 'StandardScaler', 'Pipeline'),
                                ('sklearn.preprocessing._encoders', 'OneHotEncoder', 'Pipeline'),
-                               ('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer', 'Pipeline'),
+                               ('mlinspect.utils._utils', 'MyW2VTransformer', 'Pipeline'),
                                ('sklearn.impute._base', 'SimpleImputer', 'Pipeline'),
                                ('sklearn.preprocessing._discretization', 'KBinsDiscretizer', 'Pipeline'),
                                }:
@@ -52,7 +52,7 @@ class SklearnDagPostprocessor:
                                  ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier',
                                   'Pipeline'),
                                  ('sklearn.linear_model._logistic', 'LogisticRegression', 'Pipeline'),
-                                 ('example_pipelines.healthcare.healthcare_utils', 'MyKerasClassifier', 'Pipeline')}:
+                                 ('mlinspect.utils._utils', 'MyKerasClassifier', 'Pipeline')}:
                 annotations_for_all_associated_dag_nodes = annotation_post_processing_map[node.code_reference]
                 annotations, columns = annotations_for_all_associated_dag_nodes['fit']
                 new_code_references_to_inspection_result[dag_node_identifier] = annotations
