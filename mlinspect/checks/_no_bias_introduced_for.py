@@ -145,7 +145,7 @@ class NoBiasIntroducedFor(Check):
         joined_df.loc[joined_df['removed_records'] < 0, 'removal_probability'] = 0
         joined_df.loc[joined_df['removed_records'] < 0, 'normalized_removal_probability'] = 0
 
-        not_nan = joined_df["normalized_removal_probability"].notnull() and not_nan
+        not_nan = joined_df["normalized_removal_probability"].notnull() & not_nan
         max_probability_difference = nanmax([joined_df[not_nan]["normalized_removal_probability"].max(), 0.])
         acceptable_probability_difference = max_probability_difference <= self.max_allowed_probability_difference
 
