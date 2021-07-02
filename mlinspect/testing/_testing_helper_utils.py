@@ -10,6 +10,7 @@ from pandas import DataFrame
 from demo.feature_overview.missing_embeddings import MissingEmbeddings
 from mlinspect import OperatorContext, FunctionInfo, OperatorType
 from mlinspect._pipeline_inspector import PipelineInspector
+from mlinspect.checks import SimilarRemovalProbabilitiesFor
 from mlinspect.checks._no_bias_introduced_for import NoBiasIntroducedFor
 from mlinspect.checks._no_illegal_features import NoIllegalFeatures
 from mlinspect.inspections import HistogramForColumns
@@ -245,6 +246,7 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
         .on_pipeline_from_py_file(py_file_path) \
         .add_check(NoBiasIntroducedFor(sensitive_columns)) \
         .add_check(NoIllegalFeatures()) \
+        .add_check(SimilarRemovalProbabilitiesFor(sensitive_columns)) \
         .add_required_inspection(MissingEmbeddings(20)) \
         .add_required_inspection(RowLineage(5)) \
         .add_required_inspection(MaterializeFirstOutputRows(5)) \
