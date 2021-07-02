@@ -4,6 +4,7 @@ Tests whether NoMissingEmbeddings works
 import math
 from inspect import cleandoc
 
+import matplotlib
 import pandas
 from pandas import DataFrame
 from testfixtures import compare
@@ -94,6 +95,7 @@ def test_removal_probab_dropna():
         "'A' probability difference below the configured maximum test threshold": [True]
     })
     pandas.testing.assert_frame_equal(overview, expected_df)
+    matplotlib.use("template")  # Disable plt.show when executing nb as part of this test
     SimilarRemovalProbabilitiesFor.plot_removal_probability_histograms(
         list(check_result.removal_probability_change.values())[0]['A'])
     SimilarRemovalProbabilitiesFor.plot_distribution_change_histograms(
