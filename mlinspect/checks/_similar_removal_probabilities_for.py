@@ -1,18 +1,19 @@
 """
 The NoBiasIntroducedFor check
 """
-import dataclasses
-from typing import Iterable, OrderedDict
 import collections
+import dataclasses
+from typing import Iterable, Dict
+
 from matplotlib import pyplot
 from pandas import DataFrame
 
-from mlinspect.inspections._inspection_input import OperatorType, FunctionInfo
-from mlinspect.instrumentation._dag_node import DagNode
 from mlinspect.checks._check import Check, CheckStatus, CheckResult
 from mlinspect.inspections._histogram_for_columns import HistogramForColumns
 from mlinspect.inspections._inspection import Inspection
+from mlinspect.inspections._inspection_input import OperatorType, FunctionInfo
 from mlinspect.inspections._inspection_result import InspectionResult
+from mlinspect.instrumentation._dag_node import DagNode
 
 
 @dataclasses.dataclass(eq=False, frozen=True)
@@ -37,12 +38,14 @@ class SimilarRemovalProbabilitiesForResult(CheckResult):
     """
     Did the histogram change too much for some operations?
     """
-    removal_probability_change: OrderedDict[DagNode, OrderedDict[str, RemovalProbabilities]]
+    removal_probability_change: Dict[DagNode, Dict[str, RemovalProbabilities]]
 
 
 class SimilarRemovalProbabilitiesFor(Check):
     """
-    Does the user pipeline introduce bias because of operators like joins and selects?
+    Does the user pipeline introduce bias because of operators like joins and selects? This check
+    is based on computing removal probabilities. For all groups where values get removed, we expect the probability
+    to be similar.
     """
 
     # pylint: disable=unnecessary-pass, too-few-public-methods
@@ -83,7 +86,7 @@ class SimilarRemovalProbabilitiesFor(Check):
                 if not column_result.acceptable_probability_difference:
                     issue = "A {} causes a max_probability_difference of '{}' by {}, a value above the " \
                             "configured maximum threshold {}!" \
-                        .format(node.operator_type.value, column, column_result.max_probability_difference,
+                        .format(node.operator_info.operator.value, column, column_result.max_probability_difference,
                                 self.max_allowed_probability_difference)
                     issue_list.append(issue)
                     check_status = CheckStatus.FAILURE
@@ -114,18 +117,6 @@ class SimilarRemovalProbabilitiesFor(Check):
         joined_df["count_before"] = joined_df["count_before"].fillna(0, downcast='infer')
         joined_df["count_after"] = joined_df["count_after"].fillna(0, downcast='infer')
 
-        # TODO: What information is useful/what is confusing?
-        # joined_df["absolute_change"] = joined_df["count_after"] - joined_df["count_before"]
-        # joined_df["relative_change"] = joined_df["absolute_change"] / joined_df["count_before"]
-        joined_df["ratio_before"] = joined_df["count_before"] / joined_df["count_before"].sum()
-        joined_df["ratio_after"] = joined_df["count_after"] / joined_df["count_after"].sum()
-        # joined_df["absolute_ratio_change"] = joined_df["ratio_after"] - joined_df["ratio_before"]
-        absolute_ratio_change = joined_df["ratio_after"] - joined_df["ratio_before"]
-        joined_df["relative_ratio_change"] = absolute_ratio_change / joined_df["ratio_before"]
-
-        # Dropping nan values (e.g., missing value imputation) is a distribution change we consider okay
-        not_nan = joined_df["sensitive_column_value"].notnull()
-
         # Probability of removal
         joined_df["removed_records"] = joined_df["count_before"] - joined_df["count_after"]
         joined_df["removal_probability"] = joined_df["removed_records"] / joined_df["count_before"]
@@ -137,11 +128,14 @@ class SimilarRemovalProbabilitiesFor(Check):
         joined_df.loc[joined_df['removed_records'] < 0, 'removal_probability'] = 0
         joined_df.loc[joined_df['removed_records'] < 0, 'normalized_removal_probability'] = 0
 
-        not_nan = joined_df["normalized_removal_probability"].notnull() & not_nan
-        max_probability_difference = joined_df[not_nan]["normalized_removal_probability"].max()
-        acceptable_probability_difference = max_probability_difference <= self.max_allowed_probability_difference
+        # Dropping nan values (e.g., missing value imputation) is a distribution change we consider okay
+        not_nan_columns = joined_df["sensitive_column_value"].notnull()
+        not_nan_normalized_removal_probabilities = joined_df["normalized_removal_probability"].notnull()
+        relevant_normalized_probabs = not_nan_columns & not_nan_normalized_removal_probabilities
+        max_normalized_removal_probab = joined_df[relevant_normalized_probabs]["normalized_removal_probability"].max()
+        acceptable_probability_difference = max_normalized_removal_probab <= self.max_allowed_probability_difference
 
-        return RemovalProbabilities(node, acceptable_probability_difference, max_probability_difference, joined_df)
+        return RemovalProbabilities(node, acceptable_probability_difference, max_normalized_removal_probab, joined_df)
 
     @staticmethod
     def plot_distribution_change_histograms(distribution_change: RemovalProbabilities, filename=None,
