@@ -66,14 +66,8 @@ class SimilarRemovalProbabilitiesFor(Check):
 
     def evaluate(self, inspection_result: InspectionResult) -> CheckResult:
         """Evaluate the check"""
+        histograms, relevant_nodes = self.get_relevant_nodes_and_histograms(inspection_result)
         dag = inspection_result.dag
-        histograms = {}
-        for dag_node, inspection_results in inspection_result.dag_node_to_inspection_results.items():
-            histograms[dag_node] = inspection_results[HistogramForColumns(self.sensitive_columns)]
-        relevant_nodes = [node for node in dag.nodes if node.operator_info.operator in {OperatorType.JOIN,
-                                                                                        OperatorType.SELECTION} or
-                          (node.operator_info.function_info == FunctionInfo('sklearn.impute._base', 'SimpleImputer')
-                           and set(node.details.columns).intersection(self.sensitive_columns))]
         check_status = CheckStatus.SUCCESS
         bias_distribution_change = collections.OrderedDict()
         issue_list = []
@@ -97,6 +91,18 @@ class SimilarRemovalProbabilitiesFor(Check):
         else:
             description = None
         return SimilarRemovalProbabilitiesForResult(self, check_status, description, bias_distribution_change)
+
+    def get_relevant_nodes_and_histograms(self, inspection_result):
+        """Get all DAG nodes relevant for this inspection and their histograms"""
+        dag = inspection_result.dag
+        histograms = {}
+        for dag_node, inspection_results in inspection_result.dag_node_to_inspection_results.items():
+            histograms[dag_node] = inspection_results[HistogramForColumns(self.sensitive_columns)]
+        relevant_nodes = [node for node in dag.nodes if node.operator_info.operator in {OperatorType.JOIN,
+                                                                                        OperatorType.SELECTION} or
+                          (node.operator_info.function_info == FunctionInfo('sklearn.impute._base', 'SimpleImputer')
+                           and set(node.details.columns).intersection(self.sensitive_columns))]
+        return histograms, relevant_nodes
 
     def get_histograms_for_node_and_column(self, column, histograms, node, parents):
         """

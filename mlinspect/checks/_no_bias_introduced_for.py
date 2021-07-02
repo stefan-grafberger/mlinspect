@@ -66,15 +66,8 @@ class NoBiasIntroducedFor(Check):
 
     def evaluate(self, inspection_result: InspectionResult) -> CheckResult:
         """Evaluate the check"""
-        # pylint: disable=too-many-locals
+        histograms, relevant_nodes = self.get_relevant_nodes_and_histograms(inspection_result)
         dag = inspection_result.dag
-        histograms = {}
-        for dag_node, inspection_results in inspection_result.dag_node_to_inspection_results.items():
-            histograms[dag_node] = inspection_results[HistogramForColumns(self.sensitive_columns)]
-        relevant_nodes = [node for node in dag.nodes if node.operator_info.operator in {OperatorType.JOIN,
-                                                                                        OperatorType.SELECTION} or
-                          (node.operator_info.function_info == FunctionInfo('sklearn.impute._base', 'SimpleImputer')
-                           and set(node.details.columns).intersection(self.sensitive_columns))]
         check_status = CheckStatus.SUCCESS
         bias_distribution_change = collections.OrderedDict()
         issue_list = []
@@ -118,12 +111,8 @@ class NoBiasIntroducedFor(Check):
         joined_df["count_before"] = joined_df["count_before"].fillna(0, downcast='infer')
         joined_df["count_after"] = joined_df["count_after"].fillna(0, downcast='infer')
 
-        # TODO: What information is useful/what is confusing?
-        # joined_df["absolute_change"] = joined_df["count_after"] - joined_df["count_before"]
-        # joined_df["relative_change"] = joined_df["absolute_change"] / joined_df["count_before"]
         joined_df["ratio_before"] = joined_df["count_before"] / joined_df["count_before"].sum()
         joined_df["ratio_after"] = joined_df["count_after"] / joined_df["count_after"].sum()
-        # joined_df["absolute_ratio_change"] = joined_df["ratio_after"] - joined_df["ratio_before"]
         absolute_ratio_change = joined_df["ratio_after"] - joined_df["ratio_before"]
         joined_df["relative_ratio_change"] = absolute_ratio_change / joined_df["ratio_before"]
 
@@ -133,6 +122,18 @@ class NoBiasIntroducedFor(Check):
 
         all_changes_acceptable = min_relative_ratio_change >= self.min_allowed_relative_ratio_change
         return BiasDistributionChange(node, all_changes_acceptable, min_relative_ratio_change, joined_df)
+
+    def get_relevant_nodes_and_histograms(self, inspection_result):
+        """Get all DAG nodes relevant for this inspection and their histograms"""
+        dag = inspection_result.dag
+        histograms = {}
+        for dag_node, inspection_results in inspection_result.dag_node_to_inspection_results.items():
+            histograms[dag_node] = inspection_results[HistogramForColumns(self.sensitive_columns)]
+        relevant_nodes = [node for node in dag.nodes if node.operator_info.operator in {OperatorType.JOIN,
+                                                                                        OperatorType.SELECTION} or
+                          (node.operator_info.function_info == FunctionInfo('sklearn.impute._base', 'SimpleImputer')
+                           and set(node.details.columns).intersection(self.sensitive_columns))]
+        return histograms, relevant_nodes
 
     @staticmethod
     def plot_distribution_change_histograms(distribution_change: BiasDistributionChange, filename=None,
