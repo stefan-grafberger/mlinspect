@@ -3,8 +3,6 @@ Some useful utils for the project
 """
 from pathlib import Path
 
-import networkx
-
 
 def get_project_root() -> Path:
     """Returns the project root folder."""
