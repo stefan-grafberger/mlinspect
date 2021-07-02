@@ -5,26 +5,31 @@ import dataclasses
 from typing import Iterable, OrderedDict
 import collections
 from matplotlib import pyplot
-from numpy import nanmax
 from pandas import DataFrame
 
-from mlinspect import DagNode, OperatorType
+from mlinspect.inspections._inspection_input import OperatorType, FunctionInfo
+from mlinspect.instrumentation._dag_node import DagNode
 from mlinspect.checks._check import Check, CheckStatus, CheckResult
 from mlinspect.inspections._histogram_for_columns import HistogramForColumns
 from mlinspect.inspections._inspection import Inspection
 from mlinspect.inspections._inspection_result import InspectionResult
 
 
-@dataclasses.dataclass(eq=True, frozen=True)
+@dataclasses.dataclass(eq=False, frozen=True)
 class RemovalProbabilities:
     """
     Did the histogram change too much for one given operation?
     """
     dag_node: DagNode
-    acceptable_change: bool
     acceptable_probability_difference: bool
     max_probability_difference: float
     before_and_after_df: DataFrame
+
+    def __eq__(self, other):
+        return (isinstance(other, self.__class__) and
+                self.dag_node == other.dag_node and
+                self.max_probability_difference == other.max_probability_difference and
+                self.before_and_after_df.equals(other.before_and_after_df))
 
 
 @dataclasses.dataclass
@@ -32,7 +37,7 @@ class SimilarRemovalProbabilitiesForResult(CheckResult):
     """
     Did the histogram change too much for some operations?
     """
-    bias_distribution_change: OrderedDict[DagNode, OrderedDict[str, RemovalProbabilities]]
+    removal_probability_change: OrderedDict[DagNode, OrderedDict[str, RemovalProbabilities]]
 
 
 class SimilarRemovalProbabilitiesFor(Check):
@@ -59,11 +64,13 @@ class SimilarRemovalProbabilitiesFor(Check):
     def evaluate(self, inspection_result: InspectionResult) -> CheckResult:
         """Evaluate the check"""
         dag = inspection_result.dag
-        histograms = inspection_result.inspection_to_annotations[HistogramForColumns(self.sensitive_columns)]
-        relevant_nodes = [node for node in dag.nodes if node.operator_type in {OperatorType.JOIN,
-                                                                               OperatorType.SELECTION} or
-                          (node.module == ('sklearn.impute._base', 'SimpleImputer', 'Pipeline') and
-                           node.columns[0] in self.sensitive_columns)]
+        histograms = {}
+        for dag_node, inspection_results in inspection_result.dag_node_to_inspection_results.items():
+            histograms[dag_node] = inspection_results[HistogramForColumns(self.sensitive_columns)]
+        relevant_nodes = [node for node in dag.nodes if node.operator_info.operator in {OperatorType.JOIN,
+                                                                                        OperatorType.SELECTION} or
+                          (node.operator_info.function_info == FunctionInfo('sklearn.impute._base', 'SimpleImputer')
+                           and set(node.details.columns).intersection(self.sensitive_columns))]
         check_status = CheckStatus.SUCCESS
         bias_distribution_change = collections.OrderedDict()
         issue_list = []
@@ -73,14 +80,7 @@ class SimilarRemovalProbabilitiesFor(Check):
             for column in self.sensitive_columns:
                 column_result = self.get_histograms_for_node_and_column(column, histograms, node, parents)
                 column_results[column] = column_result
-                if not column_result.acceptable_change:
-                    issue = "A {} causes a min_relative_ratio_change of '{}' by {}, a value below the " \
-                            "configured minimum threshold {}!" \
-                        .format(node.operator_type.value, column, column_result.min_relative_ratio_change,
-                                self.min_allowed_relative_ratio_change)
-                    issue_list.append(issue)
-                    check_status = CheckStatus.FAILURE
-                elif not column_result.acceptable_probability_difference:
+                if not column_result.acceptable_probability_difference:
                     issue = "A {} causes a max_probability_difference of '{}' by {}, a value above the " \
                             "configured maximum threshold {}!" \
                         .format(node.operator_type.value, column, column_result.max_probability_difference,
@@ -111,8 +111,8 @@ class SimilarRemovalProbabilitiesFor(Check):
 
         joined_df = before_df.merge(after_df, on="sensitive_column_value", how="outer")
         joined_df = joined_df.sort_values(by=['sensitive_column_value']).reset_index(drop=True)
-        joined_df["count_before"] = joined_df["count_before"].fillna(0)
-        joined_df["count_after"] = joined_df["count_after"].fillna(0)
+        joined_df["count_before"] = joined_df["count_before"].fillna(0, downcast='infer')
+        joined_df["count_after"] = joined_df["count_after"].fillna(0, downcast='infer')
 
         # TODO: What information is useful/what is confusing?
         # joined_df["absolute_change"] = joined_df["count_after"] - joined_df["count_before"]
@@ -125,8 +125,6 @@ class SimilarRemovalProbabilitiesFor(Check):
 
         # Dropping nan values (e.g., missing value imputation) is a distribution change we consider okay
         not_nan = joined_df["sensitive_column_value"].notnull()
-        min_relative_ratio_change = joined_df[not_nan]["relative_ratio_change"].min()
-        all_changes_acceptable = min_relative_ratio_change >= self.min_allowed_relative_ratio_change
 
         # Probability of removal
         joined_df["removed_records"] = joined_df["count_before"] - joined_df["count_after"]
@@ -140,11 +138,10 @@ class SimilarRemovalProbabilitiesFor(Check):
         joined_df.loc[joined_df['removed_records'] < 0, 'normalized_removal_probability'] = 0
 
         not_nan = joined_df["normalized_removal_probability"].notnull() & not_nan
-        max_probability_difference = nanmax([joined_df[not_nan]["normalized_removal_probability"].max(), 0.])
+        max_probability_difference = joined_df[not_nan]["normalized_removal_probability"].max()
         acceptable_probability_difference = max_probability_difference <= self.max_allowed_probability_difference
 
-        return RemovalProbabilities(node, all_changes_acceptable, min_relative_ratio_change,
-                                    acceptable_probability_difference, max_probability_difference, joined_df)
+        return RemovalProbabilities(node, acceptable_probability_difference, max_probability_difference, joined_df)
 
     @staticmethod
     def plot_distribution_change_histograms(distribution_change: RemovalProbabilities, filename=None,
@@ -213,7 +210,7 @@ class SimilarRemovalProbabilitiesFor(Check):
         pyplot.close()
 
     @staticmethod
-    def get_distribution_changes_overview_as_df(no_bias_check_result: RemovalProbabilities) -> DataFrame:
+    def get_distribution_changes_overview_as_df(removal_probab_check_result: RemovalProbabilities) -> DataFrame:
         """
         Get a pandas DataFrame with an overview of all DistributionChanges
         """
@@ -223,12 +220,9 @@ class SimilarRemovalProbabilitiesFor(Check):
         modules = []
         code_snippets = []
         descriptions = []
-        assert isinstance(no_bias_check_result.check, SimilarRemovalProbabilitiesFor)
+        assert isinstance(removal_probab_check_result.check, SimilarRemovalProbabilitiesFor)
         sensitive_column_names = []
-        for name in no_bias_check_result.check.sensitive_columns:
-            total_change_column_name = "'{}' distribution change below the configured minimum test threshold" \
-                .format(name)
-            sensitive_column_names.append(total_change_column_name)
+        for name in removal_probab_check_result.check.sensitive_columns:
             removal_probability_column_name = "'{}' probability difference above the configured maximum test threshold" \
                 .format(name)
             sensitive_column_names.append(removal_probability_column_name)
@@ -236,15 +230,14 @@ class SimilarRemovalProbabilitiesFor(Check):
         sensitive_columns = []
         for _ in range(len(sensitive_column_names)):
             sensitive_columns.append([])
-        for dag_node, distribution_change in no_bias_check_result.bias_distribution_change.items():
+        for dag_node, distribution_change in removal_probab_check_result.bias_distribution_change.items():
             operator_types.append(dag_node.operator_type)
             code_references.append(dag_node.code_reference)
             modules.append(dag_node.module)
             code_snippets.append(dag_node.source_code)
             descriptions.append(dag_node.description)
             for index, change_info in enumerate(distribution_change.values()):
-                sensitive_columns[2 * index].append(not change_info.acceptable_change)
-                sensitive_columns[2 * index + 1].append(not change_info.acceptable_probability_difference)
+                sensitive_columns[index + 1].append(not change_info.acceptable_probability_difference)
         return DataFrame(zip(operator_types, descriptions, code_references, code_snippets, modules, *sensitive_columns),
                          columns=[
                              "operator_type",
