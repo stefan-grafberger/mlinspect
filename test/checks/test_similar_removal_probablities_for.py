@@ -4,6 +4,7 @@ Tests whether NoMissingEmbeddings works
 import math
 from inspect import cleandoc
 
+import pandas
 from pandas import DataFrame
 from testfixtures import compare
 
@@ -18,7 +19,7 @@ from mlinspect.instrumentation._dag_node import CodeReference
 
 def test_removal_probab_for_merge():
     """
-    Tests whether RowLineage works for joins
+    Tests whether SimilarRemovalProbabilitiesFor works for joins
     """
     test_code = cleandoc("""
             import pandas as pd
@@ -40,7 +41,7 @@ def test_removal_probab_for_merge():
 
 def test_removal_probab_simple_imputer():
     """
-    Tests whether RowLineage works for joins
+    Tests whether SimilarRemovalProbabilitiesFor works for imputation
     """
     test_code = cleandoc("""
             import pandas as pd
@@ -64,7 +65,7 @@ def test_removal_probab_simple_imputer():
 
 def test_removal_probab_dropna():
     """
-    Tests whether RowLineage works for joins
+    Tests whether SimilarRemovalProbabilitiesFor works for dropna
     """
     test_code = cleandoc("""
             import pandas as pd
@@ -82,6 +83,21 @@ def test_removal_probab_dropna():
     check_result = inspector_result.check_to_check_results[SimilarRemovalProbabilitiesFor(['A'])]
     expected_result = get_expected_check_result_dropna()
     compare(check_result, expected_result)
+
+    overview = SimilarRemovalProbabilitiesFor.get_removal_probabilities_overview_as_df(check_result)
+    expected_df = pandas.DataFrame({
+        'operator_type': [OperatorType.SELECTION],
+        'description': ['dropna'],
+        'code_reference': [CodeReference(5, 5, 5, 16)],
+        'source_code': ['df.dropna()'],
+        'function_info': [FunctionInfo('pandas.core.frame', 'dropna')],
+        "'A' probability difference below the configured maximum test threshold": [True]
+    })
+    pandas.testing.assert_frame_equal(overview, expected_df)
+    SimilarRemovalProbabilitiesFor.plot_removal_probability_histograms(
+        list(check_result.removal_probability_change.values())[0]['A'])
+    SimilarRemovalProbabilitiesFor.plot_distribution_change_histograms(
+        list(check_result.removal_probability_change.values())[0]['A'])
 
 
 def get_expected_check_result_merge():

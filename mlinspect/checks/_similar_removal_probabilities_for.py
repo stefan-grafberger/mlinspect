@@ -210,39 +210,46 @@ class SimilarRemovalProbabilitiesFor(Check):
         pyplot.close()
 
     @staticmethod
-    def get_distribution_changes_overview_as_df(removal_probab_check_result: RemovalProbabilities) -> DataFrame:
+    def get_removal_probabilities_overview_as_df(removal_probab_check_result: SimilarRemovalProbabilitiesForResult) \
+            -> DataFrame:
         """
         Get a pandas DataFrame with an overview of all DistributionChanges
         """
         # pylint: disable=too-many-locals
         operator_types = []
         code_references = []
-        modules = []
+        function_infos = []
         code_snippets = []
         descriptions = []
         assert isinstance(removal_probab_check_result.check, SimilarRemovalProbabilitiesFor)
         sensitive_column_names = []
         for name in removal_probab_check_result.check.sensitive_columns:
-            removal_probability_column_name = "'{}' probability difference above the configured maximum test threshold" \
-                .format(name)
+            removal_probability_column_name = "'{}' probability difference below the configured maximum test " \
+                                              "threshold".format(name)
             sensitive_column_names.append(removal_probability_column_name)
 
         sensitive_columns = []
         for _ in range(len(sensitive_column_names)):
             sensitive_columns.append([])
-        for dag_node, distribution_change in removal_probab_check_result.bias_distribution_change.items():
-            operator_types.append(dag_node.operator_type)
-            code_references.append(dag_node.code_reference)
-            modules.append(dag_node.module)
-            code_snippets.append(dag_node.source_code)
-            descriptions.append(dag_node.description)
-            for index, change_info in enumerate(distribution_change.values()):
-                sensitive_columns[index + 1].append(not change_info.acceptable_probability_difference)
-        return DataFrame(zip(operator_types, descriptions, code_references, code_snippets, modules, *sensitive_columns),
+        for dag_node, removal_probability in removal_probab_check_result.removal_probability_change.items():
+            operator_types.append(dag_node.operator_info.operator)
+            if dag_node.optional_code_info is not None:
+                code_references.append(dag_node.optional_code_info.code_reference)
+                code_snippets.append(dag_node.optional_code_info.source_code)
+            else:
+                code_references.append(dag_node.code_location.lineno)
+                code_snippets.append("You can enable code reference tracking for more details.")
+            function_infos.append(dag_node.operator_info.function_info)
+
+            descriptions.append(dag_node.details.description or "")
+            for index, change_info in enumerate(removal_probability.values()):
+                sensitive_columns[index].append(not change_info.acceptable_probability_difference)
+        return DataFrame(zip(operator_types, descriptions, code_references, code_snippets, function_infos,
+                             *sensitive_columns),
                          columns=[
                              "operator_type",
                              "description",
                              "code_reference",
                              "source_code",
-                             "module",
+                             "function_info",
                              *sensitive_column_names])
