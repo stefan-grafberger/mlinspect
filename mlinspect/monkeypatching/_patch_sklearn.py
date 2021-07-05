@@ -17,7 +17,7 @@ from mlinspect.instrumentation._dag_node import DagNode, BasicCodeLocation, DagN
 from mlinspect.instrumentation._pipeline_executor import singleton
 from mlinspect.monkeypatching._monkey_patching_utils import execute_patched_func, add_dag_node, \
     execute_patched_func_indirect_allowed, get_input_info, execute_patched_func_no_op_id, get_optional_code_info_or_none
-from mlinspect.monkeypatching._patch_numpy import MlinspectNdarray
+from mlinspect.monkeypatching._mlinspect_ndarray import MlinspectNdarray
 
 
 @gorilla.patches(preprocessing)

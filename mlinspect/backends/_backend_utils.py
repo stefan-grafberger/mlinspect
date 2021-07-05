@@ -9,7 +9,7 @@ from scipy.sparse import csr_matrix
 
 from ._backend import AnnotatedDfObject
 from ..inspections._inspection_input import ColumnInfo
-from ..monkeypatching._patch_numpy import MlinspectNdarray
+from ..monkeypatching._mlinspect_ndarray import MlinspectNdarray
 
 
 def get_annotation_rows(input_annotations, inspection_index):

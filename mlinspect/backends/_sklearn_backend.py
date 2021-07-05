@@ -7,7 +7,8 @@ import pandas
 
 from ._backend import Backend, AnnotatedDfObject, BackendResult
 from ._iter_creation import iter_input_annotation_output_sink_op, iter_input_annotation_output_nary_op
-from ._pandas_backend import execute_inspection_visits_unary_operator, store_inspection_outputs
+from ._pandas_backend import execute_inspection_visits_unary_operator, store_inspection_outputs, \
+    execute_inspection_visits_data_source
 from .. import OperatorType
 from ..instrumentation._pipeline_executor import singleton
 
@@ -32,7 +33,9 @@ class SklearnBackend(Backend):
             -> BackendResult:
         """The return value of some function"""
         # pylint: disable=too-many-arguments
-        if operator_context.operator == OperatorType.TRAIN_TEST_SPLIT:
+        if operator_context.operator == OperatorType.DATA_SOURCE:
+            return_value = execute_inspection_visits_data_source(operator_context, return_value)
+        elif operator_context.operator == OperatorType.TRAIN_TEST_SPLIT:
             train_data, test_data = return_value
             train_return_value = execute_inspection_visits_unary_operator(operator_context,
                                                                           input_infos[0].result_data,
