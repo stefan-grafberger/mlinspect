@@ -38,6 +38,7 @@ class NumpyRandomPatching:
                                DagNodeDetails("random", ['array']),
                                get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             add_dag_node(dag_node, [], backend_result)
-            return result
+            new_return_value = backend_result.annotated_dfobject.result_data
+            return new_return_value
 
         return execute_patched_func(original, execute_inspections, *args, **kwargs)

@@ -16,3 +16,4 @@ gorilla==0.4.0
 astunparse==1.6.3
 setuptools==57.0.0
 scipy==1.7.0
+statsmodels==0.12.2
