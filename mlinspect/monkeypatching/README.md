@@ -95,4 +95,5 @@ compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expe
 
 | Function Call        | Operator        
 | ------------- |:-------------:|
+| `('statsmodels.datasets', 'get_rdataset')`      | Data Source | 
 | `('statsmodels.api', 'add_constant')`      | Projection (Mod) | 
