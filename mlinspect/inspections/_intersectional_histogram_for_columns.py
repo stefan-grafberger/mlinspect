@@ -1,19 +1,19 @@
 """
 A simple example inspection
 """
-from typing import Iterable
+from typing import Iterable, List
 
 from mlinspect.inspections._inspection import Inspection
 from mlinspect.inspections._inspection_input import InspectionInputDataSource, \
     InspectionInputUnaryOperator, InspectionInputNAryOperator, OperatorType, FunctionInfo
 
 
-class HistogramForColumns(Inspection):
+class IntersectionalHistogramForColumns(Inspection):
     """
-    An inspection to compute group membership histograms for multiple columns
+    An inspection to compute intersectional group memberships
     """
 
-    def __init__(self, sensitive_columns):
+    def __init__(self, sensitive_columns: List[str]):
         self._histogram_op_output = None
         self._operator_type = None
         self.sensitive_columns = sensitive_columns
@@ -29,9 +29,7 @@ class HistogramForColumns(Inspection):
         # pylint: disable=too-many-branches, too-many-statements, too-many-locals
         current_count = - 1
 
-        histogram_maps = []
-        for _ in self.sensitive_columns:
-            histogram_maps.append({})
+        histogram_map = {}
 
         self._operator_type = inspection_input.operator_context.operator
 
@@ -53,9 +51,7 @@ class HistogramForColumns(Inspection):
                         else:
                             column_value = row.annotation[check_index]
                         column_values.append(column_value)
-                        group_count = histogram_maps[check_index].get(column_value, 0)
-                        group_count += 1
-                        histogram_maps[check_index][column_value] = group_count
+                    update_histograms(column_values, histogram_map)
                     yield column_values
             else:
                 for row in inspection_input.row_iterator:
@@ -67,9 +63,7 @@ class HistogramForColumns(Inspection):
                         else:
                             column_value = row.annotation[check_index]
                         column_values.append(column_value)
-                        group_count = histogram_maps[check_index].get(column_value, 0)
-                        group_count += 1
-                        histogram_maps[check_index][column_value] = group_count
+                    update_histograms(column_values, histogram_map)
                     yield column_values
         elif isinstance(inspection_input, InspectionInputDataSource):
             sensitive_columns_present = []
@@ -86,11 +80,9 @@ class HistogramForColumns(Inspection):
                     if sensitive_columns_present[check_index]:
                         column_value = row.output[sensitive_columns_index[check_index]]
                         column_values.append(column_value)
-                        group_count = histogram_maps[check_index].get(column_value, 0)
-                        group_count += 1
-                        histogram_maps[check_index][column_value] = group_count
                     else:
                         column_values.append(None)
+                update_histograms(column_values, histogram_map)
                 yield column_values
         elif isinstance(inspection_input, InspectionInputNAryOperator):
             sensitive_columns_present = []
@@ -107,19 +99,15 @@ class HistogramForColumns(Inspection):
                     if sensitive_columns_present[check_index]:
                         column_value = row.output[sensitive_columns_index[check_index]]
                         column_values.append(column_value)
-                        group_count = histogram_maps[check_index].get(column_value, 0)
-                        group_count += 1
-                        histogram_maps[check_index][column_value] = group_count
                     else:
                         column_values.append(None)
+                update_histograms(column_values, histogram_map)
                 yield column_values
         else:
             for _ in inspection_input.row_iterator:
                 yield None
 
-        self._histogram_op_output = {}
-        for check_index, column in enumerate(self.sensitive_columns):
-            self._histogram_op_output[column] = histogram_maps[check_index]
+        self._histogram_op_output = histogram_map
 
     def get_operator_annotation_after_visit(self) -> any:
         assert self._operator_type
@@ -130,3 +118,11 @@ class HistogramForColumns(Inspection):
             return result
         self._operator_type = None
         return None
+
+
+def update_histograms(column_values, histogram_map):
+    """Update the histograms with the intersectional information"""
+    value_tuple = tuple(column_values)
+    group_count = histogram_map.get(value_tuple, 0)
+    group_count += 1
+    histogram_map[value_tuple] = group_count
