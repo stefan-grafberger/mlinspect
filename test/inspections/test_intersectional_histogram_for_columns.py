@@ -11,7 +11,7 @@ from mlinspect.inspections import IntersectionalHistogramForColumns
 
 def test_histogram_merge():
     """
-    Tests whether RowLineage works for joins
+    Tests whether IntersectionalHistogramForColumns works for joins
     """
     test_code = cleandoc("""
             import pandas as pd
@@ -44,7 +44,7 @@ def test_histogram_merge():
 
 def test_histogram_projection():
     """
-    Tests whether RowLineage works for joins
+    Tests whether IntersectionalHistogramForColumns works for projections
     """
     test_code = cleandoc("""
             import pandas as pd

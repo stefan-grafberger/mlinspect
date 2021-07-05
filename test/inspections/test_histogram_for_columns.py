@@ -11,7 +11,7 @@ from mlinspect.inspections import HistogramForColumns
 
 def test_histogram_merge():
     """
-    Tests whether RowLineage works for joins
+    Tests whether HistogramForColumns works for joins
     """
     test_code = cleandoc("""
             import pandas as pd
@@ -42,7 +42,7 @@ def test_histogram_merge():
 
 def test_histogram_projection():
     """
-    Tests whether RowLineage works for joins
+    Tests whether HistogramForColumns works for projections
     """
     test_code = cleandoc("""
             import pandas as pd
