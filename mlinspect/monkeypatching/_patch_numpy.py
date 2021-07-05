@@ -35,8 +35,9 @@ class NumpyRandomPatching:
             dag_node = DagNode(op_id,
                                BasicCodeLocation(caller_filename, lineno),
                                operator_context,
-                               DagNodeDetails(None, ['array']),
+                               DagNodeDetails("random", ['array']),
                                get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             add_dag_node(dag_node, [], backend_result)
+            return result
 
         return execute_patched_func(original, execute_inspections, *args, **kwargs)
