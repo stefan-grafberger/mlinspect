@@ -1,5 +1,5 @@
 """
-A inspection to compute the ratio of non-values in output columns
+An inspection to compute the number of distinct values in output columns
 """
 from typing import Iterable
 
@@ -9,7 +9,7 @@ from mlinspect.inspections._inspection_input import OperatorType, InspectionInpu
 
 class CountDistinctOfColumns(Inspection):
     """
-    An inspection to compute the completeness of columns
+    An inspection to compute the number of distinct values of columns
     """
 
     def __init__(self, columns):
