@@ -10,7 +10,7 @@ from mlinspect.inspections._inspection_input import InspectionInputDataSource, \
 
 class HistogramForColumns(Inspection):
     """
-    A simple example inspection
+    An inspection to compute group membership histograms for multiple columns
     """
 
     def __init__(self, sensitive_columns):

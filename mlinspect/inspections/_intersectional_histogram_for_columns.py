@@ -10,7 +10,7 @@ from mlinspect.inspections._inspection_input import InspectionInputDataSource, \
 
 class IntersectionalHistogramForColumns(Inspection):
     """
-    A simple example inspection
+    An inspection to compute intersectional group memberships
     """
 
     def __init__(self, sensitive_columns: List[str]):
