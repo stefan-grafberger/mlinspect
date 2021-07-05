@@ -1,6 +1,7 @@
 """
 Packages and classes we want to expose to users
 """
+from ._completeness_of_columns import CompletenessOfColumns
 from ._inspection import Inspection
 from ._inspection_result import InspectionResult
 from ._inspection_input import InspectionInputUnaryOperator, InspectionInputDataSource, InspectionInputSinkOperator, \
@@ -19,5 +20,6 @@ __all__ = [
     'HistogramForColumns',
     'IntersectionalHistogramForColumns',
     'RowLineage',
-    'MaterializeFirstOutputRows'
+    'MaterializeFirstOutputRows',
+    'CompletenessOfColumns'
 ]
