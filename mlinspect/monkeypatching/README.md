@@ -78,3 +78,12 @@ compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expe
 | `('sklearn.linear_model._logistic', 'LogisticRegression')` | Estimator      |
 | `('sklearn.model_selection._split', 'train_test_split')` | Split (Train/Test)      |
 | `('sklearn.preprocessing._label', 'label_binarize')` | Projection (Mod)      |
+
+## Numpy 
+* The implementation can be found mainly [here](./_patch_numpy.py)
+* The [tests](../../test/monkeypatching/test_patch_numpy.py) are probably more useful to look at 
+* Currently supported functions: 
+
+| Function Call        | Operator        
+| ------------- |:-------------:|
+| `('numpy.random', 'random')`      | Data Source | 
