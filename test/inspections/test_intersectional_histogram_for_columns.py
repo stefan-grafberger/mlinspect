@@ -1,5 +1,5 @@
 """
-Tests whether HistogramForColumns works
+Tests whether IntersectionalHistogramForColumns works
 """
 from inspect import cleandoc
 

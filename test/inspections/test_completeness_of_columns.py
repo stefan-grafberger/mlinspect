@@ -1,5 +1,5 @@
 """
-Tests whether NoMissingEmbeddings works
+Tests whether CompletenessOfColumns works
 """
 from inspect import cleandoc
 
@@ -11,7 +11,7 @@ from mlinspect.inspections import CompletenessOfColumns
 
 def test_completeness_merge():
     """
-    Tests whether HistogramForColumns works for joins
+    Tests whether CompletenessOfColumns works for joins
     """
     test_code = cleandoc("""
             import numpy as np
@@ -43,7 +43,7 @@ def test_completeness_merge():
 
 def test_completeness_projection():
     """
-    Tests whether HistogramForColumns works for projections
+    Tests whether CompletenessOfColumns works for projections
     """
     test_code = cleandoc("""
             import pandas as pd

@@ -1,5 +1,5 @@
 """
-A simple example inspection
+An inspection to compute histograms of intersectional group memberships
 """
 from typing import Iterable, List
 
