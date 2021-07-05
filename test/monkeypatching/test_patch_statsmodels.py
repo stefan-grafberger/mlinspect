@@ -107,3 +107,78 @@ def test_get_rdataset():
                                              'mlinspect_lineage'])
 
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
+def test_ols_fit():
+    """
+    Tests whether the monkey patching of ('statsmodels.regression.linear_model.OLS', 'fit') works
+    """
+    test_code = cleandoc("""
+        import numpy as np
+        import statsmodels.api as sm
+        np.random.seed(42)
+        nobs = 100
+        X = np.random.random((nobs, 2))
+        X = sm.add_constant(X)
+        beta = [1, .1, .5]
+        e = np.random.random(nobs)
+        y = np.dot(X, beta) + e
+        results = sm.OLS(y, X).fit()
+        assert results.summary() is not None
+        """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(3)])
+    inspector_result.dag.remove_nodes_from(list(inspector_result.dag.nodes)[0:4])
+    inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[1])
+
+    expected_dag = networkx.DiGraph()
+    expected_train_data = DagNode(3,
+                                  BasicCodeLocation("<string-source>", 10),
+                                  OperatorContext(OperatorType.TRAIN_DATA,
+                                                  FunctionInfo('statsmodel.api.OLS', 'fit')),
+                                  DagNodeDetails('Train Data', ['array']),
+                                  OptionalCodeInfo(CodeReference(10, 10, 10, 22), 'sm.OLS(y, X)'))
+    expected_train_labels = DagNode(4,
+                                    BasicCodeLocation("<string-source>", 10),
+                                    OperatorContext(OperatorType.TRAIN_LABELS,
+                                                    FunctionInfo('statsmodel.api.OLS', 'fit')),
+                                    DagNodeDetails('Train Labels', ['array']),
+                                    OptionalCodeInfo(CodeReference(10, 10, 10, 22), 'sm.OLS(y, X)'))
+    expected_ols = DagNode(5,
+                                     BasicCodeLocation("<string-source>", 10),
+                                     OperatorContext(OperatorType.ESTIMATOR,
+                                                     FunctionInfo('statsmodel.api.OLS', 'fit')),
+                                     DagNodeDetails('Decision Tree', []),
+                                     OptionalCodeInfo(CodeReference(10, 10, 10, 22), 'sm.OLS(y, X)'))
+    expected_dag.add_edge(expected_train_data, expected_ols)
+    expected_dag.add_edge(expected_train_labels, expected_ols)
+
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_data]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.3745401188473625, 0.9507143064099162]), {LineageId(3, 0)}],
+                                     [numpy.array([1.0, 0.7319939418114051, 0.5986584841970366]), {LineageId(3, 1)}],
+                                     [numpy.array([1.0, 0.15601864044243652, 0.15599452033620265]), {LineageId(3, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
+                                      atol=0.1)
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_labels]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[2.154842811243982, {LineageId(5, 0)}],
+                                     [1.4566686012747074, {LineageId(5, 1)}],
+                                     [1.2552278383069588, {LineageId(5, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
+                                      atol=0.1)
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_ols]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[{LineageId(5, 0), LineageId(3, 0)}],
+                                     [{LineageId(5, 1), LineageId(3, 1)}],
+                                     [{LineageId(5, 2), LineageId(3, 2)}]],
+                                    columns=['mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
+                                      check_column_type=False)

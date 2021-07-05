@@ -97,3 +97,4 @@ compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expe
 | ------------- |:-------------:|
 | `('statsmodels.datasets', 'get_rdataset')`      | Data Source | 
 | `('statsmodels.api', 'add_constant')`      | Projection (Mod) | 
+| `('statsmodel.api.OLS', 'fit')`, numpy syntax      | Estimator | 
