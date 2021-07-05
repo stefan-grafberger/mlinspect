@@ -1,38 +1,42 @@
 """
 Monkey patching for numpy
 """
+import gorilla
+from numpy import random
 
-import numpy
+from mlinspect import DagNode, BasicCodeLocation, DagNodeDetails
+from mlinspect.backends._sklearn_backend import SklearnBackend
+from mlinspect.inspections._inspection_input import OperatorContext, FunctionInfo, OperatorType
+from mlinspect.monkeypatching._monkey_patching_utils import execute_patched_func, add_dag_node, \
+    get_optional_code_info_or_none
 
 
-class MlinspectNdarray(numpy.ndarray):
-    """
-    A wrapper for numpy ndarrays to store our additional annotations.
-    See https://docs.scipy.org/doc/numpy-1.13.0/user/basics.subclassing.html
-    """
+@gorilla.patches(random)
+class NumpyRandomPatching:
+    """ Patches for sklearn """
 
-    def __new__(cls, input_array, _mlinspect_dag_node=None, _mlinspect_annotation=None):
-        # Input array is an already formed ndarray instance
-        # We first cast to be our class type
-        obj = numpy.asarray(input_array).view(cls)
-        # add the new attribute to the created instance
-        obj._mlinspect_dag_node = _mlinspect_dag_node
-        obj._mlinspect_annotation = _mlinspect_annotation
-        # Finally, we must return the newly created object:
-        return obj
+    # pylint: disable=too-few-public-methods
 
-    def __array_finalize__(self, obj):
-        # pylint: disable=attribute-defined-outside-init
-        # see InfoArray.__array_finalize__ for comments
-        if obj is None:
-            return
-        self._mlinspect_dag_node = getattr(obj, '_mlinspect_dag_node', None)
-        self._mlinspect_annotation = getattr(obj, '_mlinspect_annotation', None)
+    @gorilla.name('random')
+    @gorilla.settings(allow_hit=True)
+    def patched_random(*args, **kwargs):
+        """ Patch for ('numpy.random', 'random') """
+        # pylint: disable=no-method-argument
+        original = gorilla.get_original_attribute(random, 'random')
 
-    def ravel(self, order='C'):
-        # pylint: disable=no-member
-        result = super().ravel(order)
-        assert isinstance(result, MlinspectNdarray)
-        result._mlinspect_dag_node = self._mlinspect_dag_node  # pylint: disable=protected-access
-        result._mlinspect_annotation = self._mlinspect_annotation  # pylint: disable=protected-access
-        return result
+        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            function_info = FunctionInfo('numpy.random', 'random')
+            operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
+            input_infos = SklearnBackend.before_call(operator_context, [])
+            result = original(*args, **kwargs)
+            backend_result = SklearnBackend.after_call(operator_context, input_infos, result)
+
+            dag_node = DagNode(op_id,
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails(None, ['array']),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
+            add_dag_node(dag_node, [], backend_result)
+
+        return execute_patched_func(original, execute_inspections, *args, **kwargs)
