@@ -13,7 +13,8 @@ from mlinspect._pipeline_inspector import PipelineInspector
 from mlinspect.checks import SimilarRemovalProbabilitiesFor
 from mlinspect.checks._no_bias_introduced_for import NoBiasIntroducedFor
 from mlinspect.checks._no_illegal_features import NoIllegalFeatures
-from mlinspect.inspections import HistogramForColumns, IntersectionalHistogramForColumns, CompletenessOfColumns
+from mlinspect.inspections import HistogramForColumns, IntersectionalHistogramForColumns, CompletenessOfColumns, \
+    CountDistinctOfColumns
 from mlinspect.inspections._lineage import RowLineage
 from mlinspect.inspections._materialize_first_output_rows import MaterializeFirstOutputRows
 from mlinspect.instrumentation._dag_node import DagNode, CodeReference, BasicCodeLocation, DagNodeDetails, \
@@ -252,6 +253,7 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
         .add_required_inspection(MaterializeFirstOutputRows(5)) \
         .add_required_inspection(IntersectionalHistogramForColumns(sensitive_columns)) \
         .add_required_inspection(CompletenessOfColumns(sensitive_columns)) \
+        .add_required_inspection(CountDistinctOfColumns(sensitive_columns)) \
         .add_custom_monkey_patching_modules(custom_monkey_patching) \
         .execute()
 
@@ -267,12 +269,14 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
             assert inspection_result[HistogramForColumns(sensitive_columns)] is not None
             assert inspection_result[IntersectionalHistogramForColumns(sensitive_columns)] is not None
             assert inspection_result[CompletenessOfColumns(sensitive_columns)] is not None
+            assert inspection_result[CountDistinctOfColumns(sensitive_columns)] is not None
         else:
             assert inspection_result[MaterializeFirstOutputRows(5)] is None
             assert inspection_result[RowLineage(5)] is not None
             assert inspection_result[HistogramForColumns(sensitive_columns)] is None
             assert inspection_result[IntersectionalHistogramForColumns(sensitive_columns)] is None
             assert inspection_result[CompletenessOfColumns(sensitive_columns)] is None
+            assert inspection_result[CountDistinctOfColumns(sensitive_columns)] is None
 
     save_fig_to_path(inspector_result.dag, dag_png_path)
     assert os.path.isfile(dag_png_path)
