@@ -754,6 +754,7 @@ class SklearnSGDClassifierPatching:
                                operator_context,
                                DagNodeDetails("Score", []),
                                get_optional_code_info_or_none(optional_code_reference, optional_source_code))
+            # TODO: Also add the fit node as parent
             add_dag_node(dag_node, [test_data_dag_node, test_labels_dag_node], estimator_backend_result)
             return result
 
