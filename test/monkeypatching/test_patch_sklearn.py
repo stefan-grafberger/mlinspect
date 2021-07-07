@@ -726,18 +726,18 @@ def test_decision_tree():
                                    OptionalCodeInfo(CodeReference(6, 5, 6, 95),
                                                     "pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], "
                                                     "'target': ['no', 'no', 'yes', 'yes']})"))
-    expected_standard_scaler = DagNode(2,
-                                       BasicCodeLocation("<string-source>", 8),
-                                       OperatorContext(OperatorType.TRANSFORMER,
-                                                       FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
-                                       DagNodeDetails('Standard Scaler', ['array']),
-                                       OptionalCodeInfo(CodeReference(8, 8, 8, 24), 'StandardScaler()'))
     expected_data_projection = DagNode(1,
                                        BasicCodeLocation("<string-source>", 8),
                                        OperatorContext(OperatorType.PROJECTION,
                                                        FunctionInfo('pandas.core.frame', '__getitem__')),
                                        DagNodeDetails("to ['A', 'B']", ['A', 'B']),
                                        OptionalCodeInfo(CodeReference(8, 39, 8, 53), "df[['A', 'B']]"))
+    expected_standard_scaler = DagNode(2,
+                                       BasicCodeLocation("<string-source>", 8),
+                                       OperatorContext(OperatorType.TRANSFORMER,
+                                                       FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
+                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       OptionalCodeInfo(CodeReference(8, 8, 8, 24), 'StandardScaler()'))
     expected_dag.add_edge(expected_data_source, expected_data_projection)
     expected_dag.add_edge(expected_data_projection, expected_standard_scaler)
     expected_label_projection = DagNode(3,
@@ -831,9 +831,17 @@ def test_sgd_classifier():
 
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
                                                         inspections=[RowLineage(3)])
-    inspector_result.dag.remove_nodes_from(list(inspector_result.dag.nodes)[0:5])
+    dag_nodes_irrelevant__for_test = [dag_node for dag_node in list(inspector_result.dag.nodes)
+                                      if dag_node.node_id not in {2, 5, 4, 6, 7}]
+    inspector_result.dag.remove_nodes_from(dag_nodes_irrelevant__for_test)
 
     expected_dag = networkx.DiGraph()
+    expected_standard_scaler = DagNode(2,
+                                       BasicCodeLocation("<string-source>", 8),
+                                       OperatorContext(OperatorType.TRANSFORMER,
+                                                       FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
+                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       OptionalCodeInfo(CodeReference(8, 8, 8, 24), 'StandardScaler()'))
     expected_train_data = DagNode(5,
                                   BasicCodeLocation("<string-source>", 11),
                                   OperatorContext(OperatorType.TRAIN_DATA,
@@ -842,6 +850,14 @@ def test_sgd_classifier():
                                   DagNodeDetails('Train Data', ['array']),
                                   OptionalCodeInfo(CodeReference(11, 6, 11, 48),
                                                    "SGDClassifier(loss='log', random_state=42)"))
+    expected_dag.add_edge(expected_standard_scaler, expected_train_data)
+    expected_label_encode = DagNode(4,
+                                    BasicCodeLocation("<string-source>", 9),
+                                    OperatorContext(OperatorType.PROJECTION_MODIFY,
+                                                    FunctionInfo('sklearn.preprocessing._label', 'label_binarize')),
+                                    DagNodeDetails("label_binarize, classes: ['no', 'yes']", ['array']),
+                                    OptionalCodeInfo(CodeReference(9, 9, 9, 60),
+                                                     "label_binarize(df['target'], classes=['no', 'yes'])"))
     expected_train_labels = DagNode(6,
                                     BasicCodeLocation("<string-source>", 11),
                                     OperatorContext(OperatorType.TRAIN_LABELS,
@@ -850,6 +866,7 @@ def test_sgd_classifier():
                                     DagNodeDetails('Train Labels', ['array']),
                                     OptionalCodeInfo(CodeReference(11, 6, 11, 48),
                                                      "SGDClassifier(loss='log', random_state=42)"))
+    expected_dag.add_edge(expected_label_encode, expected_train_labels)
     expected_decision_tree = DagNode(7,
                                      BasicCodeLocation("<string-source>", 11),
                                      OperatorContext(OperatorType.ESTIMATOR,
@@ -915,9 +932,15 @@ def test_sgd_classifier_score():
 
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
                                                         inspections=[RowLineage(3)])
-    inspector_result.dag.remove_nodes_from(list(inspector_result.dag.nodes)[0:12])
+    inspector_result.dag.remove_nodes_from(list(inspector_result.dag.nodes)[0:10])
 
     expected_dag = networkx.DiGraph()
+    expected_data_projection = DagNode(11,
+                                       BasicCodeLocation("<string-source>", 16),
+                                       OperatorContext(OperatorType.PROJECTION,
+                                                       FunctionInfo('pandas.core.frame', '__getitem__')),
+                                       DagNodeDetails("to ['A', 'B']", ['A', 'B']),
+                                       OptionalCodeInfo(CodeReference(16, 23, 16, 42), "test_df[['A', 'B']]"))
     expected_test_data = DagNode(12,
                                  BasicCodeLocation("<string-source>", 16),
                                  OperatorContext(OperatorType.TEST_DATA,
@@ -926,6 +949,14 @@ def test_sgd_classifier_score():
                                  DagNodeDetails('Test Data', ['A', 'B']),
                                  OptionalCodeInfo(CodeReference(16, 13, 16, 56),
                                                   "clf.score(test_df[['A', 'B']], test_labels)"))
+    expected_dag.add_edge(expected_data_projection, expected_test_data)
+    expected_label_encode = DagNode(10,
+                                    BasicCodeLocation("<string-source>", 15),
+                                    OperatorContext(OperatorType.PROJECTION_MODIFY,
+                                                    FunctionInfo('sklearn.preprocessing._label', 'label_binarize')),
+                                    DagNodeDetails("label_binarize, classes: ['no', 'yes']", ['array']),
+                                    OptionalCodeInfo(CodeReference(15, 14, 15, 70),
+                                                     "label_binarize(test_df['target'], classes=['no', 'yes'])"))
     expected_test_labels = DagNode(13,
                                    BasicCodeLocation("<string-source>", 16),
                                    OperatorContext(OperatorType.TEST_LABELS,
@@ -934,6 +965,7 @@ def test_sgd_classifier_score():
                                    DagNodeDetails('Test Labels', ['array']),
                                    OptionalCodeInfo(CodeReference(16, 13, 16, 56),
                                                     "clf.score(test_df[['A', 'B']], test_labels)"))
+    expected_dag.add_edge(expected_label_encode, expected_test_labels)
     expected_score = DagNode(14,
                              BasicCodeLocation("<string-source>", 16),
                              OperatorContext(OperatorType.SCORE,
