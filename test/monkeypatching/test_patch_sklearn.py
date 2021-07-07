@@ -806,6 +806,127 @@ def test_decision_tree():
                                       check_column_type=False)
 
 
+def test_sgd_classifier():
+    """
+    Tests whether the monkey patching of ('sklearn.linear_model._stochastic_gradient', 'SGDClassifier') works
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+                from sklearn.preprocessing import label_binarize, StandardScaler
+                from sklearn.linear_model import SGDClassifier
+                import numpy as np
+
+                df = pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], 'target': ['no', 'no', 'yes', 'yes']})
+
+                train = StandardScaler().fit_transform(df[['A', 'B']])
+                target = label_binarize(df['target'], classes=['no', 'yes'])
+
+                clf = SGDClassifier(loss='log', random_state=42)
+                clf = clf.fit(train, target)
+
+                test_predict = clf.predict([[0., 0.], [0.6, 0.6]])
+                expected = np.array([0., 1.])
+                assert np.allclose(test_predict, expected)
+                """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(3)])
+
+    expected_dag = networkx.DiGraph()
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 6),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A', 'B', 'target']),
+                                   OptionalCodeInfo(CodeReference(6, 5, 6, 95),
+                                                    "pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], "
+                                                    "'target': ['no', 'no', 'yes', 'yes']})"))
+    expected_standard_scaler = DagNode(2,
+                                       BasicCodeLocation("<string-source>", 8),
+                                       OperatorContext(OperatorType.TRANSFORMER,
+                                                       FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
+                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       OptionalCodeInfo(CodeReference(8, 8, 8, 24), 'StandardScaler()'))
+    expected_data_projection = DagNode(1,
+                                       BasicCodeLocation("<string-source>", 8),
+                                       OperatorContext(OperatorType.PROJECTION,
+                                                       FunctionInfo('pandas.core.frame', '__getitem__')),
+                                       DagNodeDetails("to ['A', 'B']", ['A', 'B']),
+                                       OptionalCodeInfo(CodeReference(8, 39, 8, 53), "df[['A', 'B']]"))
+    expected_dag.add_edge(expected_data_source, expected_data_projection)
+    expected_dag.add_edge(expected_data_projection, expected_standard_scaler)
+    expected_label_projection = DagNode(3,
+                                        BasicCodeLocation("<string-source>", 9),
+                                        OperatorContext(OperatorType.PROJECTION,
+                                                        FunctionInfo('pandas.core.frame', '__getitem__')),
+                                        DagNodeDetails("to ['target']", ['target']),
+                                        OptionalCodeInfo(CodeReference(9, 24, 9, 36), "df['target']"))
+    expected_dag.add_edge(expected_data_source, expected_label_projection)
+    expected_label_encode = DagNode(4,
+                                    BasicCodeLocation("<string-source>", 9),
+                                    OperatorContext(OperatorType.PROJECTION_MODIFY,
+                                                    FunctionInfo('sklearn.preprocessing._label', 'label_binarize')),
+                                    DagNodeDetails("label_binarize, classes: ['no', 'yes']", ['array']),
+                                    OptionalCodeInfo(CodeReference(9, 9, 9, 60),
+                                                     "label_binarize(df['target'], classes=['no', 'yes'])"))
+    expected_dag.add_edge(expected_label_projection, expected_label_encode)
+    expected_train_data = DagNode(5,
+                                  BasicCodeLocation("<string-source>", 11),
+                                  OperatorContext(OperatorType.TRAIN_DATA,
+                                                  FunctionInfo('sklearn.linear_model._stochastic_gradient',
+                                                               'SGDClassifier')),
+                                  DagNodeDetails('Train Data', ['array']),
+                                  OptionalCodeInfo(CodeReference(11, 6, 11, 48),
+                                                   "SGDClassifier(loss='log', random_state=42)"))
+    expected_dag.add_edge(expected_standard_scaler, expected_train_data)
+    expected_train_labels = DagNode(6,
+                                    BasicCodeLocation("<string-source>", 11),
+                                    OperatorContext(OperatorType.TRAIN_LABELS,
+                                                    FunctionInfo('sklearn.linear_model._stochastic_gradient',
+                                                                 'SGDClassifier')),
+                                    DagNodeDetails('Train Labels', ['array']),
+                                    OptionalCodeInfo(CodeReference(11, 6, 11, 48),
+                                                     "SGDClassifier(loss='log', random_state=42)"))
+    expected_dag.add_edge(expected_label_encode, expected_train_labels)
+    expected_decision_tree = DagNode(7,
+                                     BasicCodeLocation("<string-source>", 11),
+                                     OperatorContext(OperatorType.ESTIMATOR,
+                                                     FunctionInfo('sklearn.linear_model._stochastic_gradient',
+                                                                  'SGDClassifier')),
+                                     DagNodeDetails('Decision Tree', []),
+                                     OptionalCodeInfo(CodeReference(11, 6, 11, 48),
+                                                      "SGDClassifier(loss='log', random_state=42)"))
+    expected_dag.add_edge(expected_train_data, expected_decision_tree)
+    expected_dag.add_edge(expected_train_labels, expected_decision_tree)
+
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_data]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([-1.3416407864998738, -1.3416407864998738]), {LineageId(0, 0)}],
+                                     [numpy.array([-0.4472135954999579, -0.4472135954999579]), {LineageId(0, 1)}],
+                                     [numpy.array([0.4472135954999579, 0.4472135954999579]), {LineageId(0, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_labels]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([0]), {LineageId(0, 0)}],
+                                     [numpy.array([0]), {LineageId(0, 1)}],
+                                     [numpy.array([1]), {LineageId(0, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_decision_tree]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[{LineageId(0, 0)}],
+                                     [{LineageId(0, 1)}],
+                                     [{LineageId(0, 2)}]],
+                                    columns=['mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
+                                      check_column_type=False)
+
+
 def test_logistic_regression():
     """
     Tests whether the monkey patching of ('sklearn.linear_model._logistic', 'LogisticRegression') works
