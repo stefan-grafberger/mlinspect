@@ -56,11 +56,12 @@ class SklearnBackend(Backend):
                                          test_return_value.dag_node_annotation)
         elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY,
                                            OperatorType.TRANSFORMER, OperatorType.TRAIN_DATA,
-                                           OperatorType.TRAIN_LABELS}:
+                                           OperatorType.TRAIN_LABELS, OperatorType.TEST_DATA,
+                                           OperatorType.TEST_LABELS}:
             return_value = execute_inspection_visits_unary_operator(operator_context, input_infos[0].result_data,
                                                                     input_infos[0].result_annotation, return_value,
                                                                     False)
-        elif operator_context.operator == OperatorType.ESTIMATOR:
+        elif operator_context.operator in {OperatorType.ESTIMATOR, OperatorType.SCORE}:
             return_value = execute_inspection_visits_sink_op(operator_context,
                                                              input_infos[0].result_data,
                                                              input_infos[0].result_annotation,

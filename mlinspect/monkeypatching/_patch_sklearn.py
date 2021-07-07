@@ -17,7 +17,8 @@ from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import DagNode, BasicCodeLocation, DagNodeDetails, CodeReference
 from mlinspect.instrumentation._pipeline_executor import singleton
 from mlinspect.monkeypatching._monkey_patching_utils import execute_patched_func, add_dag_node, \
-    execute_patched_func_indirect_allowed, get_input_info, execute_patched_func_no_op_id, get_optional_code_info_or_none
+    execute_patched_func_indirect_allowed, get_input_info, execute_patched_func_no_op_id, \
+    get_optional_code_info_or_none, get_column_names
 from mlinspect.monkeypatching._mlinspect_ndarray import MlinspectNdarray
 
 
@@ -695,6 +696,70 @@ class SklearnSGDClassifierPatching:
                                                           self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [train_data_dag_node, train_labels_dag_node], estimator_backend_result)
         return self
+
+    @gorilla.name('score')
+    @gorilla.settings(allow_hit=True)
+    def patched_score(self, *args, **kwargs):
+        """ Patch for ('sklearn.linear_model._stochastic_gradient.SGDClassifier', 'score') """
+        # pylint: disable=no-method-argument
+        original = gorilla.get_original_attribute(linear_model.SGDClassifier, 'score')
+
+        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            # pylint: disable=too-many-locals
+            function_info = FunctionInfo('sklearn.linear_model._stochastic_gradient.SGDClassifier', 'score')
+            # Test data
+            input_info_test_data = get_input_info(args[0], caller_filename, lineno, function_info,
+                                                  optional_code_reference, optional_source_code)
+            operator_context = OperatorContext(OperatorType.TEST_DATA, function_info)
+            test_data_dag_node = DagNode(op_id,
+                                         BasicCodeLocation(caller_filename, lineno),
+                                         operator_context,
+                                         DagNodeDetails("Test Data", get_column_names(args[0])),
+                                         get_optional_code_info_or_none(optional_code_reference, optional_source_code))
+            input_infos = SklearnBackend.before_call(operator_context, [input_info_test_data.annotated_dfobject])
+            data_backend_result = SklearnBackend.after_call(operator_context,
+                                                            input_infos,
+                                                            args[0])
+            add_dag_node(test_data_dag_node, [input_info_test_data.dag_node], data_backend_result)
+            test_data_result = data_backend_result.annotated_dfobject.result_data
+
+            # Test labels
+            operator_context = OperatorContext(OperatorType.TEST_LABELS, function_info)
+            input_info_test_labels = get_input_info(args[1], caller_filename, lineno, function_info,
+                                                    optional_code_reference, optional_source_code)
+            test_label_op_id = _pipeline_executor.singleton.get_next_op_id()
+            test_labels_dag_node = DagNode(test_label_op_id,
+                                           BasicCodeLocation(caller_filename, lineno),
+                                           operator_context,
+                                           DagNodeDetails("Test Labels", get_column_names(args[1])),
+                                           get_optional_code_info_or_none(optional_code_reference,
+                                                                          optional_source_code))
+            input_infos = SklearnBackend.before_call(operator_context, [input_info_test_labels.annotated_dfobject])
+            label_backend_result = SklearnBackend.after_call(operator_context,
+                                                             input_infos,
+                                                             args[1])
+            add_dag_node(test_labels_dag_node, [input_info_test_labels.dag_node], label_backend_result)
+            test_labels_result = label_backend_result.annotated_dfobject.result_data
+
+            # Score
+            operator_context = OperatorContext(OperatorType.SCORE, function_info)
+            input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+            input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+            result = original(self, test_data_result, test_labels_result, *args[2:], **kwargs)
+            estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                                 input_infos,
+                                                                 None)
+
+            dag_node = DagNode(singleton.get_next_op_id(),
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails("Score", []),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
+            add_dag_node(dag_node, [test_data_dag_node, test_labels_dag_node], estimator_backend_result)
+            return result
+
+        return execute_patched_func(original, execute_inspections, *args, **kwargs)
 
 
 @gorilla.patches(linear_model.LogisticRegression)

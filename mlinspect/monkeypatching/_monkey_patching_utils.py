@@ -133,14 +133,7 @@ def get_input_info(df_object, caller_filename, lineno, function_info, optional_c
     for the DAG node we want to insert in the next step.
     """
     # pylint: disable=too-many-arguments, unused-argument, protected-access, unused-variable, too-many-locals
-    if isinstance(df_object, DataFrame):
-        columns = list(df_object.columns)  # TODO: Update this for numpy arrays etc. later
-    elif isinstance(df_object, Series):
-        columns = [df_object.name]
-    elif isinstance(df_object, (csr_matrix, numpy.ndarray)):
-        columns = ['array']
-    else:
-        raise NotImplementedError("TODO: Mlinspect info storage for type: '{}'".format(type(df_object)))
+    columns = get_column_names(df_object)
     if hasattr(df_object, "_mlinspect_annotation"):
         input_op_id = df_object._mlinspect_dag_node
         input_dag_node = singleton.op_id_to_dag_node[input_op_id]
@@ -165,6 +158,19 @@ def get_input_info(df_object, caller_filename, lineno, function_info, optional_c
         annotation_df = backend_result.annotated_dfobject.result_annotation
         input_info = InputInfo(input_dag_node, AnnotatedDfObject(df_object, annotation_df))
     return input_info
+
+
+def get_column_names(df_object):
+    """Get column names for a dataframe ojbect"""
+    if isinstance(df_object, DataFrame):
+        columns = list(df_object.columns)  # TODO: Update this for numpy arrays etc. later
+    elif isinstance(df_object, Series):
+        columns = [df_object.name]
+    elif isinstance(df_object, (csr_matrix, numpy.ndarray)):
+        columns = ['array']
+    else:
+        raise NotImplementedError("TODO: Type: '{}' still is not supported!".format(type(df_object)))
+    return columns
 
 
 def add_dag_node(dag_node: DagNode, dag_node_parents: List[DagNode], backend_result: BackendResult):
