@@ -477,7 +477,6 @@ class SklearnSimpleImputerPatching:
 @gorilla.patches(tree.DecisionTreeClassifier)
 class SklearnDecisionTreePatching:
     """ Patches for sklearn DecisionTree"""
-
     # pylint: disable=too-few-public-methods
 
     @gorilla.name('__init__')
@@ -589,7 +588,6 @@ class SklearnDecisionTreePatching:
 @gorilla.patches(linear_model.SGDClassifier)
 class SklearnSGDClassifierPatching:
     """ Patches for sklearn SGDClassifier"""
-
     # pylint: disable=too-few-public-methods
 
     @gorilla.name('__init__')
