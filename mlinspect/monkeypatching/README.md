@@ -75,6 +75,7 @@ compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expe
 | `('sklearn.preprocessing._data', 'StandardScaler')` | Transformer      |
 | `('sklearn.impute._base’, 'SimpleImputer')` | Transformer      |
 | `('sklearn.preprocessing._discretization', 'KBinsDiscretizer')` | Transformer      |
+| `('sklearn.preprocessing_function_transformer','FunctionTransformer')` | Transformer      |
 | `('sklearn.tree._classes', 'DecisionTreeClassifier')` | Estimator      |
 | `('sklearn.linear_model._stochastic_gradient', 'SGDClassifier')` | Estimator      |
 | `('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')` | Estimator      |

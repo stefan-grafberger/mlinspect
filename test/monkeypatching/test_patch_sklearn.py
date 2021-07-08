@@ -192,6 +192,83 @@ def test_standard_scaler():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
+def test_function_transformer():
+    """
+    Tests whether the monkey patching of ('sklearn.preprocessing_function_transformer', 'FunctionTransformer') works
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+                from sklearn.preprocessing import FunctionTransformer
+                import numpy as np
+                
+                def safe_log(x):
+                    return np.log(x, out=np.zeros_like(x), where=(x!=0))
+
+                df = pd.DataFrame({'A': [1, 2, 10, 5]})
+                function_transformer = FunctionTransformer(lambda x: safe_log(x))
+                encoded_data = function_transformer.fit_transform(df)
+                test_df = pd.DataFrame({'A': [1, 2, 10, 5]})
+                encoded_data = function_transformer.transform(test_df)
+                expected = np.array([[0.000000], [0.693147], [2.302585], [1.609438]])
+                assert np.allclose(encoded_data, expected)
+                """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(3)])
+
+    expected_dag = networkx.DiGraph()
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 8),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A']),
+                                   OptionalCodeInfo(CodeReference(8, 5, 8, 39), "pd.DataFrame({'A': [1, 2, 10, 5]})"))
+    expected_transformer = DagNode(1,
+                                   BasicCodeLocation("<string-source>", 9),
+                                   OperatorContext(OperatorType.TRANSFORMER,
+                                                   FunctionInfo('sklearn.preprocessing_function_transformer',
+                                                                'FunctionTransformer')),
+                                   DagNodeDetails('Function Transformer: fit_transform', ['A']),
+                                   OptionalCodeInfo(CodeReference(9, 23, 9, 65),
+                                                    'FunctionTransformer(lambda x: safe_log(x))'))
+    expected_dag.add_edge(expected_data_source, expected_transformer)
+    expected_data_source_two = DagNode(2,
+                                       BasicCodeLocation("<string-source>", 11),
+                                       OperatorContext(OperatorType.DATA_SOURCE,
+                                                       FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                       DagNodeDetails(None, ['A']),
+                                       OptionalCodeInfo(CodeReference(11, 10, 11, 44),
+                                                        "pd.DataFrame({'A': [1, 2, 10, 5]})"))
+    expected_transformer_two = DagNode(3,
+                                       BasicCodeLocation("<string-source>", 9),
+                                       OperatorContext(OperatorType.TRANSFORMER,
+                                                       FunctionInfo('sklearn.preprocessing_function_transformer',
+                                                                    'FunctionTransformer')),
+                                       DagNodeDetails('Function Transformer: transform', ['A']),
+                                       OptionalCodeInfo(CodeReference(9, 23, 9, 65),
+                                                        'FunctionTransformer(lambda x: safe_log(x))'))
+    expected_dag.add_edge(expected_data_source_two, expected_transformer_two)
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[0., {LineageId(0, 0)}],
+                                     [0.6931471805599453, {LineageId(0, 1)}],
+                                     [2.302585092994046, {LineageId(0, 2)}]],
+                                    columns=['A', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
+                                      atol=0.01)
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer_two]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[0., {LineageId(2, 0)}],
+                                     [0.6931471805599453, {LineageId(2, 1)}],
+                                     [2.302585092994046, {LineageId(2, 2)}]],
+                                    columns=['A', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
+                                      atol=0.01)
+
+
 def test_kbins_discretizer():
     """
     Tests whether the monkey patching of ('sklearn.preprocessing._discretization', 'KBinsDiscretizer') works
