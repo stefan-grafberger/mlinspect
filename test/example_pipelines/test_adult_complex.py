@@ -22,4 +22,4 @@ def test_instrumented_py_pipeline_runs():
     Tests whether the pipeline works with instrumentation
     """
     dag = run_and_assert_all_op_outputs_inspected(ADULT_COMPLEX_PY, ["race"], ADULT_COMPLEX_PNG)
-    assert len(dag) == 15
+    assert len(dag) == 24
