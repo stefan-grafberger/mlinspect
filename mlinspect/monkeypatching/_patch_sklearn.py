@@ -1,6 +1,7 @@
 """
 Monkey patching for sklearn
 """
+# pylint: disable=too-many-lines
 
 import gorilla
 import numpy
@@ -285,7 +286,7 @@ class SklearnStandardScalerPatching:
     def patched_fit_transform(self, *args, **kwargs):
         """ Patch for ('sklearn.preprocessing._data.StandardScaler', 'fit_transform') """
         # pylint: disable=no-method-argument
-        self.mlinspect_fit_transform_active = True
+        self.mlinspect_fit_transform_active = True  # pylint: disable=attribute-defined-outside-init
         original = gorilla.get_original_attribute(preprocessing.StandardScaler, 'fit_transform')
         function_info = FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')
         input_info = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno, function_info,
@@ -306,7 +307,7 @@ class SklearnStandardScalerPatching:
                            get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                           self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
-        self.mlinspect_fit_transform_active = False
+        self.mlinspect_fit_transform_active = False  # pylint: disable=attribute-defined-outside-init
         return new_return_value
 
     @gorilla.name('transform')
@@ -335,9 +336,9 @@ class SklearnStandardScalerPatching:
                                get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                               self.mlinspect_optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
-            return new_return_value
         else:
-            return original(self, *args, **kwargs)
+            new_return_value = original(self, *args, **kwargs)
+        return new_return_value
 
 
 @gorilla.patches(preprocessing.KBinsDiscretizer)
@@ -379,7 +380,7 @@ class SklearnKBinsDiscretizerPatching:
     def patched_fit_transform(self, *args, **kwargs):
         """ Patch for ('sklearn.preprocessing._discretization.KBinsDiscretizer', 'fit_transform') """
         # pylint: disable=no-method-argument
-        self.mlinspect_fit_transform_active = True
+        self.mlinspect_fit_transform_active = True  # pylint: disable=attribute-defined-outside-init
         original = gorilla.get_original_attribute(preprocessing.KBinsDiscretizer, 'fit_transform')
         function_info = FunctionInfo('sklearn.preprocessing._discretization', 'KBinsDiscretizer')
         input_info = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno, function_info,
@@ -400,7 +401,7 @@ class SklearnKBinsDiscretizerPatching:
                            get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                           self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
-        self.mlinspect_fit_transform_active = False
+        self.mlinspect_fit_transform_active = False  # pylint: disable=attribute-defined-outside-init
         return new_return_value
 
     @gorilla.name('transform')
@@ -429,9 +430,9 @@ class SklearnKBinsDiscretizerPatching:
                                get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                               self.mlinspect_optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
-            return new_return_value
         else:
-            return original(self, *args, **kwargs)
+            new_return_value = original(self, *args, **kwargs)
+        return new_return_value
 
 
 @gorilla.patches(preprocessing.OneHotEncoder)
@@ -474,7 +475,7 @@ class SklearnOneHotEncoderPatching:
     def patched_fit_transform(self, *args, **kwargs):
         """ Patch for ('sklearn.preprocessing._encoders.OneHotEncoder', 'fit_transform') """
         # pylint: disable=no-method-argument
-        self.mlinspect_fit_transform_active = True
+        self.mlinspect_fit_transform_active = True  # pylint: disable=attribute-defined-outside-init
         original = gorilla.get_original_attribute(preprocessing.OneHotEncoder, 'fit_transform')
         function_info = FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')
         input_info = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno, function_info,
@@ -494,7 +495,7 @@ class SklearnOneHotEncoderPatching:
                            get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                           self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
-        self.mlinspect_fit_transform_active = False
+        self.mlinspect_fit_transform_active = False  # pylint: disable=attribute-defined-outside-init
         return new_return_value
 
     @gorilla.name('transform')
@@ -522,9 +523,9 @@ class SklearnOneHotEncoderPatching:
                                get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                               self.mlinspect_optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
-            return new_return_value
         else:
-            return original(self, *args, **kwargs)
+            new_return_value = original(self, *args, **kwargs)
+        return new_return_value
 
 
 @gorilla.patches(impute.SimpleImputer)
@@ -569,7 +570,7 @@ class SklearnSimpleImputerPatching:
     def patched_fit_transform(self, *args, **kwargs):
         """ Patch for ('sklearn.preprocessing._encoders.OneHotEncoder', 'fit_transform') """
         # pylint: disable=no-method-argument
-        self.mlinspect_fit_transform_active = True
+        self.mlinspect_fit_transform_active = True  # pylint: disable=attribute-defined-outside-init
         original = gorilla.get_original_attribute(impute.SimpleImputer, 'fit_transform')
         function_info = FunctionInfo('sklearn.impute._base', 'SimpleImputer')
         input_info = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno, function_info,
@@ -594,7 +595,7 @@ class SklearnSimpleImputerPatching:
                            get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                           self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
-        self.mlinspect_fit_transform_active = False
+        self.mlinspect_fit_transform_active = False  # pylint: disable=attribute-defined-outside-init
         return new_return_value
 
     @gorilla.name('transform')
@@ -627,9 +628,9 @@ class SklearnSimpleImputerPatching:
                                get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                               self.mlinspect_optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
-            return new_return_value
         else:
-            return original(self, *args, **kwargs)
+            new_return_value = original(self, *args, **kwargs)
+        return new_return_value
 
 
 @gorilla.patches(tree.DecisionTreeClassifier)

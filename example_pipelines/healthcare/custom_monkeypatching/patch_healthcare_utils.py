@@ -61,7 +61,7 @@ class SklearnMyW2VTransformerPatching:
     def patched_fit_transform(self, *args, **kwargs):
         """ Patch for ('example_pipelines.healthcare.healthcare_utils.MyW2VTransformer', 'fit_transform') """
         # pylint: disable=no-method-argument
-        self.mlinspect_fit_transform_active = True
+        self.mlinspect_fit_transform_active = True  # pylint: disable=attribute-defined-outside-init
         original = gorilla.get_original_attribute(healthcare_utils.MyW2VTransformer, 'fit_transform')
         function_info = FunctionInfo('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer')
         input_info = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno, function_info,
@@ -82,7 +82,7 @@ class SklearnMyW2VTransformerPatching:
                            get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                           self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
-        self.mlinspect_fit_transform_active = False
+        self.mlinspect_fit_transform_active = False  # pylint: disable=attribute-defined-outside-init
         return new_return_value
 
     @gorilla.patch(healthcare_utils.MyW2VTransformer, name='transform', settings=gorilla.Settings(allow_hit=True))
@@ -110,7 +110,6 @@ class SklearnMyW2VTransformerPatching:
                                get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                               self.mlinspect_optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
-            self.mlinspect_fit_transform_active = False
-            return new_return_value
         else:
-            return original(self, *args, **kwargs)
+            new_return_value = original(self, *args, **kwargs)
+        return new_return_value
