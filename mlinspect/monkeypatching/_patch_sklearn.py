@@ -13,14 +13,13 @@ from tensorflow.python.keras.wrappers import scikit_learn as keras_sklearn_inter
 from mlinspect.backends._backend import BackendResult
 from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.inspections._inspection_input import OperatorContext, FunctionInfo, OperatorType
-from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import DagNode, BasicCodeLocation, DagNodeDetails, CodeReference
 from mlinspect.instrumentation._pipeline_executor import singleton
+from mlinspect.monkeypatching._mlinspect_ndarray import MlinspectNdarray
 from mlinspect.monkeypatching._monkey_patching_utils import execute_patched_func, add_dag_node, \
     execute_patched_func_indirect_allowed, get_input_info, execute_patched_func_no_op_id, \
-    get_optional_code_info_or_none, get_column_names, get_dag_node_for_id, add_train_data_node, \
+    get_optional_code_info_or_none, get_dag_node_for_id, add_train_data_node, \
     add_train_label_node, add_test_label_node, add_test_data_dag_node
-from mlinspect.monkeypatching._mlinspect_ndarray import MlinspectNdarray
 
 
 @gorilla.patches(preprocessing)

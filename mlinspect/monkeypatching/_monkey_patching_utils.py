@@ -274,6 +274,7 @@ def add_train_data_node(estimator, train_data_arg, function_info):
 
 def add_test_data_dag_node(test_data_arg, op_id, function_info, lineno, optional_code_reference, optional_source_code,
                            caller_filename):
+    # pylint: disable=too-many-arguments
     """Add a Test Data DAG Node for a estimator.score call"""
     input_info_test_data = get_input_info(test_data_arg, caller_filename, lineno, function_info,
                                           optional_code_reference, optional_source_code)
@@ -295,6 +296,7 @@ def add_test_data_dag_node(test_data_arg, op_id, function_info, lineno, optional
 def add_test_label_node(test_label_arg, caller_filename, function_info, lineno, optional_code_reference,
                         optional_source_code):
     """Add a Test Label DAG Node for a estimator.score call"""
+    # pylint: disable=too-many-arguments
     operator_context = OperatorContext(OperatorType.TEST_LABELS, function_info)
     input_info_test_labels = get_input_info(test_label_arg, caller_filename, lineno, function_info,
                                             optional_code_reference, optional_source_code)
