@@ -1474,3 +1474,123 @@ def test_keras_wrapper():
                                     columns=['mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       check_column_type=False)
+
+
+def test_keras_wrapper_score():
+    """
+    Tests whether the monkey patching of ('tensorflow.python.keras.wrappers.scikit_learn.KerasClassifier', 'score')
+     works
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+                from sklearn.preprocessing import StandardScaler, OneHotEncoder
+                from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
+                from tensorflow.keras.layers import Dense
+                from tensorflow.keras.models import Sequential
+                from tensorflow.python.keras.optimizer_v2.gradient_descent import SGD
+                import tensorflow as tf
+                import numpy as np
+
+                df = pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], 'target': ['no', 'no', 'yes', 'yes']})
+
+                train = StandardScaler().fit_transform(df[['A', 'B']])
+                target = OneHotEncoder(sparse=False).fit_transform(df[['target']])
+                
+                def create_model(input_dim):
+                    clf = Sequential()
+                    clf.add(Dense(2, activation='relu', input_dim=input_dim))
+                    clf.add(Dense(2, activation='relu'))
+                    clf.add(Dense(2, activation='softmax'))
+                    clf.compile(loss='categorical_crossentropy', optimizer=SGD(), metrics=["accuracy"])
+                    return clf
+
+                np.random.seed(42)
+                tf.random.set_seed(42)
+                clf = KerasClassifier(build_fn=create_model, epochs=15, batch_size=1, verbose=0, input_dim=2)
+                clf = clf.fit(train, target)
+
+                test_df = pd.DataFrame({'A': [0., 0.8], 'B':  [0., 0.8], 'target': ['no', 'yes']})
+                test_labels = OneHotEncoder(sparse=False).fit_transform(test_df[['target']])
+                test_score = clf.score(test_df[['A', 'B']], test_labels)
+                assert test_score == 1.0
+                """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(3)])
+    filter_dag_for_nodes_with_ids(inspector_result, {7, 10, 11, 12, 13, 14}, 15)
+
+    expected_dag = networkx.DiGraph()
+    expected_data_projection = DagNode(11,
+                                       BasicCodeLocation("<string-source>", 30),
+                                       OperatorContext(OperatorType.PROJECTION,
+                                                       FunctionInfo('pandas.core.frame', '__getitem__')),
+                                       DagNodeDetails("to ['A', 'B']", ['A', 'B']),
+                                       OptionalCodeInfo(CodeReference(30, 23, 30, 42), "test_df[['A', 'B']]"))
+    expected_test_data = DagNode(12,
+                                 BasicCodeLocation("<string-source>", 30),
+                                 OperatorContext(OperatorType.TEST_DATA,
+                                                 FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn.'
+                                                              'KerasClassifier', 'score')),
+                                 DagNodeDetails('Test Data', ['A', 'B']),
+                                 OptionalCodeInfo(CodeReference(30, 13, 30, 56),
+                                                  "clf.score(test_df[['A', 'B']], test_labels)"))
+    expected_dag.add_edge(expected_data_projection, expected_test_data)
+    expected_label_encode = DagNode(10,
+                                    BasicCodeLocation("<string-source>", 29),
+                                    OperatorContext(OperatorType.TRANSFORMER,
+                                                    FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
+                                    DagNodeDetails('One-Hot Encoder', ['array']),
+                                    OptionalCodeInfo(CodeReference(29, 14, 29, 41), 'OneHotEncoder(sparse=False)'))
+    expected_test_labels = DagNode(13,
+                                   BasicCodeLocation("<string-source>", 30),
+                                   OperatorContext(OperatorType.TEST_LABELS,
+                                                   FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn.'
+                                                                'KerasClassifier', 'score')),
+                                   DagNodeDetails('Test Labels', ['array']),
+                                   OptionalCodeInfo(CodeReference(30, 13, 30, 56),
+                                                    "clf.score(test_df[['A', 'B']], test_labels)"))
+    expected_dag.add_edge(expected_label_encode, expected_test_labels)
+    expected_classifier = DagNode(7,
+                                  BasicCodeLocation("<string-source>", 25),
+                                  OperatorContext(OperatorType.ESTIMATOR,
+                                                  FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn',
+                                                               'KerasClassifier')),
+                                  DagNodeDetails('Neural Network', []),
+                                  OptionalCodeInfo(CodeReference(25, 6, 25, 93),
+                                                   'KerasClassifier(build_fn=create_model, epochs=15, batch_size=1, '
+                                                   'verbose=0, input_dim=2)'))
+    expected_score = DagNode(14,
+                             BasicCodeLocation("<string-source>", 30),
+                             OperatorContext(OperatorType.SCORE,
+                                             FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn.'
+                                                          'KerasClassifier', 'score')),
+                             DagNodeDetails('Neural Network', []),
+                             OptionalCodeInfo(CodeReference(30, 13, 30, 56),
+                                              "clf.score(test_df[['A', 'B']], test_labels)"))
+    expected_dag.add_edge(expected_classifier, expected_score)
+    expected_dag.add_edge(expected_test_data, expected_score)
+    expected_dag.add_edge(expected_test_labels, expected_score)
+
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test_data]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[0, 0, {LineageId(8, 0)}],
+                                     [0.8, 0.8, {LineageId(8, 1)}]],
+                                    columns=['A', 'B', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test_labels]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0]), {LineageId(8, 0)}],
+                                     [numpy.array([0.0, 1.0]), {LineageId(8, 1)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_score]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[{LineageId(8, 0)}],
+                                     [{LineageId(8, 1)}]],
+                                    columns=['mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
+                                      check_column_type=False)

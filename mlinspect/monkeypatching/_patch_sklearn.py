@@ -859,7 +859,7 @@ class SklearnKerasClassifierPatching:
     @gorilla.patch(keras_sklearn_internal.BaseWrapper, name='__init__', settings=gorilla.Settings(allow_hit=True))
     def patched__init__(self, build_fn=None, mlinspect_caller_filename=None, mlinspect_lineno=None,
                         mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None,
-                        **sk_params):
+                        mlinspect_estimator_node_id=None, **sk_params):
         """ Patch for ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier') """
         # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals, too-many-arguments
         original = gorilla.get_original_attribute(keras_sklearn_internal.BaseWrapper, '__init__')
@@ -868,6 +868,7 @@ class SklearnKerasClassifierPatching:
         self.mlinspect_lineno = mlinspect_lineno
         self.mlinspect_optional_code_reference = mlinspect_optional_code_reference
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
+        self.mlinspect_estimator_node_id = mlinspect_estimator_node_id
 
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
@@ -899,8 +900,8 @@ class SklearnKerasClassifierPatching:
         estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                              input_infos,
                                                              None)
-
-        dag_node = DagNode(singleton.get_next_op_id(),
+        self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
+        dag_node = DagNode(self.mlinspect_estimator_node_id,
                            BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
                            operator_context,
                            DagNodeDetails("Neural Network", []),
@@ -908,3 +909,50 @@ class SklearnKerasClassifierPatching:
                                                           self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [train_data_dag_node, train_labels_dag_node], estimator_backend_result)
         return self
+
+    @gorilla.patch(keras_sklearn_external.KerasClassifier, name='score', settings=gorilla.Settings(allow_hit=True))
+    def patched_score(self, *args, **kwargs):
+        """ Patch for ('tensorflow.python.keras.wrappers.scikit_learn.KerasClassifier', 'score') """
+        # pylint: disable=no-method-argument
+        original = gorilla.get_original_attribute(keras_sklearn_external.KerasClassifier, 'score')
+
+        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            # pylint: disable=too-many-locals
+            function_info = FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn.KerasClassifier', 'score')
+            # Test data
+            data_backend_result, test_data_node, test_data_result = add_test_data_dag_node(args[0], op_id,
+                                                                                           function_info,
+                                                                                           lineno,
+                                                                                           optional_code_reference,
+                                                                                           optional_source_code,
+                                                                                           caller_filename)
+
+            # Test labels
+            label_backend_result, test_labels_node, test_labels_result = add_test_label_node(args[1],
+                                                                                             caller_filename,
+                                                                                             function_info,
+                                                                                             lineno,
+                                                                                             optional_code_reference,
+                                                                                             optional_source_code)
+
+            # Score
+            operator_context = OperatorContext(OperatorType.SCORE, function_info)
+            input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+            input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+            result = original(self, test_data_result, test_labels_result, *args[2:], **kwargs)
+            estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                                 input_infos,
+                                                                 None)
+
+            dag_node = DagNode(singleton.get_next_op_id(),
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails("Neural Network", []),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
+            estimator_dag_node = get_dag_node_for_id(self.mlinspect_estimator_node_id)
+            add_dag_node(dag_node, [estimator_dag_node, test_data_node, test_labels_node],
+                         estimator_backend_result)
+            return result
+
+        return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
