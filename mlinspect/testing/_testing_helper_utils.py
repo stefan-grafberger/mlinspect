@@ -257,6 +257,9 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
         .add_custom_monkey_patching_modules(custom_monkey_patching) \
         .execute()
 
+    save_fig_to_path(inspector_result.dag, dag_png_path)
+    assert os.path.isfile(dag_png_path)
+
     for dag_node, inspection_result in inspector_result.dag_node_to_inspection_results.items():
         assert dag_node.operator_info.operator != OperatorType.MISSING_OP
         assert MaterializeFirstOutputRows(5) in inspection_result
@@ -277,9 +280,6 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
             assert inspection_result[IntersectionalHistogramForColumns(sensitive_columns)] is None
             assert inspection_result[CompletenessOfColumns(sensitive_columns)] is None
             assert inspection_result[CountDistinctOfColumns(sensitive_columns)] is None
-
-    save_fig_to_path(inspector_result.dag, dag_png_path)
-    assert os.path.isfile(dag_png_path)
 
     return inspector_result.dag
 

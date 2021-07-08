@@ -496,7 +496,7 @@ class SklearnDecisionTreePatching:
         self.mlinspect_lineno = mlinspect_lineno
         self.mlinspect_optional_code_reference = mlinspect_optional_code_reference
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
-        self.mlinspect_estimator_node_id = None
+        self.mlinspect_estimator_node_id = mlinspect_estimator_node_id
 
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
@@ -511,6 +511,7 @@ class SklearnDecisionTreePatching:
             self.mlinspect_lineno = lineno
             self.mlinspect_optional_code_reference = optional_code_reference
             self.mlinspect_optional_source_code = optional_source_code
+            self.mlinspect_estimator_node_id = None
 
         return execute_patched_func_no_op_id(original, execute_inspections, self, criterion=criterion,
                                              splitter=splitter, max_depth=max_depth,
@@ -595,7 +596,7 @@ class SklearnDecisionTreePatching:
                          estimator_backend_result)
             return result
 
-        return execute_patched_func(original, execute_inspections, *args, **kwargs)
+        return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
 
 
 @gorilla.patches(linear_model.SGDClassifier)
@@ -723,7 +724,7 @@ class SklearnSGDClassifierPatching:
                          estimator_backend_result)
             return result
 
-        return execute_patched_func(original, execute_inspections, *args, **kwargs)
+        return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
 
 
 @gorilla.patches(linear_model.LogisticRegression)
@@ -740,7 +741,7 @@ class SklearnLogisticRegressionPatching:
                         multi_class='auto', verbose=0, warm_start=False, n_jobs=None,
                         l1_ratio=None, mlinspect_caller_filename=None,
                         mlinspect_lineno=None, mlinspect_optional_code_reference=None,
-                        mlinspect_optional_source_code=None):
+                        mlinspect_optional_source_code=None, mlinspect_estimator_node_id=None):
         """ Patch for ('sklearn.linear_model._logistic', 'LogisticRegression') """
         # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals
         original = gorilla.get_original_attribute(linear_model.LogisticRegression, '__init__')
@@ -749,6 +750,7 @@ class SklearnLogisticRegressionPatching:
         self.mlinspect_lineno = mlinspect_lineno
         self.mlinspect_optional_code_reference = mlinspect_optional_code_reference
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
+        self.mlinspect_estimator_node_id = mlinspect_estimator_node_id
 
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
@@ -791,8 +793,8 @@ class SklearnLogisticRegressionPatching:
         estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                              input_infos,
                                                              None)
-
-        dag_node = DagNode(singleton.get_next_op_id(),
+        self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
+        dag_node = DagNode(self.mlinspect_estimator_node_id,
                            BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
                            operator_context,
                            DagNodeDetails("Logistic Regression", []),
@@ -800,6 +802,54 @@ class SklearnLogisticRegressionPatching:
                                                           self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [train_data_node, train_labels_node], estimator_backend_result)
         return self
+
+    @gorilla.name('score')
+    @gorilla.settings(allow_hit=True)
+    def patched_score(self, *args, **kwargs):
+        """ Patch for ('sklearn.linear_model._logistic.LogisticRegression', 'score') """
+        # pylint: disable=no-method-argument
+        original = gorilla.get_original_attribute(linear_model.LogisticRegression, 'score')
+
+        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            # pylint: disable=too-many-locals
+            function_info = FunctionInfo('sklearn.linear_model._logistic.LogisticRegression', 'score')
+            # Test data
+            data_backend_result, test_data_node, test_data_result = add_test_data_dag_node(args[0], op_id,
+                                                                                           function_info,
+                                                                                           lineno,
+                                                                                           optional_code_reference,
+                                                                                           optional_source_code,
+                                                                                           caller_filename)
+
+            # Test labels
+            label_backend_result, test_labels_node, test_labels_result = add_test_label_node(args[1],
+                                                                                             caller_filename,
+                                                                                             function_info,
+                                                                                             lineno,
+                                                                                             optional_code_reference,
+                                                                                             optional_source_code)
+
+            # Score
+            operator_context = OperatorContext(OperatorType.SCORE, function_info)
+            input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+            input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+            result = original(self, test_data_result, test_labels_result, *args[2:], **kwargs)
+            estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                                 input_infos,
+                                                                 None)
+
+            dag_node = DagNode(singleton.get_next_op_id(),
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails("Logistic Regression", []),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
+            estimator_dag_node = get_dag_node_for_id(self.mlinspect_estimator_node_id)
+            add_dag_node(dag_node, [estimator_dag_node, test_data_node, test_labels_node],
+                         estimator_backend_result)
+            return result
+
+        return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
 
 
 class SklearnKerasClassifierPatching:
