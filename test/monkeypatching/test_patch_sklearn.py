@@ -156,7 +156,7 @@ def test_standard_scaler():
                                    BasicCodeLocation("<string-source>", 6),
                                    OperatorContext(OperatorType.TRANSFORMER,
                                                    FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
-                                   DagNodeDetails('Standard Scaler', ['array']),
+                                   DagNodeDetails('Standard Scaler: fit_transform', ['array']),
                                    OptionalCodeInfo(CodeReference(6, 18, 6, 34), 'StandardScaler()'))
     expected_dag.add_edge(expected_data_source, expected_transformer)
     expected_data_source_two = DagNode(2,
@@ -170,7 +170,7 @@ def test_standard_scaler():
                                        BasicCodeLocation("<string-source>", 6),
                                        OperatorContext(OperatorType.TRANSFORMER,
                                                        FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
-                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       DagNodeDetails('Standard Scaler: transform', ['array']),
                                        OptionalCodeInfo(CodeReference(6, 18, 6, 34), 'StandardScaler()'))
     expected_dag.add_edge(expected_data_source_two, expected_transformer_two)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
@@ -225,7 +225,7 @@ def test_kbins_discretizer():
                                    OperatorContext(OperatorType.TRANSFORMER,
                                                    FunctionInfo('sklearn.preprocessing._discretization',
                                                                 'KBinsDiscretizer')),
-                                   DagNodeDetails('K-Bins Discretizer', ['array']),
+                                   DagNodeDetails('K-Bins Discretizer: fit_transform', ['array']),
                                    OptionalCodeInfo(CodeReference(6, 14, 6, 78),
                                                     "KBinsDiscretizer(n_bins=3, encode='ordinal', strategy='uniform')"))
     expected_dag.add_edge(expected_data_source, expected_transformer)
@@ -241,7 +241,7 @@ def test_kbins_discretizer():
                                        OperatorContext(OperatorType.TRANSFORMER,
                                                        FunctionInfo('sklearn.preprocessing._discretization',
                                                                     'KBinsDiscretizer')),
-                                       DagNodeDetails('K-Bins Discretizer', ['array']),
+                                       DagNodeDetails('K-Bins Discretizer: transform', ['array']),
                                        OptionalCodeInfo(CodeReference(6, 14, 6, 78),
                                                         "KBinsDiscretizer(n_bins=3, encode='ordinal', strategy='uniform')"))
     expected_dag.add_edge(expected_data_source_two, expected_transformer_two)
@@ -297,7 +297,7 @@ def test_simple_imputer():
                                    BasicCodeLocation("<string-source>", 6),
                                    OperatorContext(OperatorType.TRANSFORMER,
                                                    FunctionInfo('sklearn.impute._base', 'SimpleImputer')),
-                                   DagNodeDetails('Simple Imputer', ['A']),
+                                   DagNodeDetails('Simple Imputer: fit_transform', ['A']),
                                    OptionalCodeInfo(CodeReference(6, 10, 6, 72),
                                                     "SimpleImputer(missing_values=np.nan, strategy='most_frequent')"))
     expected_dag.add_edge(expected_data_source, expected_transformer)
@@ -312,7 +312,7 @@ def test_simple_imputer():
                                        BasicCodeLocation("<string-source>", 6),
                                        OperatorContext(OperatorType.TRANSFORMER,
                                                        FunctionInfo('sklearn.impute._base', 'SimpleImputer')),
-                                       DagNodeDetails('Simple Imputer', ['A']),
+                                       DagNodeDetails('Simple Imputer: transform', ['A']),
                                        OptionalCodeInfo(CodeReference(6, 10, 6, 72),
                                                         "SimpleImputer(missing_values=np.nan, strategy='most_frequent')"))
     expected_dag.add_edge(expected_data_source_two, expected_transformer_two)
@@ -369,7 +369,7 @@ def test_one_hot_encoder_not_sparse():
                                    BasicCodeLocation("<string-source>", 6),
                                    OperatorContext(OperatorType.TRANSFORMER,
                                                    FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
-                                   DagNodeDetails('One-Hot Encoder', ['array']),
+                                   DagNodeDetails('One-Hot Encoder: fit_transform', ['array']),
                                    OptionalCodeInfo(CodeReference(6, 18, 6, 45), 'OneHotEncoder(sparse=False)'))
     expected_dag.add_edge(expected_data_source, expected_transformer)
     expected_data_source_two = DagNode(2,
@@ -384,7 +384,7 @@ def test_one_hot_encoder_not_sparse():
                                        OperatorContext(OperatorType.TRANSFORMER,
                                                        FunctionInfo('sklearn.preprocessing._encoders',
                                                                     'OneHotEncoder')),
-                                       DagNodeDetails('One-Hot Encoder', ['array']),
+                                       DagNodeDetails('One-Hot Encoder: transform', ['array']),
                                        OptionalCodeInfo(CodeReference(6, 18, 6, 45), 'OneHotEncoder(sparse=False)'))
     expected_dag.add_edge(expected_data_source_two, expected_transformer_two)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
@@ -438,7 +438,7 @@ def test_one_hot_encoder_sparse():
                                    BasicCodeLocation("<string-source>", 7),
                                    OperatorContext(OperatorType.TRANSFORMER,
                                                    FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
-                                   DagNodeDetails('One-Hot Encoder', ['array']),
+                                   DagNodeDetails('One-Hot Encoder: fit_transform', ['array']),
                                    OptionalCodeInfo(CodeReference(7, 18, 7, 33), 'OneHotEncoder()'))
     expected_dag.add_edge(expected_data_source, expected_transformer)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
@@ -498,7 +498,7 @@ def test_column_transformer_one_transformer():
                                        BasicCodeLocation("<string-source>", 9),
                                        OperatorContext(OperatorType.TRANSFORMER,
                                                        FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
-                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       DagNodeDetails('Standard Scaler: fit_transform', ['array']),
                                        OptionalCodeInfo(CodeReference(9, 16, 9, 32), 'StandardScaler()'))
     expected_dag.add_edge(expected_projection, expected_standard_scaler)
     expected_concat = DagNode(3,
@@ -599,14 +599,14 @@ def test_column_transformer_multiple_transformers_all_dense():
                                        BasicCodeLocation("<string-source>", 9),
                                        OperatorContext(OperatorType.TRANSFORMER,
                                                        FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
-                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       DagNodeDetails('Standard Scaler: fit_transform', ['array']),
                                        OptionalCodeInfo(CodeReference(9, 16, 9, 32), 'StandardScaler()'))
     expected_dag.add_edge(expected_projection_1, expected_standard_scaler)
     expected_one_hot = DagNode(4,
                                BasicCodeLocation("<string-source>", 10),
                                OperatorContext(OperatorType.TRANSFORMER,
                                                FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
-                               DagNodeDetails('One-Hot Encoder', ['array']),
+                               DagNodeDetails('One-Hot Encoder: fit_transform', ['array']),
                                OptionalCodeInfo(CodeReference(10, 20, 10, 47), 'OneHotEncoder(sparse=False)'))
     expected_dag.add_edge(expected_projection_2, expected_one_hot)
     expected_concat = DagNode(5,
@@ -724,14 +724,14 @@ def test_column_transformer_multiple_transformers_sparse_dense():
                                        BasicCodeLocation("<string-source>", 9),
                                        OperatorContext(OperatorType.TRANSFORMER,
                                                        FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
-                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       DagNodeDetails('Standard Scaler: fit_transform', ['array']),
                                        OptionalCodeInfo(CodeReference(9, 16, 9, 32), 'StandardScaler()'))
     expected_dag.add_edge(expected_projection_1, expected_standard_scaler)
     expected_one_hot = DagNode(4,
                                BasicCodeLocation("<string-source>", 10),
                                OperatorContext(OperatorType.TRANSFORMER,
                                                FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
-                               DagNodeDetails('One-Hot Encoder', ['array']),
+                               DagNodeDetails('One-Hot Encoder: fit_transform', ['array']),
                                OptionalCodeInfo(CodeReference(10, 20, 10, 46), 'OneHotEncoder(sparse=True)'))
     expected_dag.add_edge(expected_projection_2, expected_one_hot)
     expected_concat = DagNode(5,
@@ -852,14 +852,14 @@ def test_column_transformer_transform_after_fit_transform():
                                        BasicCodeLocation("<string-source>", 9),
                                        OperatorContext(OperatorType.TRANSFORMER,
                                                        FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
-                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       DagNodeDetails('Standard Scaler: transform', ['array']),
                                        OptionalCodeInfo(CodeReference(9, 16, 9, 32), 'StandardScaler()'))
     expected_dag.add_edge(expected_projection_1, expected_standard_scaler)
     expected_one_hot = DagNode(10,
                                BasicCodeLocation("<string-source>", 10),
                                OperatorContext(OperatorType.TRANSFORMER,
                                                FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
-                               DagNodeDetails('One-Hot Encoder', ['array']),
+                               DagNodeDetails('One-Hot Encoder: transform', ['array']),
                                OptionalCodeInfo(CodeReference(10, 20, 10, 46), 'OneHotEncoder(sparse=True)'))
     expected_dag.add_edge(expected_projection_2, expected_one_hot)
     expected_concat = DagNode(11,
@@ -961,7 +961,7 @@ def test_decision_tree():
                                        BasicCodeLocation("<string-source>", 8),
                                        OperatorContext(OperatorType.TRANSFORMER,
                                                        FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
-                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       DagNodeDetails('Standard Scaler: fit_transform', ['array']),
                                        OptionalCodeInfo(CodeReference(8, 8, 8, 24), 'StandardScaler()'))
     expected_dag.add_edge(expected_data_source, expected_data_projection)
     expected_dag.add_edge(expected_data_projection, expected_standard_scaler)
@@ -1165,7 +1165,7 @@ def test_sgd_classifier():
                                        BasicCodeLocation("<string-source>", 8),
                                        OperatorContext(OperatorType.TRANSFORMER,
                                                        FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
-                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       DagNodeDetails('Standard Scaler: fit_transform', ['array']),
                                        OptionalCodeInfo(CodeReference(8, 8, 8, 24), 'StandardScaler()'))
     expected_train_data = DagNode(5,
                                   BasicCodeLocation("<string-source>", 11),
@@ -1386,7 +1386,7 @@ def test_logistic_regression():
                                        BasicCodeLocation("<string-source>", 8),
                                        OperatorContext(OperatorType.TRANSFORMER,
                                                        FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
-                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       DagNodeDetails('Standard Scaler: fit_transform', ['array']),
                                        OptionalCodeInfo(CodeReference(8, 8, 8, 24), 'StandardScaler()'))
     expected_data_projection = DagNode(1,
                                        BasicCodeLocation("<string-source>", 8),
@@ -1617,7 +1617,7 @@ def test_keras_wrapper():
                                        BasicCodeLocation("<string-source>", 11),
                                        OperatorContext(OperatorType.TRANSFORMER,
                                                        FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
-                                       DagNodeDetails('Standard Scaler', ['array']),
+                                       DagNodeDetails('Standard Scaler: fit_transform', ['array']),
                                        OptionalCodeInfo(CodeReference(11, 8, 11, 24), 'StandardScaler()'))
     expected_data_projection = DagNode(1,
                                        BasicCodeLocation("<string-source>", 11),
@@ -1638,7 +1638,7 @@ def test_keras_wrapper():
                                     BasicCodeLocation("<string-source>", 12),
                                     OperatorContext(OperatorType.TRANSFORMER,
                                                     FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
-                                    DagNodeDetails('One-Hot Encoder', ['array']),
+                                    DagNodeDetails('One-Hot Encoder: fit_transform', ['array']),
                                     OptionalCodeInfo(CodeReference(12, 9, 12, 36), 'OneHotEncoder(sparse=False)'))
     expected_dag.add_edge(expected_label_projection, expected_label_encode)
     expected_train_data = DagNode(5,
@@ -1764,7 +1764,7 @@ def test_keras_wrapper_score():
                                     BasicCodeLocation("<string-source>", 29),
                                     OperatorContext(OperatorType.TRANSFORMER,
                                                     FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
-                                    DagNodeDetails('One-Hot Encoder', ['array']),
+                                    DagNodeDetails('One-Hot Encoder: fit_transform', ['array']),
                                     OptionalCodeInfo(CodeReference(29, 14, 29, 41), 'OneHotEncoder(sparse=False)'))
     expected_test_labels = DagNode(13,
                                    BasicCodeLocation("<string-source>", 30),

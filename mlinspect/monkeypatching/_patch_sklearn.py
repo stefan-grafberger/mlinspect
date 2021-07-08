@@ -303,7 +303,7 @@ class SklearnStandardScalerPatching:
         dag_node = DagNode(singleton.get_next_op_id(),
                            BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
                            operator_context,
-                           DagNodeDetails("Standard Scaler", ['array']),
+                           DagNodeDetails("Standard Scaler: fit_transform", ['array']),
                            get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                           self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
@@ -332,7 +332,7 @@ class SklearnStandardScalerPatching:
             dag_node = DagNode(singleton.get_next_op_id(),
                                BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
                                operator_context,
-                               DagNodeDetails("Standard Scaler", ['array']),
+                               DagNodeDetails("Standard Scaler: transform", ['array']),
                                get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                               self.mlinspect_optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
@@ -397,7 +397,7 @@ class SklearnKBinsDiscretizerPatching:
         dag_node = DagNode(singleton.get_next_op_id(),
                            BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
                            operator_context,
-                           DagNodeDetails("K-Bins Discretizer", ['array']),
+                           DagNodeDetails("K-Bins Discretizer: fit_transform", ['array']),
                            get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                           self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
@@ -426,7 +426,7 @@ class SklearnKBinsDiscretizerPatching:
             dag_node = DagNode(singleton.get_next_op_id(),
                                BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
                                operator_context,
-                               DagNodeDetails("K-Bins Discretizer", ['array']),
+                               DagNodeDetails("K-Bins Discretizer: transform", ['array']),
                                get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                               self.mlinspect_optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
@@ -491,7 +491,7 @@ class SklearnOneHotEncoderPatching:
         dag_node = DagNode(singleton.get_next_op_id(),
                            BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
                            operator_context,
-                           DagNodeDetails("One-Hot Encoder", ['array']),
+                           DagNodeDetails("One-Hot Encoder: fit_transform", ['array']),
                            get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                           self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
@@ -519,7 +519,7 @@ class SklearnOneHotEncoderPatching:
             dag_node = DagNode(singleton.get_next_op_id(),
                                BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
                                operator_context,
-                               DagNodeDetails("One-Hot Encoder", ['array']),
+                               DagNodeDetails("One-Hot Encoder: transform", ['array']),
                                get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                               self.mlinspect_optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
@@ -591,7 +591,7 @@ class SklearnSimpleImputerPatching:
         dag_node = DagNode(singleton.get_next_op_id(),
                            BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
                            operator_context,
-                           DagNodeDetails("Simple Imputer", columns),
+                           DagNodeDetails("Simple Imputer: fit_transform", columns),
                            get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                           self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
@@ -624,7 +624,7 @@ class SklearnSimpleImputerPatching:
             dag_node = DagNode(singleton.get_next_op_id(),
                                BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
                                operator_context,
-                               DagNodeDetails("Simple Imputer", columns),
+                               DagNodeDetails("Simple Imputer: transform", columns),
                                get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                               self.mlinspect_optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)

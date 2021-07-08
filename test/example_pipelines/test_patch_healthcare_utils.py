@@ -50,7 +50,7 @@ def test_my_word_to_vec_transformer():
                                  OperatorContext(OperatorType.TRANSFORMER,
                                                  FunctionInfo('example_pipelines.healthcare.healthcare_utils',
                                                               'MyW2VTransformer')),
-                                 DagNodeDetails('Word2Vec', ['array']),
+                                 DagNodeDetails('Word2Vec: fit_transform', ['array']),
                                  OptionalCodeInfo(CodeReference(6, 14, 6, 62),
                                                   'MyW2VTransformer(min_count=2, size=2, workers=1)'))
     expected_dag.add_edge(expected_data_source, expected_estimator)
@@ -66,7 +66,7 @@ def test_my_word_to_vec_transformer():
                                      OperatorContext(OperatorType.TRANSFORMER,
                                                      FunctionInfo('example_pipelines.healthcare.healthcare_utils',
                                                                   'MyW2VTransformer')),
-                                     DagNodeDetails('Word2Vec', ['array']),
+                                     DagNodeDetails('Word2Vec: transform', ['array']),
                                      OptionalCodeInfo(CodeReference(6, 14, 6, 62),
                                                       'MyW2VTransformer(min_count=2, size=2, workers=1)'))
     expected_dag.add_edge(expected_data_source_two, expected_estimator_two)

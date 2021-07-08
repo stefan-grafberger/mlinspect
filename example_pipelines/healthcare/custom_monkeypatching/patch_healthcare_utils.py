@@ -78,7 +78,7 @@ class SklearnMyW2VTransformerPatching:
         dag_node = DagNode(singleton.get_next_op_id(),
                            BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
                            operator_context,
-                           DagNodeDetails("Word2Vec", ['array']),
+                           DagNodeDetails("Word2Vec: fit_transform", ['array']),
                            get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                           self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [input_info.dag_node], backend_result)
@@ -106,7 +106,7 @@ class SklearnMyW2VTransformerPatching:
             dag_node = DagNode(singleton.get_next_op_id(),
                                BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
                                operator_context,
-                               DagNodeDetails("Word2Vec", ['array']),
+                               DagNodeDetails("Word2Vec: transform", ['array']),
                                get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                               self.mlinspect_optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
