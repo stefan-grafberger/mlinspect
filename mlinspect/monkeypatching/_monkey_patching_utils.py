@@ -237,7 +237,7 @@ def add_train_label_node(estimator, train_label_arg, function_info):
     train_labels_dag_node = DagNode(train_label_op_id,
                                     BasicCodeLocation(estimator.mlinspect_caller_filename, estimator.mlinspect_lineno),
                                     operator_context,
-                                    DagNodeDetails("Train Labels", ["array"]),
+                                    DagNodeDetails(None, ["array"]),
                                     get_optional_code_info_or_none(estimator.mlinspect_optional_code_reference,
                                                                    estimator.mlinspect_optional_source_code))
     input_infos = SklearnBackend.before_call(operator_context, [input_info_train_labels.annotated_dfobject])
@@ -260,7 +260,7 @@ def add_train_data_node(estimator, train_data_arg, function_info):
     train_data_dag_node = DagNode(train_data_op_id,
                                   BasicCodeLocation(estimator.mlinspect_caller_filename, estimator.mlinspect_lineno),
                                   operator_context,
-                                  DagNodeDetails("Train Data", ["array"]),
+                                  DagNodeDetails(None, ["array"]),
                                   get_optional_code_info_or_none(estimator.mlinspect_optional_code_reference,
                                                                  estimator.mlinspect_optional_source_code))
     input_infos = SklearnBackend.before_call(operator_context, [input_info_train_data.annotated_dfobject])
@@ -283,7 +283,7 @@ def add_test_data_dag_node(test_data_arg, function_info, lineno, optional_code_r
     test_data_dag_node = DagNode(test_data_op_id,
                                  BasicCodeLocation(caller_filename, lineno),
                                  operator_context,
-                                 DagNodeDetails("Test Data", get_column_names(test_data_arg)),
+                                 DagNodeDetails(None, get_column_names(test_data_arg)),
                                  get_optional_code_info_or_none(optional_code_reference, optional_source_code))
     input_infos = SklearnBackend.before_call(operator_context, [input_info_test_data.annotated_dfobject])
     data_backend_result = SklearnBackend.after_call(operator_context,
@@ -305,7 +305,7 @@ def add_test_label_node(test_label_arg, caller_filename, function_info, lineno, 
     test_labels_dag_node = DagNode(test_label_op_id,
                                    BasicCodeLocation(caller_filename, lineno),
                                    operator_context,
-                                   DagNodeDetails("Test Labels", get_column_names(test_label_arg)),
+                                   DagNodeDetails(None, get_column_names(test_label_arg)),
                                    get_optional_code_info_or_none(optional_code_reference,
                                                                   optional_source_code))
     input_infos = SklearnBackend.before_call(operator_context, [input_info_test_labels.annotated_dfobject])

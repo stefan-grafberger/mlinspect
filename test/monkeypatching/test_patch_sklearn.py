@@ -984,14 +984,14 @@ def test_decision_tree():
                                   BasicCodeLocation("<string-source>", 11),
                                   OperatorContext(OperatorType.TRAIN_DATA,
                                                   FunctionInfo('sklearn.tree._classes', 'DecisionTreeClassifier')),
-                                  DagNodeDetails('Train Data', ['array']),
+                                  DagNodeDetails(None, ['array']),
                                   OptionalCodeInfo(CodeReference(11, 6, 11, 30), 'DecisionTreeClassifier()'))
     expected_dag.add_edge(expected_standard_scaler, expected_train_data)
     expected_train_labels = DagNode(6,
                                     BasicCodeLocation("<string-source>", 11),
                                     OperatorContext(OperatorType.TRAIN_LABELS,
                                                     FunctionInfo('sklearn.tree._classes', 'DecisionTreeClassifier')),
-                                    DagNodeDetails('Train Labels', ['array']),
+                                    DagNodeDetails(None, ['array']),
                                     OptionalCodeInfo(CodeReference(11, 6, 11, 30), 'DecisionTreeClassifier()'))
     expected_dag.add_edge(expected_label_encode, expected_train_labels)
     expected_decision_tree = DagNode(7,
@@ -1070,7 +1070,7 @@ def test_decision_tree_score():
                                  BasicCodeLocation("<string-source>", 16),
                                  OperatorContext(OperatorType.TEST_DATA,
                                                  FunctionInfo('sklearn.tree._classes.DecisionTreeClassifier', 'score')),
-                                 DagNodeDetails('Test Data', ['A', 'B']),
+                                 DagNodeDetails(None, ['A', 'B']),
                                  OptionalCodeInfo(CodeReference(16, 13, 16, 56),
                                                   "clf.score(test_df[['A', 'B']], test_labels)"))
     expected_dag.add_edge(expected_data_projection, expected_test_data)
@@ -1086,7 +1086,7 @@ def test_decision_tree_score():
                                    OperatorContext(OperatorType.TEST_LABELS,
                                                    FunctionInfo('sklearn.tree._classes.DecisionTreeClassifier',
                                                                 'score')),
-                                   DagNodeDetails('Test Labels', ['array']),
+                                   DagNodeDetails(None, ['array']),
                                    OptionalCodeInfo(CodeReference(16, 13, 16, 56),
                                                     "clf.score(test_df[['A', 'B']], test_labels)"))
     expected_dag.add_edge(expected_label_encode, expected_test_labels)
@@ -1172,7 +1172,7 @@ def test_sgd_classifier():
                                   OperatorContext(OperatorType.TRAIN_DATA,
                                                   FunctionInfo('sklearn.linear_model._stochastic_gradient',
                                                                'SGDClassifier')),
-                                  DagNodeDetails('Train Data', ['array']),
+                                  DagNodeDetails(None, ['array']),
                                   OptionalCodeInfo(CodeReference(11, 6, 11, 48),
                                                    "SGDClassifier(loss='log', random_state=42)"))
     expected_dag.add_edge(expected_standard_scaler, expected_train_data)
@@ -1188,7 +1188,7 @@ def test_sgd_classifier():
                                     OperatorContext(OperatorType.TRAIN_LABELS,
                                                     FunctionInfo('sklearn.linear_model._stochastic_gradient',
                                                                  'SGDClassifier')),
-                                    DagNodeDetails('Train Labels', ['array']),
+                                    DagNodeDetails(None, ['array']),
                                     OptionalCodeInfo(CodeReference(11, 6, 11, 48),
                                                      "SGDClassifier(loss='log', random_state=42)"))
     expected_dag.add_edge(expected_label_encode, expected_train_labels)
@@ -1282,7 +1282,7 @@ def test_sgd_classifier_score():
                                  OperatorContext(OperatorType.TEST_DATA,
                                                  FunctionInfo('sklearn.linear_model._stochastic_gradient.'
                                                               'SGDClassifier', 'score')),
-                                 DagNodeDetails('Test Data', ['A', 'B']),
+                                 DagNodeDetails(None, ['A', 'B']),
                                  OptionalCodeInfo(CodeReference(16, 13, 16, 56),
                                                   "clf.score(test_df[['A', 'B']], test_labels)"))
     expected_dag.add_edge(expected_data_projection, expected_test_data)
@@ -1298,7 +1298,7 @@ def test_sgd_classifier_score():
                                    OperatorContext(OperatorType.TEST_LABELS,
                                                    FunctionInfo('sklearn.linear_model._stochastic_gradient.'
                                                                 'SGDClassifier', 'score')),
-                                   DagNodeDetails('Test Labels', ['array']),
+                                   DagNodeDetails(None, ['array']),
                                    OptionalCodeInfo(CodeReference(16, 13, 16, 56),
                                                     "clf.score(test_df[['A', 'B']], test_labels)"))
     expected_dag.add_edge(expected_label_encode, expected_test_labels)
@@ -1415,7 +1415,7 @@ def test_logistic_regression():
                                   BasicCodeLocation("<string-source>", 11),
                                   OperatorContext(OperatorType.TRAIN_DATA,
                                                   FunctionInfo('sklearn.linear_model._logistic', 'LogisticRegression')),
-                                  DagNodeDetails('Train Data', ['array']),
+                                  DagNodeDetails(None, ['array']),
                                   OptionalCodeInfo(CodeReference(11, 6, 11, 26), 'LogisticRegression()'))
     expected_dag.add_edge(expected_standard_scaler, expected_train_data)
     expected_train_labels = DagNode(6,
@@ -1423,7 +1423,7 @@ def test_logistic_regression():
                                     OperatorContext(OperatorType.TRAIN_LABELS,
                                                     FunctionInfo('sklearn.linear_model._logistic',
                                                                  'LogisticRegression')),
-                                    DagNodeDetails('Train Labels', ['array']),
+                                    DagNodeDetails(None, ['array']),
                                     OptionalCodeInfo(CodeReference(11, 6, 11, 26), 'LogisticRegression()'))
     expected_dag.add_edge(expected_label_encode, expected_train_labels)
     expected_estimator = DagNode(7,
@@ -1504,7 +1504,7 @@ def test_logistic_regression_score():
                                  OperatorContext(OperatorType.TEST_DATA,
                                                  FunctionInfo('sklearn.linear_model._logistic.LogisticRegression',
                                                               'score')),
-                                 DagNodeDetails('Test Data', ['A', 'B']),
+                                 DagNodeDetails(None, ['A', 'B']),
                                  OptionalCodeInfo(CodeReference(16, 13, 16, 56),
                                                   "clf.score(test_df[['A', 'B']], test_labels)"))
     expected_dag.add_edge(expected_data_projection, expected_test_data)
@@ -1520,7 +1520,7 @@ def test_logistic_regression_score():
                                    OperatorContext(OperatorType.TEST_LABELS,
                                                    FunctionInfo('sklearn.linear_model._logistic.LogisticRegression',
                                                                 'score')),
-                                   DagNodeDetails('Test Labels', ['array']),
+                                   DagNodeDetails(None, ['array']),
                                    OptionalCodeInfo(CodeReference(16, 13, 16, 56),
                                                     "clf.score(test_df[['A', 'B']], test_labels)"))
     expected_dag.add_edge(expected_label_encode, expected_test_labels)
@@ -1646,7 +1646,7 @@ def test_keras_wrapper():
                                   OperatorContext(OperatorType.TRAIN_DATA,
                                                   FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn',
                                                                'KerasClassifier')),
-                                  DagNodeDetails('Train Data', ['array']),
+                                  DagNodeDetails(None, ['array']),
                                   OptionalCodeInfo(CodeReference(22, 6, 22, 92),
                                                    'KerasClassifier(build_fn=create_model, epochs=2, '
                                                    'batch_size=1, verbose=0, input_dim=2)'))
@@ -1656,7 +1656,7 @@ def test_keras_wrapper():
                                     OperatorContext(OperatorType.TRAIN_LABELS,
                                                     FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn',
                                                                  'KerasClassifier')),
-                                    DagNodeDetails('Train Labels', ['array']),
+                                    DagNodeDetails(None, ['array']),
                                     OptionalCodeInfo(CodeReference(22, 6, 22, 92),
                                                      'KerasClassifier(build_fn=create_model, epochs=2, '
                                                      'batch_size=1, verbose=0, input_dim=2)'))
@@ -1756,7 +1756,7 @@ def test_keras_wrapper_score():
                                  OperatorContext(OperatorType.TEST_DATA,
                                                  FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn.'
                                                               'KerasClassifier', 'score')),
-                                 DagNodeDetails('Test Data', ['A', 'B']),
+                                 DagNodeDetails(None, ['A', 'B']),
                                  OptionalCodeInfo(CodeReference(30, 13, 30, 56),
                                                   "clf.score(test_df[['A', 'B']], test_labels)"))
     expected_dag.add_edge(expected_data_projection, expected_test_data)
@@ -1771,7 +1771,7 @@ def test_keras_wrapper_score():
                                    OperatorContext(OperatorType.TEST_LABELS,
                                                    FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn.'
                                                                 'KerasClassifier', 'score')),
-                                   DagNodeDetails('Test Labels', ['array']),
+                                   DagNodeDetails(None, ['array']),
                                    OptionalCodeInfo(CodeReference(30, 13, 30, 56),
                                                     "clf.score(test_df[['A', 'B']], test_labels)"))
     expected_dag.add_edge(expected_label_encode, expected_test_labels)

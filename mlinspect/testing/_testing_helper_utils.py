@@ -120,7 +120,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
                                   BasicCodeLocation(caller_filename, 26 + line_offset),
                                   OperatorContext(OperatorType.TRAIN_DATA,
                                                   FunctionInfo('sklearn.tree._classes', 'DecisionTreeClassifier')),
-                                  DagNodeDetails('Train Data', ['array']),
+                                  DagNodeDetails(None, ['array']),
                                   OptionalCodeInfo(CodeReference(26 + line_offset, 19, 26 + line_offset, 48),
                                                    'tree.DecisionTreeClassifier()'))
     expected_graph.add_edge(expected_pipeline_concatenation, expected_train_data)
@@ -148,7 +148,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
                                     BasicCodeLocation(caller_filename, 26 + line_offset),
                                     OperatorContext(OperatorType.TRAIN_LABELS,
                                                     FunctionInfo('sklearn.tree._classes', 'DecisionTreeClassifier')),
-                                    DagNodeDetails('Train Labels', ['array']),
+                                    DagNodeDetails(None, ['array']),
                                     OptionalCodeInfo(CodeReference(26 + line_offset, 19, 26 + line_offset, 48),
                                                      'tree.DecisionTreeClassifier()'))
     expected_graph.add_edge(expected_project_modify, expected_train_labels)
