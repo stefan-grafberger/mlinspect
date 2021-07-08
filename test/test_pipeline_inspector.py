@@ -119,8 +119,8 @@ def assert_healthcare_pipeline_output_complete(inspector_result):
     for dag_node, inspection_result in inspector_result.dag_node_to_inspection_results.items():
         assert dag_node.operator_info.operator != OperatorType.MISSING_OP
         assert MaterializeFirstOutputRows(5) in inspection_result
-        if dag_node.operator_info.operator != OperatorType.ESTIMATOR:  # Estimator does not have output
+        if dag_node.operator_info.operator not in {OperatorType.ESTIMATOR, OperatorType.SCORE}:
             assert inspection_result[MaterializeFirstOutputRows(5)] is not None
         else:
             assert inspection_result[MaterializeFirstOutputRows(5)] is None
-    assert len(inspector_result.dag) == 26
+    assert len(inspector_result.dag) == 37

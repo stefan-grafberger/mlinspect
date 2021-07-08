@@ -689,7 +689,7 @@ def test_column_transformer_multiple_transformers_sparse_dense():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
-# FIXME: Test transform kbins, simple imputer
+# FIXME: Test transform kbins, simple imputer, pipeline.score
 
 def test_transform_after_fit_transform():
     """
