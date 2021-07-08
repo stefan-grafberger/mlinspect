@@ -137,20 +137,20 @@ def test_ols_fit():
                                   BasicCodeLocation("<string-source>", 10),
                                   OperatorContext(OperatorType.TRAIN_DATA,
                                                   FunctionInfo('statsmodel.api.OLS', 'fit')),
-                                  DagNodeDetails('Train Data', ['array']),
+                                  DagNodeDetails(None, ['array']),
                                   OptionalCodeInfo(CodeReference(10, 10, 10, 22), 'sm.OLS(y, X)'))
     expected_train_labels = DagNode(4,
                                     BasicCodeLocation("<string-source>", 10),
                                     OperatorContext(OperatorType.TRAIN_LABELS,
                                                     FunctionInfo('statsmodel.api.OLS', 'fit')),
-                                    DagNodeDetails('Train Labels', ['array']),
+                                    DagNodeDetails(None, ['array']),
                                     OptionalCodeInfo(CodeReference(10, 10, 10, 22), 'sm.OLS(y, X)'))
     expected_ols = DagNode(5,
-                                     BasicCodeLocation("<string-source>", 10),
-                                     OperatorContext(OperatorType.ESTIMATOR,
-                                                     FunctionInfo('statsmodel.api.OLS', 'fit')),
-                                     DagNodeDetails('Decision Tree', []),
-                                     OptionalCodeInfo(CodeReference(10, 10, 10, 22), 'sm.OLS(y, X)'))
+                           BasicCodeLocation("<string-source>", 10),
+                           OperatorContext(OperatorType.ESTIMATOR,
+                                           FunctionInfo('statsmodel.api.OLS', 'fit')),
+                           DagNodeDetails('Decision Tree', []),
+                           OptionalCodeInfo(CodeReference(10, 10, 10, 22), 'sm.OLS(y, X)'))
     expected_dag.add_edge(expected_train_data, expected_ols)
     expected_dag.add_edge(expected_train_labels, expected_ols)
 

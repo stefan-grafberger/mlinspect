@@ -67,17 +67,19 @@ compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expe
 
 | Function Call        | Operator        
 | ------------- |:-------------:|
-| `('sklearn.compose._column_transformer', 'ColumnTransformer')`, column selection      | Projection | 
-| `('sklearn.compose._column_transformer', 'ColumnTransformer')`, concatenation      | Concatenation      | 
+| `('sklearn.compose._column_transformer', 'ColumnTransformer')`, column selection      | Projection |
+| `('sklearn.preprocessing._label', 'label_binarize')` | Projection (Mod)      |
+| `('sklearn.compose._column_transformer', 'ColumnTransformer')`, concatenation      | Concatenation      |
+| `('sklearn.model_selection._split', 'train_test_split')` | Split (Train/Test) 
 | `('sklearn.preprocessing._encoders', 'OneHotEncoder')`, arg type: strings | Transformer |
 | `('sklearn.preprocessing._data', 'StandardScaler')` | Transformer      |
 | `('sklearn.impute._base’, 'SimpleImputer')` | Transformer      |
 | `('sklearn.preprocessing._discretization', 'KBinsDiscretizer')` | Transformer      |
 | `('sklearn.tree._classes', 'DecisionTreeClassifier')` | Estimator      |
+| `('sklearn.linear_model._stochastic_gradient', 'SGDClassifier')` | Estimator      |
 | `('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')` | Estimator      |
 | `('sklearn.linear_model._logistic', 'LogisticRegression')` | Estimator      |
-| `('sklearn.model_selection._split', 'train_test_split')` | Split (Train/Test)      |
-| `('sklearn.preprocessing._label', 'label_binarize')` | Projection (Mod)      |
+
 
 ## Numpy 
 * The implementation can be found mainly [here](./_patch_numpy.py)
@@ -97,4 +99,4 @@ compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expe
 | ------------- |:-------------:|
 | `('statsmodels.datasets', 'get_rdataset')`      | Data Source | 
 | `('statsmodels.api', 'add_constant')`      | Projection (Mod) | 
-| `('statsmodel.api.OLS', 'fit')`, numpy syntax      | Estimator | 
+| `('statsmodel.api', 'OLS')`, numpy syntax      | Estimator | 

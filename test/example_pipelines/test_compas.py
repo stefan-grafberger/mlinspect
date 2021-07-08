@@ -21,4 +21,4 @@ def test_instrumented_py_pipeline_runs():
     Tests whether the pipeline works with instrumentation
     """
     dag = run_and_assert_all_op_outputs_inspected(COMPAS_PY, ['sex', 'race'], COMPAS_PNG)
-    assert len(dag) == 29
+    assert len(dag) == 39

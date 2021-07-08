@@ -51,7 +51,7 @@ class CountDistinctOfColumns(Inspection):
 
     def get_operator_annotation_after_visit(self) -> any:
         assert self._operator_type
-        if self._operator_type is not OperatorType.ESTIMATOR:
+        if self._operator_type not in {OperatorType.ESTIMATOR, OperatorType.SCORE}:
             completeness_results = {}
             for column_index, column_name in enumerate(self._present_column_names):
                 distinct_value_count = len(self._distinct_value_sets[column_index])

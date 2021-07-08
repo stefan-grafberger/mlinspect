@@ -40,7 +40,7 @@ def test_no_missing_embeddings():
                 BasicCodeLocation('<string-source>', 5),
                 OperatorContext(OperatorType.TRANSFORMER,
                                 FunctionInfo('example_pipelines.healthcare.healthcare_utils', 'MyW2VTransformer')),
-                DagNodeDetails('Word2Vec', ['array']),
+                DagNodeDetails('Word2Vec: fit_transform', ['array']),
                 OptionalCodeInfo(CodeReference(5, 14, 5, 62), 'MyW2VTransformer(min_count=2, size=2, workers=1)'))
         : MissingEmbeddingsInfo(2, ['cat_b', 'cat_c'])}
     expected_result = NoMissingEmbeddingsResult(NoMissingEmbeddings(10), CheckStatus.FAILURE,

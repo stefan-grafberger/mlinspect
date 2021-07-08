@@ -88,7 +88,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
                                                 OperatorContext(OperatorType.TRANSFORMER,
                                                                 FunctionInfo('sklearn.preprocessing._encoders',
                                                                              'OneHotEncoder')),
-                                                DagNodeDetails('One-Hot Encoder', ['array']),
+                                                DagNodeDetails('One-Hot Encoder: fit_transform', ['array']),
                                                 OptionalCodeInfo(CodeReference(19 + line_offset, 20, 19 + line_offset,
                                                                                72),
                                                                  "preprocessing.OneHotEncoder(handle_unknown='ignore')")
@@ -98,7 +98,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
                                                 OperatorContext(OperatorType.TRANSFORMER,
                                                                 FunctionInfo('sklearn.preprocessing._data',
                                                                              'StandardScaler')),
-                                                DagNodeDetails('Standard Scaler', ['array']),
+                                                DagNodeDetails('Standard Scaler: fit_transform', ['array']),
                                                 OptionalCodeInfo(CodeReference(20 + line_offset, 16, 20 + line_offset,
                                                                                46),
                                                                  'preprocessing.StandardScaler()'))
@@ -120,7 +120,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
                                   BasicCodeLocation(caller_filename, 26 + line_offset),
                                   OperatorContext(OperatorType.TRAIN_DATA,
                                                   FunctionInfo('sklearn.tree._classes', 'DecisionTreeClassifier')),
-                                  DagNodeDetails('Train Data', ['array']),
+                                  DagNodeDetails(None, ['array']),
                                   OptionalCodeInfo(CodeReference(26 + line_offset, 19, 26 + line_offset, 48),
                                                    'tree.DecisionTreeClassifier()'))
     expected_graph.add_edge(expected_pipeline_concatenation, expected_train_data)
@@ -148,7 +148,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
                                     BasicCodeLocation(caller_filename, 26 + line_offset),
                                     OperatorContext(OperatorType.TRAIN_LABELS,
                                                     FunctionInfo('sklearn.tree._classes', 'DecisionTreeClassifier')),
-                                    DagNodeDetails('Train Labels', ['array']),
+                                    DagNodeDetails(None, ['array']),
                                     OptionalCodeInfo(CodeReference(26 + line_offset, 19, 26 + line_offset, 48),
                                                      'tree.DecisionTreeClassifier()'))
     expected_graph.add_edge(expected_project_modify, expected_train_labels)
@@ -257,13 +257,17 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
         .add_custom_monkey_patching_modules(custom_monkey_patching) \
         .execute()
 
+    save_fig_to_path(inspector_result.dag, dag_png_path)
+    assert os.path.isfile(dag_png_path)
+
     for dag_node, inspection_result in inspector_result.dag_node_to_inspection_results.items():
         assert dag_node.operator_info.operator != OperatorType.MISSING_OP
         assert MaterializeFirstOutputRows(5) in inspection_result
         assert RowLineage(5) in inspection_result
         assert MissingEmbeddings(20) in inspection_result
         assert HistogramForColumns(sensitive_columns) in inspection_result
-        if dag_node.operator_info.operator != OperatorType.ESTIMATOR:  # Estimator does not have output
+        # Estimator and score do not have output
+        if dag_node.operator_info.operator not in {OperatorType.ESTIMATOR, OperatorType.SCORE}:
             assert inspection_result[MaterializeFirstOutputRows(5)] is not None
             assert inspection_result[RowLineage(5)] is not None
             assert inspection_result[HistogramForColumns(sensitive_columns)] is not None
@@ -277,9 +281,6 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
             assert inspection_result[IntersectionalHistogramForColumns(sensitive_columns)] is None
             assert inspection_result[CompletenessOfColumns(sensitive_columns)] is None
             assert inspection_result[CountDistinctOfColumns(sensitive_columns)] is None
-
-    save_fig_to_path(inspector_result.dag, dag_png_path)
-    assert os.path.isfile(dag_png_path)
 
     return inspector_result.dag
 

@@ -55,7 +55,7 @@ class MissingEmbeddings(Inspection):
         if self._is_embedding_operator:
             assert self._missing_embedding_count is not None  # May only be called after the operator visit is finished
             result = MissingEmbeddingsInfo(self._missing_embedding_count, self._missing_embeddings_examples)
-            self._missing_embedding_count = None
+            self._missing_embedding_count = 0
             self._is_embedding_operator = False
             self._missing_embeddings_examples = []
             return result

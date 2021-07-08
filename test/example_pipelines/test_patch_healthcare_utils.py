@@ -30,6 +30,8 @@ def test_my_word_to_vec_transformer():
                 word_to_vec = MyW2VTransformer(min_count=2, size=2, workers=1)
                 encoded_data = word_to_vec.fit_transform(df)
                 assert encoded_data.shape == (4, 2)
+                test_df = pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})
+                encoded_data = word_to_vec.transform(test_df)
                 """)
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
                                                         inspections=[RowLineage(3)],
@@ -44,14 +46,30 @@ def test_my_word_to_vec_transformer():
                                    OptionalCodeInfo(CodeReference(5, 5, 5, 62),
                                                     "pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
     expected_estimator = DagNode(1,
-                              BasicCodeLocation("<string-source>", 6),
-                              OperatorContext(OperatorType.TRANSFORMER,
-                                              FunctionInfo('example_pipelines.healthcare.healthcare_utils',
-                                                           'MyW2VTransformer')),
-                              DagNodeDetails('Word2Vec', ['array']),
-                              OptionalCodeInfo(CodeReference(6, 14, 6, 62),
-                                               'MyW2VTransformer(min_count=2, size=2, workers=1)'))
+                                 BasicCodeLocation("<string-source>", 6),
+                                 OperatorContext(OperatorType.TRANSFORMER,
+                                                 FunctionInfo('example_pipelines.healthcare.healthcare_utils',
+                                                              'MyW2VTransformer')),
+                                 DagNodeDetails('Word2Vec: fit_transform', ['array']),
+                                 OptionalCodeInfo(CodeReference(6, 14, 6, 62),
+                                                  'MyW2VTransformer(min_count=2, size=2, workers=1)'))
     expected_dag.add_edge(expected_data_source, expected_estimator)
+    expected_data_source_two = DagNode(2,
+                                       BasicCodeLocation("<string-source>", 9),
+                                       OperatorContext(OperatorType.DATA_SOURCE,
+                                                       FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                       DagNodeDetails(None, ['A']),
+                                       OptionalCodeInfo(CodeReference(9, 10, 9, 67),
+                                                        "pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
+    expected_estimator_two = DagNode(3,
+                                     BasicCodeLocation("<string-source>", 6),
+                                     OperatorContext(OperatorType.TRANSFORMER,
+                                                     FunctionInfo('example_pipelines.healthcare.healthcare_utils',
+                                                                  'MyW2VTransformer')),
+                                     DagNodeDetails('Word2Vec: transform', ['array']),
+                                     OptionalCodeInfo(CodeReference(6, 14, 6, 62),
+                                                      'MyW2VTransformer(min_count=2, size=2, workers=1)'))
+    expected_dag.add_edge(expected_data_source_two, expected_estimator_two)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_estimator]
@@ -59,6 +77,15 @@ def test_my_word_to_vec_transformer():
     expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0]), {LineageId(0, 0)}],
                                      [numpy.array([0.0, 0.0, 0.0]), {LineageId(0, 1)}],
                                      [numpy.array([0.0, 0.0, 0.0]), {LineageId(0, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_series_equal(lineage_output["mlinspect_lineage"], expected_lineage_df["mlinspect_lineage"])
+    assert expected_lineage_df.iloc[0, 0].shape == (3,)
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_estimator_two]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0]), {LineageId(2, 0)}],
+                                     [numpy.array([0.0, 0.0, 0.0]), {LineageId(2, 1)}],
+                                     [numpy.array([0.0, 0.0, 0.0]), {LineageId(2, 2)}]],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_series_equal(lineage_output["mlinspect_lineage"], expected_lineage_df["mlinspect_lineage"])
     assert expected_lineage_df.iloc[0, 0].shape == (3,)
