@@ -487,7 +487,7 @@ class SklearnDecisionTreePatching:
                         max_leaf_nodes=None, min_impurity_decrease=0., min_impurity_split=None, class_weight=None,
                         presort='deprecated', ccp_alpha=0.0, mlinspect_caller_filename=None,
                         mlinspect_lineno=None, mlinspect_optional_code_reference=None,
-                        mlinspect_optional_source_code=None):
+                        mlinspect_optional_source_code=None, mlinspect_estimator_node_id=None):
         """ Patch for ('sklearn.tree._classes', 'DecisionTreeClassifier') """
         # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals
         original = gorilla.get_original_attribute(tree.DecisionTreeClassifier, '__init__')
@@ -496,6 +496,7 @@ class SklearnDecisionTreePatching:
         self.mlinspect_lineno = mlinspect_lineno
         self.mlinspect_optional_code_reference = mlinspect_optional_code_reference
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
+        self.mlinspect_estimator_node_id = None
 
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
@@ -542,7 +543,8 @@ class SklearnDecisionTreePatching:
                                                              input_infos,
                                                              None)
 
-        dag_node = DagNode(singleton.get_next_op_id(),
+        self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
+        dag_node = DagNode(self.mlinspect_estimator_node_id,
                            BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
                            operator_context,
                            DagNodeDetails("Decision Tree", []),
@@ -550,6 +552,50 @@ class SklearnDecisionTreePatching:
                                                           self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [train_data_node, train_labels_node], estimator_backend_result)
         return self
+
+    @gorilla.name('score')
+    @gorilla.settings(allow_hit=True)
+    def patched_score(self, *args, **kwargs):
+        """ Patch for ('sklearn.tree._classes.DecisionTreeClassifier', 'score') """
+        # pylint: disable=no-method-argument
+        original = gorilla.get_original_attribute(tree.DecisionTreeClassifier, 'score')
+
+        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            # pylint: disable=too-many-locals
+            function_info = FunctionInfo('sklearn.tree._classes.DecisionTreeClassifier', 'score')
+            data_backend_result, test_data_node, test_data_result = add_test_data_dag_node(args[0], op_id,
+                                                                                           function_info,
+                                                                                           lineno,
+                                                                                           optional_code_reference,
+                                                                                           optional_source_code,
+                                                                                           caller_filename)
+            label_backend_result, test_labels_node, test_labels_result = add_test_label_node(args[1],
+                                                                                             caller_filename,
+                                                                                             function_info,
+                                                                                             lineno,
+                                                                                             optional_code_reference,
+                                                                                             optional_source_code)
+
+            operator_context = OperatorContext(OperatorType.SCORE, function_info)
+            input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+            input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+            result = original(self, test_data_result, test_labels_result, *args[2:], **kwargs)
+            estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                                 input_infos,
+                                                                 None)
+
+            dag_node = DagNode(singleton.get_next_op_id(),
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails("Decision Tree", []),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
+            estimator_dag_node = get_dag_node_for_id(self.mlinspect_estimator_node_id)
+            add_dag_node(dag_node, [estimator_dag_node, test_data_node, test_labels_node],
+                         estimator_backend_result)
+            return result
+
+        return execute_patched_func(original, execute_inspections, *args, **kwargs)
 
 
 @gorilla.patches(linear_model.SGDClassifier)
