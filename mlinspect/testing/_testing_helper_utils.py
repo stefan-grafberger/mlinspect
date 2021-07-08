@@ -88,7 +88,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
                                                 OperatorContext(OperatorType.TRANSFORMER,
                                                                 FunctionInfo('sklearn.preprocessing._encoders',
                                                                              'OneHotEncoder')),
-                                                DagNodeDetails('One-Hot Encoder', ['array']),
+                                                DagNodeDetails('One-Hot Encoder: fit_transform', ['array']),
                                                 OptionalCodeInfo(CodeReference(19 + line_offset, 20, 19 + line_offset,
                                                                                72),
                                                                  "preprocessing.OneHotEncoder(handle_unknown='ignore')")
@@ -98,7 +98,7 @@ def get_expected_dag_adult_easy(caller_filename: str, line_offset: int = 0, with
                                                 OperatorContext(OperatorType.TRANSFORMER,
                                                                 FunctionInfo('sklearn.preprocessing._data',
                                                                              'StandardScaler')),
-                                                DagNodeDetails('Standard Scaler', ['array']),
+                                                DagNodeDetails('Standard Scaler: fit_transform', ['array']),
                                                 OptionalCodeInfo(CodeReference(20 + line_offset, 16, 20 + line_offset,
                                                                                46),
                                                                  'preprocessing.StandardScaler()'))

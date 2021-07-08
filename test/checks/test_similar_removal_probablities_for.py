@@ -130,7 +130,7 @@ def get_expected_check_result_simple_imputer():
                        BasicCodeLocation('<string-source>', 6),
                        OperatorContext(OperatorType.TRANSFORMER,
                                        FunctionInfo('sklearn.impute._base', 'SimpleImputer')),
-                       DagNodeDetails('Simple Imputer', ['A']),
+                       DagNodeDetails('Simple Imputer: fit_transform', ['A']),
                        OptionalCodeInfo(CodeReference(6, 10, 6, 72),
                                         "SimpleImputer(missing_values=np.nan, strategy='most_frequent')"))
 
