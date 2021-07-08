@@ -13,7 +13,9 @@ from scipy.sparse import csr_matrix
 
 from mlinspect.backends._backend import AnnotatedDfObject, BackendResult
 from mlinspect.backends._pandas_backend import execute_inspection_visits_data_source
+from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.inspections._inspection_input import OperatorContext, OperatorType
+from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import DagNode, CodeReference, BasicCodeLocation, DagNodeDetails, \
     OptionalCodeInfo
 from mlinspect.instrumentation._pipeline_executor import singleton
@@ -222,3 +224,91 @@ def get_optional_code_info_or_none(optional_code_reference: CodeReference or Non
         assert optional_source_code is None
         code_info_or_none = None
     return code_info_or_none
+
+
+def add_train_label_node(estimator, train_label_arg, function_info):
+    """Add a Train Data DAG Node for a estimator.fit call"""
+    operator_context = OperatorContext(OperatorType.TRAIN_LABELS, function_info)
+    input_info_train_labels = get_input_info(train_label_arg, estimator.mlinspect_caller_filename,
+                                             estimator.mlinspect_lineno, function_info,
+                                             estimator.mlinspect_optional_code_reference,
+                                             estimator.mlinspect_optional_source_code)
+    train_label_op_id = _pipeline_executor.singleton.get_next_op_id()
+    train_labels_dag_node = DagNode(train_label_op_id,
+                                    BasicCodeLocation(estimator.mlinspect_caller_filename, estimator.mlinspect_lineno),
+                                    operator_context,
+                                    DagNodeDetails("Train Labels", ["array"]),
+                                    get_optional_code_info_or_none(estimator.mlinspect_optional_code_reference,
+                                                                   estimator.mlinspect_optional_source_code))
+    input_infos = SklearnBackend.before_call(operator_context, [input_info_train_labels.annotated_dfobject])
+    label_backend_result = SklearnBackend.after_call(operator_context,
+                                                     input_infos,
+                                                     train_label_arg)
+    add_dag_node(train_labels_dag_node, [input_info_train_labels.dag_node], label_backend_result)
+    train_labels_result = label_backend_result.annotated_dfobject.result_data
+    return label_backend_result, train_labels_dag_node, train_labels_result
+
+
+def add_train_data_node(estimator, train_data_arg, function_info):
+    """Add a Train Label DAG Node for a estimator.fit call"""
+    input_info_train_data = get_input_info(train_data_arg, estimator.mlinspect_caller_filename,
+                                           estimator.mlinspect_lineno, function_info,
+                                           estimator.mlinspect_optional_code_reference,
+                                           estimator.mlinspect_optional_source_code)
+    train_data_op_id = _pipeline_executor.singleton.get_next_op_id()
+    operator_context = OperatorContext(OperatorType.TRAIN_DATA, function_info)
+    train_data_dag_node = DagNode(train_data_op_id,
+                                  BasicCodeLocation(estimator.mlinspect_caller_filename, estimator.mlinspect_lineno),
+                                  operator_context,
+                                  DagNodeDetails("Train Data", ["array"]),
+                                  get_optional_code_info_or_none(estimator.mlinspect_optional_code_reference,
+                                                                 estimator.mlinspect_optional_source_code))
+    input_infos = SklearnBackend.before_call(operator_context, [input_info_train_data.annotated_dfobject])
+    data_backend_result = SklearnBackend.after_call(operator_context,
+                                                    input_infos,
+                                                    train_data_arg)
+    add_dag_node(train_data_dag_node, [input_info_train_data.dag_node], data_backend_result)
+    train_data_result = data_backend_result.annotated_dfobject.result_data
+    return data_backend_result, train_data_dag_node, train_data_result
+
+
+def add_test_data_dag_node(test_data_arg, op_id, function_info, lineno, optional_code_reference, optional_source_code,
+                           caller_filename):
+    """Add a Test Data DAG Node for a estimator.score call"""
+    input_info_test_data = get_input_info(test_data_arg, caller_filename, lineno, function_info,
+                                          optional_code_reference, optional_source_code)
+    operator_context = OperatorContext(OperatorType.TEST_DATA, function_info)
+    test_data_dag_node = DagNode(op_id,
+                                 BasicCodeLocation(caller_filename, lineno),
+                                 operator_context,
+                                 DagNodeDetails("Test Data", get_column_names(test_data_arg)),
+                                 get_optional_code_info_or_none(optional_code_reference, optional_source_code))
+    input_infos = SklearnBackend.before_call(operator_context, [input_info_test_data.annotated_dfobject])
+    data_backend_result = SklearnBackend.after_call(operator_context,
+                                                    input_infos,
+                                                    test_data_arg)
+    add_dag_node(test_data_dag_node, [input_info_test_data.dag_node], data_backend_result)
+    test_data_result = data_backend_result.annotated_dfobject.result_data
+    return data_backend_result, test_data_dag_node, test_data_result
+
+
+def add_test_label_node(test_label_arg, caller_filename, function_info, lineno, optional_code_reference,
+                        optional_source_code):
+    """Add a Test Label DAG Node for a estimator.score call"""
+    operator_context = OperatorContext(OperatorType.TEST_LABELS, function_info)
+    input_info_test_labels = get_input_info(test_label_arg, caller_filename, lineno, function_info,
+                                            optional_code_reference, optional_source_code)
+    test_label_op_id = _pipeline_executor.singleton.get_next_op_id()
+    test_labels_dag_node = DagNode(test_label_op_id,
+                                   BasicCodeLocation(caller_filename, lineno),
+                                   operator_context,
+                                   DagNodeDetails("Test Labels", get_column_names(test_label_arg)),
+                                   get_optional_code_info_or_none(optional_code_reference,
+                                                                  optional_source_code))
+    input_infos = SklearnBackend.before_call(operator_context, [input_info_test_labels.annotated_dfobject])
+    label_backend_result = SklearnBackend.after_call(operator_context,
+                                                     input_infos,
+                                                     test_label_arg)
+    add_dag_node(test_labels_dag_node, [input_info_test_labels.dag_node], label_backend_result)
+    test_labels_result = label_backend_result.annotated_dfobject.result_data
+    return label_backend_result, test_labels_dag_node, test_labels_result
