@@ -272,14 +272,15 @@ def add_train_data_node(estimator, train_data_arg, function_info):
     return data_backend_result, train_data_dag_node, train_data_result
 
 
-def add_test_data_dag_node(test_data_arg, op_id, function_info, lineno, optional_code_reference, optional_source_code,
+def add_test_data_dag_node(test_data_arg, function_info, lineno, optional_code_reference, optional_source_code,
                            caller_filename):
     # pylint: disable=too-many-arguments
     """Add a Test Data DAG Node for a estimator.score call"""
     input_info_test_data = get_input_info(test_data_arg, caller_filename, lineno, function_info,
                                           optional_code_reference, optional_source_code)
     operator_context = OperatorContext(OperatorType.TEST_DATA, function_info)
-    test_data_dag_node = DagNode(op_id,
+    test_data_op_id = _pipeline_executor.singleton.get_next_op_id()
+    test_data_dag_node = DagNode(test_data_op_id,
                                  BasicCodeLocation(caller_filename, lineno),
                                  operator_context,
                                  DagNodeDetails("Test Data", get_column_names(test_data_arg)),

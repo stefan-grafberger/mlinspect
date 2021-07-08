@@ -561,11 +561,11 @@ class SklearnDecisionTreePatching:
         # pylint: disable=no-method-argument
         original = gorilla.get_original_attribute(tree.DecisionTreeClassifier, 'score')
 
-        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             # pylint: disable=too-many-locals
             function_info = FunctionInfo('sklearn.tree._classes.DecisionTreeClassifier', 'score')
-            data_backend_result, test_data_node, test_data_result = add_test_data_dag_node(args[0], op_id,
+            data_backend_result, test_data_node, test_data_result = add_test_data_dag_node(args[0],
                                                                                            function_info,
                                                                                            lineno,
                                                                                            optional_code_reference,
@@ -596,7 +596,7 @@ class SklearnDecisionTreePatching:
                          estimator_backend_result)
             return result
 
-        return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
+        return execute_patched_func_indirect_allowed(execute_inspections)
 
 
 @gorilla.patches(linear_model.SGDClassifier)
@@ -685,12 +685,12 @@ class SklearnSGDClassifierPatching:
         # pylint: disable=no-method-argument
         original = gorilla.get_original_attribute(linear_model.SGDClassifier, 'score')
 
-        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             # pylint: disable=too-many-locals
             function_info = FunctionInfo('sklearn.linear_model._stochastic_gradient.SGDClassifier', 'score')
             # Test data
-            data_backend_result, test_data_node, test_data_result = add_test_data_dag_node(args[0], op_id,
+            data_backend_result, test_data_node, test_data_result = add_test_data_dag_node(args[0],
                                                                                            function_info,
                                                                                            lineno,
                                                                                            optional_code_reference,
@@ -724,7 +724,7 @@ class SklearnSGDClassifierPatching:
                          estimator_backend_result)
             return result
 
-        return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
+        return execute_patched_func_indirect_allowed(execute_inspections)
 
 
 @gorilla.patches(linear_model.LogisticRegression)
@@ -810,12 +810,12 @@ class SklearnLogisticRegressionPatching:
         # pylint: disable=no-method-argument
         original = gorilla.get_original_attribute(linear_model.LogisticRegression, 'score')
 
-        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             # pylint: disable=too-many-locals
             function_info = FunctionInfo('sklearn.linear_model._logistic.LogisticRegression', 'score')
             # Test data
-            data_backend_result, test_data_node, test_data_result = add_test_data_dag_node(args[0], op_id,
+            data_backend_result, test_data_node, test_data_result = add_test_data_dag_node(args[0],
                                                                                            function_info,
                                                                                            lineno,
                                                                                            optional_code_reference,
@@ -849,7 +849,7 @@ class SklearnLogisticRegressionPatching:
                          estimator_backend_result)
             return result
 
-        return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
+        return execute_patched_func_indirect_allowed(execute_inspections)
 
 
 class SklearnKerasClassifierPatching:
@@ -916,12 +916,12 @@ class SklearnKerasClassifierPatching:
         # pylint: disable=no-method-argument
         original = gorilla.get_original_attribute(keras_sklearn_external.KerasClassifier, 'score')
 
-        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             # pylint: disable=too-many-locals
             function_info = FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn.KerasClassifier', 'score')
             # Test data
-            data_backend_result, test_data_node, test_data_result = add_test_data_dag_node(args[0], op_id,
+            data_backend_result, test_data_node, test_data_result = add_test_data_dag_node(args[0],
                                                                                            function_info,
                                                                                            lineno,
                                                                                            optional_code_reference,
@@ -955,4 +955,4 @@ class SklearnKerasClassifierPatching:
                          estimator_backend_result)
             return result
 
-        return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
+        return execute_patched_func_indirect_allowed(execute_inspections)
