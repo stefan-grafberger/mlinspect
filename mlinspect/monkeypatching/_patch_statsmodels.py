@@ -124,9 +124,11 @@ class StatsmodelsOlsPatching:
         data_backend_result, train_data_node, train_data_result = add_train_data_node(self,
                                                                                       self.data.exog,
                                                                                       function_info)
+        self.data.exog = train_data_result
         # pylint: disable=no-member
         label_backend_result, train_labels_node, train_labels_result = add_train_label_node(self, self.data.endog,
                                                                                             function_info)
+        self.data.endog = train_labels_result
 
         # Estimator
         operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
