@@ -137,7 +137,7 @@ def test_standard_scaler():
                 standard_scaler = StandardScaler()
                 encoded_data = standard_scaler.fit_transform(df)
                 test_df = pd.DataFrame({'A': [1, 2, 10, 5]})
-                encoded_data = standard_scaler.fit_transform(test_df)
+                encoded_data = standard_scaler.transform(test_df)
                 expected = np.array([[-1.], [-0.71428571], [1.57142857], [0.14285714]])
                 assert np.allclose(encoded_data, expected)
                 """)
@@ -204,6 +204,8 @@ def test_kbins_discretizer():
                 df = pd.DataFrame({'A': [1, 2, 10, 5]})
                 discretizer = KBinsDiscretizer(n_bins=3, encode='ordinal', strategy='uniform')
                 encoded_data = discretizer.fit_transform(df)
+                test_df = pd.DataFrame({'A': [1, 2, 10, 5]})
+                encoded_data = discretizer.transform(test_df)
                 expected = np.array([[0.], [0.], [2.], [1.]])
                 assert np.allclose(encoded_data, expected)
                 """)
@@ -227,6 +229,22 @@ def test_kbins_discretizer():
                                    OptionalCodeInfo(CodeReference(6, 14, 6, 78),
                                                     "KBinsDiscretizer(n_bins=3, encode='ordinal', strategy='uniform')"))
     expected_dag.add_edge(expected_data_source, expected_transformer)
+    expected_data_source_two = DagNode(2,
+                                       BasicCodeLocation("<string-source>", 8),
+                                       OperatorContext(OperatorType.DATA_SOURCE,
+                                                       FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                       DagNodeDetails(None, ['A']),
+                                       OptionalCodeInfo(CodeReference(8, 10, 8, 44),
+                                                        "pd.DataFrame({'A': [1, 2, 10, 5]})"))
+    expected_transformer_two = DagNode(3,
+                                       BasicCodeLocation("<string-source>", 6),
+                                       OperatorContext(OperatorType.TRANSFORMER,
+                                                       FunctionInfo('sklearn.preprocessing._discretization',
+                                                                    'KBinsDiscretizer')),
+                                       DagNodeDetails('K-Bins Discretizer', ['array']),
+                                       OptionalCodeInfo(CodeReference(6, 14, 6, 78),
+                                                        "KBinsDiscretizer(n_bins=3, encode='ordinal', strategy='uniform')"))
+    expected_dag.add_edge(expected_data_source_two, expected_transformer_two)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
@@ -234,6 +252,14 @@ def test_kbins_discretizer():
     expected_lineage_df = DataFrame([[numpy.array([0.]), {LineageId(0, 0)}],
                                      [numpy.array([0.]), {LineageId(0, 1)}],
                                      [numpy.array([2.]), {LineageId(0, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer_two]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([0.]), {LineageId(2, 0)}],
+                                     [numpy.array([0.]), {LineageId(2, 1)}],
+                                     [numpy.array([2.]), {LineageId(2, 2)}]],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -250,6 +276,8 @@ def test_simple_imputer():
                 df = pd.DataFrame({'A': ['cat_a', np.nan, 'cat_a', 'cat_c']})
                 imputer = SimpleImputer(missing_values=np.nan, strategy='most_frequent')
                 imputed_data = imputer.fit_transform(df)
+                test_df = pd.DataFrame({'A': ['cat_a', np.nan, 'cat_a', 'cat_c']})
+                imputed_data = imputer.transform(test_df)
                 expected = np.array([['cat_a'], ['cat_a'], ['cat_a'], ['cat_c']])
                 assert np.array_equal(imputed_data, expected)
                 """)
@@ -273,6 +301,21 @@ def test_simple_imputer():
                                    OptionalCodeInfo(CodeReference(6, 10, 6, 72),
                                                     "SimpleImputer(missing_values=np.nan, strategy='most_frequent')"))
     expected_dag.add_edge(expected_data_source, expected_transformer)
+    expected_data_source_two = DagNode(2,
+                                       BasicCodeLocation("<string-source>", 8),
+                                       OperatorContext(OperatorType.DATA_SOURCE,
+                                                       FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                       DagNodeDetails(None, ['A']),
+                                       OptionalCodeInfo(CodeReference(8, 10, 8, 66),
+                                                        "pd.DataFrame({'A': ['cat_a', np.nan, 'cat_a', 'cat_c']})"))
+    expected_transformer_two = DagNode(3,
+                                       BasicCodeLocation("<string-source>", 6),
+                                       OperatorContext(OperatorType.TRANSFORMER,
+                                                       FunctionInfo('sklearn.impute._base', 'SimpleImputer')),
+                                       DagNodeDetails('Simple Imputer', ['A']),
+                                       OptionalCodeInfo(CodeReference(6, 10, 6, 72),
+                                                        "SimpleImputer(missing_values=np.nan, strategy='most_frequent')"))
+    expected_dag.add_edge(expected_data_source_two, expected_transformer_two)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
@@ -280,6 +323,14 @@ def test_simple_imputer():
     expected_lineage_df = DataFrame([[numpy.array(['cat_a']), {LineageId(0, 0)}],
                                      [numpy.array(['cat_a']), {LineageId(0, 1)}],
                                      [numpy.array(['cat_a']), {LineageId(0, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer_two]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array(['cat_a']), {LineageId(2, 0)}],
+                                     [numpy.array(['cat_a']), {LineageId(2, 1)}],
+                                     [numpy.array(['cat_a']), {LineageId(2, 2)}]],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -299,6 +350,8 @@ def test_one_hot_encoder_not_sparse():
                 expected = np.array([[1., 0., 0.], [0., 1., 0.], [1., 0., 0.], [0., 0., 1.]])
                 print(encoded_data)
                 assert np.allclose(encoded_data, expected)
+                test_df = pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})
+                encoded_data = one_hot_encoder.transform(test_df)
                 """)
 
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
@@ -319,6 +372,21 @@ def test_one_hot_encoder_not_sparse():
                                    DagNodeDetails('One-Hot Encoder', ['array']),
                                    OptionalCodeInfo(CodeReference(6, 18, 6, 45), 'OneHotEncoder(sparse=False)'))
     expected_dag.add_edge(expected_data_source, expected_transformer)
+    expected_data_source_two = DagNode(2,
+                                       BasicCodeLocation("<string-source>", 11),
+                                       OperatorContext(OperatorType.DATA_SOURCE,
+                                                       FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                       DagNodeDetails(None, ['A']),
+                                       OptionalCodeInfo(CodeReference(11, 10, 11, 67),
+                                                        "pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
+    expected_transformer_two = DagNode(3,
+                                       BasicCodeLocation("<string-source>", 6),
+                                       OperatorContext(OperatorType.TRANSFORMER,
+                                                       FunctionInfo('sklearn.preprocessing._encoders',
+                                                                    'OneHotEncoder')),
+                                       DagNodeDetails('One-Hot Encoder', ['array']),
+                                       OptionalCodeInfo(CodeReference(6, 18, 6, 45), 'OneHotEncoder(sparse=False)'))
+    expected_dag.add_edge(expected_data_source_two, expected_transformer_two)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
@@ -326,6 +394,14 @@ def test_one_hot_encoder_not_sparse():
     expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), {LineageId(0, 0)}],
                                      [numpy.array([0.0, 1.0, 0.0]), {LineageId(0, 1)}],
                                      [numpy.array([1.0, 0.0, 0.0]), {LineageId(0, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer_two]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), {LineageId(2, 0)}],
+                                     [numpy.array([0.0, 1.0, 0.0]), {LineageId(2, 1)}],
+                                     [numpy.array([1.0, 0.0, 0.0]), {LineageId(2, 2)}]],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -580,7 +656,6 @@ def test_column_transformer_multiple_transformers_all_dense():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_concat]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    # TODO: Lineage concat
     expected_lineage_df = DataFrame([[numpy.array([-1.0, 1.0, 0.0, 0.0]), {LineageId(0, 0)}],
                                      [numpy.array([-0.7142857142857143, 0.0, 1.0, 0.0]), {LineageId(0, 1)}],
                                      [numpy.array([1.5714285714285714, 1.0, 0.0, 0.0]), {LineageId(0, 2)}]],
@@ -713,8 +788,6 @@ def test_column_transformer_multiple_transformers_sparse_dense():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
-# FIXME: Test transform kbins, simple imputer
-
 def test_column_transformer_transform_after_fit_transform():
     """
     Tests whether the monkey patching of ('sklearn.compose._column_transformer', 'ColumnTransformer') works with
@@ -734,134 +807,6 @@ def test_column_transformer_transform_after_fit_transform():
                 encoded_data = column_transformer.fit_transform(df)
                 test_df = pd.DataFrame({'A': [1, 2, 10, 5], 'B': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})
                 encoded_data = column_transformer.transform(test_df)
-                expected = numpy.array([[-1., 1., 0., 0.], [-0.71428571, 0., 1., 0.], [ 1.57142857, 1., 0., 0.], 
-                    [0.14285714, 0., 0., 1.]])
-                print(encoded_data)
-                assert numpy.allclose(encoded_data, expected)
-                """)
-
-    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
-                                                        inspections=[RowLineage(3)])
-    filter_dag_for_nodes_with_ids(inspector_result, {6, 7, 8, 9, 10, 11}, 12)
-
-    expected_dag = networkx.DiGraph()
-    expected_data_source = DagNode(6,
-                                   BasicCodeLocation("<string-source>", 13),
-                                   OperatorContext(OperatorType.DATA_SOURCE,
-                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
-                                   DagNodeDetails(None, ['A', 'B']),
-                                   OptionalCodeInfo(CodeReference(13, 10, 13, 87),
-                                                    "pd.DataFrame({'A': [1, 2, 10, 5], "
-                                                    "'B': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})"))
-    expected_projection_1 = DagNode(7,
-                                    BasicCodeLocation("<string-source>", 8),
-                                    OperatorContext(OperatorType.PROJECTION,
-                                                    FunctionInfo('sklearn.compose._column_transformer',
-                                                                 'ColumnTransformer')),
-                                    DagNodeDetails("to ['A']", ['A']),
-                                    OptionalCodeInfo(CodeReference(8, 21, 11, 2),
-                                                     "ColumnTransformer(transformers=[\n"
-                                                     "    ('numeric', StandardScaler(), ['A']),\n"
-                                                     "    ('categorical', OneHotEncoder(sparse=True), ['B'])\n])"))
-    expected_dag.add_edge(expected_data_source, expected_projection_1)
-    expected_projection_2 = DagNode(9,
-                                    BasicCodeLocation("<string-source>", 8),
-                                    OperatorContext(OperatorType.PROJECTION,
-                                                    FunctionInfo('sklearn.compose._column_transformer',
-                                                                 'ColumnTransformer')),
-                                    DagNodeDetails("to ['B']", ['B']),
-                                    OptionalCodeInfo(CodeReference(8, 21, 11, 2),
-                                                     "ColumnTransformer(transformers=[\n"
-                                                     "    ('numeric', StandardScaler(), ['A']),\n"
-                                                     "    ('categorical', OneHotEncoder(sparse=True), ['B'])\n])"))
-    expected_dag.add_edge(expected_data_source, expected_projection_2)
-    expected_standard_scaler = DagNode(8,
-                                       BasicCodeLocation("<string-source>", 9),
-                                       OperatorContext(OperatorType.TRANSFORMER,
-                                                       FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
-                                       DagNodeDetails('Standard Scaler', ['array']),
-                                       OptionalCodeInfo(CodeReference(9, 16, 9, 32), 'StandardScaler()'))
-    expected_dag.add_edge(expected_projection_1, expected_standard_scaler)
-    expected_one_hot = DagNode(10,
-                               BasicCodeLocation("<string-source>", 10),
-                               OperatorContext(OperatorType.TRANSFORMER,
-                                               FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
-                               DagNodeDetails('One-Hot Encoder', ['array']),
-                               OptionalCodeInfo(CodeReference(10, 20, 10, 46), 'OneHotEncoder(sparse=True)'))
-    expected_dag.add_edge(expected_projection_2, expected_one_hot)
-    expected_concat = DagNode(11,
-                              BasicCodeLocation("<string-source>", 8),
-                              OperatorContext(OperatorType.CONCATENATION,
-                                              FunctionInfo('sklearn.compose._column_transformer', 'ColumnTransformer')),
-                              DagNodeDetails(None, ['array']),
-                              OptionalCodeInfo(CodeReference(8, 21, 11, 2),
-                                               "ColumnTransformer(transformers=[\n"
-                                               "    ('numeric', StandardScaler(), ['A']),\n"
-                                               "    ('categorical', OneHotEncoder(sparse=True), ['B'])\n])"))
-    expected_dag.add_edge(expected_standard_scaler, expected_concat)
-    expected_dag.add_edge(expected_one_hot, expected_concat)
-    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
-
-    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_projection_1]
-    lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[1, {LineageId(6, 0)}],
-                                     [2, {LineageId(6, 1)}],
-                                     [10, {LineageId(6, 2)}]],
-                                    columns=['A', 'mlinspect_lineage'])
-    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
-
-    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_projection_2]
-    lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([['cat_a', {LineageId(6, 0)}],
-                                     ['cat_b', {LineageId(6, 1)}],
-                                     ['cat_a', {LineageId(6, 2)}]],
-                                    columns=['B', 'mlinspect_lineage'])
-    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
-
-    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_standard_scaler]
-    lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([-1.0]), {LineageId(6, 0)}],
-                                     [numpy.array([-0.7142857142857143]), {LineageId(6, 1)}],
-                                     [numpy.array([1.5714285714285714]), {LineageId(6, 2)}]],
-                                    columns=['array', 'mlinspect_lineage'])
-    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
-
-    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_one_hot]
-    lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), {LineageId(6, 0)}],
-                                     [numpy.array([0.0, 1.0, 0.0]), {LineageId(6, 1)}],
-                                     [numpy.array([1.0, 0.0, 0.0]), {LineageId(6, 2)}]],
-                                    columns=['array', 'mlinspect_lineage'])
-    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
-
-    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_concat]
-    lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([-1.0, 1.0, 0.0, 0.0]), {LineageId(6, 0)}],
-                                     [numpy.array([-0.7142857142857143, 0.0, 1.0, 0.0]), {LineageId(6, 1)}],
-                                     [numpy.array([1.5714285714285714, 1.0, 0.0, 0.0]), {LineageId(6, 2)}]],
-                                    columns=['array', 'mlinspect_lineage'])
-    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
-
-
-def test_column_transformer_transform_after_fit_transform():
-    """
-    Tests whether the monkey patching of ('sklearn.compose._column_transformer', 'ColumnTransformer') works with
-    multiple transformers with sparse and dense mixed output    """
-    test_code = cleandoc("""
-                import pandas as pd
-                from sklearn.preprocessing import label_binarize, StandardScaler, OneHotEncoder
-                from sklearn.compose import ColumnTransformer
-                from scipy.sparse import csr_matrix
-                import numpy
-
-                df = pd.DataFrame({'A': [1, 2, 10, 5], 'B': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})
-                column_transformer = ColumnTransformer(transformers=[
-                    ('numeric', StandardScaler(), ['A']),
-                    ('categorical', OneHotEncoder(sparse=True), ['B'])
-                ])
-                encoded_data = column_transformer.fit_transform(df)
-                test_df = pd.DataFrame({'A': [1, 2, 10, 5], 'B': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})
-                encoded_data = column_transformer.score(test_df)
                 expected = numpy.array([[-1., 1., 0., 0.], [-0.71428571, 0., 1., 0.], [ 1.57142857, 1., 0., 0.], 
                     [0.14285714, 0., 0., 1.]])
                 print(encoded_data)
