@@ -831,9 +831,7 @@ def test_sgd_classifier():
 
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
                                                         inspections=[RowLineage(3)])
-    dag_nodes_irrelevant__for_test = [dag_node for dag_node in list(inspector_result.dag.nodes)
-                                      if dag_node.node_id not in {2, 5, 4, 6, 7}]
-    inspector_result.dag.remove_nodes_from(dag_nodes_irrelevant__for_test)
+    filter_dag_for_nodes_with_ids(inspector_result, {2, 5, 4, 6, 7}, 8)
 
     expected_dag = networkx.DiGraph()
     expected_standard_scaler = DagNode(2,
@@ -867,16 +865,16 @@ def test_sgd_classifier():
                                     OptionalCodeInfo(CodeReference(11, 6, 11, 48),
                                                      "SGDClassifier(loss='log', random_state=42)"))
     expected_dag.add_edge(expected_label_encode, expected_train_labels)
-    expected_decision_tree = DagNode(7,
-                                     BasicCodeLocation("<string-source>", 11),
-                                     OperatorContext(OperatorType.ESTIMATOR,
-                                                     FunctionInfo('sklearn.linear_model._stochastic_gradient',
-                                                                  'SGDClassifier')),
-                                     DagNodeDetails('Decision Tree', []),
-                                     OptionalCodeInfo(CodeReference(11, 6, 11, 48),
-                                                      "SGDClassifier(loss='log', random_state=42)"))
-    expected_dag.add_edge(expected_train_data, expected_decision_tree)
-    expected_dag.add_edge(expected_train_labels, expected_decision_tree)
+    expected_classifier = DagNode(7,
+                                  BasicCodeLocation("<string-source>", 11),
+                                  OperatorContext(OperatorType.ESTIMATOR,
+                                                  FunctionInfo('sklearn.linear_model._stochastic_gradient',
+                                                               'SGDClassifier')),
+                                  DagNodeDetails('SGD Classifier', []),
+                                  OptionalCodeInfo(CodeReference(11, 6, 11, 48),
+                                                   "SGDClassifier(loss='log', random_state=42)"))
+    expected_dag.add_edge(expected_train_data, expected_classifier)
+    expected_dag.add_edge(expected_train_labels, expected_classifier)
 
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
@@ -896,7 +894,7 @@ def test_sgd_classifier():
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
-    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_decision_tree]
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_classifier]
     lineage_output = inspection_results_data_source[RowLineage(3)]
     expected_lineage_df = DataFrame([[{LineageId(0, 0)}],
                                      [{LineageId(0, 1)}],
@@ -904,6 +902,17 @@ def test_sgd_classifier():
                                     columns=['mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       check_column_type=False)
+
+
+def filter_dag_for_nodes_with_ids(inspector_result, node_ids, total_expected_node_num):
+    """
+    Filter for DAG Nodes relevant for this test
+    """
+    assert len(inspector_result.dag.nodes) == total_expected_node_num
+    dag_nodes_irrelevant__for_test = [dag_node for dag_node in list(inspector_result.dag.nodes)
+                                      if dag_node.node_id not in node_ids]
+    inspector_result.dag.remove_nodes_from(dag_nodes_irrelevant__for_test)
+    assert len(inspector_result.dag.nodes) == len(node_ids)
 
 
 def test_sgd_classifier_score():
@@ -932,7 +941,7 @@ def test_sgd_classifier_score():
 
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
                                                         inspections=[RowLineage(3)])
-    inspector_result.dag.remove_nodes_from(list(inspector_result.dag.nodes)[0:10])
+    filter_dag_for_nodes_with_ids(inspector_result, {7, 10, 11, 12, 13, 14}, 15)
 
     expected_dag = networkx.DiGraph()
     expected_data_projection = DagNode(11,
@@ -966,14 +975,23 @@ def test_sgd_classifier_score():
                                    OptionalCodeInfo(CodeReference(16, 13, 16, 56),
                                                     "clf.score(test_df[['A', 'B']], test_labels)"))
     expected_dag.add_edge(expected_label_encode, expected_test_labels)
+    expected_classifier = DagNode(7,
+                                  BasicCodeLocation("<string-source>", 11),
+                                  OperatorContext(OperatorType.ESTIMATOR,
+                                                  FunctionInfo('sklearn.linear_model._stochastic_gradient',
+                                                               'SGDClassifier')),
+                                  DagNodeDetails('SGD Classifier', []),
+                                  OptionalCodeInfo(CodeReference(11, 6, 11, 48),
+                                                   "SGDClassifier(loss='log', random_state=42)"))
     expected_score = DagNode(14,
                              BasicCodeLocation("<string-source>", 16),
                              OperatorContext(OperatorType.SCORE,
                                              FunctionInfo('sklearn.linear_model._stochastic_gradient.SGDClassifier',
                                                           'score')),
-                             DagNodeDetails('Score', []),
+                             DagNodeDetails('SGD Classifier', []),
                              OptionalCodeInfo(CodeReference(16, 13, 16, 56),
                                               "clf.score(test_df[['A', 'B']], test_labels)"))
+    expected_dag.add_edge(expected_classifier, expected_score)
     expected_dag.add_edge(expected_test_data, expected_score)
     expected_dag.add_edge(expected_test_labels, expected_score)
 

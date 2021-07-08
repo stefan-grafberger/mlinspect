@@ -48,7 +48,6 @@ class OperatorType(Enum):
     CONCATENATION = "Concatenation"
     ESTIMATOR = "Estimator"
     SCORE = "Score"
-    FIT = "Fit Transformers and Estimators"
     TRAIN_DATA = "Train Data"
     TRAIN_LABELS = "Train Labels"
     TEST_DATA = "Test Data"

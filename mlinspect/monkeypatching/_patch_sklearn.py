@@ -18,7 +18,7 @@ from mlinspect.instrumentation._dag_node import DagNode, BasicCodeLocation, DagN
 from mlinspect.instrumentation._pipeline_executor import singleton
 from mlinspect.monkeypatching._monkey_patching_utils import execute_patched_func, add_dag_node, \
     execute_patched_func_indirect_allowed, get_input_info, execute_patched_func_no_op_id, \
-    get_optional_code_info_or_none, get_column_names
+    get_optional_code_info_or_none, get_column_names, get_dag_node_for_id
 from mlinspect.monkeypatching._mlinspect_ndarray import MlinspectNdarray
 
 
@@ -597,7 +597,8 @@ class SklearnSGDClassifierPatching:
                         n_jobs=None, random_state=None, learning_rate="optimal", eta0=0.0, power_t=0.5,
                         early_stopping=False, validation_fraction=0.1, n_iter_no_change=5, class_weight=None,
                         warm_start=False, average=False, mlinspect_caller_filename=None, mlinspect_lineno=None,
-                        mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None):
+                        mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None,
+                        mlinspect_estimator_node_id=None):
         """ Patch for ('sklearn.linear_model._stochastic_gradient', 'SGDClassifier') """
         # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals
         original = gorilla.get_original_attribute(linear_model.SGDClassifier, '__init__')
@@ -606,6 +607,7 @@ class SklearnSGDClassifierPatching:
         self.mlinspect_lineno = mlinspect_lineno
         self.mlinspect_optional_code_reference = mlinspect_optional_code_reference
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
+        self.mlinspect_estimator_node_id = mlinspect_estimator_node_id
 
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
@@ -620,6 +622,7 @@ class SklearnSGDClassifierPatching:
             self.mlinspect_lineno = lineno
             self.mlinspect_optional_code_reference = optional_code_reference
             self.mlinspect_optional_source_code = optional_source_code
+            self.mlinspect_estimator_node_id = None
 
         return execute_patched_func_no_op_id(original, execute_inspections, self, loss=loss, penalty=penalty,
                                              alpha=alpha, l1_ratio=l1_ratio, fit_intercept=fit_intercept,
@@ -685,11 +688,11 @@ class SklearnSGDClassifierPatching:
         estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                              input_infos,
                                                              None)
-
-        dag_node = DagNode(singleton.get_next_op_id(),
+        self.mlinspect_estimator_node_id = singleton.get_next_op_id()
+        dag_node = DagNode(self.mlinspect_estimator_node_id,
                            BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
                            operator_context,
-                           DagNodeDetails("Decision Tree", []),
+                           DagNodeDetails("SGD Classifier", []),
                            get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
                                                           self.mlinspect_optional_source_code))
         add_dag_node(dag_node, [train_data_dag_node, train_labels_dag_node], estimator_backend_result)
@@ -752,10 +755,11 @@ class SklearnSGDClassifierPatching:
             dag_node = DagNode(singleton.get_next_op_id(),
                                BasicCodeLocation(caller_filename, lineno),
                                operator_context,
-                               DagNodeDetails("Score", []),
+                               DagNodeDetails("SGD Classifier", []),
                                get_optional_code_info_or_none(optional_code_reference, optional_source_code))
-            # TODO: Also add the fit node as parent
-            add_dag_node(dag_node, [test_data_dag_node, test_labels_dag_node], estimator_backend_result)
+            estimator_dag_node = get_dag_node_for_id(self.mlinspect_estimator_node_id)
+            add_dag_node(dag_node, [estimator_dag_node, test_data_dag_node, test_labels_dag_node],
+                         estimator_backend_result)
             return result
 
         return execute_patched_func(original, execute_inspections, *args, **kwargs)
