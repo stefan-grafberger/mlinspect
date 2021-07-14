@@ -246,6 +246,7 @@ class DataFramePatching:
 
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
+            # pylint: disable=too-many-locals
             function_info = FunctionInfo('pandas.core.frame', 'merge')
 
             input_info_a = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
