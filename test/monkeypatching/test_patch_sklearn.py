@@ -529,6 +529,80 @@ def test_one_hot_encoder_sparse():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
+def test_hashing_vectorizer():
+    """
+    Tests whether the monkey patching of ('sklearn.feature_extraction.text', 'HashingVectorizer') works
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+                from sklearn.feature_extraction.text import HashingVectorizer
+                from scipy.sparse import csr_matrix
+                import numpy as np
+
+                df = pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})
+                vectorizer = HashingVectorizer(ngram_range=(1, 3), n_features=2**2)
+                encoded_data = vectorizer.fit_transform(df['A'])
+                expected = csr_matrix([[-0., 0., 0., -1.], [0., -1., -0., 0.], [0., 0., 0., -1.], [0., 0., 0., -1.]])
+                assert np.allclose(encoded_data.A, expected.A)
+                test_df = pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})
+                encoded_data = vectorizer.transform(test_df['A'])
+                """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(3)])
+    inspector_result.dag.remove_node(list(inspector_result.dag)[0])
+    inspector_result.dag.remove_node(list(inspector_result.dag)[2])
+
+    expected_dag = networkx.DiGraph()
+    expected_data_source = DagNode(1,
+                                   BasicCodeLocation("<string-source>", 8),
+                                   OperatorContext(OperatorType.PROJECTION,
+                                                   FunctionInfo('pandas.core.frame', '__getitem__')),
+                                   DagNodeDetails("to ['A']", ['A']),
+                                   OptionalCodeInfo(CodeReference(8, 40, 8, 47), "df['A']"))
+    expected_transformer = DagNode(2,
+                                   BasicCodeLocation("<string-source>", 7),
+                                   OperatorContext(OperatorType.TRANSFORMER,
+                                                   FunctionInfo('sklearn.feature_extraction.text',
+                                                                'HashingVectorizer')),
+                                   DagNodeDetails('Hashing Vectorizer: fit_transform', ['array']),
+                                   OptionalCodeInfo(CodeReference(7, 13, 7, 67),
+                                                    'HashingVectorizer(ngram_range=(1, 3), n_features=2**2)'))
+    expected_dag.add_edge(expected_data_source, expected_transformer)
+    expected_data_source_two = DagNode(4,
+                                       BasicCodeLocation("<string-source>", 12),
+                                       OperatorContext(OperatorType.PROJECTION,
+                                                       FunctionInfo('pandas.core.frame', '__getitem__')),
+                                       DagNodeDetails("to ['A']", ['A']),
+                                       OptionalCodeInfo(CodeReference(12, 36, 12, 48), "test_df['A']"))
+    expected_transformer_two = DagNode(5,
+                                       BasicCodeLocation("<string-source>", 7),
+                                       OperatorContext(OperatorType.TRANSFORMER,
+                                                       FunctionInfo('sklearn.feature_extraction.text',
+                                                                    'HashingVectorizer')),
+                                       DagNodeDetails('Hashing Vectorizer: transform', ['array']),
+                                       OptionalCodeInfo(CodeReference(7, 13, 7, 67),
+                                                        'HashingVectorizer(ngram_range=(1, 3), n_features=2**2)'))
+    expected_dag.add_edge(expected_data_source_two, expected_transformer_two)
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(0, 0)}],
+                                     [numpy.array([0.0, -1.0, 0.0, 0.]), {LineageId(0, 1)}],
+                                     [numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(0, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer_two]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(3, 0)}],
+                                     [numpy.array([0.0, -1.0, 0.0, 0.]), {LineageId(3, 1)}],
+                                     [numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(3, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
 def test_column_transformer_one_transformer():
     """
     Tests whether the monkey patching of ('sklearn.compose._column_transformer', 'ColumnTransformer') works with
@@ -610,6 +684,107 @@ def test_column_transformer_one_transformer():
     expected_lineage_df = DataFrame([[numpy.array([-1.0, -1.0]), {LineageId(0, 0)}],
                                      [numpy.array([-0.7142857142857143, -0.7142857142857143]), {LineageId(0, 1)}],
                                      [numpy.array([1.5714285714285714, 1.5714285714285714]), {LineageId(0, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
+def test_column_transformer_one_transformer_single_column_projection():
+    """
+    Tests whether the monkey patching of ('sklearn.compose._column_transformer', 'ColumnTransformer') works with
+    one transformer
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+                from sklearn.feature_extraction.text import HashingVectorizer
+                from scipy.sparse import csr_matrix
+                from sklearn.compose import ColumnTransformer
+                import numpy as np
+
+                df = pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c'], 'B': [1, 2, 10, 5]})
+                column_transformer = ColumnTransformer(transformers=[
+                    ('hashing', HashingVectorizer(ngram_range=(1, 3), n_features=2**2), 'A')
+                ])
+                encoded_data = column_transformer.fit_transform(df)
+                expected = csr_matrix([[-0., 0., 0., -1.], [0., -1., -0., 0.], [0., 0., 0., -1.], [0., 0., 0., -1.]])
+                assert np.allclose(encoded_data.A, expected.A)
+                test_df = pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c'],  'B': [1, 2, 10, 5]})
+                encoded_data = column_transformer.transform(test_df)
+                """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(3)])
+    filter_dag_for_nodes_with_ids(inspector_result, {1, 2, 3, 6}, 8)
+
+    expected_dag = networkx.DiGraph()
+    expected_projection = DagNode(1,
+                                  BasicCodeLocation("<string-source>", 8),
+                                  OperatorContext(OperatorType.PROJECTION,
+                                                  FunctionInfo('sklearn.compose._column_transformer',
+                                                               'ColumnTransformer')),
+                                  DagNodeDetails("to ['A']", ['A']),
+                                  OptionalCodeInfo(CodeReference(8, 21, 10, 2),
+                                                   "ColumnTransformer(transformers=[\n"
+                                                   "    ('hashing', HashingVectorizer(ngram_range=(1, 3), "
+                                                   "n_features=2**2), 'A')\n])"))
+    expected_vectorizer = DagNode(2,
+                                  BasicCodeLocation("<string-source>", 9),
+                                  OperatorContext(OperatorType.TRANSFORMER,
+                                                  FunctionInfo('sklearn.feature_extraction.text', 'HashingVectorizer')),
+                                  DagNodeDetails('Hashing Vectorizer: fit_transform', ['array']),
+                                  OptionalCodeInfo(CodeReference(9, 16, 9, 70), 'HashingVectorizer(ngram_range=(1, 3), '
+                                                                                'n_features=2**2)'))
+    expected_dag.add_edge(expected_projection, expected_vectorizer)
+    expected_concat = DagNode(3,
+                              BasicCodeLocation("<string-source>", 8),
+                              OperatorContext(OperatorType.CONCATENATION,
+                                              FunctionInfo('sklearn.compose._column_transformer', 'ColumnTransformer')),
+                              DagNodeDetails(None, ['array']),
+                              OptionalCodeInfo(CodeReference(8, 21, 10, 2),
+                                               "ColumnTransformer(transformers=[\n"
+                                                   "    ('hashing', HashingVectorizer(ngram_range=(1, 3), "
+                                                   "n_features=2**2), 'A')\n])"))
+    expected_dag.add_edge(expected_vectorizer, expected_concat)
+
+    expected_transform = DagNode(6,
+                                 BasicCodeLocation("<string-source>", 9),
+                                 OperatorContext(OperatorType.TRANSFORMER,
+                                                 FunctionInfo('sklearn.feature_extraction.text', 'HashingVectorizer')),
+                                 DagNodeDetails('Hashing Vectorizer: transform', ['array']),
+                                 OptionalCodeInfo(CodeReference(9, 16, 9, 70), 'HashingVectorizer(ngram_range=(1, 3), '
+                                                                                'n_features=2**2)'))
+    expected_dag.add_node(expected_transform)
+
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_projection]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([['cat_a', {LineageId(0, 0)}],
+                                     ['cat_b', {LineageId(0, 1)}],
+                                     ['cat_a', {LineageId(0, 2)}]],
+                                    columns=['A', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_vectorizer]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(0, 0)}],
+                                     [numpy.array([0.0, -1.0, 0.0, 0.]), {LineageId(0, 1)}],
+                                     [numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(0, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_concat]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(0, 0)}],
+                                     [numpy.array([0.0, -1.0, 0.0, 0.]), {LineageId(0, 1)}],
+                                     [numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(0, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transform]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(4, 0)}],
+                                     [numpy.array([0.0, -1.0, 0.0, 0.]), {LineageId(4, 1)}],
+                                     [numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(4, 2)}]],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
