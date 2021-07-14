@@ -1,5 +1,5 @@
 """
-A simple example inspection
+A simple inspection to compute histograms of sensitive groups in the data
 """
 from typing import Iterable
 

@@ -1,5 +1,5 @@
 """
-A simple example analyzer
+A simple inspection to materialise operator outputs
 """
 from typing import Iterable
 

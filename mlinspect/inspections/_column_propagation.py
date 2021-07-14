@@ -1,5 +1,5 @@
 """
-A simple example inspection
+A simple inspection to forward-propagate columns
 """
 from typing import Iterable
 

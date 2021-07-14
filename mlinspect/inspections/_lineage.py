@@ -1,5 +1,5 @@
 """
-A simple inspection for testing annotation propagation
+A simple inspection for lineage tracking
 """
 import dataclasses
 from typing import Iterable
@@ -22,7 +22,7 @@ class LineageId:
 
 class RowLineage(Inspection):
     """
-    A simple inspection for testing annotation propagation
+    A simple inspection for row-level lineage tracking
     """
     # TODO: Add an option to pass a list of lineage ids to this inspection. Then it materializes all related tuples.
     #  To do this efficiently, we do not want to do expensive membership tests. We can collect all base LineageIds
