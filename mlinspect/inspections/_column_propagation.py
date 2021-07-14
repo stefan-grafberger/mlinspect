@@ -131,10 +131,18 @@ class ColumnPropagation(Inspection):
             self._is_sink = True
             for row in inspection_input.row_iterator:
                 current_count += 1
-                annotations = row.annotation
+                column_values = []
+                for check_index, _ in enumerate(self.sensitive_columns):
+                    column_value_candidates = [annotation[check_index] for annotation in row.annotation
+                                               if annotation[check_index] is not None]
+                    if len(column_value_candidates) >= 1:
+                        column_value = column_value_candidates[0]
+                    else:
+                        column_value = None
+                    column_values.append(column_value)
                 if current_count < self.row_count:
-                    operator_annotations.append(annotations)
-                yield annotations
+                    operator_annotations.append(column_values)
+                yield column_values
         else:
             assert False
 
