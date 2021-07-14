@@ -3,37 +3,45 @@ A simple example inspection
 """
 from typing import Iterable
 
+import pandas
+
+from mlinspect.inspections import InspectionInputSinkOperator
+from pandas import DataFrame, Series
+
 from mlinspect.inspections._inspection import Inspection
 from mlinspect.inspections._inspection_input import InspectionInputDataSource, \
-    InspectionInputUnaryOperator, InspectionInputNAryOperator, OperatorType, FunctionInfo
+    InspectionInputUnaryOperator, InspectionInputNAryOperator, FunctionInfo
 
 
-class HistogramForColumns(Inspection):
+class ColumnPropagation(Inspection):
     """
-    An inspection to compute group membership histograms for multiple columns
+    An inspection to forward-propagate sensitive columns
     """
 
-    def __init__(self, sensitive_columns):
-        self._histogram_op_output = None
+    def __init__(self, sensitive_columns, row_count: int):
+        self.row_count = row_count
         self._operator_type = None
         self.sensitive_columns = sensitive_columns
+        self._op_output = None
+        self._op_annotations = None
+        self._output_columns = None
+        self._is_sink = False
 
     @property
     def inspection_id(self):
-        return tuple(self.sensitive_columns)
+        return tuple([self.row_count, *self.sensitive_columns])
 
     def visit_operator(self, inspection_input) -> Iterable[any]:
         """
         Visit an operator
         """
         # pylint: disable=too-many-branches, too-many-statements, too-many-locals
-        current_count = - 1
+        operator_output = []
+        operator_annotations = []
+        current_count = -1
 
-        histogram_maps = []
-        for _ in self.sensitive_columns:
-            histogram_maps.append({})
-
-        self._operator_type = inspection_input.operator_context.operator
+        if not isinstance(inspection_input, InspectionInputSinkOperator):
+            self._output_columns = inspection_input.output_columns.fields
 
         if isinstance(inspection_input, InspectionInputUnaryOperator):
             sensitive_columns_present = []
@@ -53,9 +61,9 @@ class HistogramForColumns(Inspection):
                         else:
                             column_value = row.annotation[check_index]
                         column_values.append(column_value)
-                        group_count = histogram_maps[check_index].get(column_value, 0)
-                        group_count += 1
-                        histogram_maps[check_index][column_value] = group_count
+                    if current_count < self.row_count:
+                        operator_output.append(row.output)
+                        operator_annotations.append(column_values)
                     yield column_values
             else:
                 for row in inspection_input.row_iterator:
@@ -67,9 +75,9 @@ class HistogramForColumns(Inspection):
                         else:
                             column_value = row.annotation[check_index]
                         column_values.append(column_value)
-                        group_count = histogram_maps[check_index].get(column_value, 0)
-                        group_count += 1
-                        histogram_maps[check_index][column_value] = group_count
+                    if current_count < self.row_count:
+                        operator_output.append(row.output)
+                        operator_annotations.append(column_values)
                     yield column_values
         elif isinstance(inspection_input, InspectionInputDataSource):
             sensitive_columns_present = []
@@ -86,11 +94,11 @@ class HistogramForColumns(Inspection):
                     if sensitive_columns_present[check_index]:
                         column_value = row.output[sensitive_columns_index[check_index]]
                         column_values.append(column_value)
-                        group_count = histogram_maps[check_index].get(column_value, 0)
-                        group_count += 1
-                        histogram_maps[check_index][column_value] = group_count
                     else:
                         column_values.append(None)
+                if current_count < self.row_count:
+                    operator_output.append(row.output)
+                    operator_annotations.append(column_values)
                 yield column_values
         elif isinstance(inspection_input, InspectionInputNAryOperator):
             sensitive_columns_present = []
@@ -107,9 +115,6 @@ class HistogramForColumns(Inspection):
                     if sensitive_columns_present[check_index]:
                         column_value = row.output[sensitive_columns_index[check_index]]
                         column_values.append(column_value)
-                        group_count = histogram_maps[check_index].get(column_value, 0)
-                        group_count += 1
-                        histogram_maps[check_index][column_value] = group_count
                     else:
                         if sensitive_columns_present[check_index]:
                             column_value = row.output[sensitive_columns_index[check_index]]
@@ -121,24 +126,36 @@ class HistogramForColumns(Inspection):
                             else:
                                 column_value = None
                         column_values.append(column_value)
-                        group_count = histogram_maps[check_index].get(column_value, 0)
-                        group_count += 1
-                        histogram_maps[check_index][column_value] = group_count
+                if current_count < self.row_count:
+                    operator_output.append(row.output)
+                    operator_annotations.append(column_values)
                 yield column_values
+        elif isinstance(inspection_input, InspectionInputSinkOperator):
+            self._is_sink = True
+            for row in inspection_input.row_iterator:
+                current_count += 1
+                annotations = row.annotation
+                if current_count < self.row_count:
+                    operator_annotations.append(annotations)
+                yield annotations
         else:
-            for _ in inspection_input.row_iterator:
-                yield None
+            assert False
 
-        self._histogram_op_output = {}
-        for check_index, column in enumerate(self.sensitive_columns):
-            self._histogram_op_output[column] = histogram_maps[check_index]
+        self._op_output = operator_output
+        self._op_annotations = operator_annotations
 
     def get_operator_annotation_after_visit(self) -> any:
-        assert self._operator_type
-        if self._operator_type is not OperatorType.ESTIMATOR:
-            result = self._histogram_op_output
-            self._histogram_op_output = None
-            self._operator_type = None
-            return result
-        self._operator_type = None
-        return None
+        assert self._op_annotations  # May only be called after the operator visit is finished
+        new_sensitive_column_names = [f"mlinspect_{column_name}" for column_name in self.sensitive_columns]
+        if not self._is_sink:
+            original_output_df = DataFrame(self._op_output, columns=self._output_columns)
+            output_annotations = DataFrame(self._op_annotations, columns=new_sensitive_column_names)
+            result = pandas.concat([original_output_df, output_annotations], axis=1)
+        else:
+            annotation_columns = Series(self._op_annotations)
+            result = DataFrame(annotation_columns, columns=new_sensitive_column_names)
+        self._op_output = None
+        self._op_annotations = None
+        self._output_columns = None
+        self._is_sink = False
+        return result
