@@ -1,5 +1,5 @@
 """
-A simple example analyzer
+A simple inspection to materialise operator outputs
 """
 from typing import Iterable
 
@@ -48,7 +48,7 @@ class MaterializeFirstOutputRows(Inspection):
 
     def get_operator_annotation_after_visit(self) -> any:
         assert self._operator_type
-        if self._operator_type not in {OperatorType.ESTIMATOR, OperatorType.SCORE}:
+        if self._operator_type is not OperatorType.ESTIMATOR:
             assert self._first_rows_op_output and self._output_columns is not None  # Visit must be finished
             result = DataFrame(self._first_rows_op_output, columns=self._output_columns)
             self._first_rows_op_output = None

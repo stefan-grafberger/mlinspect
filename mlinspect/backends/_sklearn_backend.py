@@ -60,12 +60,16 @@ class SklearnBackend(Backend):
             return_value = execute_inspection_visits_unary_operator(operator_context, input_infos[0].result_data,
                                                                     input_infos[0].result_annotation, return_value,
                                                                     False)
-        elif operator_context.operator in {OperatorType.ESTIMATOR, OperatorType.SCORE}:
+        elif operator_context.operator == OperatorType.ESTIMATOR:
             return_value = execute_inspection_visits_sink_op(operator_context,
                                                              input_infos[0].result_data,
                                                              input_infos[0].result_annotation,
                                                              input_infos[1].result_data,
                                                              input_infos[1].result_annotation)
+        elif operator_context.operator == OperatorType.SCORE:
+            return_value = execute_inspection_visits_nary_op(operator_context,
+                                                             input_infos,
+                                                             return_value)
         elif operator_context.operator == OperatorType.CONCATENATION:
             return_value = execute_inspection_visits_nary_op(operator_context, input_infos, return_value)
         else:

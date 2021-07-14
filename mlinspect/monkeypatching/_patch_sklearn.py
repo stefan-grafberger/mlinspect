@@ -9,6 +9,7 @@ import pandas
 from sklearn import preprocessing, compose, tree, impute, linear_model, model_selection
 from sklearn.feature_extraction import text
 from sklearn.linear_model._stochastic_gradient import DEFAULT_EPSILON
+from sklearn.metrics import accuracy_score
 from tensorflow.keras.wrappers import scikit_learn as keras_sklearn_external  # pylint: disable=no-name-in-module
 from tensorflow.python.keras.wrappers import scikit_learn as keras_sklearn_internal  # pylint: disable=no-name-in-module
 
@@ -925,8 +926,6 @@ class SklearnDecisionTreePatching:
     def patched_score(self, *args, **kwargs):
         """ Patch for ('sklearn.tree._classes.DecisionTreeClassifier', 'score') """
         # pylint: disable=no-method-argument
-        original = gorilla.get_original_attribute(tree.DecisionTreeClassifier, 'score')
-
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             # pylint: disable=too-many-locals
@@ -947,10 +946,14 @@ class SklearnDecisionTreePatching:
             operator_context = OperatorContext(OperatorType.SCORE, function_info)
             input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
             input_infos = SklearnBackend.before_call(operator_context, input_dfs)
-            result = original(self, test_data_result, test_labels_result, *args[2:], **kwargs)
+
+            # Same as original, but captures the test set predictions
+            predictions = self.predict(test_data_result)  # pylint: disable=no-member
+            result = accuracy_score(test_labels_result, predictions, **kwargs)
+
             estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                                  input_infos,
-                                                                 None)
+                                                                 predictions)
 
             dag_node = DagNode(singleton.get_next_op_id(),
                                BasicCodeLocation(caller_filename, lineno),
@@ -1049,8 +1052,6 @@ class SklearnSGDClassifierPatching:
     def patched_score(self, *args, **kwargs):
         """ Patch for ('sklearn.linear_model._stochastic_gradient.SGDClassifier', 'score') """
         # pylint: disable=no-method-argument
-        original = gorilla.get_original_attribute(linear_model.SGDClassifier, 'score')
-
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             # pylint: disable=too-many-locals
@@ -1075,10 +1076,14 @@ class SklearnSGDClassifierPatching:
             operator_context = OperatorContext(OperatorType.SCORE, function_info)
             input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
             input_infos = SklearnBackend.before_call(operator_context, input_dfs)
-            result = original(self, test_data_result, test_labels_result, *args[2:], **kwargs)
+
+            # Same as original, but captures the test set predictions
+            predictions = self.predict(test_data_result)  # pylint: disable=no-member
+            result = accuracy_score(test_labels_result, predictions, **kwargs)
+
             estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                                  input_infos,
-                                                                 None)
+                                                                 predictions)
 
             dag_node = DagNode(singleton.get_next_op_id(),
                                BasicCodeLocation(caller_filename, lineno),
@@ -1096,7 +1101,6 @@ class SklearnSGDClassifierPatching:
 @gorilla.patches(linear_model.LogisticRegression)
 class SklearnLogisticRegressionPatching:
     """ Patches for sklearn LogisticRegression"""
-
     # pylint: disable=too-few-public-methods
 
     @gorilla.name('__init__')
@@ -1174,8 +1178,6 @@ class SklearnLogisticRegressionPatching:
     def patched_score(self, *args, **kwargs):
         """ Patch for ('sklearn.linear_model._logistic.LogisticRegression', 'score') """
         # pylint: disable=no-method-argument
-        original = gorilla.get_original_attribute(linear_model.LogisticRegression, 'score')
-
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             # pylint: disable=too-many-locals
@@ -1200,10 +1202,14 @@ class SklearnLogisticRegressionPatching:
             operator_context = OperatorContext(OperatorType.SCORE, function_info)
             input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
             input_infos = SklearnBackend.before_call(operator_context, input_dfs)
-            result = original(self, test_data_result, test_labels_result, *args[2:], **kwargs)
+
+            # Same as original, but captures the test set predictions
+            predictions = self.predict(test_data_result)  # pylint: disable=no-member
+            result = accuracy_score(test_labels_result, predictions, **kwargs)
+
             estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                                  input_infos,
-                                                                 None)
+                                                                 predictions)
 
             dag_node = DagNode(singleton.get_next_op_id(),
                                BasicCodeLocation(caller_filename, lineno),
@@ -1306,10 +1312,14 @@ class SklearnKerasClassifierPatching:
             operator_context = OperatorContext(OperatorType.SCORE, function_info)
             input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
             input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+
+            # This currently calls predict twice, but patching here is complex. Maybe revisit this in future work
+            predictions = self.predict(test_data_result)  # pylint: disable=no-member
             result = original(self, test_data_result, test_labels_result, *args[2:], **kwargs)
+
             estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                                  input_infos,
-                                                                 None)
+                                                                 predictions)
 
             dag_node = DagNode(singleton.get_next_op_id(),
                                BasicCodeLocation(caller_filename, lineno),

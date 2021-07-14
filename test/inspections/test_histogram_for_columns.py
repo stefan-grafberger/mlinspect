@@ -70,3 +70,38 @@ def test_histogram_projection():
     histogram_output = inspection_results[2][HistogramForColumns(["A"])]
     expected_histogram = {'A': {'cat_a': 2, 'cat_b': 2, 'cat_c': 1}}
     compare(histogram_output, expected_histogram)
+
+
+def test_histogram_score():
+    """
+    Tests whether HistogramForColumns works for projections
+    """
+    test_code = cleandoc("""
+            import pandas as pd
+            from sklearn.preprocessing import label_binarize, StandardScaler
+            from sklearn.tree import DecisionTreeClassifier
+            import numpy as np
+
+            df = pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], 'target': ['no', 'no', 'yes', 'yes']})
+
+            train = StandardScaler().fit_transform(df[['A', 'B']])
+            target = label_binarize(df['target'], classes=['no', 'yes'])
+
+            clf = DecisionTreeClassifier()
+            clf = clf.fit(train, target)
+
+            test_df = pd.DataFrame({'A': [0., 0.6], 'B':  [0., 0.6], 'target': ['no', 'yes']})
+            test_labels = label_binarize(test_df['target'], classes=['no', 'yes'])
+            test_score = clf.score(test_df[['A', 'B']], test_labels)
+            assert test_score == 1.0
+            """)
+
+    inspector_result = PipelineInspector \
+        .on_pipeline_from_string(test_code) \
+        .add_required_inspection(HistogramForColumns(["target"])) \
+        .execute()
+    inspection_results = list(inspector_result.dag_node_to_inspection_results.values())
+
+    histogram_output = inspection_results[14][HistogramForColumns(["target"])]
+    expected_histogram = {'target': {'no': 1, 'yes': 1}}
+    compare(histogram_output, expected_histogram)

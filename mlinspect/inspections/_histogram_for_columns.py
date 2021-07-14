@@ -1,5 +1,5 @@
 """
-A simple example inspection
+A simple inspection to compute histograms of sensitive groups in the data
 """
 from typing import Iterable
 
@@ -26,7 +26,7 @@ class HistogramForColumns(Inspection):
         """
         Visit an operator
         """
-        # pylint: disable=too-many-branches, too-many-statements, too-many-locals
+        # pylint: disable=too-many-branches, too-many-statements, too-many-locals, too-many-nested-blocks
         current_count = - 1
 
         histogram_maps = []
@@ -111,7 +111,19 @@ class HistogramForColumns(Inspection):
                         group_count += 1
                         histogram_maps[check_index][column_value] = group_count
                     else:
-                        column_values.append(None)
+                        if sensitive_columns_present[check_index]:
+                            column_value = row.output[sensitive_columns_index[check_index]]
+                        else:
+                            column_value_candidates = [annotation[check_index] for annotation in row.annotation
+                                                       if annotation[check_index] is not None]
+                            if len(column_value_candidates) >= 1:
+                                column_value = column_value_candidates[0]
+                            else:
+                                column_value = None
+                        column_values.append(column_value)
+                        group_count = histogram_maps[check_index].get(column_value, 0)
+                        group_count += 1
+                        histogram_maps[check_index][column_value] = group_count
                 yield column_values
         else:
             for _ in inspection_input.row_iterator:
@@ -123,7 +135,7 @@ class HistogramForColumns(Inspection):
 
     def get_operator_annotation_after_visit(self) -> any:
         assert self._operator_type
-        if self._operator_type not in {OperatorType.ESTIMATOR, OperatorType.SCORE}:
+        if self._operator_type is not OperatorType.ESTIMATOR:
             result = self._histogram_op_output
             self._histogram_op_output = None
             self._operator_type = None
