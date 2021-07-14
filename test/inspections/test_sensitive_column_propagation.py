@@ -109,4 +109,3 @@ def test_propagation_score():
     propagation_output = inspection_results[14][ColumnPropagation(["cat_col"], 2)]
     expected_df = DataFrame([[0, 'cat_a'], [1, 'cat_b']], columns=['array', 'mlinspect_cat_col'])
     pandas.testing.assert_frame_equal(propagation_output.reset_index(drop=True), expected_df.reset_index(drop=True))
-
