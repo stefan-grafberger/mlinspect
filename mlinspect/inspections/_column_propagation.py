@@ -149,8 +149,7 @@ class ColumnPropagation(Inspection):
             output_annotations = pandas.DataFrame(self._op_annotations, columns=new_sensitive_column_names)
             result = pandas.concat([original_output_df, output_annotations], axis=1)
         else:
-            annotation_columns = pandas.Series(self._op_annotations)
-            result = pandas.DataFrame(annotation_columns, columns=new_sensitive_column_names)
+            result = pandas.DataFrame(self._op_annotations, columns=new_sensitive_column_names)
         self._op_output = None
         self._op_annotations = None
         self._output_columns = None
