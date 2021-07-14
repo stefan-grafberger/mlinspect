@@ -74,6 +74,7 @@ compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expe
 | `('sklearn.preprocessing._encoders', 'OneHotEncoder')`, arg type: strings | Transformer |
 | `('sklearn.preprocessing._data', 'StandardScaler')` | Transformer      |
 | `('sklearn.impute._base’, 'SimpleImputer')` | Transformer      |
+| `('sklearn.feature_extraction.text’, 'HashingVectorizer')` | Transformer      |
 | `('sklearn.preprocessing._discretization', 'KBinsDiscretizer')` | Transformer      |
 | `('sklearn.preprocessing_function_transformer','FunctionTransformer')` | Transformer      |
 | `('sklearn.tree._classes', 'DecisionTreeClassifier')` | Estimator      |
