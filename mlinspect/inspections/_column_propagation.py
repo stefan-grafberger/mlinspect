@@ -5,11 +5,8 @@ from typing import Iterable
 
 import pandas
 
-from mlinspect.inspections import InspectionInputSinkOperator
-from pandas import DataFrame, Series
-
 from mlinspect.inspections._inspection import Inspection
-from mlinspect.inspections._inspection_input import InspectionInputDataSource, \
+from mlinspect.inspections._inspection_input import InspectionInputSinkOperator, InspectionInputDataSource, \
     InspectionInputUnaryOperator, InspectionInputNAryOperator, FunctionInfo
 
 
@@ -35,7 +32,7 @@ class ColumnPropagation(Inspection):
         """
         Visit an operator
         """
-        # pylint: disable=too-many-branches, too-many-statements, too-many-locals
+        # pylint: disable=too-many-branches, too-many-statements, too-many-locals, too-many-nested-blocks
         operator_output = []
         operator_annotations = []
         current_count = -1
@@ -148,12 +145,12 @@ class ColumnPropagation(Inspection):
         assert self._op_annotations  # May only be called after the operator visit is finished
         new_sensitive_column_names = [f"mlinspect_{column_name}" for column_name in self.sensitive_columns]
         if not self._is_sink:
-            original_output_df = DataFrame(self._op_output, columns=self._output_columns)
-            output_annotations = DataFrame(self._op_annotations, columns=new_sensitive_column_names)
+            original_output_df = pandas.DataFrame(self._op_output, columns=self._output_columns)
+            output_annotations = pandas.DataFrame(self._op_annotations, columns=new_sensitive_column_names)
             result = pandas.concat([original_output_df, output_annotations], axis=1)
         else:
-            annotation_columns = Series(self._op_annotations)
-            result = DataFrame(annotation_columns, columns=new_sensitive_column_names)
+            annotation_columns = pandas.Series(self._op_annotations)
+            result = pandas.DataFrame(annotation_columns, columns=new_sensitive_column_names)
         self._op_output = None
         self._op_annotations = None
         self._output_columns = None

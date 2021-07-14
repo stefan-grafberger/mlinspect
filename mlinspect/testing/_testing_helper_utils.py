@@ -279,8 +279,8 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
         else:
             assert inspection_result[MaterializeFirstOutputRows(5)] is None
             assert inspection_result[RowLineage(5)] is not None
+            assert inspection_result[ColumnPropagation(sensitive_columns, 5)] is not None
             assert inspection_result[HistogramForColumns(sensitive_columns)] is None
-            assert inspection_result[ColumnPropagation(sensitive_columns, 5)] is None
             assert inspection_result[IntersectionalHistogramForColumns(sensitive_columns)] is None
             assert inspection_result[CompletenessOfColumns(sensitive_columns)] is None
             assert inspection_result[CountDistinctOfColumns(sensitive_columns)] is None

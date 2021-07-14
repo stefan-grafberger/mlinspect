@@ -26,7 +26,7 @@ class HistogramForColumns(Inspection):
         """
         Visit an operator
         """
-        # pylint: disable=too-many-branches, too-many-statements, too-many-locals
+        # pylint: disable=too-many-branches, too-many-statements, too-many-locals, too-many-nested-blocks
         current_count = - 1
 
         histogram_maps = []

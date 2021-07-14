@@ -11,7 +11,7 @@ from ._histogram_for_columns import HistogramForColumns
 from ._intersectional_histogram_for_columns import IntersectionalHistogramForColumns
 from ._lineage import RowLineage
 from ._materialize_first_output_rows import MaterializeFirstOutputRows
-from ._sensitive_column_propagation import ColumnPropagation
+from ._column_propagation import ColumnPropagation
 
 __all__ = [
     # For defining custom inspections
