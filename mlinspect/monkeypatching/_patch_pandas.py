@@ -246,22 +246,30 @@ class DataFramePatching:
 
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
+            # pylint: disable=too-many-locals
             function_info = FunctionInfo('pandas.core.frame', 'merge')
 
             input_info_a = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
                                           optional_source_code)
-            input_info_b = get_input_info(args[0], caller_filename, lineno, function_info, optional_code_reference,
+            if 'right' in kwargs:
+                right_df = kwargs.pop('right')
+                args_start_index = 0
+            else:
+                right_df = args[0]
+                args_start_index = 1
+            input_info_b = get_input_info(right_df, caller_filename, lineno, function_info, optional_code_reference,
                                           optional_source_code)
             operator_context = OperatorContext(OperatorType.JOIN, function_info)
             input_infos = PandasBackend.before_call(operator_context, [input_info_a.annotated_dfobject,
                                                                        input_info_b.annotated_dfobject])
             # No input_infos copy needed because it's only a selection and the rows not being removed don't change
-            result = original(input_infos[0].result_data, input_infos[1].result_data, *args[1:], **kwargs)
+            result = original(input_infos[0].result_data, input_infos[1].result_data, *args[args_start_index:],
+                              **kwargs)
             backend_result = PandasBackend.after_call(operator_context,
                                                       input_infos,
                                                       result)
             result = backend_result.annotated_dfobject.result_data
-            description = "on '{}'".format(kwargs['on'])
+            description = self.get_merge_description(**kwargs)
             dag_node = DagNode(op_id,
                                BasicCodeLocation(caller_filename, lineno),
                                operator_context,
@@ -272,6 +280,30 @@ class DataFramePatching:
             return result
 
         return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
+
+    @staticmethod
+    def get_merge_description(**kwargs):
+        """Get the description for a pd.merge call"""
+        if 'on' in kwargs:
+            description = f"on '{kwargs['on']}'"
+        elif ('left_on' in kwargs or kwargs['left_index'] is True) and ('right_on' in kwargs or
+                                                                        kwargs['right_index'] is True):
+            if 'left_on' in kwargs:
+                left_column = f"'{kwargs['left_on']}'"
+            else:
+                left_column = 'left_index'
+            if 'right_on' in kwargs:
+                right_column = f"'{kwargs['right_on']}'"
+            else:
+                right_column = 'right_index'
+            description = f"on {left_column} == {right_column}"
+        else:
+            description = None
+        if 'how' in kwargs and description is not None:
+            description += f" ({kwargs['how']})"
+        elif 'how' in kwargs:
+            description = f"({kwargs['how']})"
+        return description
 
     @gorilla.name('groupby')
     @gorilla.settings(allow_hit=True)
@@ -297,6 +329,7 @@ class DataFramePatching:
 @gorilla.patches(pandas.core.groupby.generic.DataFrameGroupBy)
 class DataFrameGroupByPatching:
     """ Patches for 'pandas.core.groupby.generic' """
+
     # pylint: disable=too-few-public-methods
 
     @gorilla.name('agg')
