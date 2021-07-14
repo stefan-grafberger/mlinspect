@@ -111,7 +111,7 @@ class IntersectionalHistogramForColumns(Inspection):
 
     def get_operator_annotation_after_visit(self) -> any:
         assert self._operator_type
-        if self._operator_type not in {OperatorType.ESTIMATOR, OperatorType.SCORE}:
+        if self._operator_type is not OperatorType.ESTIMATOR:
             result = self._histogram_op_output
             self._histogram_op_output = None
             self._operator_type = None

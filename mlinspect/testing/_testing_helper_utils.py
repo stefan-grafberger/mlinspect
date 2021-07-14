@@ -267,7 +267,7 @@ def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag
         assert MissingEmbeddings(20) in inspection_result
         assert HistogramForColumns(sensitive_columns) in inspection_result
         # Estimator and score do not have output
-        if dag_node.operator_info.operator not in {OperatorType.ESTIMATOR, OperatorType.SCORE}:
+        if dag_node.operator_info.operator is not OperatorType.ESTIMATOR:
             assert inspection_result[MaterializeFirstOutputRows(5)] is not None
             assert inspection_result[RowLineage(5)] is not None
             assert inspection_result[HistogramForColumns(sensitive_columns)] is not None

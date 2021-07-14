@@ -60,7 +60,7 @@ class RowLineage(Inspection):
                 yield annotation
 
         elif isinstance(inspection_input, InspectionInputNAryOperator):
-            if inspection_input.operator_context.operator == OperatorType.JOIN:
+            if inspection_input.operator_context.operator in {OperatorType.JOIN, OperatorType.SCORE}:
                 for row in inspection_input.row_iterator:
                     current_count += 1
 
