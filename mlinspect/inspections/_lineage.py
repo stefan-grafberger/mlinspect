@@ -41,7 +41,7 @@ class RowLineage(Inspection):
         else:
             self.operator_type_restriction = None
             self._inspection_id = self.row_count
-        self._operator_count = 0
+        self._operator_count = -1
         self._op_output = None
         self._op_lineage = None
         self._output_columns = None
