@@ -30,6 +30,8 @@ class RowLineage(Inspection):
     #  This set membership can be used as a 'materialize' flag we use as annotation. Then we simply need to check this
     #  flag to check whether to materialize rows.
 
+    ALL_ROWS = -1
+
     def __init__(self, row_count: int):
         self.row_count = row_count
         self._inspection_id = self.row_count
@@ -49,6 +51,8 @@ class RowLineage(Inspection):
 
         if not isinstance(inspection_input, InspectionInputSinkOperator):
             self._output_columns = inspection_input.output_columns.fields
+        else:
+            self._is_sink = True
 
         if isinstance(inspection_input, InspectionInputDataSource):
             for row in inspection_input.row_iterator:
@@ -59,17 +63,9 @@ class RowLineage(Inspection):
                     operator_lineage.append(annotation)
                 yield annotation
 
-        elif isinstance(inspection_input, InspectionInputNAryOperator):
-            if inspection_input.operator_context.operator in {OperatorType.JOIN, OperatorType.SCORE}:
-                for row in inspection_input.row_iterator:
-                    current_count += 1
-
-                    annotation = set.union(*row.annotation)
-                    if current_count < self.row_count:
-                        operator_output.append(row.output)
-                        operator_lineage.append(annotation)
-                    yield annotation
-            elif inspection_input.operator_context.operator == OperatorType.CONCATENATION:
+        elif isinstance(inspection_input, (InspectionInputNAryOperator, InspectionInputSinkOperator)):
+            if inspection_input.operator_context.operator in {OperatorType.JOIN, OperatorType.SCORE,
+                                                              OperatorType.CONCATENATION}:
                 for row in inspection_input.row_iterator:
                     current_count += 1
 
@@ -87,14 +83,6 @@ class RowLineage(Inspection):
 
                 if current_count < self.row_count:
                     operator_output.append(row.output)
-                    operator_lineage.append(annotation)
-                yield annotation
-        elif isinstance(inspection_input, InspectionInputSinkOperator):
-            self._is_sink = True
-            for row in inspection_input.row_iterator:
-                current_count += 1
-                annotation = set.union(*row.annotation)
-                if current_count < self.row_count:
                     operator_lineage.append(annotation)
                 yield annotation
         else:
