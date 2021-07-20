@@ -40,7 +40,7 @@ class RowLineage(Inspection):
             self._inspection_id = (self.row_count, *self.operator_type_restriction)
         else:
             self.operator_type_restriction = None
-            self._inspection_id = (self.row_count)
+            self._inspection_id = self.row_count
         self._operator_count = 0
         self._op_output = None
         self._op_lineage = None
@@ -51,13 +51,13 @@ class RowLineage(Inspection):
     def visit_operator(self, inspection_input) -> Iterable[any]:
         """Visit an operator, generate row index number annotations and check whether they get propagated correctly"""
         # pylint: disable=too-many-branches, too-many-statements
-        operator_output = []
-        operator_lineage = []
+        self._operator_count += 1
+        self._op_output = []
+        self._op_lineage = []
         current_count = -1
-
-        materialize_for_this_operator = (self.operator_type_restriction is None) or \
-                                        (inspection_input.operator_context.operator
-                                         in self.operator_type_restriction)
+        self._materialize_for_this_operator = (self.operator_type_restriction is None) or \
+                                              (inspection_input.operator_context.operator
+                                               in self.operator_type_restriction)
 
         if not isinstance(inspection_input, InspectionInputSinkOperator):
             self._output_columns = inspection_input.output_columns.fields
@@ -65,20 +65,20 @@ class RowLineage(Inspection):
             self._is_sink = True
 
         if isinstance(inspection_input, InspectionInputDataSource):
-            if materialize_for_this_operator and self.row_count == RowLineage.ALL_ROWS:
+            if self._materialize_for_this_operator and self.row_count == RowLineage.ALL_ROWS:
                 for row in inspection_input.row_iterator:
                     current_count += 1
                     annotation = {LineageId(self._operator_count, current_count)}
-                    operator_output.append(row.output)
-                    operator_lineage.append(annotation)
+                    self._op_output.append(row.output)
+                    self._op_lineage.append(annotation)
                     yield annotation
-            elif materialize_for_this_operator:
+            elif self._materialize_for_this_operator:
                 for row in inspection_input.row_iterator:
                     current_count += 1
                     annotation = {LineageId(self._operator_count, current_count)}
                     if current_count < self.row_count:
-                        operator_output.append(row.output)
-                        operator_lineage.append(annotation)
+                        self._op_output.append(row.output)
+                        self._op_lineage.append(annotation)
                     yield annotation
             else:
                 for _ in inspection_input.row_iterator:
@@ -86,22 +86,22 @@ class RowLineage(Inspection):
                     annotation = {LineageId(self._operator_count, current_count)}
                     yield annotation
         elif isinstance(inspection_input, InspectionInputNAryOperator):
-            if materialize_for_this_operator and self.row_count == RowLineage.ALL_ROWS:
+            if self._materialize_for_this_operator and self.row_count == RowLineage.ALL_ROWS:
                 for row in inspection_input.row_iterator:
                     current_count += 1
 
                     annotation = set.union(*row.annotation)
-                    operator_output.append(row.output)
-                    operator_lineage.append(annotation)
+                    self._op_output.append(row.output)
+                    self._op_lineage.append(annotation)
                     yield annotation
-            elif materialize_for_this_operator:
+            elif self._materialize_for_this_operator:
                 for row in inspection_input.row_iterator:
                     current_count += 1
 
                     annotation = set.union(*row.annotation)
                     if current_count < self.row_count:
-                        operator_output.append(row.output)
-                        operator_lineage.append(annotation)
+                        self._op_output.append(row.output)
+                        self._op_lineage.append(annotation)
                     yield annotation
             else:
                 for row in inspection_input.row_iterator:
@@ -109,20 +109,20 @@ class RowLineage(Inspection):
                     annotation = set.union(*row.annotation)
                     yield annotation
         elif isinstance(inspection_input, InspectionInputSinkOperator):
-            if materialize_for_this_operator and self.row_count == RowLineage.ALL_ROWS:
+            if self._materialize_for_this_operator and self.row_count == RowLineage.ALL_ROWS:
                 for row in inspection_input.row_iterator:
                     current_count += 1
 
                     annotation = set.union(*row.annotation)
-                    operator_lineage.append(annotation)
+                    self._op_lineage.append(annotation)
                     yield annotation
-            elif materialize_for_this_operator:
+            elif self._materialize_for_this_operator:
                 for row in inspection_input.row_iterator:
                     current_count += 1
 
                     annotation = set.union(*row.annotation)
                     if current_count < self.row_count:
-                        operator_lineage.append(annotation)
+                        self._op_lineage.append(annotation)
                     yield annotation
             else:
                 for row in inspection_input.row_iterator:
@@ -130,21 +130,21 @@ class RowLineage(Inspection):
                     annotation = set.union(*row.annotation)
                     yield annotation
         elif isinstance(inspection_input, InspectionInputUnaryOperator):
-            if materialize_for_this_operator and self.row_count == RowLineage.ALL_ROWS:
+            if self._materialize_for_this_operator and self.row_count == RowLineage.ALL_ROWS:
                 for row in inspection_input.row_iterator:
                     current_count += 1
                     annotation = row.annotation
-                    operator_output.append(row.output)
-                    operator_lineage.append(annotation)
+                    self._op_output.append(row.output)
+                    self._op_lineage.append(annotation)
                     yield annotation
-            elif materialize_for_this_operator:
+            elif self._materialize_for_this_operator:
                 for row in inspection_input.row_iterator:
                     current_count += 1
                     annotation = row.annotation
 
                     if current_count < self.row_count:
-                        operator_output.append(row.output)
-                        operator_lineage.append(annotation)
+                        self._op_output.append(row.output)
+                        self._op_lineage.append(annotation)
                     yield annotation
             else:
                 for row in inspection_input.row_iterator:
@@ -153,10 +153,6 @@ class RowLineage(Inspection):
                     yield annotation
         else:
             assert False
-        self._operator_count += 1
-        self._op_output = operator_output
-        self._op_lineage = operator_lineage
-        self._materialize_for_this_operator = materialize_for_this_operator
 
     def get_operator_annotation_after_visit(self) -> any:
         if not self._materialize_for_this_operator:
