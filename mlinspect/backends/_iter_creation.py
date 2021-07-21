@@ -13,7 +13,7 @@ from mlinspect.inspections._inspection_input import InspectionInputDataSource, I
     InspectionRowNAryOperator, ColumnInfo, InspectionRowSinkOperator
 
 
-def iter_input_data_source(inspection_count, output, operator_context):
+def iter_input_data_source(inspection_count, output, operator_context, non_data_function_args):
     """
     Create an efficient iterator for the inspection input for operators with no parent: Data Source
     """
@@ -25,14 +25,14 @@ def iter_input_data_source(inspection_count, output, operator_context):
     for inspection_index in range(inspection_count):
         output_iterator = duplicated_output_iterators[inspection_index]
         row_iterator = map(InspectionRowDataSource, output_iterator)
-        inspection_iterator = InspectionInputDataSource(operator_context, output_columns, row_iterator)
+        inspection_iterator = InspectionInputDataSource(operator_context, output_columns, row_iterator, non_data_function_args)
         inspection_iterators.append(inspection_iterator)
 
     return inspection_iterators
 
 
 def iter_input_annotation_output_map(inspection_count, input_data, input_annotations, output, operator_context,
-                                     columns=None):
+                                     non_data_function_args, columns=None):
     """
     Create an efficient iterator for the inspection input for operators with one parent that do not
     change the row order.
@@ -54,13 +54,14 @@ def iter_input_annotation_output_map(inspection_count, input_data, input_annotat
         row_iterator = map(lambda input_tuple: InspectionRowUnaryOperator(*input_tuple),
                            zip(input_iterator, annotation_rows, output_iterator))
         inspection_iterator = InspectionInputUnaryOperator(operator_context, input_columns, output_columns,
-                                                           row_iterator)
+                                                           row_iterator, non_data_function_args)
         inspection_iterators.append(inspection_iterator)
 
     return inspection_iterators
 
 
-def iter_input_annotation_output_resampled(inspection_count, input_data, input_annotations, output, operator_context):
+def iter_input_annotation_output_resampled(inspection_count, input_data, input_annotations, output, operator_context,
+                                           non_data_function_args):
     """
     Create an efficient iterator for the inspection input for operators with one parent that do change the
     row order or drop some rows, like selections.
@@ -101,14 +102,14 @@ def iter_input_annotation_output_resampled(inspection_count, input_data, input_a
         row_iterator = map(lambda input_tuple: InspectionRowUnaryOperator(*input_tuple),
                            zip(input_iterator, annotation_rows, output_iterator))
         inspection_iterator = InspectionInputUnaryOperator(operator_context, input_columns, output_columns,
-                                                           row_iterator)
+                                                           row_iterator, non_data_function_args)
         inspection_iterators.append(inspection_iterator)
 
     return inspection_iterators
 
 
 def iter_input_annotation_output_join(inspection_count, x_data, x_annotations, y_data,
-                                      y_annotations, output, operator_context):
+                                      y_annotations, output, operator_context, non_data_function_args):
     """
     Create an efficient iterator for the inspection input for join operators.
     """
@@ -172,14 +173,14 @@ def iter_input_annotation_output_join(inspection_count, x_data, x_annotations, y
         row_iterator = map(lambda input_tuple: InspectionRowNAryOperator(*input_tuple),
                            zip(input_iterator, annotation_rows, output_iterator))
         inspection_iterator = InspectionInputNAryOperator(operator_context, inputs_columns,
-                                                          output_columns, row_iterator)
+                                                          output_columns, row_iterator, non_data_function_args)
         inspection_iterators.append(inspection_iterator)
 
     return inspection_iterators
 
 
 def iter_input_annotation_output_nary_op(inspection_count, annotated_inputs: List[AnnotatedDfObject], output_data,
-                                         operator_context):
+                                         operator_context, non_data_function_args):
     """
     Create an efficient iterator for the inspection input for operators with multiple parents that do
     not change the order of rows or remove rows: concatenations.
@@ -211,14 +212,14 @@ def iter_input_annotation_output_nary_op(inspection_count, annotated_inputs: Lis
         row_iterator = map(lambda input_tuple: InspectionRowNAryOperator(*input_tuple),
                            zip(input_iterator, annotation_rows, output_iterator))
         inspection_iterator = InspectionInputNAryOperator(operator_context, inputs_columns,
-                                                          output_columns, row_iterator)
+                                                          output_columns, row_iterator, non_data_function_args)
         inspection_iterators.append(inspection_iterator)
 
     return inspection_iterators
 
 
 def iter_input_annotation_output_sink_op(inspection_count, data, data_annotation, target, target_annotation,
-                                         operator_context):
+                                         operator_context, non_data_function_args):
     """
     Create an efficient iterator for the inspection input when there is no output, e.g., estimators.
     """
@@ -240,7 +241,8 @@ def iter_input_annotation_output_sink_op(inspection_count, data, data_annotation
         annotation_rows = map(tuple, zip(*annotation_iterators))
         row_iterator = map(lambda input_tuple: InspectionRowSinkOperator(*input_tuple),
                            zip(input_iterator, annotation_rows))
-        inspection_iterator = InspectionInputSinkOperator(operator_context, inputs_columns, row_iterator)
+        inspection_iterator = InspectionInputSinkOperator(operator_context, inputs_columns, row_iterator,
+                                                          non_data_function_args)
         inspection_iterators.append(inspection_iterator)
 
     return inspection_iterators

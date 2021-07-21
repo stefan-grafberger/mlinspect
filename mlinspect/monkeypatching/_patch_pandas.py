@@ -447,7 +447,7 @@ class SeriesPatching:
             result = self
             backend_result = PandasBackend.after_call(operator_context,
                                                       input_infos,
-                                                      result)
+                                                      result, {})
 
             if self.name:  # pylint: disable=no-member
                 columns = list(self.name)  # pylint: disable=no-member

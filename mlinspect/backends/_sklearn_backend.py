@@ -1,7 +1,8 @@
 """
 The scikit-learn backend
 """
-from typing import List
+from types import MappingProxyType
+from typing import List, Dict
 
 import pandas
 
@@ -29,24 +30,25 @@ class SklearnBackend(Backend):
         return input_infos
 
     @staticmethod
-    def after_call(operator_context, input_infos: List[AnnotatedDfObject], return_value) \
+    def after_call(operator_context, input_infos: List[AnnotatedDfObject], return_value,
+                   non_data_function_args: Dict[str, any] = MappingProxyType({})) \
             -> BackendResult:
         """The return value of some function"""
         # pylint: disable=too-many-arguments
         if operator_context.operator == OperatorType.DATA_SOURCE:
-            return_value = execute_inspection_visits_data_source(operator_context, return_value)
+            return_value = execute_inspection_visits_data_source(operator_context, return_value, non_data_function_args)
         elif operator_context.operator == OperatorType.TRAIN_TEST_SPLIT:
             train_data, test_data = return_value
             train_return_value = execute_inspection_visits_unary_operator(operator_context,
                                                                           input_infos[0].result_data,
                                                                           input_infos[0].result_annotation,
                                                                           train_data,
-                                                                          True)
+                                                                          True, non_data_function_args)
             test_return_value = execute_inspection_visits_unary_operator(operator_context,
                                                                          input_infos[0].result_data,
                                                                          input_infos[0].result_annotation,
                                                                          test_data,
-                                                                         True)
+                                                                         True, non_data_function_args)
             input_infos[0].result_data.drop("mlinspect_index", axis=1, inplace=True)
             train_data.drop("mlinspect_index", axis=1, inplace=True)
             test_data.drop("mlinspect_index", axis=1, inplace=True)
@@ -59,19 +61,22 @@ class SklearnBackend(Backend):
                                            OperatorType.TEST_DATA, OperatorType.TEST_LABELS}:
             return_value = execute_inspection_visits_unary_operator(operator_context, input_infos[0].result_data,
                                                                     input_infos[0].result_annotation, return_value,
-                                                                    False)
+                                                                    False, non_data_function_args)
         elif operator_context.operator == OperatorType.ESTIMATOR:
             return_value = execute_inspection_visits_sink_op(operator_context,
                                                              input_infos[0].result_data,
                                                              input_infos[0].result_annotation,
                                                              input_infos[1].result_data,
-                                                             input_infos[1].result_annotation)
+                                                             input_infos[1].result_annotation,
+                                                             non_data_function_args)
         elif operator_context.operator == OperatorType.SCORE:
             return_value = execute_inspection_visits_nary_op(operator_context,
                                                              input_infos,
-                                                             return_value)
+                                                             return_value,
+                                                             non_data_function_args)
         elif operator_context.operator == OperatorType.CONCATENATION:
-            return_value = execute_inspection_visits_nary_op(operator_context, input_infos, return_value)
+            return_value = execute_inspection_visits_nary_op(operator_context, input_infos, return_value,
+                                                             non_data_function_args)
         else:
             raise NotImplementedError("SklearnBackend doesn't know any operations of type '{}' yet!"
                                       .format(operator_context.operator))
@@ -83,7 +88,7 @@ class SklearnBackend(Backend):
 # -------------------------------------------------------
 
 def execute_inspection_visits_sink_op(operator_context, data, data_annotation, target,
-                                      target_annotation) -> BackendResult:
+                                      target_annotation, non_data_function_args) -> BackendResult:
     """ Execute inspections """
     # pylint: disable=too-many-arguments
     inspection_count = len(singleton.inspections)
@@ -92,21 +97,23 @@ def execute_inspection_visits_sink_op(operator_context, data, data_annotation, t
                                                                      data_annotation,
                                                                      target,
                                                                      target_annotation,
-                                                                     operator_context)
+                                                                     operator_context,
+                                                                     non_data_function_args)
     annotation_iterators = execute_visits(iterators_for_inspections)
     return_value = store_inspection_outputs(annotation_iterators, None)
     return return_value
 
 
 def execute_inspection_visits_nary_op(operator_context, annotated_dfs: List[AnnotatedDfObject],
-                                      return_value_df) -> BackendResult:
+                                      return_value_df, non_data_function_args) -> BackendResult:
     """Execute inspections"""
     # pylint: disable=too-many-arguments
     inspection_count = len(singleton.inspections)
     iterators_for_inspections = iter_input_annotation_output_nary_op(inspection_count,
                                                                      annotated_dfs,
                                                                      return_value_df,
-                                                                     operator_context)
+                                                                     operator_context,
+                                                                     non_data_function_args)
     annotation_iterators = execute_visits(iterators_for_inspections)
     return_value = store_inspection_outputs(annotation_iterators, return_value_df)
     return return_value

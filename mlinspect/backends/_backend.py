@@ -3,6 +3,7 @@ The Interface for the different instrumentation backends
 """
 import abc
 import dataclasses
+from types import MappingProxyType
 from typing import List, Dict
 
 from mlinspect.inspections import Inspection
@@ -37,8 +38,8 @@ class Backend(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def after_call(self, operator_context, input_infos: List[AnnotatedDfObject], return_value) \
-            -> BackendResult:
+    def after_call(self, operator_context, input_infos: List[AnnotatedDfObject], return_value,
+                   non_data_function_args: Dict[str, any] = MappingProxyType({})) -> BackendResult:
         """The return value of some function"""
         # pylint: disable=too-many-arguments, unused-argument
         raise NotImplementedError

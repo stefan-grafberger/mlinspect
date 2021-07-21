@@ -865,14 +865,21 @@ class SklearnDecisionTreePatching:
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
         self.mlinspect_estimator_node_id = mlinspect_estimator_node_id
 
+        self.mlinspect_non_data_function_arguments = {'criterion': criterion, 'splitter': splitter,
+                                                      'max_depth': max_depth,
+                                                      'min_samples_split': min_samples_split,
+                                                      'min_samples_leaf': min_samples_leaf,
+                                                      'min_weight_fraction_leaf': min_weight_fraction_leaf,
+                                                      'max_features': max_features,
+                                                      'random_state': random_state, 'max_leaf_nodes': max_leaf_nodes,
+                                                      'min_impurity_decrease': min_impurity_decrease,
+                                                      'min_impurity_split': min_impurity_split,
+                                                      'class_weight': class_weight, 'presort': presort,
+                                                      'ccp_alpha': ccp_alpha}
+
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            original(self, criterion=criterion, splitter=splitter, max_depth=max_depth,
-                     min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf,
-                     min_weight_fraction_leaf=min_weight_fraction_leaf, max_features=max_features,
-                     random_state=random_state, max_leaf_nodes=max_leaf_nodes,
-                     min_impurity_decrease=min_impurity_decrease, min_impurity_split=min_impurity_split,
-                     class_weight=class_weight, presort=presort, ccp_alpha=ccp_alpha)
+            original(self, **self.mlinspect_non_data_function_arguments)
 
             self.mlinspect_caller_filename = caller_filename
             self.mlinspect_lineno = lineno
@@ -880,15 +887,8 @@ class SklearnDecisionTreePatching:
             self.mlinspect_optional_source_code = optional_source_code
             self.mlinspect_estimator_node_id = None
 
-        return execute_patched_func_no_op_id(original, execute_inspections, self, criterion=criterion,
-                                             splitter=splitter, max_depth=max_depth,
-                                             min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf,
-                                             min_weight_fraction_leaf=min_weight_fraction_leaf,
-                                             max_features=max_features,
-                                             random_state=random_state, max_leaf_nodes=max_leaf_nodes,
-                                             min_impurity_decrease=min_impurity_decrease,
-                                             min_impurity_split=min_impurity_split,
-                                             class_weight=class_weight, presort=presort, ccp_alpha=ccp_alpha)
+        return execute_patched_func_no_op_id(original, execute_inspections, self,
+                                             **self.mlinspect_non_data_function_arguments)
 
     @gorilla.name('fit')
     @gorilla.settings(allow_hit=True)
@@ -909,7 +909,8 @@ class SklearnDecisionTreePatching:
         original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
         estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                              input_infos,
-                                                             None)
+                                                             None,
+                                                             self.mlinspect_non_data_function_arguments)
 
         self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
         dag_node = DagNode(self.mlinspect_estimator_node_id,
@@ -925,6 +926,7 @@ class SklearnDecisionTreePatching:
     @gorilla.settings(allow_hit=True)
     def patched_score(self, *args, **kwargs):
         """ Patch for ('sklearn.tree._classes.DecisionTreeClassifier', 'score') """
+
         # pylint: disable=no-method-argument
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
@@ -953,7 +955,8 @@ class SklearnDecisionTreePatching:
 
             estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                                  input_infos,
-                                                                 predictions)
+                                                                 predictions,
+                                                                 self.mlinspect_non_data_function_arguments)
 
             dag_node = DagNode(singleton.get_next_op_id(),
                                BasicCodeLocation(caller_filename, lineno),
@@ -993,14 +996,21 @@ class SklearnSGDClassifierPatching:
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
         self.mlinspect_estimator_node_id = mlinspect_estimator_node_id
 
+        self.mlinspect_non_data_function_arguments = {'loss': loss, 'penalty': penalty, 'alpha': alpha,
+                                                      'l1_ratio': l1_ratio, 'fit_intercept': fit_intercept,
+                                                      'max_iter': max_iter, 'tol': tol, 'shuffle': shuffle,
+                                                      'verbose': verbose, 'epsilon': epsilon, 'n_jobs': n_jobs,
+                                                      'random_state': random_state, 'learning_rate': learning_rate,
+                                                      'eta0': eta0, 'power_t': power_t,
+                                                      'early_stopping': early_stopping,
+                                                      'validation_fraction': validation_fraction,
+                                                      'n_iter_no_change': n_iter_no_change,
+                                                      'class_weight': class_weight, 'warm_start': warm_start,
+                                                      'average': average}
+
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            original(self, loss=loss, penalty=penalty, alpha=alpha, l1_ratio=l1_ratio, fit_intercept=fit_intercept,
-                     max_iter=max_iter, tol=tol, shuffle=shuffle, verbose=verbose, epsilon=epsilon, n_jobs=n_jobs,
-                     random_state=random_state, learning_rate=learning_rate, eta0=eta0, power_t=power_t,
-                     early_stopping=early_stopping, validation_fraction=validation_fraction,
-                     n_iter_no_change=n_iter_no_change, class_weight=class_weight, warm_start=warm_start,
-                     average=average)
+            original(self, **self.mlinspect_non_data_function_arguments)
 
             self.mlinspect_caller_filename = caller_filename
             self.mlinspect_lineno = lineno
@@ -1008,15 +1018,8 @@ class SklearnSGDClassifierPatching:
             self.mlinspect_optional_source_code = optional_source_code
             self.mlinspect_estimator_node_id = None
 
-        return execute_patched_func_no_op_id(original, execute_inspections, self, loss=loss, penalty=penalty,
-                                             alpha=alpha, l1_ratio=l1_ratio, fit_intercept=fit_intercept,
-                                             max_iter=max_iter, tol=tol, shuffle=shuffle, verbose=verbose,
-                                             epsilon=epsilon, n_jobs=n_jobs, random_state=random_state,
-                                             learning_rate=learning_rate, eta0=eta0, power_t=power_t,
-                                             early_stopping=early_stopping, validation_fraction=validation_fraction,
-                                             n_iter_no_change=n_iter_no_change, class_weight=class_weight,
-                                             warm_start=warm_start,
-                                             average=average)
+        return execute_patched_func_no_op_id(original, execute_inspections, self,
+                                             **self.mlinspect_non_data_function_arguments)
 
     @gorilla.name('fit')
     @gorilla.settings(allow_hit=True)
@@ -1036,7 +1039,8 @@ class SklearnSGDClassifierPatching:
         original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
         estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                              input_infos,
-                                                             None)
+                                                             None,
+                                                             self.mlinspect_non_data_function_arguments)
         self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
         dag_node = DagNode(self.mlinspect_estimator_node_id,
                            BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
@@ -1051,6 +1055,7 @@ class SklearnSGDClassifierPatching:
     @gorilla.settings(allow_hit=True)
     def patched_score(self, *args, **kwargs):
         """ Patch for ('sklearn.linear_model._stochastic_gradient.SGDClassifier', 'score') """
+
         # pylint: disable=no-method-argument
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
@@ -1083,7 +1088,8 @@ class SklearnSGDClassifierPatching:
 
             estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                                  input_infos,
-                                                                 predictions)
+                                                                 predictions,
+                                                                 self.mlinspect_non_data_function_arguments)
 
             dag_node = DagNode(singleton.get_next_op_id(),
                                BasicCodeLocation(caller_filename, lineno),
@@ -1101,6 +1107,7 @@ class SklearnSGDClassifierPatching:
 @gorilla.patches(linear_model.LogisticRegression)
 class SklearnLogisticRegressionPatching:
     """ Patches for sklearn LogisticRegression"""
+
     # pylint: disable=too-few-public-methods
 
     @gorilla.name('__init__')
@@ -1177,6 +1184,7 @@ class SklearnLogisticRegressionPatching:
     @gorilla.settings(allow_hit=True)
     def patched_score(self, *args, **kwargs):
         """ Patch for ('sklearn.linear_model._logistic.LogisticRegression', 'score') """
+
         # pylint: disable=no-method-argument
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """

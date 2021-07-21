@@ -3,7 +3,7 @@ Data classes used as input for the inspections
 """
 import dataclasses
 from enum import Enum
-from typing import Tuple, List, Iterable
+from typing import Tuple, List, Iterable, Dict
 
 
 @dataclasses.dataclass(frozen=True)
@@ -82,6 +82,7 @@ class InspectionInputDataSource:
     operator_context: OperatorContext
     output_columns: ColumnInfo
     row_iterator: Iterable[InspectionRowDataSource]
+    non_data_function_args: Dict[str, any]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -103,6 +104,7 @@ class InspectionInputUnaryOperator:
     input_columns: ColumnInfo
     output_columns: ColumnInfo
     row_iterator: Iterable[InspectionRowUnaryOperator]
+    non_data_function_args: Dict[str, any]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -124,6 +126,7 @@ class InspectionInputNAryOperator:
     inputs_columns: List[ColumnInfo]
     output_columns: ColumnInfo
     row_iterator: Iterable[InspectionRowNAryOperator]
+    non_data_function_args: Dict[str, any]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -143,3 +146,4 @@ class InspectionInputSinkOperator:
     operator_context: OperatorContext
     inputs_columns: List[ColumnInfo]
     row_iterator: Iterable[InspectionRowSinkOperator]
+    non_data_function_args: Dict[str, any]
