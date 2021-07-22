@@ -484,7 +484,7 @@ def test_arg_capturing_simple_imputer():
 
 def test_arg_capturing_function_transformer():
     """
-    Tests whether ArgumentCapturing works for the sklearn SimpleImputer
+    Tests whether ArgumentCapturing works for the sklearn FunctionTransformer
     """
     test_code = cleandoc("""
                     import pandas as pd
