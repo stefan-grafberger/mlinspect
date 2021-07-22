@@ -320,7 +320,8 @@ def test_kbins_discretizer():
                                                                     'KBinsDiscretizer')),
                                        DagNodeDetails('K-Bins Discretizer: transform', ['array']),
                                        OptionalCodeInfo(CodeReference(6, 14, 6, 78),
-                                                        "KBinsDiscretizer(n_bins=3, encode='ordinal', strategy='uniform')"))
+                                                        "KBinsDiscretizer(n_bins=3, encode='ordinal', "
+                                                        "strategy='uniform')"))
     expected_dag.add_edge(expected_data_source_two, expected_transformer_two)
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 

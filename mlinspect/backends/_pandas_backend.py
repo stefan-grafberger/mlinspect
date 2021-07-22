@@ -1,7 +1,8 @@
 """
 The pandas backend
 """
-from typing import List
+from types import MappingProxyType
+from typing import List, Dict
 
 import pandas
 
@@ -37,15 +38,17 @@ class PandasBackend(Backend):
         return input_infos
 
     @staticmethod
-    def after_call(operator_context, input_infos: List[AnnotatedDfObject], return_value) \
+    def after_call(operator_context, input_infos: List[AnnotatedDfObject], return_value,
+                   non_data_function_args: Dict[str, any] = MappingProxyType({})) \
             -> BackendResult:
         """The return value of some function"""
         # pylint: disable=too-many-arguments
         if operator_context.operator == OperatorType.DATA_SOURCE:
-            return_value = execute_inspection_visits_data_source(operator_context, return_value)
+            return_value = execute_inspection_visits_data_source(operator_context, return_value, non_data_function_args)
         elif operator_context.operator == OperatorType.GROUP_BY_AGG:
             df_reset_index = return_value.reset_index()
-            reset_index_return_value = execute_inspection_visits_data_source(operator_context, df_reset_index)
+            reset_index_return_value = execute_inspection_visits_data_source(operator_context, df_reset_index,
+                                                                             non_data_function_args)
             annotated_result_object = AnnotatedDfObject(return_value,
                                                         reset_index_return_value.annotated_dfobject.result_annotation)
             return_value = BackendResult(annotated_result_object, reset_index_return_value.dag_node_annotation)
@@ -53,21 +56,23 @@ class PandasBackend(Backend):
         elif operator_context.operator == OperatorType.SELECTION:
             return_value = execute_inspection_visits_unary_operator(operator_context, input_infos[0].result_data,
                                                                     input_infos[0].result_annotation, return_value,
-                                                                    True)
+                                                                    True, non_data_function_args)
             input_infos[0].result_data.drop("mlinspect_index", axis=1, inplace=True)
         elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY}:
             return_value = execute_inspection_visits_unary_operator(operator_context,
                                                                     input_infos[0].result_data,
                                                                     input_infos[0].result_annotation,
                                                                     return_value,
-                                                                    False)
+                                                                    False,
+                                                                    non_data_function_args)
         elif operator_context.operator == OperatorType.JOIN:
             return_value = execute_inspection_visits_join(operator_context,
                                                           input_infos[0].result_data,
                                                           input_infos[0].result_annotation,
                                                           input_infos[1].result_data,
                                                           input_infos[1].result_annotation,
-                                                          return_value)
+                                                          return_value,
+                                                          non_data_function_args)
             input_infos[0].result_data.drop("mlinspect_index_x", axis=1, inplace=True)
             input_infos[1].result_data.drop("mlinspect_index_y", axis=1, inplace=True)
 
@@ -82,17 +87,19 @@ class PandasBackend(Backend):
 # Execute inspections functions
 # -------------------------------------------------------
 
-def execute_inspection_visits_data_source(operator_context, return_value) -> BackendResult:
+def execute_inspection_visits_data_source(operator_context, return_value, non_data_function_args) -> BackendResult:
     """Execute inspections when the current operator is a data source and does not have parents in the DAG"""
     # pylint: disable=unused-argument
     inspection_count = len(singleton.inspections)
-    iterators_for_inspections = iter_input_data_source(inspection_count, return_value, operator_context)
+    iterators_for_inspections = iter_input_data_source(inspection_count, return_value, operator_context,
+                                                       non_data_function_args)
     return_value = execute_visits_and_store_results(iterators_for_inspections, return_value)
     return return_value
 
 
 def execute_inspection_visits_unary_operator(operator_context, input_data,
-                                             input_annotations, return_value_df, resampled) -> BackendResult:
+                                             input_annotations, return_value_df, resampled, non_data_function_args
+                                             ) -> BackendResult:
     """Execute inspections when the current operator has one parent in the DAG"""
     # pylint: disable=too-many-arguments, unused-argument
     assert not resampled or "mlinspect_index" in return_value_df.columns
@@ -102,20 +109,22 @@ def execute_inspection_visits_unary_operator(operator_context, input_data,
                                                                            input_data,
                                                                            input_annotations,
                                                                            return_value_df,
-                                                                           operator_context)
+                                                                           operator_context,
+                                                                           non_data_function_args)
     else:
         iterators_for_inspections = iter_input_annotation_output_map(inspection_count,
                                                                      input_data,
                                                                      input_annotations,
                                                                      return_value_df,
-                                                                     operator_context)
+                                                                     operator_context,
+                                                                     non_data_function_args)
     return_value = execute_visits_and_store_results(iterators_for_inspections, return_value_df)
     return return_value
 
 
 def execute_inspection_visits_join(operator_context, input_data_one,
                                    input_annotations_one, input_data_two, input_annotations_two,
-                                   return_value_df) -> BackendResult:
+                                   return_value_df, non_data_function_args) -> BackendResult:
     """Execute inspections when the current operator has one parent in the DAG"""
     # pylint: disable=too-many-arguments, too-many-locals
     assert "mlinspect_index_x" in return_value_df
@@ -129,7 +138,8 @@ def execute_inspection_visits_join(operator_context, input_data_one,
                                                                   input_data_two,
                                                                   input_annotations_two,
                                                                   return_value_df,
-                                                                  operator_context)
+                                                                  operator_context,
+                                                                  non_data_function_args)
     return_value = execute_visits_and_store_results(iterators_for_inspections, return_value_df)
     return return_value
 

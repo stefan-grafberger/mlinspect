@@ -1,6 +1,7 @@
 """
 Packages and classes we want to expose to users
 """
+from ._arg_capturing import ArgumentCapturing
 from ._completeness_of_columns import CompletenessOfColumns
 from ._count_distinct_of_columns import CountDistinctOfColumns
 from ._inspection import Inspection
@@ -25,5 +26,6 @@ __all__ = [
     'RowLineage',
     'MaterializeFirstOutputRows',
     'CompletenessOfColumns',
-    'CountDistinctOfColumns'
+    'CountDistinctOfColumns',
+    'ArgumentCapturing'
 ]
