@@ -1245,6 +1245,8 @@ class SklearnKerasClassifierPatching:
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
         self.mlinspect_estimator_node_id = mlinspect_estimator_node_id
 
+        self.mlinspect_non_data_func_args = sk_params
+
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             original(self, build_fn=build_fn, **sk_params)
@@ -1274,7 +1276,8 @@ class SklearnKerasClassifierPatching:
         original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
         estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                              input_infos,
-                                                             None)
+                                                             None,
+                                                             self.mlinspect_non_data_func_args)
         self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
         dag_node = DagNode(self.mlinspect_estimator_node_id,
                            BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
@@ -1322,7 +1325,8 @@ class SklearnKerasClassifierPatching:
 
             estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                                  input_infos,
-                                                                 predictions)
+                                                                 predictions,
+                                                                 self.mlinspect_non_data_func_args)
 
             dag_node = DagNode(singleton.get_next_op_id(),
                                BasicCodeLocation(caller_filename, lineno),

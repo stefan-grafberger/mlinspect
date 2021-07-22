@@ -136,28 +136,42 @@ def test_arg_capturing_sklearn_sgd_classifier():
     compare(captured_args, expected_args)
 
 
-def test_arg_capturing_sklearn_logistic_regression():
+def test_arg_capturing_sklearn_keras_classifier():
     """
     Tests whether ArgumentCapturing works for the sklearn LogisticRegression
     """
     test_code = cleandoc("""
-                import pandas as pd
-                from sklearn.preprocessing import label_binarize, StandardScaler
-                from sklearn.linear_model import LogisticRegression
-                import numpy as np
-
-                df = pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], 'target': ['no', 'no', 'yes', 'yes']})
-
-                train = StandardScaler().fit_transform(df[['A', 'B']])
-                target = label_binarize(df['target'], classes=['no', 'yes'])
-
-                clf = LogisticRegression()
-                clf = clf.fit(train, target)
-
-                test_df = pd.DataFrame({'A': [0., 0.6], 'B':  [0., 0.6], 'target': ['no', 'yes']})
-                test_labels = label_binarize(test_df['target'], classes=['no', 'yes'])
-                test_score = clf.score(test_df[['A', 'B']], test_labels)
-                assert test_score == 1.0
+                    import pandas as pd
+                    from sklearn.preprocessing import StandardScaler, OneHotEncoder
+                    from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
+                    from tensorflow.keras.layers import Dense
+                    from tensorflow.keras.models import Sequential
+                    from tensorflow.python.keras.optimizer_v2.gradient_descent import SGD
+                    import tensorflow as tf
+                    import numpy as np
+    
+                    df = pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], 'target': ['no', 'no', 'yes', 'yes']})
+    
+                    train = StandardScaler().fit_transform(df[['A', 'B']])
+                    target = OneHotEncoder(sparse=False).fit_transform(df[['target']])
+                    
+                    def create_model(input_dim):
+                        clf = Sequential()
+                        clf.add(Dense(2, activation='relu', input_dim=input_dim))
+                        clf.add(Dense(2, activation='relu'))
+                        clf.add(Dense(2, activation='softmax'))
+                        clf.compile(loss='categorical_crossentropy', optimizer=SGD(), metrics=["accuracy"])
+                        return clf
+    
+                    np.random.seed(42)
+                    tf.random.set_seed(42)
+                    clf = KerasClassifier(build_fn=create_model, epochs=15, batch_size=1, verbose=0, input_dim=2)
+                    clf = clf.fit(train, target)
+    
+                    test_df = pd.DataFrame({'A': [0., 0.8], 'B':  [0., 0.8], 'target': ['no', 'yes']})
+                    test_labels = OneHotEncoder(sparse=False).fit_transform(test_df[['target']])
+                    test_score = clf.score(test_df[['A', 'B']], test_labels)
+                    assert test_score == 1.0
                     """)
 
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
@@ -166,28 +180,27 @@ def test_arg_capturing_sklearn_logistic_regression():
     score_node = list(inspector_result.dag.nodes)[14]
 
     expected_classifier = DagNode(7,
-                                  BasicCodeLocation("<string-source>", 11),
+                                  BasicCodeLocation("<string-source>", 25),
                                   OperatorContext(OperatorType.ESTIMATOR,
-                                                  FunctionInfo('sklearn.linear_model._logistic', 'LogisticRegression')),
-                                  DagNodeDetails('Logistic Regression', []),
-                                  OptionalCodeInfo(CodeReference(11, 6, 11, 26),
-                                                   'LogisticRegression()'))
+                                                  FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn',
+                                                               'KerasClassifier')),
+                                  DagNodeDetails('Neural Network', []),
+                                  OptionalCodeInfo(CodeReference(25, 6, 25, 93),
+                                                   'KerasClassifier(build_fn=create_model, epochs=15, batch_size=1, '
+                                                   'verbose=0, input_dim=2)'))
     expected_score = DagNode(14,
-                             BasicCodeLocation("<string-source>", 16),
+                             BasicCodeLocation("<string-source>", 30),
                              OperatorContext(OperatorType.SCORE,
-                                             FunctionInfo('sklearn.linear_model._logistic.LogisticRegression',
-                                                          'score')),
-                             DagNodeDetails('Logistic Regression', []),
-                             OptionalCodeInfo(CodeReference(16, 13, 16, 56),
+                                             FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn.'
+                                                          'KerasClassifier', 'score')),
+                             DagNodeDetails('Neural Network', []),
+                             OptionalCodeInfo(CodeReference(30, 13, 30, 56),
                                               "clf.score(test_df[['A', 'B']], test_labels)"))
 
     compare(classifier_node, expected_classifier)
     compare(score_node, expected_score)
 
-    expected_args = {'penalty': 'l2', 'dual': False, 'tol': 0.0001, 'C': 1.0, 'fit_intercept': True,
-                     'intercept_scaling': 1, 'class_weight': None, 'random_state': None, 'solver': 'lbfgs',
-                     'max_iter': 100, 'multi_class': 'auto', 'verbose': 0, 'warm_start': False, 'n_jobs': None,
-                     'l1_ratio': None}
+    expected_args = {'epochs': 15, 'batch_size': 1, 'verbose': 0, 'input_dim': 2}
 
     inspection_results_tree = inspector_result.dag_node_to_inspection_results[classifier_node]
     captured_args = inspection_results_tree[ArgumentCapturing()]
