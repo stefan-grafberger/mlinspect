@@ -774,10 +774,13 @@ class SklearnFunctionTransformerPatching:
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
         self.mlinspect_fit_transform_active = mlinspect_fit_transform_active
 
+        self.mlinspect_non_data_func_args = {'validate': validate, 'accept_sparse': accept_sparse,
+                                             'check_inverse': check_inverse, 'kw_args': kw_args,
+                                             'inv_kw_args': inv_kw_args}
+
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            original(self, func=func, inverse_func=inverse_func, validate=validate, accept_sparse=accept_sparse,
-                     check_inverse=check_inverse, kw_args=kw_args, inv_kw_args=inv_kw_args)
+            original(self, func=func, inverse_func=inverse_func, **self.mlinspect_non_data_func_args)
 
             self.mlinspect_caller_filename = caller_filename
             self.mlinspect_lineno = lineno
@@ -785,8 +788,7 @@ class SklearnFunctionTransformerPatching:
             self.mlinspect_optional_source_code = optional_source_code
 
         return execute_patched_func_no_op_id(original, execute_inspections, self, func=func, inverse_func=inverse_func,
-                                             validate=validate, accept_sparse=accept_sparse,
-                                             check_inverse=check_inverse, kw_args=kw_args, inv_kw_args=inv_kw_args)
+                                             **self.mlinspect_non_data_func_args)
 
     @gorilla.name('fit_transform')
     @gorilla.settings(allow_hit=True)
@@ -804,7 +806,8 @@ class SklearnFunctionTransformerPatching:
         result = original(self, input_infos[0].result_data, *args[1:], **kwargs)
         backend_result = SklearnBackend.after_call(operator_context,
                                                    input_infos,
-                                                   result)
+                                                   result,
+                                                   self.mlinspect_non_data_func_args)
         new_return_value = backend_result.annotated_dfobject.result_data
         if isinstance(input_infos[0].result_data, pandas.DataFrame):
             columns = list(input_infos[0].result_data.columns)
@@ -837,7 +840,8 @@ class SklearnFunctionTransformerPatching:
             result = original(self, input_infos[0].result_data, *args[1:], **kwargs)
             backend_result = SklearnBackend.after_call(operator_context,
                                                        input_infos,
-                                                       result)
+                                                       result,
+                                                       self.mlinspect_non_data_func_args)
             new_return_value = backend_result.annotated_dfobject.result_data
             if isinstance(input_infos[0].result_data, pandas.DataFrame):
                 columns = list(input_infos[0].result_data.columns)

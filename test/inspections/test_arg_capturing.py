@@ -480,3 +480,61 @@ def test_arg_capturing_simple_imputer():
     inspection_results_tree = inspector_result.dag_node_to_inspection_results[expected_transform]
     captured_args = inspection_results_tree[ArgumentCapturing()]
     compare(captured_args, expected_args)
+
+
+def test_arg_capturing_function_transformer():
+    """
+    Tests whether ArgumentCapturing works for the sklearn SimpleImputer
+    """
+    test_code = cleandoc("""
+                    import pandas as pd
+                    from sklearn.preprocessing import FunctionTransformer
+                    import numpy as np
+                    
+                    def safe_log(x):
+                        return np.log(x, out=np.zeros_like(x), where=(x!=0))
+    
+                    df = pd.DataFrame({'A': [1, 2, 10, 5]})
+                    function_transformer = FunctionTransformer(lambda x: safe_log(x))
+                    encoded_data = function_transformer.fit_transform(df)
+                    test_df = pd.DataFrame({'A': [1, 2, 10, 5]})
+                    encoded_data = function_transformer.transform(test_df)
+                    expected = np.array([[0.000000], [0.693147], [2.302585], [1.609438]])
+                    assert np.allclose(encoded_data, expected)
+                    """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[ArgumentCapturing()])
+    fit_transform_node = list(inspector_result.dag.nodes)[1]
+    transform_node = list(inspector_result.dag.nodes)[3]
+
+    expected_fit_transform = DagNode(1,
+                                     BasicCodeLocation("<string-source>", 9),
+                                     OperatorContext(OperatorType.TRANSFORMER,
+                                                     FunctionInfo('sklearn.preprocessing_function_transformer',
+                                                                  'FunctionTransformer')),
+                                     DagNodeDetails('Function Transformer: fit_transform', ['A']),
+                                     OptionalCodeInfo(CodeReference(9, 23, 9, 65),
+                                                      'FunctionTransformer(lambda x: safe_log(x))'))
+    expected_transform = DagNode(3,
+                                 BasicCodeLocation("<string-source>", 9),
+                                 OperatorContext(OperatorType.TRANSFORMER,
+                                                 FunctionInfo('sklearn.preprocessing_function_transformer',
+                                                              'FunctionTransformer')),
+                                 DagNodeDetails('Function Transformer: transform', ['A']),
+                                 OptionalCodeInfo(CodeReference(9, 23, 9, 65),
+                                                  'FunctionTransformer(lambda x: safe_log(x))'))
+
+    compare(fit_transform_node, expected_fit_transform)
+    compare(transform_node, expected_transform)
+
+    expected_args = {'validate': False, 'accept_sparse': False, 'check_inverse': True, 'kw_args': None,
+                     'inv_kw_args': None}
+
+    inspection_results_tree = inspector_result.dag_node_to_inspection_results[expected_fit_transform]
+    captured_args = inspection_results_tree[ArgumentCapturing()]
+    compare(captured_args, expected_args)
+
+    inspection_results_tree = inspector_result.dag_node_to_inspection_results[expected_transform]
+    captured_args = inspection_results_tree[ArgumentCapturing()]
+    compare(captured_args, expected_args)
