@@ -134,3 +134,65 @@ def test_arg_capturing_sklearn_sgd_classifier():
     inspection_results_tree = inspector_result.dag_node_to_inspection_results[score_node]
     captured_args = inspection_results_tree[ArgumentCapturing()]
     compare(captured_args, expected_args)
+
+
+def test_arg_capturing_sklearn_logistic_regression():
+    """
+    Tests whether ArgumentCapturing works for the sklearn LogisticRegression
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+                from sklearn.preprocessing import label_binarize, StandardScaler
+                from sklearn.linear_model import LogisticRegression
+                import numpy as np
+
+                df = pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], 'target': ['no', 'no', 'yes', 'yes']})
+
+                train = StandardScaler().fit_transform(df[['A', 'B']])
+                target = label_binarize(df['target'], classes=['no', 'yes'])
+
+                clf = LogisticRegression()
+                clf = clf.fit(train, target)
+
+                test_df = pd.DataFrame({'A': [0., 0.6], 'B':  [0., 0.6], 'target': ['no', 'yes']})
+                test_labels = label_binarize(test_df['target'], classes=['no', 'yes'])
+                test_score = clf.score(test_df[['A', 'B']], test_labels)
+                assert test_score == 1.0
+                    """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[ArgumentCapturing()])
+    classifier_node = list(inspector_result.dag.nodes)[7]
+    score_node = list(inspector_result.dag.nodes)[14]
+
+    expected_classifier = DagNode(7,
+                                  BasicCodeLocation("<string-source>", 11),
+                                  OperatorContext(OperatorType.ESTIMATOR,
+                                                  FunctionInfo('sklearn.linear_model._logistic', 'LogisticRegression')),
+                                  DagNodeDetails('Logistic Regression', []),
+                                  OptionalCodeInfo(CodeReference(11, 6, 11, 26),
+                                                   'LogisticRegression()'))
+    expected_score = DagNode(14,
+                             BasicCodeLocation("<string-source>", 16),
+                             OperatorContext(OperatorType.SCORE,
+                                             FunctionInfo('sklearn.linear_model._logistic.LogisticRegression',
+                                                          'score')),
+                             DagNodeDetails('Logistic Regression', []),
+                             OptionalCodeInfo(CodeReference(16, 13, 16, 56),
+                                              "clf.score(test_df[['A', 'B']], test_labels)"))
+
+    compare(classifier_node, expected_classifier)
+    compare(score_node, expected_score)
+
+    expected_args = {'penalty': 'l2', 'dual': False, 'tol': 0.0001, 'C': 1.0, 'fit_intercept': True,
+                     'intercept_scaling': 1, 'class_weight': None, 'random_state': None, 'solver': 'lbfgs',
+                     'max_iter': 100, 'multi_class': 'auto', 'verbose': 0, 'warm_start': False, 'n_jobs': None,
+                     'l1_ratio': None}
+
+    inspection_results_tree = inspector_result.dag_node_to_inspection_results[classifier_node]
+    captured_args = inspection_results_tree[ArgumentCapturing()]
+    compare(captured_args, expected_args)
+
+    inspection_results_tree = inspector_result.dag_node_to_inspection_results[score_node]
+    captured_args = inspection_results_tree[ArgumentCapturing()]
+    compare(captured_args, expected_args)

@@ -1125,26 +1125,23 @@ class SklearnLogisticRegressionPatching:
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
         self.mlinspect_estimator_node_id = mlinspect_estimator_node_id
 
+        self.mlinspect_non_data_func_args = {'penalty': penalty, 'dual': dual, 'tol': tol, 'C': C,
+                                             'fit_intercept': fit_intercept, 'intercept_scaling': intercept_scaling,
+                                             'class_weight': class_weight, 'random_state': random_state,
+                                             'solver': solver, 'max_iter': max_iter, 'multi_class': multi_class,
+                                             'verbose': verbose, 'warm_start': warm_start, 'n_jobs': n_jobs,
+                                             'l1_ratio': l1_ratio}
+
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            original(self, penalty=penalty, dual=dual, tol=tol, C=C,
-                     fit_intercept=fit_intercept, intercept_scaling=intercept_scaling, class_weight=class_weight,
-                     random_state=random_state, solver=solver, max_iter=max_iter,
-                     multi_class=multi_class, verbose=verbose, warm_start=warm_start, n_jobs=n_jobs,
-                     l1_ratio=l1_ratio)
+            original(self, **self.mlinspect_non_data_func_args)
 
             self.mlinspect_caller_filename = caller_filename
             self.mlinspect_lineno = lineno
             self.mlinspect_optional_code_reference = optional_code_reference
             self.mlinspect_optional_source_code = optional_source_code
 
-        return execute_patched_func_no_op_id(original, execute_inspections, self, penalty=penalty, dual=dual, tol=tol,
-                                             C=C, fit_intercept=fit_intercept, intercept_scaling=intercept_scaling,
-                                             class_weight=class_weight,
-                                             random_state=random_state, solver=solver, max_iter=max_iter,
-                                             multi_class=multi_class, verbose=verbose, warm_start=warm_start,
-                                             n_jobs=n_jobs,
-                                             l1_ratio=l1_ratio)
+        return execute_patched_func_no_op_id(original, execute_inspections, self, **self.mlinspect_non_data_func_args)
 
     @gorilla.name('fit')
     @gorilla.settings(allow_hit=True)
@@ -1165,7 +1162,8 @@ class SklearnLogisticRegressionPatching:
         original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
         estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                              input_infos,
-                                                             None)
+                                                             None,
+                                                             self.mlinspect_non_data_func_args)
         self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
         dag_node = DagNode(self.mlinspect_estimator_node_id,
                            BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
@@ -1213,7 +1211,8 @@ class SklearnLogisticRegressionPatching:
 
             estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                                  input_infos,
-                                                                 predictions)
+                                                                 predictions,
+                                                                 self.mlinspect_non_data_func_args)
 
             dag_node = DagNode(singleton.get_next_op_id(),
                                BasicCodeLocation(caller_filename, lineno),
