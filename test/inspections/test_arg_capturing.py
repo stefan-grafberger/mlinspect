@@ -318,3 +318,111 @@ def test_arg_capturing_hashing_vectorizer():
     inspection_results_tree = inspector_result.dag_node_to_inspection_results[expected_transform]
     captured_args = inspection_results_tree[ArgumentCapturing()]
     compare(captured_args, expected_args)
+
+
+def test_arg_capturing_kbins_discretizer():
+    """
+    Tests whether ArgumentCapturing works for the sklearn KBinsDiscretizer
+    """
+    test_code = cleandoc("""
+                    import pandas as pd
+                    from sklearn.preprocessing import KBinsDiscretizer
+                    import numpy as np
+    
+                    df = pd.DataFrame({'A': [1, 2, 10, 5]})
+                    discretizer = KBinsDiscretizer(n_bins=3, encode='ordinal', strategy='uniform')
+                    encoded_data = discretizer.fit_transform(df)
+                    test_df = pd.DataFrame({'A': [1, 2, 10, 5]})
+                    encoded_data = discretizer.transform(test_df)
+                    expected = np.array([[0.], [0.], [2.], [1.]])
+                    assert np.allclose(encoded_data, expected)
+                    """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[ArgumentCapturing()])
+    fit_transform_node = list(inspector_result.dag.nodes)[1]
+    transform_node = list(inspector_result.dag.nodes)[3]
+
+    expected_fit_transform = DagNode(1,
+                                     BasicCodeLocation("<string-source>", 6),
+                                     OperatorContext(OperatorType.TRANSFORMER,
+                                                     FunctionInfo('sklearn.preprocessing._discretization',
+                                                                  'KBinsDiscretizer')),
+                                     DagNodeDetails('K-Bins Discretizer: fit_transform', ['array']),
+                                     OptionalCodeInfo(CodeReference(6, 14, 6, 78),
+                                                      "KBinsDiscretizer(n_bins=3, encode='ordinal', strategy='uniform')"))
+    expected_transform = DagNode(3,
+                                 BasicCodeLocation("<string-source>", 6),
+                                 OperatorContext(OperatorType.TRANSFORMER,
+                                                 FunctionInfo('sklearn.preprocessing._discretization',
+                                                              'KBinsDiscretizer')),
+                                 DagNodeDetails('K-Bins Discretizer: transform', ['array']),
+                                 OptionalCodeInfo(CodeReference(6, 14, 6, 78),
+                                                  "KBinsDiscretizer(n_bins=3, encode='ordinal', "
+                                                  "strategy='uniform')"))
+
+    compare(fit_transform_node, expected_fit_transform)
+    compare(transform_node, expected_transform)
+
+    expected_args = {'n_bins': 3, 'encode': 'ordinal', 'strategy': 'uniform'}
+
+    inspection_results_tree = inspector_result.dag_node_to_inspection_results[expected_fit_transform]
+    captured_args = inspection_results_tree[ArgumentCapturing()]
+    compare(captured_args, expected_args)
+
+    inspection_results_tree = inspector_result.dag_node_to_inspection_results[expected_transform]
+    captured_args = inspection_results_tree[ArgumentCapturing()]
+    compare(captured_args, expected_args)
+
+
+def test_arg_capturing_one_hot_encoder():
+    """
+    Tests whether ArgumentCapturing works for the sklearn OneHotEncoder
+    """
+    test_code = cleandoc("""
+                    import pandas as pd
+                    from sklearn.preprocessing import label_binarize, OneHotEncoder
+                    import numpy as np
+    
+                    df = pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})
+                    one_hot_encoder = OneHotEncoder(sparse=False)
+                    encoded_data = one_hot_encoder.fit_transform(df)
+                    expected = np.array([[1., 0., 0.], [0., 1., 0.], [1., 0., 0.], [0., 0., 1.]])
+                    print(encoded_data)
+                    assert np.allclose(encoded_data, expected)
+                    test_df = pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})
+                    encoded_data = one_hot_encoder.transform(test_df)
+                    """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[ArgumentCapturing()])
+    fit_transform_node = list(inspector_result.dag.nodes)[1]
+    transform_node = list(inspector_result.dag.nodes)[3]
+
+    expected_fit_transform = DagNode(1,
+                                     BasicCodeLocation("<string-source>", 6),
+                                     OperatorContext(OperatorType.TRANSFORMER,
+                                                     FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
+                                     DagNodeDetails('One-Hot Encoder: fit_transform', ['array']),
+                                     OptionalCodeInfo(CodeReference(6, 18, 6, 45), 'OneHotEncoder(sparse=False)'))
+    expected_transform = DagNode(3,
+                                 BasicCodeLocation("<string-source>", 6),
+                                 OperatorContext(OperatorType.TRANSFORMER,
+                                                 FunctionInfo('sklearn.preprocessing._encoders',
+                                                              'OneHotEncoder')),
+                                 DagNodeDetails('One-Hot Encoder: transform', ['array']),
+                                 OptionalCodeInfo(CodeReference(6, 18, 6, 45), 'OneHotEncoder(sparse=False)'))
+
+    compare(fit_transform_node, expected_fit_transform)
+    compare(transform_node, expected_transform)
+
+    expected_args = {'categories': 'auto', 'drop': None, 'sparse': False, 'dtype': numpy.float64,
+                     'handle_unknown': 'error'}
+
+    inspection_results_tree = inspector_result.dag_node_to_inspection_results[expected_fit_transform]
+    captured_args = inspection_results_tree[ArgumentCapturing()]
+    compare(captured_args, expected_args)
+
+    inspection_results_tree = inspector_result.dag_node_to_inspection_results[expected_transform]
+    captured_args = inspection_results_tree[ArgumentCapturing()]
+    compare(captured_args, expected_args)

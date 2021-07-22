@@ -472,17 +472,18 @@ class SklearnKBinsDiscretizerPatching:
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
         self.mlinspect_fit_transform_active = mlinspect_fit_transform_active
 
+        self.mlinspect_non_data_func_args = {'n_bins': n_bins, 'encode': encode, 'strategy': strategy}
+
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            original(self, n_bins=n_bins, encode=encode, strategy=strategy)
+            original(self, **self.mlinspect_non_data_func_args)
 
             self.mlinspect_caller_filename = caller_filename
             self.mlinspect_lineno = lineno
             self.mlinspect_optional_code_reference = optional_code_reference
             self.mlinspect_optional_source_code = optional_source_code
 
-        return execute_patched_func_no_op_id(original, execute_inspections, self, n_bins=n_bins, encode=encode,
-                                             strategy=strategy)
+        return execute_patched_func_no_op_id(original, execute_inspections, self, **self.mlinspect_non_data_func_args)
 
     @gorilla.name('fit_transform')
     @gorilla.settings(allow_hit=True)
@@ -500,7 +501,8 @@ class SklearnKBinsDiscretizerPatching:
         result = original(self, input_infos[0].result_data, *args[1:], **kwargs)
         backend_result = SklearnBackend.after_call(operator_context,
                                                    input_infos,
-                                                   result)
+                                                   result,
+                                                   self.mlinspect_non_data_func_args)
         new_return_value = backend_result.annotated_dfobject.result_data
         assert isinstance(new_return_value, MlinspectNdarray)
         dag_node = DagNode(singleton.get_next_op_id(),
@@ -529,7 +531,8 @@ class SklearnKBinsDiscretizerPatching:
             result = original(self, input_infos[0].result_data, *args[1:], **kwargs)
             backend_result = SklearnBackend.after_call(operator_context,
                                                        input_infos,
-                                                       result)
+                                                       result,
+                                                       self.mlinspect_non_data_func_args)
             new_return_value = backend_result.annotated_dfobject.result_data
             assert isinstance(new_return_value, MlinspectNdarray)
             dag_node = DagNode(singleton.get_next_op_id(),
@@ -567,17 +570,19 @@ class SklearnOneHotEncoderPatching:
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
         self.mlinspect_fit_transform_active = mlinspect_fit_transform_active
 
+        self.mlinspect_non_data_func_args = {'categories': categories, 'drop': drop, 'sparse': sparse, 'dtype': dtype,
+                                             'handle_unknown': handle_unknown}
+
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            original(self, categories=categories, drop=drop, sparse=sparse, dtype=dtype, handle_unknown=handle_unknown)
+            original(self, **self.mlinspect_non_data_func_args)
 
             self.mlinspect_caller_filename = caller_filename
             self.mlinspect_lineno = lineno
             self.mlinspect_optional_code_reference = optional_code_reference
             self.mlinspect_optional_source_code = optional_source_code
 
-        return execute_patched_func_no_op_id(original, execute_inspections, self, categories=categories, drop=drop,
-                                             sparse=sparse, dtype=dtype, handle_unknown=handle_unknown)
+        return execute_patched_func_no_op_id(original, execute_inspections, self, **self.mlinspect_non_data_func_args)
 
     @gorilla.name('fit_transform')
     @gorilla.settings(allow_hit=True)
@@ -595,7 +600,8 @@ class SklearnOneHotEncoderPatching:
         result = original(self, input_infos[0].result_data, *args[1:], **kwargs)
         backend_result = SklearnBackend.after_call(operator_context,
                                                    input_infos,
-                                                   result)
+                                                   result,
+                                                   self.mlinspect_non_data_func_args)
         new_return_value = backend_result.annotated_dfobject.result_data
         dag_node = DagNode(singleton.get_next_op_id(),
                            BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
@@ -623,7 +629,8 @@ class SklearnOneHotEncoderPatching:
             result = original(self, input_infos[0].result_data, *args[1:], **kwargs)
             backend_result = SklearnBackend.after_call(operator_context,
                                                        input_infos,
-                                                       result)
+                                                       result,
+                                                       self.mlinspect_non_data_func_args)
             new_return_value = backend_result.annotated_dfobject.result_data
             dag_node = DagNode(singleton.get_next_op_id(),
                                BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
