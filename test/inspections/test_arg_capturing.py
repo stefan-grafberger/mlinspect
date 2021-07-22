@@ -3,6 +3,7 @@ Tests whether ArgumentCapturing works
 """
 from inspect import cleandoc
 
+import numpy
 from testfixtures import compare
 
 from mlinspect import OperatorType, DagNode, BasicCodeLocation, OperatorContext, FunctionInfo, DagNodeDetails, \
@@ -251,6 +252,64 @@ def test_arg_capturing_standard_scaler():
     compare(transform_node, expected_transform)
 
     expected_args = {'copy': True, 'with_mean': True, 'with_std': True}
+
+    inspection_results_tree = inspector_result.dag_node_to_inspection_results[expected_fit_transform]
+    captured_args = inspection_results_tree[ArgumentCapturing()]
+    compare(captured_args, expected_args)
+
+    inspection_results_tree = inspector_result.dag_node_to_inspection_results[expected_transform]
+    captured_args = inspection_results_tree[ArgumentCapturing()]
+    compare(captured_args, expected_args)
+
+
+def test_arg_capturing_hashing_vectorizer():
+    """
+    Tests whether ArgumentCapturing works for the sklearn HasingVectorizer
+    """
+    test_code = cleandoc("""
+                    import pandas as pd
+                    from sklearn.feature_extraction.text import HashingVectorizer
+                    from scipy.sparse import csr_matrix
+                    import numpy as np
+    
+                    df = pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})
+                    vectorizer = HashingVectorizer(ngram_range=(1, 3), n_features=2**2)
+                    encoded_data = vectorizer.fit_transform(df['A'])
+                    expected = csr_matrix([[-0., 0., 0., -1.], [0., -1., -0., 0.], [0., 0., 0., -1.], [0., 0., 0., -1.]])
+                    assert np.allclose(encoded_data.A, expected.A)
+                    test_df = pd.DataFrame({'A': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})
+                    encoded_data = vectorizer.transform(test_df['A'])
+                    """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[ArgumentCapturing()])
+    fit_transform_node = list(inspector_result.dag.nodes)[2]
+    transform_node = list(inspector_result.dag.nodes)[5]
+
+    expected_fit_transform = DagNode(2,
+                                     BasicCodeLocation("<string-source>", 7),
+                                     OperatorContext(OperatorType.TRANSFORMER,
+                                                     FunctionInfo('sklearn.feature_extraction.text',
+                                                                  'HashingVectorizer')),
+                                     DagNodeDetails('Hashing Vectorizer: fit_transform', ['array']),
+                                     OptionalCodeInfo(CodeReference(7, 13, 7, 67),
+                                                      'HashingVectorizer(ngram_range=(1, 3), n_features=2**2)'))
+    expected_transform = DagNode(5,
+                                 BasicCodeLocation("<string-source>", 7),
+                                 OperatorContext(OperatorType.TRANSFORMER,
+                                                 FunctionInfo('sklearn.feature_extraction.text',
+                                                              'HashingVectorizer')),
+                                 DagNodeDetails('Hashing Vectorizer: transform', ['array']),
+                                 OptionalCodeInfo(CodeReference(7, 13, 7, 67),
+                                                  'HashingVectorizer(ngram_range=(1, 3), n_features=2**2)'))
+
+    compare(fit_transform_node, expected_fit_transform)
+    compare(transform_node, expected_transform)
+
+    expected_args = {'input': 'content', 'encoding': 'utf-8', 'decode_error': 'strict', 'strip_accents': None,
+                     'lowercase': True, 'preprocessor': None, 'tokenizer': None, 'stop_words': None,
+                     'token_pattern': '(?u)\\b\\w\\w+\\b', 'ngram_range': (1, 3), 'analyzer': 'word', 'n_features': 4,
+                     'binary': False, 'norm': 'l2', 'alternate_sign': True, 'dtype': numpy.float64}
 
     inspection_results_tree = inspector_result.dag_node_to_inspection_results[expected_fit_transform]
     captured_args = inspection_results_tree[ArgumentCapturing()]

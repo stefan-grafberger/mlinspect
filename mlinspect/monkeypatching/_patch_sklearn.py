@@ -371,24 +371,24 @@ class SklearnHasingVectorizerPatching:
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
         self.mlinspect_fit_transform_active = mlinspect_fit_transform_active
 
+        self.mlinspect_non_data_func_args = {'input': input, 'encoding': encoding, 'decode_error': decode_error,
+                                             'strip_accents': strip_accents, 'lowercase': lowercase,
+                                             'preprocessor': preprocessor, 'tokenizer': tokenizer,
+                                             'stop_words': stop_words, 'token_pattern': token_pattern,
+                                             'ngram_range': ngram_range, 'analyzer': analyzer, 'n_features': n_features,
+                                             'binary': binary, 'norm': norm, 'alternate_sign': alternate_sign,
+                                             'dtype': dtype}
+
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            original(self, input=input, encoding=encoding, decode_error=decode_error, strip_accents=strip_accents,
-                     lowercase=lowercase, preprocessor=preprocessor, tokenizer=tokenizer, stop_words=stop_words,
-                     token_pattern=token_pattern, ngram_range=ngram_range, analyzer=analyzer, n_features=n_features,
-                     binary=binary, norm=norm, alternate_sign=alternate_sign, dtype=dtype)
+            original(self, **self.mlinspect_non_data_func_args)
 
             self.mlinspect_caller_filename = caller_filename
             self.mlinspect_lineno = lineno
             self.mlinspect_optional_code_reference = optional_code_reference
             self.mlinspect_optional_source_code = optional_source_code
 
-        return execute_patched_func_no_op_id(original, execute_inspections, self, input=input, encoding=encoding,
-                                             decode_error=decode_error, strip_accents=strip_accents,
-                                             lowercase=lowercase, preprocessor=preprocessor, tokenizer=tokenizer,
-                                             stop_words=stop_words, token_pattern=token_pattern,
-                                             ngram_range=ngram_range, analyzer=analyzer, n_features=n_features,
-                                             binary=binary, norm=norm, alternate_sign=alternate_sign, dtype=dtype)
+        return execute_patched_func_no_op_id(original, execute_inspections, self, **self.mlinspect_non_data_func_args)
 
     @gorilla.name('fit_transform')
     @gorilla.settings(allow_hit=True)
@@ -406,7 +406,8 @@ class SklearnHasingVectorizerPatching:
         result = original(self, input_infos[0].result_data, *args[1:], **kwargs)
         backend_result = SklearnBackend.after_call(operator_context,
                                                    input_infos,
-                                                   result)
+                                                   result,
+                                                   self.mlinspect_non_data_func_args)
         new_return_value = backend_result.annotated_dfobject.result_data
         dag_node = DagNode(singleton.get_next_op_id(),
                            BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
@@ -434,7 +435,8 @@ class SklearnHasingVectorizerPatching:
             result = original(self, input_infos[0].result_data, *args[1:], **kwargs)
             backend_result = SklearnBackend.after_call(operator_context,
                                                        input_infos,
-                                                       result)
+                                                       result,
+                                                       self.mlinspect_non_data_func_args)
             new_return_value = backend_result.annotated_dfobject.result_data
             dag_node = DagNode(singleton.get_next_op_id(),
                                BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
