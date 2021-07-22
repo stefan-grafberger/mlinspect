@@ -138,7 +138,7 @@ def test_arg_capturing_sklearn_sgd_classifier():
 
 def test_arg_capturing_sklearn_keras_classifier():
     """
-    Tests whether ArgumentCapturing works for the sklearn LogisticRegression
+    Tests whether ArgumentCapturing works for the sklearn KerasClassifier
     """
     test_code = cleandoc("""
                     import pandas as pd
@@ -207,5 +207,55 @@ def test_arg_capturing_sklearn_keras_classifier():
     compare(captured_args, expected_args)
 
     inspection_results_tree = inspector_result.dag_node_to_inspection_results[score_node]
+    captured_args = inspection_results_tree[ArgumentCapturing()]
+    compare(captured_args, expected_args)
+
+
+def test_arg_capturing_standard_scaler():
+    """
+    Tests whether ArgumentCapturing works for the sklearn StandardScaler
+    """
+    test_code = cleandoc("""
+                    import pandas as pd
+                    from sklearn.preprocessing import StandardScaler
+                    import numpy as np
+    
+                    df = pd.DataFrame({'A': [1, 2, 10, 5]})
+                    standard_scaler = StandardScaler()
+                    encoded_data = standard_scaler.fit_transform(df)
+                    test_df = pd.DataFrame({'A': [1, 2, 10, 5]})
+                    encoded_data = standard_scaler.transform(test_df)
+                    expected = np.array([[-1.], [-0.71428571], [1.57142857], [0.14285714]])
+                    assert np.allclose(encoded_data, expected)
+                    """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[ArgumentCapturing()])
+    fit_transform_node = list(inspector_result.dag.nodes)[1]
+    transform_node = list(inspector_result.dag.nodes)[3]
+
+    expected_fit_transform = DagNode(1,
+                                     BasicCodeLocation("<string-source>", 6),
+                                     OperatorContext(OperatorType.TRANSFORMER,
+                                                     FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
+                                     DagNodeDetails('Standard Scaler: fit_transform', ['array']),
+                                     OptionalCodeInfo(CodeReference(6, 18, 6, 34), 'StandardScaler()'))
+    expected_transform = DagNode(3,
+                                 BasicCodeLocation("<string-source>", 6),
+                                 OperatorContext(OperatorType.TRANSFORMER,
+                                                 FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
+                                 DagNodeDetails('Standard Scaler: transform', ['array']),
+                                 OptionalCodeInfo(CodeReference(6, 18, 6, 34), 'StandardScaler()'))
+
+    compare(fit_transform_node, expected_fit_transform)
+    compare(transform_node, expected_transform)
+
+    expected_args = {'copy': True, 'with_mean': True, 'with_std': True}
+
+    inspection_results_tree = inspector_result.dag_node_to_inspection_results[expected_fit_transform]
+    captured_args = inspection_results_tree[ArgumentCapturing()]
+    compare(captured_args, expected_args)
+
+    inspection_results_tree = inspector_result.dag_node_to_inspection_results[expected_transform]
     captured_args = inspection_results_tree[ArgumentCapturing()]
     compare(captured_args, expected_args)
