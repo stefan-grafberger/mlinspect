@@ -426,3 +426,57 @@ def test_arg_capturing_one_hot_encoder():
     inspection_results_tree = inspector_result.dag_node_to_inspection_results[expected_transform]
     captured_args = inspection_results_tree[ArgumentCapturing()]
     compare(captured_args, expected_args)
+
+
+def test_arg_capturing_simple_imputer():
+    """
+    Tests whether ArgumentCapturing works for the sklearn SimpleImputer
+    """
+    test_code = cleandoc("""
+                    import pandas as pd
+                    from sklearn.impute import SimpleImputer
+                    import numpy as np
+    
+                    df = pd.DataFrame({'A': ['cat_a', np.nan, 'cat_a', 'cat_c']})
+                    imputer = SimpleImputer(missing_values=np.nan, strategy='most_frequent')
+                    imputed_data = imputer.fit_transform(df)
+                    test_df = pd.DataFrame({'A': ['cat_a', np.nan, 'cat_a', 'cat_c']})
+                    imputed_data = imputer.transform(test_df)
+                    expected = np.array([['cat_a'], ['cat_a'], ['cat_a'], ['cat_c']])
+                    assert np.array_equal(imputed_data, expected)
+                    """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[ArgumentCapturing()])
+    fit_transform_node = list(inspector_result.dag.nodes)[1]
+    transform_node = list(inspector_result.dag.nodes)[3]
+
+    expected_fit_transform = DagNode(1,
+                                     BasicCodeLocation("<string-source>", 6),
+                                     OperatorContext(OperatorType.TRANSFORMER,
+                                                     FunctionInfo('sklearn.impute._base', 'SimpleImputer')),
+                                     DagNodeDetails('Simple Imputer: fit_transform', ['A']),
+                                     OptionalCodeInfo(CodeReference(6, 10, 6, 72),
+                                                      "SimpleImputer(missing_values=np.nan, strategy='most_frequent')"))
+    expected_transform = DagNode(3,
+                                 BasicCodeLocation("<string-source>", 6),
+                                 OperatorContext(OperatorType.TRANSFORMER,
+                                                 FunctionInfo('sklearn.impute._base', 'SimpleImputer')),
+                                 DagNodeDetails('Simple Imputer: transform', ['A']),
+                                 OptionalCodeInfo(CodeReference(6, 10, 6, 72),
+                                                  "SimpleImputer(missing_values=np.nan, strategy='most_frequent')"))
+
+    compare(fit_transform_node, expected_fit_transform)
+    compare(transform_node, expected_transform)
+
+    expected_args = {'missing_values': numpy.nan, 'strategy': 'most_frequent', 'fill_value': None, 'verbose': 0,
+                     'copy': True,
+                     'add_indicator': False}
+
+    inspection_results_tree = inspector_result.dag_node_to_inspection_results[expected_fit_transform]
+    captured_args = inspection_results_tree[ArgumentCapturing()]
+    compare(captured_args, expected_args)
+
+    inspection_results_tree = inspector_result.dag_node_to_inspection_results[expected_transform]
+    captured_args = inspection_results_tree[ArgumentCapturing()]
+    compare(captured_args, expected_args)
