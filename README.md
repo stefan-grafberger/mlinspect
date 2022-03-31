@@ -62,8 +62,9 @@ mlinspect already supports a selection of API functions from `pandas` and `sciki
 * For debugging in PyCharm, set the pytest flag `--no-cov` ([Link](https://stackoverflow.com/questions/34870962/how-to-debug-py-test-in-pycharm-when-coverage-is-enabled))
 
 ## Publications
-* [Stefan Grafberger, Shubha Guha, Julia Stoyanovich, Sebastian Schelter (2021). mlinspect: a Data Distribution Debugger for Machine Learning Pipelines. ACM SIGMOD (demo).](https://stefan-grafberger.com/publications/mlinspect-a-data-distribution-debugger-for-machine-learning-pipelines/mlinspect-demo.pdf)
-* [Stefan Grafberger, Julia Stoyanovich, Sebastian Schelter (2020). Lightweight Inspection of Data Preprocessing in Native Machine Learning Pipelines. Conference on Innovative Data Systems Research (CIDR).](https://stefan-grafberger.com/publications/lightweight-inspection-of-data-preprocessing-in-native-machine-learning-pipelines/mlinspect-cidr.pdf)
+* [Stefan Grafberger, Paul Groth, Julia Stoyanovich, Sebastian Schelter (2022). Data Distribution Debugging in Machine Learning Pipelines. The VLDB Journal — The International Journal on Very Large Data Bases (Special Issue on Data Science for Responsible Data Management).](https://stefan-grafberger.com/mlinspect-journal.pdf)
+* [Stefan Grafberger, Shubha Guha, Julia Stoyanovich, Sebastian Schelter (2021). mlinspect: a Data Distribution Debugger for Machine Learning Pipelines. ACM SIGMOD (demo).](https://stefan-grafberger.com/mlinspect-demo.pdf)
+* [Stefan Grafberger, Julia Stoyanovich, Sebastian Schelter (2020). Lightweight Inspection of Data Preprocessing in Native Machine Learning Pipelines. Conference on Innovative Data Systems Research (CIDR).](https://stefan-grafberger.com/mlinspect-cidr.pdf)
 
 ## License
 This library is licensed under the Apache 2.0 License.
