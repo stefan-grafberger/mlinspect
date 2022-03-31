@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Grafberger"
+  given-names: "Stefan"
+  orcid: "https://orcid.org/0000-0002-9884-9517"
+- family-names: "Groth"
+  given-names: "Paul"
+  orcid: "https://orcid.org/0000-0003-0183-6910"
+- family-names: "Stoyanovich"
+  given-names: "Julia"
+- family-names: "Schelter"
+  given-names: "Sebastian"
+title: "Data Distribution Debugging in Machine Learning Pipelines"
+doi: 10.1007/s00778-021-00726-w
+url: "https://github.com/stefan-grafberger/mlinspect"
+preferred-citation:
+    type: article
+    authors:
+    - family-names: "Grafberger"
+      given-names: "Stefan"
+      orcid: "https://orcid.org/0000-0002-9884-9517"
+    - family-names: "Groth"
+      given-names: "Paul"
+      orcid: "https://orcid.org/0000-0003-0183-6910"
+    - family-names: "Stoyanovich"
+      given-names: "Julia"
+    - family-names: "Schelter"
+      given-names: "Sebastian"
+    title: "Data Distribution Debugging in Machine Learning Pipelines"
+    doi: 10.1007/s00778-021-00726-w
+    date-released: 2022-01-31
+
