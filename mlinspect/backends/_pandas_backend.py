@@ -66,7 +66,7 @@ class PandasBackend(Backend):
                    non_data_function_args: Dict[str, any] = MappingProxyType({})) \
             -> BackendResult:
         """The return value of some function"""
-        # pylint: disable=too-many-arguments,too-many-locals
+        # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
         if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage) \
                 and operator_context.operator \
                 in {OperatorType.DATA_SOURCE, OperatorType.PROJECTION,
@@ -159,7 +159,7 @@ class PandasBackend(Backend):
                 # Calculating directly using apply (apply is not a fast function)
                 # This can be done faster, see
                 # https://github.com/stefan-grafberger/mlinspect-private-branches/blob/performance-improvement-experiments/experiments/performance/performance-improvement-experiments.ipynb
-                if non_data_function_args['how'] == 'outer':
+                if 'how' in non_data_function_args and non_data_function_args['how'] == 'outer':
                     return_value['mlinspect_lineage_x'] = return_value['mlinspect_lineage_x'].replace({numpy.nan: set()})
                     return_value['mlinspect_lineage_y'] = return_value['mlinspect_lineage_y'].replace({numpy.nan: set()})
                 return_value['mlinspect_lineage'] = return_value\
