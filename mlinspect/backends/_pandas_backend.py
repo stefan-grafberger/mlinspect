@@ -29,7 +29,7 @@ class PandasBackend(Backend):
         if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage) \
                 and operator_context.operator \
                 in {OperatorType.DATA_SOURCE, OperatorType.PROJECTION,
-                    OperatorType.PROJECTION_MODIFY, OperatorType.SELECTION}:  # TODO: Add support for more operators
+                    OperatorType.PROJECTION_MODIFY, OperatorType.SELECTION, OperatorType.JOIN}:  # TODO: Add support for more operators
             if operator_context.operator == OperatorType.SELECTION:
                 pandas_df = input_infos[0].result_data
                 assert isinstance(pandas_df, pandas.DataFrame)
@@ -37,7 +37,15 @@ class PandasBackend(Backend):
                 inspection_name = str(lineage_inspection)
                 input_infos[0].result_data['mlinspect_lineage'] = input_infos[0].result_annotation[inspection_name]
             elif operator_context.function_info == FunctionInfo('pandas.core.frame', 'merge'):
-                raise NotImplementedError()
+                pandas_df_x = input_infos[0].result_data
+                assert isinstance(pandas_df_x, pandas.DataFrame)
+                lineage_inspection = singleton.inspections[0]
+                inspection_name = str(lineage_inspection)
+                input_infos[0].result_data['mlinspect_lineage_x'] = input_infos[0].result_annotation[inspection_name]
+
+                pandas_df_y = input_infos[1].result_data
+                assert isinstance(pandas_df_y, pandas.DataFrame)
+                input_infos[1].result_data['mlinspect_lineage_y'] = input_infos[1].result_annotation[inspection_name]
         else:
             if operator_context.operator == OperatorType.SELECTION:
                 pandas_df = input_infos[0].result_data
@@ -62,7 +70,7 @@ class PandasBackend(Backend):
                 and operator_context.operator \
                 in {OperatorType.DATA_SOURCE, OperatorType.PROJECTION,
                     OperatorType.PROJECTION_MODIFY, OperatorType.SELECTION,
-                    OperatorType.GROUP_BY_AGG}:  # TODO: Add support for more operators
+                    OperatorType.GROUP_BY_AGG, OperatorType.JOIN}:  # TODO: Add support for more operators
             print("optimized mode")
             if operator_context.operator in {OperatorType.DATA_SOURCE, OperatorType.GROUP_BY_AGG}:
                 # inspection annotation
@@ -126,6 +134,35 @@ class PandasBackend(Backend):
                 materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
                                                 (operator_context.operator
                                                  in lineage_inspection.operator_type_restriction)
+                if materialize_for_this_operator:
+                    reset_index_return_value = return_value.reset_index(drop=True)
+                    lineage_dag_annotation = reset_index_return_value
+                    if lineage_inspection.row_count != RowLineage.ALL_ROWS:
+                        lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
+                else:
+                    lineage_dag_annotation = None
+                inspection_outputs[lineage_inspection] = lineage_dag_annotation
+                # inspection annotation
+                annotations_df = pandas.DataFrame(return_value.pop('mlinspect_lineage'))
+                annotations_df = annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
+                # inspection output
+                return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
+                return_value = BackendResult(return_value_with_annotation, inspection_outputs)
+            elif operator_context.operator == OperatorType.JOIN:
+                lineage_inspection = singleton.inspections[0]
+                inspection_name = str(lineage_inspection)
+                # TODO: Should we use a different format for performance reasons?
+                inspection_outputs = {}
+                materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
+                                                (operator_context.operator
+                                                 in lineage_inspection.operator_type_restriction)
+                # Calculating directly using apply (apply is not a fast function)
+                # This can be done faster, see
+                # https://github.com/stefan-grafberger/mlinspect-private-branches/blob/performance-improvement-experiments/experiments/performance/performance-improvement-experiments.ipynb
+                return_value['mlinspect_lineage'] = return_value\
+                    .apply(lambda row: row.mlinspect_lineage_x.union(row.mlinspect_lineage_y), axis=1)
+                return_value.drop('mlinspect_lineage_x', inplace=True, axis=1)
+                return_value.drop('mlinspect_lineage_y', inplace=True, axis=1)
                 if materialize_for_this_operator:
                     reset_index_return_value = return_value.reset_index(drop=True)
                     lineage_dag_annotation = reset_index_return_value
