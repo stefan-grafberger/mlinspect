@@ -26,17 +26,30 @@ class PandasBackend(Backend):
     def before_call(operator_context, input_infos: List[AnnotatedDfObject]):
         """The value or module a function may be called on"""
         # pylint: disable=too-many-arguments
-        if operator_context.operator == OperatorType.SELECTION:
-            pandas_df = input_infos[0].result_data
-            assert isinstance(pandas_df, pandas.DataFrame)
-            pandas_df['mlinspect_index'] = range(0, len(pandas_df))
-        elif operator_context.function_info == FunctionInfo('pandas.core.frame', 'merge'):
-            first_pandas_df = input_infos[0].result_data
-            assert isinstance(first_pandas_df, pandas.DataFrame)
-            first_pandas_df['mlinspect_index_x'] = range(0, len(first_pandas_df))
-            second_pandas_df = input_infos[1].result_data
-            assert isinstance(second_pandas_df, pandas.DataFrame)
-            second_pandas_df['mlinspect_index_y'] = range(0, len(second_pandas_df))
+        if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage) \
+                and operator_context.operator \
+                in {OperatorType.DATA_SOURCE, OperatorType.PROJECTION,
+                    OperatorType.PROJECTION_MODIFY, OperatorType.SELECTION}:  # TODO: Add support for more operators
+            if operator_context.operator == OperatorType.SELECTION:
+                pandas_df = input_infos[0].result_data
+                assert isinstance(pandas_df, pandas.DataFrame)
+                lineage_inspection = singleton.inspections[0]
+                inspection_name = str(lineage_inspection)
+                input_infos[0].result_data['mlinspect_lineage'] = input_infos[0].result_annotation[inspection_name]
+            elif operator_context.function_info == FunctionInfo('pandas.core.frame', 'merge'):
+                raise NotImplementedError()
+        else:
+            if operator_context.operator == OperatorType.SELECTION:
+                pandas_df = input_infos[0].result_data
+                assert isinstance(pandas_df, pandas.DataFrame)
+                pandas_df['mlinspect_index'] = range(0, len(pandas_df))
+            elif operator_context.function_info == FunctionInfo('pandas.core.frame', 'merge'):
+                first_pandas_df = input_infos[0].result_data
+                assert isinstance(first_pandas_df, pandas.DataFrame)
+                first_pandas_df['mlinspect_index_x'] = range(0, len(first_pandas_df))
+                second_pandas_df = input_infos[1].result_data
+                assert isinstance(second_pandas_df, pandas.DataFrame)
+                second_pandas_df['mlinspect_index_y'] = range(0, len(second_pandas_df))
         return input_infos
 
     @staticmethod
@@ -48,9 +61,10 @@ class PandasBackend(Backend):
         if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage) \
                 and operator_context.operator \
                 in {OperatorType.DATA_SOURCE, OperatorType.PROJECTION,
-                    OperatorType.PROJECTION_MODIFY}:  # TODO: Add support for more operators
+                    OperatorType.PROJECTION_MODIFY, OperatorType.SELECTION,
+                    OperatorType.GROUP_BY_AGG}:  # TODO: Add support for more operators
             print("optimized mode")
-            if operator_context.operator == OperatorType.DATA_SOURCE:
+            if operator_context.operator in {OperatorType.DATA_SOURCE, OperatorType.GROUP_BY_AGG}:
                 # inspection annotation
                 lineage_inspection = singleton.inspections[0]
                 inspection_name = str(lineage_inspection)
@@ -61,6 +75,32 @@ class PandasBackend(Backend):
                 lineage_id_list_a = [{LineageId(current_data_source, row_id)}
                                      for row_id in range(len(return_value))]
                 annotations_df = pandas.DataFrame({inspection_name: pandas.Series(lineage_id_list_a, dtype="object")})
+                inspection_outputs = {}
+                materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
+                                                (operator_context.operator
+                                                 in lineage_inspection.operator_type_restriction)
+                if materialize_for_this_operator:
+                    if operator_context.operator == OperatorType.DATA_SOURCE:
+                        reset_index_return_value = return_value.reset_index(drop=True)
+                    else:
+                        reset_index_return_value = return_value.reset_index(drop=False)
+                    lineage_dag_annotation = pandas.concat([reset_index_return_value, annotations_df], axis=1)
+                    if lineage_inspection.row_count != RowLineage.ALL_ROWS:
+                        lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
+                        lineage_dag_annotation = lineage_dag_annotation.rename(
+                            columns={inspection_name: 'mlinspect_lineage'})
+                else:
+                    lineage_dag_annotation = None
+                inspection_outputs[lineage_inspection] = lineage_dag_annotation
+                # inspection output
+                return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
+                return_value = BackendResult(return_value_with_annotation, inspection_outputs)
+            elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY}:
+                # inspection annotation
+                lineage_inspection = singleton.inspections[0]
+                inspection_name = str(lineage_inspection)
+                # TODO: Should we use a different format for performance reasons?
+                annotations_df = input_infos[0].result_annotation
                 inspection_outputs = {}
                 materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
                                                 (operator_context.operator
@@ -78,28 +118,25 @@ class PandasBackend(Backend):
                 # inspection output
                 return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
                 return_value = BackendResult(return_value_with_annotation, inspection_outputs)
-            elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY}:
-                # inspection annotation
+            elif operator_context.operator in {OperatorType.SELECTION}:
                 lineage_inspection = singleton.inspections[0]
                 inspection_name = str(lineage_inspection)
-                current_data_source = singleton.data_source_count
-                singleton.data_source_count += 1
                 # TODO: Should we use a different format for performance reasons?
-                annotations_df = input_infos[0].result_annotation
                 inspection_outputs = {}
                 materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
                                                 (operator_context.operator
                                                  in lineage_inspection.operator_type_restriction)
                 if materialize_for_this_operator:
                     reset_index_return_value = return_value.reset_index(drop=True)
-                    lineage_dag_annotation = pandas.concat([reset_index_return_value, annotations_df], axis=1)
+                    lineage_dag_annotation = reset_index_return_value
                     if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                         lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
-                        lineage_dag_annotation = lineage_dag_annotation.rename(
-                            columns={inspection_name: 'mlinspect_lineage'})
                 else:
                     lineage_dag_annotation = None
                 inspection_outputs[lineage_inspection] = lineage_dag_annotation
+                # inspection annotation
+                annotations_df = pandas.DataFrame(return_value.pop('mlinspect_lineage'))
+                annotations_df = annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
                 # inspection output
                 return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
                 return_value = BackendResult(return_value_with_annotation, inspection_outputs)
