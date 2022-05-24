@@ -267,7 +267,7 @@ class DataFramePatching:
                               **kwargs)
             backend_result = PandasBackend.after_call(operator_context,
                                                       input_infos,
-                                                      result)
+                                                      result, kwargs)
             result = backend_result.annotated_dfobject.result_data
             description = self.get_merge_description(**kwargs)
             dag_node = DagNode(op_id,

@@ -4,6 +4,7 @@ The pandas backend
 from types import MappingProxyType
 from typing import List, Dict
 
+import numpy
 import pandas
 
 from ._backend import Backend, AnnotatedDfObject, BackendResult
@@ -76,8 +77,7 @@ class PandasBackend(Backend):
                 # inspection annotation
                 lineage_inspection = singleton.inspections[0]
                 inspection_name = str(lineage_inspection)
-                current_data_source = singleton.data_source_count
-                singleton.data_source_count += 1
+                current_data_source = singleton.next_op_id - 1
                 # TODO: Should we use a different format for performance reasons?
                 # lineage_id_list_a = ["LineageId(0, " + str(row_id) + ")" for row_id in range(len(df_a))]
                 lineage_id_list_a = [{LineageId(current_data_source, row_id)}
@@ -159,6 +159,9 @@ class PandasBackend(Backend):
                 # Calculating directly using apply (apply is not a fast function)
                 # This can be done faster, see
                 # https://github.com/stefan-grafberger/mlinspect-private-branches/blob/performance-improvement-experiments/experiments/performance/performance-improvement-experiments.ipynb
+                if non_data_function_args['how'] == 'outer':
+                    return_value['mlinspect_lineage_x'] = return_value['mlinspect_lineage_x'].replace({numpy.nan: set()})
+                    return_value['mlinspect_lineage_y'] = return_value['mlinspect_lineage_y'].replace({numpy.nan: set()})
                 return_value['mlinspect_lineage'] = return_value\
                     .apply(lambda row: row.mlinspect_lineage_x.union(row.mlinspect_lineage_y), axis=1)
                 return_value.drop('mlinspect_lineage_x', inplace=True, axis=1)
