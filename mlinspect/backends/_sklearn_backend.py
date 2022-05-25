@@ -52,7 +52,8 @@ class SklearnBackend(Backend):
                 and operator_context.operator \
                 in {OperatorType.TRAIN_TEST_SPLIT, OperatorType.DATA_SOURCE, OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY,
                     OperatorType.TRANSFORMER, OperatorType.TRAIN_DATA, OperatorType.TRAIN_LABELS,
-                                               OperatorType.TEST_DATA, OperatorType.TEST_LABELS}:
+                                               OperatorType.TEST_DATA, OperatorType.TEST_LABELS,
+                    OperatorType.ESTIMATOR}:
             print("optimized mode")
             if operator_context.operator == OperatorType.DATA_SOURCE:
                 # inspection annotation
@@ -152,6 +153,28 @@ class SklearnBackend(Backend):
                                              train_inspection_outputs,
                                              test_return_value_data_with_annotation,
                                              test_inspection_outputs)
+            elif operator_context.operator == OperatorType.ESTIMATOR:
+                # inspection annotation
+                lineage_inspection = singleton.inspections[0]
+                inspection_name = str(lineage_inspection)
+                # TODO: Should we use a different format for performance reasons?
+                annotations_df = input_infos[0].result_annotation
+                inspection_outputs = {}
+                materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
+                                                (operator_context.operator
+                                                 in lineage_inspection.operator_type_restriction)
+                if materialize_for_this_operator:
+                    lineage_dag_annotation = annotations_df
+                    if lineage_inspection.row_count != RowLineage.ALL_ROWS:
+                        lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
+                        lineage_dag_annotation = lineage_dag_annotation.rename(
+                            columns={inspection_name: 'mlinspect_lineage'})
+                else:
+                    lineage_dag_annotation = None
+                inspection_outputs[lineage_inspection] = lineage_dag_annotation
+                # inspection output
+                return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
+                return_value = BackendResult(return_value_with_annotation, inspection_outputs)
         else:
             if operator_context.operator == OperatorType.DATA_SOURCE:
                 return_value = execute_inspection_visits_data_source(operator_context, return_value,
