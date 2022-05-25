@@ -4,7 +4,9 @@ The scikit-learn backend
 from types import MappingProxyType
 from typing import List, Dict
 
+import numpy
 import pandas
+from scipy.sparse import csr_matrix
 
 from ._backend import Backend, AnnotatedDfObject, BackendResult
 from ._backend_utils import create_wrapper_with_annotations
@@ -48,7 +50,9 @@ class SklearnBackend(Backend):
         # pylint: disable=too-many-arguments
         if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage) \
                 and operator_context.operator \
-                in {OperatorType.TRAIN_TEST_SPLIT, OperatorType.DATA_SOURCE}:
+                in {OperatorType.TRAIN_TEST_SPLIT, OperatorType.DATA_SOURCE, OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY,
+                    OperatorType.TRANSFORMER, OperatorType.TRAIN_DATA, OperatorType.TRAIN_LABELS,
+                                               OperatorType.TEST_DATA, OperatorType.TEST_LABELS}:
             print("optimized mode")
             if operator_context.operator == OperatorType.DATA_SOURCE:
                 # inspection annotation
@@ -71,6 +75,41 @@ class SklearnBackend(Backend):
                         lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
                     lineage_dag_annotation = lineage_dag_annotation.rename(
                         columns={inspection_name: 'mlinspect_lineage'})
+                else:
+                    lineage_dag_annotation = None
+                inspection_outputs[lineage_inspection] = lineage_dag_annotation
+                # inspection output
+                return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
+                return_value = BackendResult(return_value_with_annotation, inspection_outputs)
+            elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY,
+                                               OperatorType.TRANSFORMER, OperatorType.TRAIN_DATA,
+                                               OperatorType.TRAIN_LABELS, OperatorType.TEST_DATA,
+                                               OperatorType.TEST_LABELS}:
+                # inspection annotation
+                lineage_inspection = singleton.inspections[0]
+                inspection_name = str(lineage_inspection)
+                # TODO: Should we use a different format for performance reasons?
+                annotations_df = input_infos[0].result_annotation
+                inspection_outputs = {}
+                materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
+                                                (operator_context.operator
+                                                 in lineage_inspection.operator_type_restriction)
+                if materialize_for_this_operator:
+                    if isinstance(return_value, numpy.ndarray):
+                        pd_series = pandas.Series(list(return_value))
+                        pandas_return_value = pandas.DataFrame({'array': pd_series})
+                    elif isinstance(return_value, csr_matrix):
+                        pd_series = pandas.Series(list(return_value.toarray()))
+                        pandas_return_value = pandas.DataFrame({'array': pd_series})
+                    elif isinstance(return_value, pandas.DataFrame):
+                        pandas_return_value = return_value.reset_index(drop=True)
+                    else:
+                        assert False
+                    lineage_dag_annotation = pandas.concat([pandas_return_value, annotations_df], axis=1)
+                    if lineage_inspection.row_count != RowLineage.ALL_ROWS:
+                        lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
+                        lineage_dag_annotation = lineage_dag_annotation.rename(
+                            columns={inspection_name: 'mlinspect_lineage'})
                 else:
                     lineage_dag_annotation = None
                 inspection_outputs[lineage_inspection] = lineage_dag_annotation
