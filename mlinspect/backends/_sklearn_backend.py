@@ -7,10 +7,12 @@ from typing import List, Dict
 import pandas
 
 from ._backend import Backend, AnnotatedDfObject, BackendResult
+from ._backend_utils import create_wrapper_with_annotations
 from ._iter_creation import iter_input_annotation_output_sink_op, iter_input_annotation_output_nary_op
 from ._pandas_backend import execute_inspection_visits_unary_operator, store_inspection_outputs, \
     execute_inspection_visits_data_source
 from .. import OperatorType
+from ..inspections import RowLineage
 from ..instrumentation._pipeline_executor import singleton
 
 
@@ -23,10 +25,18 @@ class SklearnBackend(Backend):
     def before_call(operator_context, input_infos: List[AnnotatedDfObject]):
         """The value or module a function may be called on"""
         # pylint: disable=too-many-arguments
-        if operator_context.operator == OperatorType.TRAIN_TEST_SPLIT:
-            pandas_df = input_infos[0].result_data
-            assert isinstance(pandas_df, pandas.DataFrame)
-            pandas_df['mlinspect_index'] = range(0, len(pandas_df))
+        if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage):
+            if operator_context.operator == OperatorType.TRAIN_TEST_SPLIT:
+                pandas_df = input_infos[0].result_data
+                assert isinstance(pandas_df, pandas.DataFrame)
+                lineage_inspection = singleton.inspections[0]
+                inspection_name = str(lineage_inspection)
+                input_infos[0].result_data['mlinspect_lineage'] = input_infos[0].result_annotation[inspection_name]
+        else:
+            if operator_context.operator == OperatorType.TRAIN_TEST_SPLIT:
+                pandas_df = input_infos[0].result_data
+                assert isinstance(pandas_df, pandas.DataFrame)
+                pandas_df['mlinspect_index'] = range(0, len(pandas_df))
         return input_infos
 
     @staticmethod
@@ -35,51 +45,94 @@ class SklearnBackend(Backend):
             -> BackendResult:
         """The return value of some function"""
         # pylint: disable=too-many-arguments
-        if operator_context.operator == OperatorType.DATA_SOURCE:
-            return_value = execute_inspection_visits_data_source(operator_context, return_value, non_data_function_args)
-        elif operator_context.operator == OperatorType.TRAIN_TEST_SPLIT:
-            train_data, test_data = return_value
-            train_return_value = execute_inspection_visits_unary_operator(operator_context,
-                                                                          input_infos[0].result_data,
-                                                                          input_infos[0].result_annotation,
-                                                                          train_data,
-                                                                          True, non_data_function_args)
-            test_return_value = execute_inspection_visits_unary_operator(operator_context,
-                                                                         input_infos[0].result_data,
-                                                                         input_infos[0].result_annotation,
-                                                                         test_data,
-                                                                         True, non_data_function_args)
-            input_infos[0].result_data.drop("mlinspect_index", axis=1, inplace=True)
-            train_data.drop("mlinspect_index", axis=1, inplace=True)
-            test_data.drop("mlinspect_index", axis=1, inplace=True)
-            return_value = BackendResult(train_return_value.annotated_dfobject,
-                                         train_return_value.dag_node_annotation,
-                                         test_return_value.annotated_dfobject,
-                                         test_return_value.dag_node_annotation)
-        elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY,
-                                           OperatorType.TRANSFORMER, OperatorType.TRAIN_DATA, OperatorType.TRAIN_LABELS,
-                                           OperatorType.TEST_DATA, OperatorType.TEST_LABELS}:
-            return_value = execute_inspection_visits_unary_operator(operator_context, input_infos[0].result_data,
-                                                                    input_infos[0].result_annotation, return_value,
-                                                                    False, non_data_function_args)
-        elif operator_context.operator == OperatorType.ESTIMATOR:
-            return_value = execute_inspection_visits_sink_op(operator_context,
-                                                             input_infos[0].result_data,
-                                                             input_infos[0].result_annotation,
-                                                             input_infos[1].result_data,
-                                                             input_infos[1].result_annotation,
-                                                             non_data_function_args)
-        elif operator_context.operator == OperatorType.SCORE:
-            return_value = execute_inspection_visits_nary_op(operator_context,
-                                                             input_infos,
-                                                             return_value,
-                                                             non_data_function_args)
-        elif operator_context.operator == OperatorType.CONCATENATION:
-            return_value = execute_inspection_visits_nary_op(operator_context, input_infos, return_value,
-                                                             non_data_function_args)
+        if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage) \
+                and operator_context.operator \
+                in {OperatorType.TRAIN_TEST_SPLIT}:
+            print("optimized mode")
+            if operator_context.operator in {OperatorType.TRAIN_TEST_SPLIT}:
+                # inspection annotation
+                lineage_inspection = singleton.inspections[0]
+                inspection_name = str(lineage_inspection)
+                # TODO: Should we use a different format for performance reasons?
+                train_inspection_outputs = {}
+                test_inspection_outputs = {}
+                materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
+                                                (operator_context.operator
+                                                 in lineage_inspection.operator_type_restriction)
+                train_data, test_data = return_value
+                if materialize_for_this_operator:
+                    train_lineage_dag_annotation = train_data.reset_index(drop=True)
+                    test_lineage_dag_annotation = test_data.reset_index(drop=True)
+                    if lineage_inspection.row_count != RowLineage.ALL_ROWS:
+                        train_lineage_dag_annotation = train_lineage_dag_annotation.head(lineage_inspection.row_count)
+                        test_lineage_dag_annotation = test_lineage_dag_annotation.head(lineage_inspection.row_count)
+                else:
+                    train_lineage_dag_annotation = None
+                    test_lineage_dag_annotation = None
+                train_inspection_outputs[lineage_inspection] = train_lineage_dag_annotation
+                test_inspection_outputs[lineage_inspection] = test_lineage_dag_annotation
+                # inspection annotation
+                train_annotations_df = pandas.DataFrame(train_data.pop('mlinspect_lineage'))
+                train_annotations_df = train_annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
+                test_annotations_df = pandas.DataFrame(test_data.pop('mlinspect_lineage'))
+                test_annotations_df = test_annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
+                # inspection output
+                train_return_value_data_with_annotation = create_wrapper_with_annotations(train_annotations_df,
+                                                                                          train_data)
+                test_return_value_data_with_annotation = create_wrapper_with_annotations(test_annotations_df,
+                                                                                         test_data)
+                return_value = BackendResult(train_return_value_data_with_annotation,
+                                             train_inspection_outputs,
+                                             test_return_value_data_with_annotation,
+                                             test_inspection_outputs)
         else:
-            raise NotImplementedError("SklearnBackend doesn't know any operations of type '{}' yet!"
-                                      .format(operator_context.operator))
+            if operator_context.operator == OperatorType.DATA_SOURCE:
+                return_value = execute_inspection_visits_data_source(operator_context, return_value,
+                                                                     non_data_function_args)
+            elif operator_context.operator == OperatorType.TRAIN_TEST_SPLIT:
+                train_data, test_data = return_value
+                train_return_value = execute_inspection_visits_unary_operator(operator_context,
+                                                                              input_infos[0].result_data,
+                                                                              input_infos[0].result_annotation,
+                                                                              train_data,
+                                                                              True, non_data_function_args)
+                test_return_value = execute_inspection_visits_unary_operator(operator_context,
+                                                                             input_infos[0].result_data,
+                                                                             input_infos[0].result_annotation,
+                                                                             test_data,
+                                                                             True, non_data_function_args)
+                input_infos[0].result_data.drop("mlinspect_index", axis=1, inplace=True)
+                train_data.drop("mlinspect_index", axis=1, inplace=True)
+                test_data.drop("mlinspect_index", axis=1, inplace=True)
+                return_value = BackendResult(train_return_value.annotated_dfobject,
+                                             train_return_value.dag_node_annotation,
+                                             test_return_value.annotated_dfobject,
+                                             test_return_value.dag_node_annotation)
+            elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY,
+                                               OperatorType.TRANSFORMER, OperatorType.TRAIN_DATA,
+                                               OperatorType.TRAIN_LABELS,
+                                               OperatorType.TEST_DATA, OperatorType.TEST_LABELS}:
+                return_value = execute_inspection_visits_unary_operator(operator_context, input_infos[0].result_data,
+                                                                        input_infos[0].result_annotation, return_value,
+                                                                        False, non_data_function_args)
+            elif operator_context.operator == OperatorType.ESTIMATOR:
+                return_value = execute_inspection_visits_sink_op(operator_context,
+                                                                 input_infos[0].result_data,
+                                                                 input_infos[0].result_annotation,
+                                                                 input_infos[1].result_data,
+                                                                 input_infos[1].result_annotation,
+                                                                 non_data_function_args)
+            elif operator_context.operator == OperatorType.SCORE:
+                return_value = execute_inspection_visits_nary_op(operator_context,
+                                                                 input_infos,
+                                                                 return_value,
+                                                                 non_data_function_args)
+            elif operator_context.operator == OperatorType.CONCATENATION:
+                return_value = execute_inspection_visits_nary_op(operator_context, input_infos, return_value,
+                                                                 non_data_function_args)
+            else:
+                raise NotImplementedError("SklearnBackend doesn't know any operations of type '{}' yet!"
+                                          .format(operator_context.operator))
         return return_value
 
 
