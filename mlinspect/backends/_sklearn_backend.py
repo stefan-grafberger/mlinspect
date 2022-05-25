@@ -50,10 +50,11 @@ class SklearnBackend(Backend):
         # pylint: disable=too-many-arguments
         if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage) \
                 and operator_context.operator \
-                in {OperatorType.TRAIN_TEST_SPLIT, OperatorType.DATA_SOURCE, OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY,
+                in {OperatorType.TRAIN_TEST_SPLIT, OperatorType.DATA_SOURCE, OperatorType.PROJECTION,
+                    OperatorType.PROJECTION_MODIFY,
                     OperatorType.TRANSFORMER, OperatorType.TRAIN_DATA, OperatorType.TRAIN_LABELS,
-                                               OperatorType.TEST_DATA, OperatorType.TEST_LABELS,
-                    OperatorType.ESTIMATOR}:
+                    OperatorType.TEST_DATA, OperatorType.TEST_LABELS,
+                    OperatorType.ESTIMATOR, OperatorType.SCORE}:
             print("optimized mode")
             if operator_context.operator == OperatorType.DATA_SOURCE:
                 # inspection annotation
@@ -175,6 +176,43 @@ class SklearnBackend(Backend):
                 # inspection output
                 return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
                 return_value = BackendResult(return_value_with_annotation, inspection_outputs)
+            elif operator_context.operator == OperatorType.SCORE:
+                # inspection annotation
+                lineage_inspection = singleton.inspections[0]
+                inspection_name = str(lineage_inspection)
+                # TODO: Should we use a different format for performance reasons?
+                annotations_df_data = input_infos[0].result_annotation
+                annotations_df_data = annotations_df_data.rename(columns={inspection_name: 'mlinspect_lineage_x'})
+                annotations_df_labels = input_infos[1].result_annotation
+                annotations_df_labels = annotations_df_labels.rename(columns={inspection_name: 'mlinspect_lineage_y'})
+                annotations_df = pandas.concat([annotations_df_data, annotations_df_labels], axis=1)
+                annotations_df['mlinspect_lineage'] = annotations_df\
+                    .apply(lambda row: row.mlinspect_lineage_x.union(row.mlinspect_lineage_y), axis=1)
+                annotations_df.drop('mlinspect_lineage_x', inplace=True, axis=1)
+                annotations_df.drop('mlinspect_lineage_y', inplace=True, axis=1)
+                inspection_outputs = {}
+                materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
+                                                (operator_context.operator
+                                                 in lineage_inspection.operator_type_restriction)
+                if materialize_for_this_operator:
+                    if isinstance(return_value, numpy.ndarray):
+                        pd_series = pandas.Series(list(return_value))
+                        pandas_return_value = pandas.DataFrame({'array': pd_series})
+                    else:
+                        assert False
+                    lineage_dag_annotation = pandas.concat([pandas_return_value, annotations_df], axis=1)
+                    if lineage_inspection.row_count != RowLineage.ALL_ROWS:
+                        lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
+                        lineage_dag_annotation = lineage_dag_annotation.rename(
+                            columns={inspection_name: 'mlinspect_lineage'})
+                else:
+                    lineage_dag_annotation = None
+                inspection_outputs[lineage_inspection] = lineage_dag_annotation
+                # inspection output
+                return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
+                return_value = BackendResult(return_value_with_annotation, inspection_outputs)
+            # TODO: Support score. We are only interested in output value (see map) but in the lineage of both
+            #  input values
         else:
             if operator_context.operator == OperatorType.DATA_SOURCE:
                 return_value = execute_inspection_visits_data_source(operator_context, return_value,
