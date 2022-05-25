@@ -43,6 +43,8 @@ class PandasBackend(Backend):
 
                 pandas_df_y = input_infos[1].result_data
                 assert isinstance(pandas_df_y, pandas.DataFrame)
+                # if len(input_infos[1].result_data.axes) == 2:  # find wayZ
+                #     input_infos[1].result_data.reset_index(drop=False, inplace=True)
                 input_infos[1].result_data['mlinspect_lineage_y'] = input_infos[1].result_annotation[inspection_name]
         else:
             if operator_context.operator == OperatorType.SELECTION:
@@ -84,7 +86,8 @@ class PandasBackend(Backend):
                     if operator_context.operator == OperatorType.DATA_SOURCE:
                         reset_index_return_value = return_value.reset_index(drop=True)
                     else:
-                        reset_index_return_value = return_value.reset_index(drop=False)
+                        return_value.reset_index(drop=False, inplace=True)
+                        reset_index_return_value = return_value
                     lineage_dag_annotation = pandas.concat([reset_index_return_value, annotations_df], axis=1)
                     if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                         lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
