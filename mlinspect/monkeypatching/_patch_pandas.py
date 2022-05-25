@@ -340,6 +340,7 @@ class DataFrameGroupByPatching:
 
         def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
+            # pylint: disable=too-many-locals
             function_info = FunctionInfo('pandas.core.groupby.generic', 'agg')
             if not hasattr(self, '_mlinspect_dag_node'):
                 raise NotImplementedError("TODO: Support agg if groupby happened in external code")
@@ -352,12 +353,16 @@ class DataFrameGroupByPatching:
             backend_result = PandasBackend.after_call(operator_context,
                                                       input_infos,
                                                       result)
-
-            if len(args) > 0:
-                description = "Groupby '{}', Aggregate: '{}'".format(result.index.name, args)
+            if result.index.name is not None:
+                groupby_column = result.index.name
+                columns = [result.index.name] + list(result.columns)
             else:
-                description = "Groupby '{}', Aggregate: '{}'".format(result.index.name, kwargs)
-            columns = [result.index.name] + list(result.columns)
+                groupby_column = list(result.columns)[0]
+                columns = list(result.columns)
+            if len(args) > 0:
+                description = "Groupby '{}', Aggregate: '{}'".format(groupby_column, args)
+            else:
+                description = "Groupby '{}', Aggregate: '{}'".format(groupby_column, kwargs)
             dag_node = DagNode(op_id,
                                BasicCodeLocation(caller_filename, lineno),
                                operator_context,

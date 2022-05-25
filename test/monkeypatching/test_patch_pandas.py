@@ -572,7 +572,7 @@ def test_groupby_agg():
         df_groupby_agg = df.groupby('group').agg(mean_value=('value', 'mean'))
         
         df_expected = pd.DataFrame({'group': ['A', 'B', 'C'], 'mean_value': [1, 3, 3]})
-        pd.testing.assert_frame_equal(df_groupby_agg.reset_index(drop=False), df_expected.reset_index(drop=True))
+        pd.testing.assert_frame_equal(df_groupby_agg.reset_index(drop=False), df_expected.reset_index(drop=False))
         """)
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
                                                         inspections=[RowLineage(2)])

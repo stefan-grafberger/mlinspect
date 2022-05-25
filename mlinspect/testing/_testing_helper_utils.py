@@ -7,14 +7,8 @@ from inspect import cleandoc
 import networkx
 from pandas import DataFrame
 
-from demo.feature_overview.missing_embeddings import MissingEmbeddings
 from mlinspect import OperatorContext, FunctionInfo, OperatorType
 from mlinspect._pipeline_inspector import PipelineInspector
-from mlinspect.checks import SimilarRemovalProbabilitiesFor
-from mlinspect.checks._no_bias_introduced_for import NoBiasIntroducedFor
-from mlinspect.checks._no_illegal_features import NoIllegalFeatures
-from mlinspect.inspections import HistogramForColumns, IntersectionalHistogramForColumns, CompletenessOfColumns, \
-    CountDistinctOfColumns, ColumnPropagation
 from mlinspect.inspections._lineage import RowLineage
 from mlinspect.inspections._materialize_first_output_rows import MaterializeFirstOutputRows
 from mlinspect.instrumentation._dag_node import DagNode, CodeReference, BasicCodeLocation, DagNodeDetails, \
@@ -235,7 +229,7 @@ def run_multiple_test_analyzers(code):
     return dag_node_to_inspection_results, analyzers
 
 
-def run_and_assert_all_op_outputs_inspected(py_file_path, sensitive_columns, dag_png_path, custom_monkey_patching=None):
+def run_and_assert_all_op_outputs_inspected(py_file_path, _, dag_png_path, custom_monkey_patching=None):
     """
     Execute the pipeline with a few checks and inspections.
     Assert that mlinspect properly lets inspections inspect all DAG nodes

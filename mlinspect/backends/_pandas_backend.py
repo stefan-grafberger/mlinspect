@@ -84,11 +84,10 @@ class PandasBackend(Backend):
                                                  in lineage_inspection.operator_type_restriction)
                 if materialize_for_this_operator:
                     if operator_context.operator == OperatorType.DATA_SOURCE:
-                        reset_index_return_value = return_value.reset_index(drop=True)
+                        return_value.reset_index(drop=True, inplace=True)
                     else:
                         return_value.reset_index(drop=False, inplace=True)
-                        reset_index_return_value = return_value
-                    lineage_dag_annotation = pandas.concat([reset_index_return_value, annotations_df], axis=1)
+                    lineage_dag_annotation = pandas.concat([return_value, annotations_df], axis=1)
                     if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                         lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
                     lineage_dag_annotation = lineage_dag_annotation.rename(

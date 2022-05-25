@@ -47,7 +47,7 @@ class SklearnBackend(Backend):
                    non_data_function_args: Dict[str, any] = MappingProxyType({})) \
             -> BackendResult:
         """The return value of some function"""
-        # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements,cell-var-from-loop
         if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage):
             print("optimized mode")
             if operator_context.operator == OperatorType.DATA_SOURCE:
