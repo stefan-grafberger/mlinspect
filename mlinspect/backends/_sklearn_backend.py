@@ -13,6 +13,7 @@ from ._pandas_backend import execute_inspection_visits_unary_operator, store_ins
     execute_inspection_visits_data_source
 from .. import OperatorType
 from ..inspections import RowLineage
+from ..inspections._lineage import LineageId
 from ..instrumentation._pipeline_executor import singleton
 
 
@@ -47,9 +48,36 @@ class SklearnBackend(Backend):
         # pylint: disable=too-many-arguments
         if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage) \
                 and operator_context.operator \
-                in {OperatorType.TRAIN_TEST_SPLIT}:
+                in {OperatorType.TRAIN_TEST_SPLIT, OperatorType.DATA_SOURCE}:
             print("optimized mode")
-            if operator_context.operator in {OperatorType.TRAIN_TEST_SPLIT}:
+            if operator_context.operator == OperatorType.DATA_SOURCE:
+                # inspection annotation
+                lineage_inspection = singleton.inspections[0]
+                inspection_name = str(lineage_inspection)
+                current_data_source = singleton.next_op_id - 1
+                # TODO: Should we use a different format for performance reasons?
+                # lineage_id_list_a = ["LineageId(0, " + str(row_id) + ")" for row_id in range(len(df_a))]
+                lineage_id_list_a = [{LineageId(current_data_source, row_id)}
+                                     for row_id in range(len(return_value))]
+                annotations_df = pandas.DataFrame({inspection_name: pandas.Series(lineage_id_list_a, dtype="object")})
+                inspection_outputs = {}
+                materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
+                                                (operator_context.operator
+                                                 in lineage_inspection.operator_type_restriction)
+                if materialize_for_this_operator:
+                    pandas_return_value = pandas.DataFrame({'array': return_value})
+                    lineage_dag_annotation = pandas.concat([pandas_return_value, annotations_df], axis=1)
+                    if lineage_inspection.row_count != RowLineage.ALL_ROWS:
+                        lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
+                    lineage_dag_annotation = lineage_dag_annotation.rename(
+                        columns={inspection_name: 'mlinspect_lineage'})
+                else:
+                    lineage_dag_annotation = None
+                inspection_outputs[lineage_inspection] = lineage_dag_annotation
+                # inspection output
+                return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
+                return_value = BackendResult(return_value_with_annotation, inspection_outputs)
+            elif operator_context.operator in {OperatorType.TRAIN_TEST_SPLIT}:
                 # inspection annotation
                 lineage_inspection = singleton.inspections[0]
                 inspection_name = str(lineage_inspection)
