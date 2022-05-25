@@ -27,10 +27,7 @@ class PandasBackend(Backend):
     def before_call(operator_context, input_infos: List[AnnotatedDfObject]):
         """The value or module a function may be called on"""
         # pylint: disable=too-many-arguments
-        if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage) \
-                and operator_context.operator \
-                in {OperatorType.DATA_SOURCE, OperatorType.PROJECTION,
-                    OperatorType.PROJECTION_MODIFY, OperatorType.SELECTION, OperatorType.JOIN}:  # TODO: Add support for more operators
+        if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage):
             if operator_context.operator == OperatorType.SELECTION:
                 pandas_df = input_infos[0].result_data
                 assert isinstance(pandas_df, pandas.DataFrame)
@@ -67,11 +64,7 @@ class PandasBackend(Backend):
             -> BackendResult:
         """The return value of some function"""
         # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
-        if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage) \
-                and operator_context.operator \
-                in {OperatorType.DATA_SOURCE, OperatorType.PROJECTION,
-                    OperatorType.PROJECTION_MODIFY, OperatorType.SELECTION,
-                    OperatorType.GROUP_BY_AGG, OperatorType.JOIN}:  # TODO: Add support for more operators
+        if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage):
             print("optimized mode")
             if operator_context.operator in {OperatorType.DATA_SOURCE, OperatorType.GROUP_BY_AGG}:
                 # inspection annotation
@@ -95,8 +88,8 @@ class PandasBackend(Backend):
                     lineage_dag_annotation = pandas.concat([reset_index_return_value, annotations_df], axis=1)
                     if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                         lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
-                        lineage_dag_annotation = lineage_dag_annotation.rename(
-                            columns={inspection_name: 'mlinspect_lineage'})
+                    lineage_dag_annotation = lineage_dag_annotation.rename(
+                        columns={inspection_name: 'mlinspect_lineage'})
                 else:
                     lineage_dag_annotation = None
                 inspection_outputs[lineage_inspection] = lineage_dag_annotation
