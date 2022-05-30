@@ -75,8 +75,7 @@ class PandasBackend(Backend):
                 current_data_source = singleton.next_op_id - 1
                 # TODO: Should we use a different format for performance reasons?
                 # lineage_id_list_a = ["LineageId(0, " + str(row_id) + ")" for row_id in range(len(df_a))]
-                lineage_id_list_a = [{LineageId(current_data_source, row_id)}
-                                     for row_id in range(len(return_value))]
+                lineage_id_list_a = [f'({current_data_source},{row_id})' for row_id in range(len(return_value))]
                 annotations_df = pandas.DataFrame({inspection_name: pandas.Series(lineage_id_list_a, dtype="object")})
                 inspection_outputs = {}
                 materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
@@ -155,10 +154,10 @@ class PandasBackend(Backend):
                 # This can be done faster, see
                 # https://github.com/stefan-grafberger/mlinspect-private-branches/blob/performance-improvement-experiments/experiments/performance/performance-improvement-experiments.ipynb
                 if 'how' in non_data_function_args and non_data_function_args['how'] == 'outer':
-                    return_value['mlinspect_lineage_x'] = return_value['mlinspect_lineage_x'].replace({numpy.nan: set()})
-                    return_value['mlinspect_lineage_y'] = return_value['mlinspect_lineage_y'].replace({numpy.nan: set()})
-                return_value['mlinspect_lineage'] = return_value\
-                    .apply(lambda row: row.mlinspect_lineage_x.union(row.mlinspect_lineage_y), axis=1)
+                    return_value['mlinspect_lineage_x'] = return_value['mlinspect_lineage_x'].replace({numpy.nan: ''})
+                    return_value['mlinspect_lineage_y'] = return_value['mlinspect_lineage_y'].replace({numpy.nan: ''})
+                return_value['mlinspect_lineage'] = return_value['mlinspect_lineage_x'] + ';' + \
+                                                        return_value['mlinspect_lineage_y']
                 return_value.drop('mlinspect_lineage_x', inplace=True, axis=1)
                 return_value.drop('mlinspect_lineage_y', inplace=True, axis=1)
                 if materialize_for_this_operator:

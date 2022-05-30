@@ -57,8 +57,7 @@ class SklearnBackend(Backend):
                 current_data_source = singleton.next_op_id - 1
                 # TODO: Should we use a different format for performance reasons?
                 # lineage_id_list_a = ["LineageId(0, " + str(row_id) + ")" for row_id in range(len(df_a))]
-                lineage_id_list_a = [{LineageId(current_data_source, row_id)}
-                                     for row_id in range(len(return_value))]
+                lineage_id_list_a = [f'({current_data_source},{row_id})' for row_id in range(len(return_value))]
                 annotations_df = pandas.DataFrame({inspection_name: pandas.Series(lineage_id_list_a, dtype="object")})
                 inspection_outputs = {}
                 materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
@@ -182,8 +181,8 @@ class SklearnBackend(Backend):
                 annotations_df_labels = input_infos[1].result_annotation
                 annotations_df_labels = annotations_df_labels.rename(columns={inspection_name: 'mlinspect_lineage_y'})
                 annotations_df = pandas.concat([annotations_df_data, annotations_df_labels], axis=1)
-                annotations_df['mlinspect_lineage'] = annotations_df\
-                    .apply(lambda row: row.mlinspect_lineage_x.union(row.mlinspect_lineage_y), axis=1)
+                annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage_x'] + ';' + \
+                                                        annotations_df['mlinspect_lineage_y']
                 annotations_df.drop('mlinspect_lineage_x', inplace=True, axis=1)
                 annotations_df.drop('mlinspect_lineage_y', inplace=True, axis=1)
                 inspection_outputs = {}
@@ -219,11 +218,12 @@ class SklearnBackend(Backend):
                 if len(annotations) == 1:
                     annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage_0']
                 else:
-                    annotations_df['mlinspect_lineage'] = annotations_df \
-                        .apply(lambda row: row.mlinspect_lineage_0.union(row.mlinspect_lineage_1), axis=1)
+                    annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage_0'] + ';' + \
+                                                            annotations_df['mlinspect_lineage_1']
                     for index in range(1, len(annotations)):
-                        annotations_df['mlinspect_lineage'] = annotations_df \
-                            .apply(lambda row: row.mlinspect_lineage.union(row[f'mlinspect_lineage_{index}']), axis=1)
+                        annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage'] + ';' + annotations_df[f'mlinspect_lineage_{index}']
+                    annotations_df['mlinspect_lineage'].apply(lambda value: ';'.join(set(value.split(';'))))
+                    # TODO: Maybe we can make this faster with duckdb by combining unnest and str_agg
                 for index in range(len(annotations)):
                     annotations_df.drop(f'mlinspect_lineage_{index}', inplace=True, axis=1)
                 inspection_outputs = {}

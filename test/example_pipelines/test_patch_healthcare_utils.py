@@ -75,18 +75,18 @@ def test_my_word_to_vec_transformer():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_estimator]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0]), {LineageId(0, 0)}],
-                                     [numpy.array([0.0, 0.0, 0.0]), {LineageId(0, 1)}],
-                                     [numpy.array([0.0, 0.0, 0.0]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0]), '(0,0)'],
+                                     [numpy.array([0.0, 0.0, 0.0]), '(0,1)'],
+                                     [numpy.array([0.0, 0.0, 0.0]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_series_equal(lineage_output["mlinspect_lineage"], expected_lineage_df["mlinspect_lineage"])
     assert expected_lineage_df.iloc[0, 0].shape == (3,)
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_estimator_two]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0]), {LineageId(2, 0)}],
-                                     [numpy.array([0.0, 0.0, 0.0]), {LineageId(2, 1)}],
-                                     [numpy.array([0.0, 0.0, 0.0]), {LineageId(2, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0]), '(2,0)'],
+                                     [numpy.array([0.0, 0.0, 0.0]), '(2,1)'],
+                                     [numpy.array([0.0, 0.0, 0.0]), '(2,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_series_equal(lineage_output["mlinspect_lineage"], expected_lineage_df["mlinspect_lineage"])
     assert expected_lineage_df.iloc[0, 0].shape == (3,)
