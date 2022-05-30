@@ -14,7 +14,6 @@ from ._iter_creation import iter_input_data_source, iter_input_annotation_output
     iter_input_annotation_output_map, iter_input_annotation_output_join
 from .. import OperatorType, FunctionInfo
 from ..inspections import RowLineage
-from ..inspections._lineage import LineageId
 from ..instrumentation._pipeline_executor import singleton
 
 
@@ -158,6 +157,8 @@ class PandasBackend(Backend):
                     return_value['mlinspect_lineage_y'] = return_value['mlinspect_lineage_y'].replace({numpy.nan: ''})
                 return_value['mlinspect_lineage'] = return_value['mlinspect_lineage_x'] + ';' + \
                                                         return_value['mlinspect_lineage_y']
+                return_value['mlinspect_lineage'] = return_value['mlinspect_lineage'] \
+                    .apply(lambda value: ';'.join(set(value.split(';'))))
                 return_value.drop('mlinspect_lineage_x', inplace=True, axis=1)
                 return_value.drop('mlinspect_lineage_y', inplace=True, axis=1)
                 if materialize_for_this_operator:

@@ -15,7 +15,6 @@ from ._pandas_backend import execute_inspection_visits_unary_operator, store_ins
     execute_inspection_visits_data_source
 from .. import OperatorType
 from ..inspections import RowLineage
-from ..inspections._lineage import LineageId
 from ..instrumentation._pipeline_executor import singleton
 
 
@@ -183,6 +182,8 @@ class SklearnBackend(Backend):
                 annotations_df = pandas.concat([annotations_df_data, annotations_df_labels], axis=1)
                 annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage_x'] + ';' + \
                                                         annotations_df['mlinspect_lineage_y']
+                annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage'] \
+                    .apply(lambda value: ';'.join(set(value.split(';'))))
                 annotations_df.drop('mlinspect_lineage_x', inplace=True, axis=1)
                 annotations_df.drop('mlinspect_lineage_y', inplace=True, axis=1)
                 inspection_outputs = {}
@@ -221,8 +222,10 @@ class SklearnBackend(Backend):
                     annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage_0'] + ';' + \
                                                             annotations_df['mlinspect_lineage_1']
                     for index in range(1, len(annotations)):
-                        annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage'] + ';' + annotations_df[f'mlinspect_lineage_{index}']
-                    annotations_df['mlinspect_lineage'].apply(lambda value: ';'.join(set(value.split(';'))))
+                        annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage'] + ';' + \
+                                                                annotations_df[f'mlinspect_lineage_{index}']
+                    annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage']\
+                        .apply(lambda value: ';'.join(set(value.split(';'))))
                     # TODO: Maybe we can make this faster with duckdb by combining unnest and str_agg
                 for index in range(len(annotations)):
                     annotations_df.drop(f'mlinspect_lineage_{index}', inplace=True, axis=1)

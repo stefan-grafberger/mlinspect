@@ -14,7 +14,7 @@ from mlinspect import OperatorType, OperatorContext, FunctionInfo
 from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import DagNode, CodeReference, BasicCodeLocation, DagNodeDetails, \
     OptionalCodeInfo
-from mlinspect.inspections._lineage import RowLineage, LineageId
+from mlinspect.inspections._lineage import RowLineage
 
 
 def test_label_binarize():
@@ -55,9 +55,9 @@ def test_label_binarize():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_binarize]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([1]), {LineageId(0, 0)}],
-                                     [numpy.array([0]), {LineageId(0, 1)}],
-                                     [numpy.array([0]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([1]), '(0,0)'],
+                                     [numpy.array([0]), '(0,1)'],
+                                     [numpy.array([0]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -112,15 +112,15 @@ def test_train_test_split():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[5, {LineageId(0, 3)}],
-                                     [2, {LineageId(0, 1)}],
-                                     [1, {LineageId(0, 0)}]],
+    expected_lineage_df = DataFrame([[5, '(0,3)'],
+                                     [2, '(0,1)'],
+                                     [1, '(0,0)']],
                                     columns=['A', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[10, {LineageId(0, 2)}]], columns=['A', 'mlinspect_lineage'])
+    expected_lineage_df = DataFrame([[10, '(0,2)']], columns=['A', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
@@ -177,17 +177,17 @@ def test_standard_scaler():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([-1.0]), {LineageId(0, 0)}],
-                                     [numpy.array([-0.7142857142857143]), {LineageId(0, 1)}],
-                                     [numpy.array([1.5714285714285714]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([-1.0]), '(0,0)'],
+                                     [numpy.array([-0.7142857142857143]), '(0,1)'],
+                                     [numpy.array([1.5714285714285714]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer_two]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([-1.0]), {LineageId(2, 0)}],
-                                     [numpy.array([-0.7142857142857143]), {LineageId(2, 1)}],
-                                     [numpy.array([1.5714285714285714]), {LineageId(2, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([-1.0]), '(2,0)'],
+                                     [numpy.array([-0.7142857142857143]), '(2,1)'],
+                                     [numpy.array([1.5714285714285714]), '(2,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -252,18 +252,18 @@ def test_function_transformer():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[0., {LineageId(0, 0)}],
-                                     [0.6931471805599453, {LineageId(0, 1)}],
-                                     [2.302585092994046, {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[0., '(0,0)'],
+                                     [0.6931471805599453, '(0,1)'],
+                                     [2.302585092994046, '(0,2)']],
                                     columns=['A', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       atol=0.01)
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer_two]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[0., {LineageId(2, 0)}],
-                                     [0.6931471805599453, {LineageId(2, 1)}],
-                                     [2.302585092994046, {LineageId(2, 2)}]],
+    expected_lineage_df = DataFrame([[0., '(2,0)'],
+                                     [0.6931471805599453, '(2,1)'],
+                                     [2.302585092994046, '(2,2)']],
                                     columns=['A', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       atol=0.01)
@@ -327,17 +327,17 @@ def test_kbins_discretizer():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([0.]), {LineageId(0, 0)}],
-                                     [numpy.array([0.]), {LineageId(0, 1)}],
-                                     [numpy.array([2.]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0.]), '(0,0)'],
+                                     [numpy.array([0.]), '(0,1)'],
+                                     [numpy.array([2.]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer_two]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([0.]), {LineageId(2, 0)}],
-                                     [numpy.array([0.]), {LineageId(2, 1)}],
-                                     [numpy.array([2.]), {LineageId(2, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0.]), '(2,0)'],
+                                     [numpy.array([0.]), '(2,1)'],
+                                     [numpy.array([2.]), '(2,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -398,17 +398,17 @@ def test_simple_imputer():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array(['cat_a']), {LineageId(0, 0)}],
-                                     [numpy.array(['cat_a']), {LineageId(0, 1)}],
-                                     [numpy.array(['cat_a']), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array(['cat_a']), '(0,0)'],
+                                     [numpy.array(['cat_a']), '(0,1)'],
+                                     [numpy.array(['cat_a']), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer_two]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array(['cat_a']), {LineageId(2, 0)}],
-                                     [numpy.array(['cat_a']), {LineageId(2, 1)}],
-                                     [numpy.array(['cat_a']), {LineageId(2, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array(['cat_a']), '(2,0)'],
+                                     [numpy.array(['cat_a']), '(2,1)'],
+                                     [numpy.array(['cat_a']), '(2,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -469,17 +469,17 @@ def test_one_hot_encoder_not_sparse():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), {LineageId(0, 0)}],
-                                     [numpy.array([0.0, 1.0, 0.0]), {LineageId(0, 1)}],
-                                     [numpy.array([1.0, 0.0, 0.0]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), '(0,0)'],
+                                     [numpy.array([0.0, 1.0, 0.0]), '(0,1)'],
+                                     [numpy.array([1.0, 0.0, 0.0]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer_two]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), {LineageId(2, 0)}],
-                                     [numpy.array([0.0, 1.0, 0.0]), {LineageId(2, 1)}],
-                                     [numpy.array([1.0, 0.0, 0.0]), {LineageId(2, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), '(2,0)'],
+                                     [numpy.array([0.0, 1.0, 0.0]), '(2,1)'],
+                                     [numpy.array([1.0, 0.0, 0.0]), '(2,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -523,9 +523,9 @@ def test_one_hot_encoder_sparse():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), {LineageId(0, 0)}],
-                                     [numpy.array([0.0, 1.0, 0.0]), {LineageId(0, 1)}],
-                                     [numpy.array([1.0, 0.0, 0.0]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), '(0,0)'],
+                                     [numpy.array([0.0, 1.0, 0.0]), '(0,1)'],
+                                     [numpy.array([1.0, 0.0, 0.0]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -589,17 +589,17 @@ def test_hashing_vectorizer():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(0, 0)}],
-                                     [numpy.array([0.0, -1.0, 0.0, 0.]), {LineageId(0, 1)}],
-                                     [numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0, -1.]), '(0,0)'],
+                                     [numpy.array([0.0, -1.0, 0.0, 0.]), '(0,1)'],
+                                     [numpy.array([0.0, 0.0, 0.0, -1.]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer_two]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(3, 0)}],
-                                     [numpy.array([0.0, -1.0, 0.0, 0.]), {LineageId(3, 1)}],
-                                     [numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(3, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0, -1.]), '(3,0)'],
+                                     [numpy.array([0.0, -1.0, 0.0, 0.]), '(3,1)'],
+                                     [numpy.array([0.0, 0.0, 0.0, -1.]), '(3,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -666,25 +666,25 @@ def test_column_transformer_one_transformer():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_projection]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[1, 1, {LineageId(0, 0)}],
-                                     [2, 2, {LineageId(0, 1)}],
-                                     [10, 10, {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[1, 1, '(0,0)'],
+                                     [2, 2, '(0,1)'],
+                                     [10, 10, '(0,2)']],
                                     columns=['A', 'B', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_standard_scaler]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([-1.0, -1.0]), {LineageId(0, 0)}],
-                                     [numpy.array([-0.7142857142857143, -0.7142857142857143]), {LineageId(0, 1)}],
-                                     [numpy.array([1.5714285714285714, 1.5714285714285714]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([-1.0, -1.0]), '(0,0)'],
+                                     [numpy.array([-0.7142857142857143, -0.7142857142857143]), '(0,1)'],
+                                     [numpy.array([1.5714285714285714, 1.5714285714285714]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_concat]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([-1.0, -1.0]), {LineageId(0, 0)}],
-                                     [numpy.array([-0.7142857142857143, -0.7142857142857143]), {LineageId(0, 1)}],
-                                     [numpy.array([1.5714285714285714, 1.5714285714285714]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([-1.0, -1.0]), '(0,0)'],
+                                     [numpy.array([-0.7142857142857143, -0.7142857142857143]), '(0,1)'],
+                                     [numpy.array([1.5714285714285714, 1.5714285714285714]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -759,33 +759,33 @@ def test_column_transformer_one_transformer_single_column_projection():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_projection]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([['cat_a', {LineageId(0, 0)}],
-                                     ['cat_b', {LineageId(0, 1)}],
-                                     ['cat_a', {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([['cat_a', '(0,0)'],
+                                     ['cat_b', '(0,1)'],
+                                     ['cat_a', '(0,2)']],
                                     columns=['A', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_vectorizer]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(0, 0)}],
-                                     [numpy.array([0.0, -1.0, 0.0, 0.]), {LineageId(0, 1)}],
-                                     [numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0, -1.]), '(0,0)'],
+                                     [numpy.array([0.0, -1.0, 0.0, 0.]), '(0,1)'],
+                                     [numpy.array([0.0, 0.0, 0.0, -1.]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_concat]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(0, 0)}],
-                                     [numpy.array([0.0, -1.0, 0.0, 0.]), {LineageId(0, 1)}],
-                                     [numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0, -1.]), '(0,0)'],
+                                     [numpy.array([0.0, -1.0, 0.0, 0.]), '(0,1)'],
+                                     [numpy.array([0.0, 0.0, 0.0, -1.]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transform]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(4, 0)}],
-                                     [numpy.array([0.0, -1.0, 0.0, 0.]), {LineageId(4, 1)}],
-                                     [numpy.array([0.0, 0.0, 0.0, -1.]), {LineageId(4, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0.0, 0.0, 0.0, -1.]), '(4,0)'],
+                                     [numpy.array([0.0, -1.0, 0.0, 0.]), '(4,1)'],
+                                     [numpy.array([0.0, 0.0, 0.0, -1.]), '(4,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -877,41 +877,41 @@ def test_column_transformer_multiple_transformers_all_dense():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_projection_1]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[1, {LineageId(0, 0)}],
-                                     [2, {LineageId(0, 1)}],
-                                     [10, {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[1, '(0,0)'],
+                                     [2, '(0,1)'],
+                                     [10, '(0,2)']],
                                     columns=['A', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_projection_2]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([['cat_a', {LineageId(0, 0)}],
-                                     ['cat_b', {LineageId(0, 1)}],
-                                     ['cat_a', {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([['cat_a', '(0,0)'],
+                                     ['cat_b', '(0,1)'],
+                                     ['cat_a', '(0,2)']],
                                     columns=['B', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_standard_scaler]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([-1.0]), {LineageId(0, 0)}],
-                                     [numpy.array([-0.7142857142857143]), {LineageId(0, 1)}],
-                                     [numpy.array([1.5714285714285714]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([-1.0]), '(0,0)'],
+                                     [numpy.array([-0.7142857142857143]), '(0,1)'],
+                                     [numpy.array([1.5714285714285714]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_one_hot]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), {LineageId(0, 0)}],
-                                     [numpy.array([0.0, 1.0, 0.0]), {LineageId(0, 1)}],
-                                     [numpy.array([1.0, 0.0, 0.0]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), '(0,0)'],
+                                     [numpy.array([0.0, 1.0, 0.0]), '(0,1)'],
+                                     [numpy.array([1.0, 0.0, 0.0]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_concat]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([-1.0, 1.0, 0.0, 0.0]), {LineageId(0, 0)}],
-                                     [numpy.array([-0.7142857142857143, 0.0, 1.0, 0.0]), {LineageId(0, 1)}],
-                                     [numpy.array([1.5714285714285714, 1.0, 0.0, 0.0]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([-1.0, 1.0, 0.0, 0.0]), '(0,0)'],
+                                     [numpy.array([-0.7142857142857143, 0.0, 1.0, 0.0]), '(0,1)'],
+                                     [numpy.array([1.5714285714285714, 1.0, 0.0, 0.0]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -1002,41 +1002,41 @@ def test_column_transformer_multiple_transformers_sparse_dense():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_projection_1]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[1, {LineageId(0, 0)}],
-                                     [2, {LineageId(0, 1)}],
-                                     [10, {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[1, '(0,0)'],
+                                     [2, '(0,1)'],
+                                     [10, '(0,2)']],
                                     columns=['A', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_projection_2]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([['cat_a', {LineageId(0, 0)}],
-                                     ['cat_b', {LineageId(0, 1)}],
-                                     ['cat_a', {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([['cat_a', '(0,0)'],
+                                     ['cat_b', '(0,1)'],
+                                     ['cat_a', '(0,2)']],
                                     columns=['B', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_standard_scaler]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([-1.0]), {LineageId(0, 0)}],
-                                     [numpy.array([-0.7142857142857143]), {LineageId(0, 1)}],
-                                     [numpy.array([1.5714285714285714]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([-1.0]), '(0,0)'],
+                                     [numpy.array([-0.7142857142857143]), '(0,1)'],
+                                     [numpy.array([1.5714285714285714]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_one_hot]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), {LineageId(0, 0)}],
-                                     [numpy.array([0.0, 1.0, 0.0]), {LineageId(0, 1)}],
-                                     [numpy.array([1.0, 0.0, 0.0]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), '(0,0)'],
+                                     [numpy.array([0.0, 1.0, 0.0]), '(0,1)'],
+                                     [numpy.array([1.0, 0.0, 0.0]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_concat]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([-1.0, 1.0, 0.0, 0.0]), {LineageId(0, 0)}],
-                                     [numpy.array([-0.7142857142857143, 0.0, 1.0, 0.0]), {LineageId(0, 1)}],
-                                     [numpy.array([1.5714285714285714, 1.0, 0.0, 0.0]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([-1.0, 1.0, 0.0, 0.0]), '(0,0)'],
+                                     [numpy.array([-0.7142857142857143, 0.0, 1.0, 0.0]), '(0,1)'],
+                                     [numpy.array([1.5714285714285714, 1.0, 0.0, 0.0]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -1130,41 +1130,41 @@ def test_column_transformer_transform_after_fit_transform():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_projection_1]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[1, {LineageId(6, 0)}],
-                                     [2, {LineageId(6, 1)}],
-                                     [10, {LineageId(6, 2)}]],
+    expected_lineage_df = DataFrame([[1, '(6,0)'],
+                                     [2, '(6,1)'],
+                                     [10, '(6,2)']],
                                     columns=['A', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_projection_2]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([['cat_a', {LineageId(6, 0)}],
-                                     ['cat_b', {LineageId(6, 1)}],
-                                     ['cat_a', {LineageId(6, 2)}]],
+    expected_lineage_df = DataFrame([['cat_a', '(6,0)'],
+                                     ['cat_b', '(6,1)'],
+                                     ['cat_a', '(6,2)']],
                                     columns=['B', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_standard_scaler]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([-1.0]), {LineageId(6, 0)}],
-                                     [numpy.array([-0.7142857142857143]), {LineageId(6, 1)}],
-                                     [numpy.array([1.5714285714285714]), {LineageId(6, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([-1.0]), '(6,0)'],
+                                     [numpy.array([-0.7142857142857143]), '(6,1)'],
+                                     [numpy.array([1.5714285714285714]), '(6,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_one_hot]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), {LineageId(6, 0)}],
-                                     [numpy.array([0.0, 1.0, 0.0]), {LineageId(6, 1)}],
-                                     [numpy.array([1.0, 0.0, 0.0]), {LineageId(6, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0, 0.0]), '(6,0)'],
+                                     [numpy.array([0.0, 1.0, 0.0]), '(6,1)'],
+                                     [numpy.array([1.0, 0.0, 0.0]), '(6,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_concat]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([-1.0, 1.0, 0.0, 0.0]), {LineageId(6, 0)}],
-                                     [numpy.array([-0.7142857142857143, 0.0, 1.0, 0.0]), {LineageId(6, 1)}],
-                                     [numpy.array([1.5714285714285714, 1.0, 0.0, 0.0]), {LineageId(6, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([-1.0, 1.0, 0.0, 0.0]), '(6,0)'],
+                                     [numpy.array([-0.7142857142857143, 0.0, 1.0, 0.0]), '(6,1)'],
+                                     [numpy.array([1.5714285714285714, 1.0, 0.0, 0.0]), '(6,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -1260,25 +1260,25 @@ def test_decision_tree():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_data]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([-1.3416407864998738, -1.3416407864998738]), {LineageId(0, 0)}],
-                                     [numpy.array([-0.4472135954999579, -0.4472135954999579]), {LineageId(0, 1)}],
-                                     [numpy.array([0.4472135954999579, 0.4472135954999579]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([-1.3416407864998738, -1.3416407864998738]), '(0,0)'],
+                                     [numpy.array([-0.4472135954999579, -0.4472135954999579]), '(0,1)'],
+                                     [numpy.array([0.4472135954999579, 0.4472135954999579]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_labels]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([0]), {LineageId(0, 0)}],
-                                     [numpy.array([0]), {LineageId(0, 1)}],
-                                     [numpy.array([1]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0]), '(0,0)'],
+                                     [numpy.array([0]), '(0,1)'],
+                                     [numpy.array([1]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_decision_tree]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[{LineageId(0, 0)}],
-                                     [{LineageId(0, 1)}],
-                                     [{LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([['(0,0)'],
+                                     ['(0,1)'],
+                                     ['(0,2)']],
                                     columns=['mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       check_column_type=False)
@@ -1365,22 +1365,22 @@ def test_decision_tree_score():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test_data]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[0, 0, {LineageId(8, 0)}],
-                                     [0.6, 0.6, {LineageId(8, 1)}]],
+    expected_lineage_df = DataFrame([[0, 0, '(8,0)'],
+                                     [0.6, 0.6, '(8,1)']],
                                     columns=['A', 'B', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test_labels]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([0.]), {LineageId(8, 0)}],
-                                     [numpy.array([1.]), {LineageId(8, 1)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0.]), '(8,0)'],
+                                     [numpy.array([1.]), '(8,1)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_score]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[0, {LineageId(8, 0)}],
-                                     [1, {LineageId(8, 1)}]],
+    expected_lineage_df = DataFrame([[0, '(8,0)'],
+                                     [1, '(8,1)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       check_column_type=False)
@@ -1460,25 +1460,25 @@ def test_sgd_classifier():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_data]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([-1.3416407864998738, -1.3416407864998738]), {LineageId(0, 0)}],
-                                     [numpy.array([-0.4472135954999579, -0.4472135954999579]), {LineageId(0, 1)}],
-                                     [numpy.array([0.4472135954999579, 0.4472135954999579]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([-1.3416407864998738, -1.3416407864998738]), '(0,0)'],
+                                     [numpy.array([-0.4472135954999579, -0.4472135954999579]), '(0,1)'],
+                                     [numpy.array([0.4472135954999579, 0.4472135954999579]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_labels]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([0]), {LineageId(0, 0)}],
-                                     [numpy.array([0]), {LineageId(0, 1)}],
-                                     [numpy.array([1]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0]), '(0,0)'],
+                                     [numpy.array([0]), '(0,1)'],
+                                     [numpy.array([1]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_classifier]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[{LineageId(0, 0)}],
-                                     [{LineageId(0, 1)}],
-                                     [{LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([['(0,0)'],
+                                     ['(0,1)'],
+                                     ['(0,2)']],
                                     columns=['mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       check_column_type=False)
@@ -1687,22 +1687,22 @@ def test_sgd_classifier_score():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test_data]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[0, 0, {LineageId(8, 0)}],
-                                     [0.6, 0.6, {LineageId(8, 1)}]],
+    expected_lineage_df = DataFrame([[0, 0, '(8,0)'],
+                                     [0.6, 0.6, '(8,1)']],
                                     columns=['A', 'B', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test_labels]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([0.]), {LineageId(8, 0)}],
-                                     [numpy.array([1.]), {LineageId(8, 1)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0.]), '(8,0)'],
+                                     [numpy.array([1.]), '(8,1)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_score]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[0, {LineageId(8, 0)}],
-                                     [1, {LineageId(8, 1)}]],
+    expected_lineage_df = DataFrame([[0, '(8,0)'],
+                                     [1, '(8,1)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       check_column_type=False)
@@ -1801,25 +1801,25 @@ def test_logistic_regression():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_data]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([-1.3416407864998738, -1.3416407864998738]), {LineageId(0, 0)}],
-                                     [numpy.array([-0.4472135954999579, -0.4472135954999579]), {LineageId(0, 1)}],
-                                     [numpy.array([0.4472135954999579, 0.4472135954999579]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([-1.3416407864998738, -1.3416407864998738]), '(0,0)'],
+                                     [numpy.array([-0.4472135954999579, -0.4472135954999579]), '(0,1)'],
+                                     [numpy.array([0.4472135954999579, 0.4472135954999579]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_labels]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([0]), {LineageId(0, 0)}],
-                                     [numpy.array([0]), {LineageId(0, 1)}],
-                                     [numpy.array([1]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0]), '(0,0)'],
+                                     [numpy.array([0]), '(0,1)'],
+                                     [numpy.array([1]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_estimator]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[{LineageId(0, 0)}],
-                                     [{LineageId(0, 1)}],
-                                     [{LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([['(0,0)'],
+                                     ['(0,1)'],
+                                     ['(0,2)']],
                                     columns=['mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       check_column_type=False)
@@ -1908,22 +1908,22 @@ def test_logistic_regression_score():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test_data]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[0, 0, {LineageId(8, 0)}],
-                                     [0.6, 0.6, {LineageId(8, 1)}]],
+    expected_lineage_df = DataFrame([[0, 0, '(8,0)'],
+                                     [0.6, 0.6, '(8,1)']],
                                     columns=['A', 'B', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test_labels]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([0.]), {LineageId(8, 0)}],
-                                     [numpy.array([1.]), {LineageId(8, 1)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0.]), '(8,0)'],
+                                     [numpy.array([1.]), '(8,1)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_score]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[0, {LineageId(8, 0)}],
-                                     [1, {LineageId(8, 1)}]],
+    expected_lineage_df = DataFrame([[0, '(8,0)'],
+                                     [1, '(8,1)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       check_column_type=False)
@@ -2038,25 +2038,25 @@ def test_keras_wrapper():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_data]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([-1.3416407864998738, -1.3416407864998738]), {LineageId(0, 0)}],
-                                     [numpy.array([-0.4472135954999579, -0.4472135954999579]), {LineageId(0, 1)}],
-                                     [numpy.array([0.4472135954999579, 0.4472135954999579]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([-1.3416407864998738, -1.3416407864998738]), '(0,0)'],
+                                     [numpy.array([-0.4472135954999579, -0.4472135954999579]), '(0,1)'],
+                                     [numpy.array([0.4472135954999579, 0.4472135954999579]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_labels]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([1., 0.]), {LineageId(0, 0)}],
-                                     [numpy.array([1., 0.]), {LineageId(0, 1)}],
-                                     [numpy.array([0., 1.]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([1., 0.]), '(0,0)'],
+                                     [numpy.array([1., 0.]), '(0,1)'],
+                                     [numpy.array([0., 1.]), '(0,2)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_classifier]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[{LineageId(0, 0)}],
-                                     [{LineageId(0, 1)}],
-                                     [{LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([['(0,0)'],
+                                     ['(0,1)'],
+                                     ['(0,2)']],
                                     columns=['mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       check_column_type=False)
@@ -2161,22 +2161,22 @@ def test_keras_wrapper_score():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test_data]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[0, 0, {LineageId(8, 0)}],
-                                     [0.8, 0.8, {LineageId(8, 1)}]],
+    expected_lineage_df = DataFrame([[0, 0, '(8,0)'],
+                                     [0.8, 0.8, '(8,1)']],
                                     columns=['A', 'B', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test_labels]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0]), {LineageId(8, 0)}],
-                                     [numpy.array([0.0, 1.0]), {LineageId(8, 1)}]],
+    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0]), '(8,0)'],
+                                     [numpy.array([0.0, 1.0]), '(8,1)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_score]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[0, {LineageId(8, 0)}],
-                                     [1, {LineageId(8, 1)}]],
+    expected_lineage_df = DataFrame([[0, '(8,0)'],
+                                     [1, '(8,1)']],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       check_column_type=False)

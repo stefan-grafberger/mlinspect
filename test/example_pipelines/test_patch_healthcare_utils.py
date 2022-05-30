@@ -14,7 +14,7 @@ from mlinspect.inspections import ArgumentCapturing
 from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import DagNode, CodeReference, BasicCodeLocation, DagNodeDetails, \
     OptionalCodeInfo
-from mlinspect.inspections._lineage import RowLineage, LineageId
+from mlinspect.inspections._lineage import RowLineage
 from example_pipelines.healthcare import custom_monkeypatching
 
 
