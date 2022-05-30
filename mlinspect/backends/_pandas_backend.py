@@ -158,30 +158,27 @@ class PandasBackend(Backend):
                 return_value['mlinspect_lineage'] = return_value['mlinspect_lineage_x'] + ';' + \
                                                         return_value['mlinspect_lineage_y']
                 return_value['mlinspect_order_index'] = range(len(return_value))
-                columns_to_keep = list(return_value.columns)
-                columns_to_keep.remove('mlinspect_order_index')
-                columns_to_keep.remove('mlinspect_lineage_x')
-                columns_to_keep.remove('mlinspect_lineage_y')
-                columns_to_keep.remove('mlinspect_lineage')
-                columns_to_keep_str = ', '.join(columns_to_keep)
                 singleton.con.register('lineage_df', return_value)
-                return_value = singleton.con.execute(f"""
+                lineage_column = singleton.con.execute("""
                     WITH unnested AS (
-                        SELECT DISTINCT * EXCLUDE (mlinspect_lineage_x, mlinspect_lineage_y, mlinspect_lineage),
+                        SELECT DISTINCT mlinspect_order_index,
                         UNNEST(str_split(mlinspect_lineage, ';')) AS mlinspect_lineage
                         FROM lineage_df
                     ),
                     aggregated AS (
                         SELECT mlinspect_order_index,
-                            {columns_to_keep_str},
                             string_agg(CAST(mlinspect_lineage AS string), ';') AS mlinspect_lineage
                         FROM unnested
-                        GROUP BY mlinspect_order_index, {columns_to_keep_str}
+                        GROUP BY mlinspect_order_index
                     )
-                    SELECT * EXCLUDE (mlinspect_order_index)
+                    SELECT mlinspect_lineage
                     FROM aggregated
                     ORDER BY mlinspect_order_index
                     """).fetchdf()
+                return_value['mlinspect_lineage'] = lineage_column
+                return_value.drop('mlinspect_order_index', inplace=True, axis=1)
+                return_value.drop('mlinspect_lineage_x', inplace=True, axis=1)
+                return_value.drop('mlinspect_lineage_y', inplace=True, axis=1)
                 if materialize_for_this_operator:
                     reset_index_return_value = return_value.reset_index(drop=True)
                     lineage_dag_annotation = reset_index_return_value
