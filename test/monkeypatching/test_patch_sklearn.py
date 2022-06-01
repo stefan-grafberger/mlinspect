@@ -15,6 +15,7 @@ from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import DagNode, CodeReference, BasicCodeLocation, DagNodeDetails, \
     OptionalCodeInfo
 from mlinspect.inspections._lineage import RowLineage
+from mlinspect.testing._testing_helper_utils import do_lineage_dedup_and_sort
 
 
 def test_label_binarize():
@@ -909,6 +910,7 @@ def test_column_transformer_multiple_transformers_all_dense():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_concat]
     lineage_output = inspection_results_data_source[RowLineage(3)]
+    do_lineage_dedup_and_sort(lineage_output)
     expected_lineage_df = DataFrame([[numpy.array([-1.0, 1.0, 0.0, 0.0]), '(0,0)'],
                                      [numpy.array([-0.7142857142857143, 0.0, 1.0, 0.0]), '(0,1)'],
                                      [numpy.array([1.5714285714285714, 1.0, 0.0, 0.0]), '(0,2)']],
@@ -1034,6 +1036,7 @@ def test_column_transformer_multiple_transformers_sparse_dense():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_concat]
     lineage_output = inspection_results_data_source[RowLineage(3)]
+    do_lineage_dedup_and_sort(lineage_output)
     expected_lineage_df = DataFrame([[numpy.array([-1.0, 1.0, 0.0, 0.0]), '(0,0)'],
                                      [numpy.array([-0.7142857142857143, 0.0, 1.0, 0.0]), '(0,1)'],
                                      [numpy.array([1.5714285714285714, 1.0, 0.0, 0.0]), '(0,2)']],
@@ -1162,6 +1165,7 @@ def test_column_transformer_transform_after_fit_transform():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_concat]
     lineage_output = inspection_results_data_source[RowLineage(3)]
+    do_lineage_dedup_and_sort(lineage_output)
     expected_lineage_df = DataFrame([[numpy.array([-1.0, 1.0, 0.0, 0.0]), '(6,0)'],
                                      [numpy.array([-0.7142857142857143, 0.0, 1.0, 0.0]), '(6,1)'],
                                      [numpy.array([1.5714285714285714, 1.0, 0.0, 0.0]), '(6,2)']],
@@ -1379,6 +1383,7 @@ def test_decision_tree_score():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_score]
     lineage_output = inspection_results_data_source[RowLineage(3)]
+    do_lineage_dedup_and_sort(lineage_output)
     expected_lineage_df = DataFrame([[0, '(8,0)'],
                                      [1, '(8,1)']],
                                     columns=['array', 'mlinspect_lineage'])
@@ -1700,6 +1705,7 @@ def test_sgd_classifier_score():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_score]
     lineage_output = inspection_results_data_source[RowLineage(3)]
+    do_lineage_dedup_and_sort(lineage_output)
     expected_lineage_df = DataFrame([[0, '(8,0)'],
                                      [1, '(8,1)']],
                                     columns=['array', 'mlinspect_lineage'])
@@ -1921,6 +1927,7 @@ def test_logistic_regression_score():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_score]
     lineage_output = inspection_results_data_source[RowLineage(3)]
+    do_lineage_dedup_and_sort(lineage_output)
     expected_lineage_df = DataFrame([[0, '(8,0)'],
                                      [1, '(8,1)']],
                                     columns=['array', 'mlinspect_lineage'])
@@ -2174,6 +2181,7 @@ def test_keras_wrapper_score():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_score]
     lineage_output = inspection_results_data_source[RowLineage(3)]
+    do_lineage_dedup_and_sort(lineage_output)
     expected_lineage_df = DataFrame([[0, '(8,0)'],
                                      [1, '(8,1)']],
                                     columns=['array', 'mlinspect_lineage'])

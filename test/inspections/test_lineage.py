@@ -10,6 +10,7 @@ from pandas import DataFrame
 from mlinspect import OperatorType
 from mlinspect._pipeline_inspector import PipelineInspector
 from mlinspect.inspections import RowLineage
+from mlinspect.testing._testing_helper_utils import do_lineage_dedup_and_sort
 
 
 def test_row_lineage_merge():
@@ -105,6 +106,7 @@ def test_row_lineage_concat():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     lineage_output = inspection_results[5][RowLineage(2)]
+    do_lineage_dedup_and_sort(lineage_output)
     expected_lineage_df = DataFrame([[np.array([-1.0, 1., 0., 0.]), '(0,0)'],
                                      [np.array([-0.7142857142857143, 0., 1., 0.]), '(0,1)']],
                                     columns=['array', 'mlinspect_lineage'])

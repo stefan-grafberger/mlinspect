@@ -295,3 +295,9 @@ def get_test_code_with_function_def_and_for_loop():
                 df = df.dropna()
             """)
     return test_code
+
+
+def do_lineage_dedup_and_sort(lineage_output):
+    """ A utility function to bring the lienage into the format expected by the tests"""
+    lineage_output['mlinspect_lineage'] = lineage_output['mlinspect_lineage'] \
+        .apply(lambda value: ';'.join(sorted(set(value.split(';')))))
