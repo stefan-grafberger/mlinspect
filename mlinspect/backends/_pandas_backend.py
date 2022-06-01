@@ -12,6 +12,8 @@ from ._backend_utils import build_annotation_df_from_iters, \
 from ._iter_creation import iter_input_data_source, iter_input_annotation_output_resampled, \
     iter_input_annotation_output_map, iter_input_annotation_output_join
 from .. import OperatorType, FunctionInfo
+from ..inspections import RowLineage
+from ..inspections._lineage import LineageId
 from ..instrumentation._pipeline_executor import singleton
 
 
@@ -42,43 +44,76 @@ class PandasBackend(Backend):
                    non_data_function_args: Dict[str, any] = MappingProxyType({})) \
             -> BackendResult:
         """The return value of some function"""
-        # pylint: disable=too-many-arguments
-        if operator_context.operator == OperatorType.DATA_SOURCE:
-            return_value = execute_inspection_visits_data_source(operator_context, return_value, non_data_function_args)
-        elif operator_context.operator == OperatorType.GROUP_BY_AGG:
-            df_reset_index = return_value.reset_index()
-            reset_index_return_value = execute_inspection_visits_data_source(operator_context, df_reset_index,
-                                                                             non_data_function_args)
-            annotated_result_object = AnnotatedDfObject(return_value,
-                                                        reset_index_return_value.annotated_dfobject.result_annotation)
-            return_value = BackendResult(annotated_result_object, reset_index_return_value.dag_node_annotation)
-
-        elif operator_context.operator == OperatorType.SELECTION:
-            return_value = execute_inspection_visits_unary_operator(operator_context, input_infos[0].result_data,
-                                                                    input_infos[0].result_annotation, return_value,
-                                                                    True, non_data_function_args)
-            input_infos[0].result_data.drop("mlinspect_index", axis=1, inplace=True)
-        elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY}:
-            return_value = execute_inspection_visits_unary_operator(operator_context,
-                                                                    input_infos[0].result_data,
-                                                                    input_infos[0].result_annotation,
-                                                                    return_value,
-                                                                    False,
-                                                                    non_data_function_args)
-        elif operator_context.operator == OperatorType.JOIN:
-            return_value = execute_inspection_visits_join(operator_context,
-                                                          input_infos[0].result_data,
-                                                          input_infos[0].result_annotation,
-                                                          input_infos[1].result_data,
-                                                          input_infos[1].result_annotation,
-                                                          return_value,
-                                                          non_data_function_args)
-            input_infos[0].result_data.drop("mlinspect_index_x", axis=1, inplace=True)
-            input_infos[1].result_data.drop("mlinspect_index_y", axis=1, inplace=True)
-
+        # pylint: disable=too-many-arguments,too-many-locals
+        if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage) \
+                and OperatorType in {OperatorType.DATA_SOURCE}:  # TODO: Add support for more operators
+            print("optimized mode")
+            if operator_context.operator == OperatorType.DATA_SOURCE:
+                # inspection annotation
+                return_value = return_value.reset_index(drop=True)
+                lineage_inspection = singleton.inspections[0]
+                inspection_name = str(lineage_inspection)
+                current_data_source = singleton.data_source_count
+                singleton.data_source_count += 1
+                # TODO: Should we use a different format for performance reasons?
+                # lineage_id_list_a = ["LineageId(0, " + str(row_id) + ")" for row_id in range(len(df_a))]
+                lineage_id_list_a = [{LineageId(current_data_source, row_id)} for row_id in range(len(return_value))]
+                annotations_df = pandas.DataFrame({inspection_name: pandas.Series(lineage_id_list_a, dtype="object")})
+                inspection_outputs = {}
+                materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
+                                                (operator_context.operator
+                                                 in lineage_inspection.operator_type_restriction)
+                if materialize_for_this_operator:
+                    lineage_dag_annotation = pandas.concat([return_value, annotations_df], axis=1)
+                    if lineage_inspection.row_count != RowLineage.ALL_ROWS:
+                        lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
+                        lineage_dag_annotation = lineage_dag_annotation.rename(
+                            columns={inspection_name: 'mlinspect_lineage'})
+                else:
+                    lineage_dag_annotation = None
+                inspection_outputs[lineage_inspection] = lineage_dag_annotation
+                # inspection output
+                return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
+                return_value = BackendResult(return_value_with_annotation, inspection_outputs)
+            else:
+                raise NotImplementedError()
         else:
-            raise NotImplementedError("PandasBackend doesn't know any operations of type '{}' yet!"
-                                      .format(operator_context.operator))
+            if operator_context.operator == OperatorType.DATA_SOURCE:
+                return_value = execute_inspection_visits_data_source(operator_context, return_value, non_data_function_args)
+            elif operator_context.operator == OperatorType.GROUP_BY_AGG:
+                df_reset_index = return_value.reset_index()
+                reset_index_return_value = execute_inspection_visits_data_source(operator_context, df_reset_index,
+                                                                                 non_data_function_args)
+                annotated_result_object = AnnotatedDfObject(return_value,
+                                                            reset_index_return_value.annotated_dfobject.result_annotation)
+                return_value = BackendResult(annotated_result_object, reset_index_return_value.dag_node_annotation)
+
+            elif operator_context.operator == OperatorType.SELECTION:
+                return_value = execute_inspection_visits_unary_operator(operator_context, input_infos[0].result_data,
+                                                                        input_infos[0].result_annotation, return_value,
+                                                                        True, non_data_function_args)
+                input_infos[0].result_data.drop("mlinspect_index", axis=1, inplace=True)
+            elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY}:
+                return_value = execute_inspection_visits_unary_operator(operator_context,
+                                                                        input_infos[0].result_data,
+                                                                        input_infos[0].result_annotation,
+                                                                        return_value,
+                                                                        False,
+                                                                        non_data_function_args)
+            elif operator_context.operator == OperatorType.JOIN:
+                return_value = execute_inspection_visits_join(operator_context,
+                                                              input_infos[0].result_data,
+                                                              input_infos[0].result_annotation,
+                                                              input_infos[1].result_data,
+                                                              input_infos[1].result_annotation,
+                                                              return_value,
+                                                              non_data_function_args)
+                input_infos[0].result_data.drop("mlinspect_index_x", axis=1, inplace=True)
+                input_infos[1].result_data.drop("mlinspect_index_y", axis=1, inplace=True)
+
+            else:
+                raise NotImplementedError("PandasBackend doesn't know any operations of type '{}' yet!"
+                                          .format(operator_context.operator))
 
         return return_value
 

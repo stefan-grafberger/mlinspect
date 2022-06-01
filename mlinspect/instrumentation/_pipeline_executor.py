@@ -38,6 +38,7 @@ class PipelineExecutor:
     inspection_results = InspectionResult(networkx.DiGraph(), dict())
     inspections = []
     custom_monkey_patching = []
+    data_source_count = 0
 
     def run(self, *,
             notebook_path: str or None = None,
