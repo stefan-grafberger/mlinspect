@@ -94,6 +94,8 @@ class DataFramePatching:
             input_info = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
                                         optional_source_code)
             operator_context = OperatorContext(OperatorType.SELECTION, function_info)
+            if 'subset' not in kwargs:
+                kwargs['subset'] = list(self.columns)
             input_infos = PandasBackend.before_call(operator_context, [input_info.annotated_dfobject])
             # No input_infos copy needed because it's only a selection and the rows not being removed don't change
             result = original(input_infos[0].result_data, *args[1:], **kwargs)
