@@ -159,26 +159,28 @@ class PandasBackend(Backend):
                     return_value['mlinspect_lineage_y'] = return_value['mlinspect_lineage_y'].replace({numpy.nan: ''})
                 return_value['mlinspect_lineage'] = return_value['mlinspect_lineage_x'] + ';' + \
                                                         return_value['mlinspect_lineage_y']
-                return_value['mlinspect_order_index'] = range(len(return_value))
-                singleton.con.register('lineage_df', return_value)
-                lineage_column = singleton.con.execute("""
-                    WITH unnested AS (
-                        SELECT DISTINCT mlinspect_order_index,
-                        UNNEST(str_split(mlinspect_lineage, ';')) AS mlinspect_lineage
-                        FROM lineage_df
-                    ),
-                    aggregated AS (
-                        SELECT mlinspect_order_index,
-                            string_agg(CAST(mlinspect_lineage AS string), ';') AS mlinspect_lineage
-                        FROM unnested
-                        GROUP BY mlinspect_order_index
-                    )
-                    SELECT mlinspect_lineage
-                    FROM aggregated
-                    ORDER BY mlinspect_order_index
-                    """).fetchdf()
-                return_value['mlinspect_lineage'] = lineage_column
-                return_value.drop('mlinspect_order_index', inplace=True, axis=1)
+                # return_value['mlinspect_order_index'] = range(len(return_value))
+                # singleton.con.register('lineage_df', return_value)
+                # lineage_column = singleton.con.execute("""
+                #     WITH unnested AS (
+                #         SELECT DISTINCT mlinspect_order_index,
+                #         UNNEST(str_split(mlinspect_lineage, ';')) AS mlinspect_lineage
+                #         FROM lineage_df
+                #     ),
+                #     aggregated AS (
+                #         SELECT mlinspect_order_index,
+                #             string_agg(CAST(mlinspect_lineage AS string), ';') AS mlinspect_lineage
+                #         FROM unnested
+                #         GROUP BY mlinspect_order_index
+                #     )
+                #     SELECT mlinspect_lineage
+                #     FROM aggregated
+                #     ORDER BY mlinspect_order_index
+                #     """).fetchdf()
+                # return_value['mlinspect_lineage'] = lineage_column
+                # return_value.drop('mlinspect_order_index', inplace=True, axis=1)
+                return_value['mlinspect_lineage'] = return_value['mlinspect_lineage'] \
+                    .apply(lambda value: ';'.join(set(value.split(';'))))
                 return_value.drop('mlinspect_lineage_x', inplace=True, axis=1)
                 return_value.drop('mlinspect_lineage_y', inplace=True, axis=1)
                 if materialize_for_this_operator:
