@@ -10,5 +10,4 @@ tensorflow==2.5.0
 keras==2.4.3
 jupyter==1.0.0
 importnb==0.6.2
-nbclient==0.5.4
 seaborn==0.11.0
