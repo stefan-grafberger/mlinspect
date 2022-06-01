@@ -123,137 +123,161 @@ class PandasBackend(Backend):
         """
         Optimised lineage inspection handling if only the lineage inspection is used
         """
-        # pylint: disable=too-many-branches,too-many-statements
         if operator_context.operator in {OperatorType.DATA_SOURCE, OperatorType.GROUP_BY_AGG}:
-            # inspection annotation
-            lineage_inspection = singleton.inspections[0]
-            inspection_name = str(lineage_inspection)
-            current_data_source = singleton.next_op_id - 1
-            # TODO: Should we use a different format for performance reasons?
-            # lineage_id_list_a = ["LineageId(0, " + str(row_id) + ")" for row_id in range(len(df_a))]
-            lineage_id_list_a = [f'({current_data_source},{row_id})' for row_id in range(len(return_value))]
-            annotations_df = pandas.DataFrame({inspection_name: pandas.Series(lineage_id_list_a, dtype="object")})
-            inspection_outputs = {}
-            materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
-                                            (operator_context.operator
-                                             in lineage_inspection.operator_type_restriction)
-            if materialize_for_this_operator:
-                if operator_context.operator == OperatorType.DATA_SOURCE:
-                    return_value.reset_index(drop=True, inplace=True)
-                else:
-                    return_value.reset_index(drop=False, inplace=True)
-                lineage_dag_annotation = pandas.concat([return_value, annotations_df], axis=1)
-                if lineage_inspection.row_count != RowLineage.ALL_ROWS:
-                    lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
-                lineage_dag_annotation = lineage_dag_annotation.rename(
-                    columns={inspection_name: 'mlinspect_lineage'})
-            else:
-                lineage_dag_annotation = None
-            inspection_outputs[lineage_inspection] = lineage_dag_annotation
-            # inspection output
-            return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
-            return_value = BackendResult(return_value_with_annotation, inspection_outputs)
+            return_value = PandasBackend.lineage_only_after_call_data_source_groupby_agg(operator_context, return_value)
         elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY}:
-            # inspection annotation
-            lineage_inspection = singleton.inspections[0]
-            inspection_name = str(lineage_inspection)
-            # TODO: Should we use a different format for performance reasons?
-            annotations_df = input_infos[0].result_annotation
-            inspection_outputs = {}
-            materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
-                                            (operator_context.operator
-                                             in lineage_inspection.operator_type_restriction)
-            if materialize_for_this_operator:
-                reset_index_return_value = return_value.reset_index(drop=True)
-                lineage_dag_annotation = pandas.concat([reset_index_return_value, annotations_df], axis=1)
-                if lineage_inspection.row_count != RowLineage.ALL_ROWS:
-                    lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
-                    lineage_dag_annotation = lineage_dag_annotation.rename(
-                        columns={inspection_name: 'mlinspect_lineage'})
-            else:
-                lineage_dag_annotation = None
-            inspection_outputs[lineage_inspection] = lineage_dag_annotation
-            # inspection output
-            return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
-            return_value = BackendResult(return_value_with_annotation, inspection_outputs)
+            return_value = PandasBackend.lineage_only_after_call_map(input_infos, operator_context, return_value)
         elif operator_context.operator in {OperatorType.SELECTION}:
-            lineage_inspection = singleton.inspections[0]
-            inspection_name = str(lineage_inspection)
-            # TODO: Should we use a different format for performance reasons?
-            inspection_outputs = {}
-            materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
-                                            (operator_context.operator
-                                             in lineage_inspection.operator_type_restriction)
-            if materialize_for_this_operator:
-                reset_index_return_value = return_value.reset_index(drop=True)
-                lineage_dag_annotation = reset_index_return_value
-                if lineage_inspection.row_count != RowLineage.ALL_ROWS:
-                    lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
-            else:
-                lineage_dag_annotation = None
-            inspection_outputs[lineage_inspection] = lineage_dag_annotation
-            # inspection annotation
-            annotations_df = pandas.DataFrame(return_value.pop('mlinspect_lineage'))
-            annotations_df = annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
-            # inspection output
-            return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
-            return_value = BackendResult(return_value_with_annotation, inspection_outputs)
+            return_value = PandasBackend.lineage_only_after_call_filter(operator_context, return_value)
         elif operator_context.operator == OperatorType.JOIN:
-            lineage_inspection = singleton.inspections[0]
-            inspection_name = str(lineage_inspection)
-            # TODO: Should we use a different format for performance reasons?
-            inspection_outputs = {}
-            materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
-                                            (operator_context.operator
-                                             in lineage_inspection.operator_type_restriction)
-            # Calculating directly using apply (apply is not a fast function)
-            # This can be done faster, see
-            # https://github.com/stefan-grafberger/mlinspect-private-branches/blob/performance-improvement-experiments/experiments/performance/performance-improvement-experiments.ipynb
-            if 'how' in non_data_function_args and non_data_function_args['how'] == 'outer':
-                return_value['mlinspect_lineage_x'] = return_value['mlinspect_lineage_x'].replace({numpy.nan: ''})
-                return_value['mlinspect_lineage_y'] = return_value['mlinspect_lineage_y'].replace({numpy.nan: ''})
-            return_value['mlinspect_lineage'] = return_value['mlinspect_lineage_x'] + ';' + \
-                                                return_value['mlinspect_lineage_y']
-            # return_value['mlinspect_order_index'] = range(len(return_value))
-            # singleton.con.register('lineage_df', return_value)
-            # lineage_column = singleton.con.execute("""
-            #     WITH unnested AS (
-            #         SELECT DISTINCT mlinspect_order_index,
-            #         UNNEST(str_split(mlinspect_lineage, ';')) AS mlinspect_lineage
-            #         FROM lineage_df
-            #     ),
-            #     aggregated AS (
-            #         SELECT mlinspect_order_index,
-            #             string_agg(CAST(mlinspect_lineage AS string), ';') AS mlinspect_lineage
-            #         FROM unnested
-            #         GROUP BY mlinspect_order_index
-            #     )
-            #     SELECT mlinspect_lineage
-            #     FROM aggregated
-            #     ORDER BY mlinspect_order_index
-            #     """).fetchdf()
-            # return_value['mlinspect_lineage'] = lineage_column
-            # return_value.drop('mlinspect_order_index', inplace=True, axis=1)
-            # return_value['mlinspect_lineage'] = return_value['mlinspect_lineage'] \
-            #     .apply(lambda value: ';'.join(set(value.split(';'))))
-            return_value.drop('mlinspect_lineage_x', inplace=True, axis=1)
-            return_value.drop('mlinspect_lineage_y', inplace=True, axis=1)
-            if materialize_for_this_operator:
-                reset_index_return_value = return_value.reset_index(drop=True)
-                lineage_dag_annotation = reset_index_return_value
-                if lineage_inspection.row_count != RowLineage.ALL_ROWS:
-                    lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
-            else:
-                lineage_dag_annotation = None
-            inspection_outputs[lineage_inspection] = lineage_dag_annotation
-            # inspection annotation
-            annotations_df = pandas.DataFrame(return_value.pop('mlinspect_lineage'))
-            annotations_df = annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
-            # inspection output
-            return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
-            return_value = BackendResult(return_value_with_annotation, inspection_outputs)
+            return_value = PandasBackend.lineage_only_after_call_join(non_data_function_args, operator_context,
+                                                                      return_value)
         else:
             raise NotImplementedError()
+        return return_value
+
+    @staticmethod
+    def lineage_only_after_call_join(non_data_function_args, operator_context, return_value):
+        """
+        Optimised lineage inspection handling if only the lineage inspection is used
+        """
+        lineage_inspection = singleton.inspections[0]
+        inspection_name = str(lineage_inspection)
+        inspection_outputs = {}
+        materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
+                                        (operator_context.operator
+                                         in lineage_inspection.operator_type_restriction)
+        if 'how' in non_data_function_args and non_data_function_args['how'] == 'outer':
+            return_value['mlinspect_lineage_x'] = return_value['mlinspect_lineage_x'].replace({numpy.nan: ''})
+            return_value['mlinspect_lineage_y'] = return_value['mlinspect_lineage_y'].replace({numpy.nan: ''})
+        return_value['mlinspect_lineage'] = return_value['mlinspect_lineage_x'] + ';' + \
+                                            return_value['mlinspect_lineage_y']
+        # return_value['mlinspect_order_index'] = range(len(return_value))
+        # singleton.con.register('lineage_df', return_value)
+        # lineage_column = singleton.con.execute("""
+        #     WITH unnested AS (
+        #         SELECT DISTINCT mlinspect_order_index,
+        #         UNNEST(str_split(mlinspect_lineage, ';')) AS mlinspect_lineage
+        #         FROM lineage_df
+        #     ),
+        #     aggregated AS (
+        #         SELECT mlinspect_order_index,
+        #             string_agg(CAST(mlinspect_lineage AS string), ';') AS mlinspect_lineage
+        #         FROM unnested
+        #         GROUP BY mlinspect_order_index
+        #     )
+        #     SELECT mlinspect_lineage
+        #     FROM aggregated
+        #     ORDER BY mlinspect_order_index
+        #     """).fetchdf()
+        # return_value['mlinspect_lineage'] = lineage_column
+        # return_value.drop('mlinspect_order_index', inplace=True, axis=1)
+        # return_value['mlinspect_lineage'] = return_value['mlinspect_lineage'] \
+        #     .apply(lambda value: ';'.join(set(value.split(';'))))
+        return_value.drop('mlinspect_lineage_x', inplace=True, axis=1)
+        return_value.drop('mlinspect_lineage_y', inplace=True, axis=1)
+        if materialize_for_this_operator:
+            reset_index_return_value = return_value.reset_index(drop=True)
+            lineage_dag_annotation = reset_index_return_value
+            if lineage_inspection.row_count != RowLineage.ALL_ROWS:
+                lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
+        else:
+            lineage_dag_annotation = None
+        inspection_outputs[lineage_inspection] = lineage_dag_annotation
+        # inspection annotation
+        annotations_df = pandas.DataFrame(return_value.pop('mlinspect_lineage'))
+        annotations_df = annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
+        # inspection output
+        return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
+        return_value = BackendResult(return_value_with_annotation, inspection_outputs)
+        return return_value
+
+    @staticmethod
+    def lineage_only_after_call_filter(operator_context, return_value):
+        """
+        Optimised lineage inspection handling if only the lineage inspection is used
+        """
+        lineage_inspection = singleton.inspections[0]
+        inspection_name = str(lineage_inspection)
+        inspection_outputs = {}
+        materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
+                                        (operator_context.operator
+                                         in lineage_inspection.operator_type_restriction)
+        if materialize_for_this_operator:
+            reset_index_return_value = return_value.reset_index(drop=True)
+            lineage_dag_annotation = reset_index_return_value
+            if lineage_inspection.row_count != RowLineage.ALL_ROWS:
+                lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
+        else:
+            lineage_dag_annotation = None
+        inspection_outputs[lineage_inspection] = lineage_dag_annotation
+        # inspection annotation
+        annotations_df = pandas.DataFrame(return_value.pop('mlinspect_lineage'))
+        annotations_df = annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
+        # inspection output
+        return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
+        return_value = BackendResult(return_value_with_annotation, inspection_outputs)
+        return return_value
+
+    @staticmethod
+    def lineage_only_after_call_map(input_infos, operator_context, return_value):
+        """
+        Optimised lineage inspection handling if only the lineage inspection is used
+        """
+        # inspection annotation
+        lineage_inspection = singleton.inspections[0]
+        inspection_name = str(lineage_inspection)
+        annotations_df = input_infos[0].result_annotation
+        inspection_outputs = {}
+        materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
+                                        (operator_context.operator
+                                         in lineage_inspection.operator_type_restriction)
+        if materialize_for_this_operator:
+            reset_index_return_value = return_value.reset_index(drop=True)
+            lineage_dag_annotation = pandas.concat([reset_index_return_value, annotations_df], axis=1)
+            if lineage_inspection.row_count != RowLineage.ALL_ROWS:
+                lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
+                lineage_dag_annotation = lineage_dag_annotation.rename(
+                    columns={inspection_name: 'mlinspect_lineage'})
+        else:
+            lineage_dag_annotation = None
+        inspection_outputs[lineage_inspection] = lineage_dag_annotation
+        # inspection output
+        return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
+        return_value = BackendResult(return_value_with_annotation, inspection_outputs)
+        return return_value
+
+    @staticmethod
+    def lineage_only_after_call_data_source_groupby_agg(operator_context, return_value):
+        """
+        Optimised lineage inspection handling if only the lineage inspection is used
+        """
+        # inspection annotation
+        lineage_inspection = singleton.inspections[0]
+        inspection_name = str(lineage_inspection)
+        current_data_source = singleton.next_op_id - 1
+        lineage_id_list_a = [f'({current_data_source},{row_id})' for row_id in range(len(return_value))]
+        annotations_df = pandas.DataFrame({inspection_name: pandas.Series(lineage_id_list_a, dtype="object")})
+        inspection_outputs = {}
+        materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
+                                        (operator_context.operator
+                                         in lineage_inspection.operator_type_restriction)
+        if materialize_for_this_operator:
+            if operator_context.operator == OperatorType.DATA_SOURCE:
+                return_value.reset_index(drop=True, inplace=True)
+            else:
+                return_value.reset_index(drop=False, inplace=True)
+            lineage_dag_annotation = pandas.concat([return_value, annotations_df], axis=1)
+            if lineage_inspection.row_count != RowLineage.ALL_ROWS:
+                lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
+            lineage_dag_annotation = lineage_dag_annotation.rename(
+                columns={inspection_name: 'mlinspect_lineage'})
+        else:
+            lineage_dag_annotation = None
+        inspection_outputs[lineage_inspection] = lineage_dag_annotation
+        # inspection output
+        return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
+        return_value = BackendResult(return_value_with_annotation, inspection_outputs)
         return return_value
 
 
