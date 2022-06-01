@@ -179,8 +179,8 @@ class PandasBackend(Backend):
                 #     """).fetchdf()
                 # return_value['mlinspect_lineage'] = lineage_column
                 # return_value.drop('mlinspect_order_index', inplace=True, axis=1)
-                return_value['mlinspect_lineage'] = return_value['mlinspect_lineage'] \
-                    .apply(lambda value: ';'.join(set(value.split(';'))))
+                # return_value['mlinspect_lineage'] = return_value['mlinspect_lineage'] \
+                #     .apply(lambda value: ';'.join(set(value.split(';'))))
                 return_value.drop('mlinspect_lineage_x', inplace=True, axis=1)
                 return_value.drop('mlinspect_lineage_y', inplace=True, axis=1)
                 if materialize_for_this_operator:
