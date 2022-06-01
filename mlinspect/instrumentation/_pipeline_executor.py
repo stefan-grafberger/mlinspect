@@ -40,6 +40,7 @@ class PipelineExecutor:
     inspection_results = InspectionResult(networkx.DiGraph(), dict())
     inspections = []
     custom_monkey_patching = []
+    fast_lineage = True
 
     def run(self, *,
             notebook_path: str or None = None,
@@ -124,6 +125,7 @@ class PipelineExecutor:
         self.inspection_results = InspectionResult(networkx.DiGraph(), dict())
         self.inspections = []
         self.custom_monkey_patching = []
+        self.fast_lineage = True
 
     @staticmethod
     def instrument_pipeline(parsed_ast, track_code_references):

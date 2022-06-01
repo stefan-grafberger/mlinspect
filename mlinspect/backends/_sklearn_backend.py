@@ -27,7 +27,8 @@ class SklearnBackend(Backend):
     def before_call(operator_context, input_infos: List[AnnotatedDfObject]):
         """The value or module a function may be called on"""
         # pylint: disable=too-many-arguments
-        if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage):
+        if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage) \
+                and singleton.fast_lineage is True:
             if operator_context.operator == OperatorType.TRAIN_TEST_SPLIT:
                 pandas_df = input_infos[0].result_data
                 assert isinstance(pandas_df, pandas.DataFrame)
@@ -47,7 +48,8 @@ class SklearnBackend(Backend):
             -> BackendResult:
         """The return value of some function"""
         # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements,cell-var-from-loop
-        if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage):
+        if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage) and \
+                singleton.fast_lineage is True:
             print("optimized mode")
             if operator_context.operator == OperatorType.DATA_SOURCE:
                 # inspection annotation
@@ -258,6 +260,7 @@ class SklearnBackend(Backend):
                 raise NotImplementedError("SklearnBackend doesn't know any operations of type '{}' yet!"
                                           .format(operator_context.operator))
         else:
+            print("unoptimized mode")
             if operator_context.operator == OperatorType.DATA_SOURCE:
                 return_value = execute_inspection_visits_data_source(operator_context, return_value,
                                                                      non_data_function_args)
