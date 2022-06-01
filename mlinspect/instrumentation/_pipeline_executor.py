@@ -4,7 +4,7 @@ Instrument and executes the pipeline
 import ast
 from typing import Iterable, List
 
-import duckdb
+# import duckdb
 import gorilla
 import nbformat
 import networkx
@@ -25,7 +25,7 @@ class PipelineExecutor:
     """
     # pylint: disable=too-many-instance-attributes
 
-    con = duckdb.connect(database=':memory:', read_only=False)  # pylint: disable=no-member
+    # con = duckdb.connect(database=':memory:', read_only=False)  # pylint: disable=no-member
     source_code_path = None
     source_code = None
     script_scope = {}
