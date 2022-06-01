@@ -1484,6 +1484,114 @@ def test_sgd_classifier():
                                       check_column_type=False)
 
 
+def test_grid_search_cv_sgd_classifier():
+    """
+    Tests whether the monkey patching of ('sklearn.linear_model._stochastic_gradient', 'SGDClassifier') works
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+                from sklearn.preprocessing import label_binarize, StandardScaler
+                from sklearn.linear_model import SGDClassifier
+                from sklearn.model_selection import GridSearchCV
+                import numpy as np
+                
+                df = pd.DataFrame({'A': [0, 1, 2, 3, 4, 5], 'B': [0, 1, 2, 3, 4, 5], 
+                                   'target': ['no', 'no', 'no', 'yes', 'yes', 'yes']})
+                
+                train = StandardScaler().fit_transform(df[['A', 'B']])
+                target = label_binarize(df['target'], classes=['no', 'yes'])
+                
+                param_grid = {
+                    'penalty': ['l2', 'l1'],
+                }
+                clf = GridSearchCV(SGDClassifier(loss='log', random_state=42), param_grid, cv=3)
+                clf = clf.fit(train, target)
+                
+                test_predict = clf.predict([[0., 0.], [0.6, 0.6]])
+                expected = np.array([0., 1.])
+                assert np.allclose(test_predict, expected)
+                """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(3)])
+    filter_dag_for_nodes_with_ids(inspector_result, {2, 5, 4, 6, 7}, 8)
+
+    expected_dag = networkx.DiGraph()
+    expected_standard_scaler = DagNode(2,
+                                       BasicCodeLocation("<string-source>", 10),
+                                       OperatorContext(OperatorType.TRANSFORMER,
+                                                       FunctionInfo('sklearn.preprocessing._data',
+                                                                    'StandardScaler')),
+                                       DagNodeDetails('Standard Scaler: fit_transform', ['array']),
+                                       OptionalCodeInfo(CodeReference(10, 8, 10, 24), 'StandardScaler()'))
+    expected_train_data = DagNode(5,
+                                  BasicCodeLocation("<string-source>", 16),
+                                  OperatorContext(OperatorType.TRAIN_DATA,
+                                                  FunctionInfo('sklearn.linear_model._stochastic_gradient',
+                                                               'SGDClassifier')),
+                                  DagNodeDetails(None, ['array']),
+                                  OptionalCodeInfo(CodeReference(16, 19, 16, 61),
+                                                   "SGDClassifier(loss='log', random_state=42)"))
+    expected_dag.add_edge(expected_standard_scaler, expected_train_data)
+    expected_label_encode = DagNode(4,
+                                    BasicCodeLocation("<string-source>", 11),
+                                    OperatorContext(OperatorType.PROJECTION_MODIFY,
+                                                    FunctionInfo('sklearn.preprocessing._label', 'label_binarize')),
+                                    DagNodeDetails("label_binarize, classes: ['no', 'yes']", ['array']),
+                                    OptionalCodeInfo(CodeReference(11, 9, 11, 60),
+                                                     "label_binarize(df['target'], classes=['no', 'yes'])"))
+    expected_train_labels = DagNode(6,
+                                    BasicCodeLocation("<string-source>", 16),
+                                    OperatorContext(OperatorType.TRAIN_LABELS,
+                                                    FunctionInfo('sklearn.linear_model._stochastic_gradient',
+                                                                 'SGDClassifier')),
+                                    DagNodeDetails(None, ['array']),
+                                    OptionalCodeInfo(CodeReference(16, 19, 16, 61),
+                                                     "SGDClassifier(loss='log', random_state=42)"))
+    expected_dag.add_edge(expected_label_encode, expected_train_labels)
+    expected_classifier = DagNode(7,
+                                  BasicCodeLocation("<string-source>", 16),
+                                  OperatorContext(OperatorType.ESTIMATOR,
+                                                  FunctionInfo('sklearn.linear_model._stochastic_gradient',
+                                                               'SGDClassifier')),
+                                  DagNodeDetails('SGD Classifier', []),
+                                  OptionalCodeInfo(CodeReference(16, 19, 16, 61),
+                                                   "SGDClassifier(loss='log', random_state=42)"))
+    expected_dag.add_edge(expected_train_data, expected_classifier)
+    expected_dag.add_edge(expected_train_labels, expected_classifier)
+
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_data]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([-1.4638501094227998, -1.4638501094227998]), {LineageId(0, 0)}],
+                                     [numpy.array([-0.8783100656536799, -0.8783100656536799]), {LineageId(0, 1)}],
+                                     [numpy.array([-0.29277002188455997, -0.29277002188455997]),
+                                      {LineageId(0, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True),
+                                      expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_labels]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([0]), {LineageId(0, 0)}],
+                                     [numpy.array([0]), {LineageId(0, 1)}],
+                                     [numpy.array([0]), {LineageId(0, 2)}]],
+                                    columns=['array', 'mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True),
+                                      expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_classifier]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[{LineageId(0, 0)}],
+                                     [{LineageId(0, 1)}],
+                                     [{LineageId(0, 2)}]],
+                                    columns=['mlinspect_lineage'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True),
+                                      expected_lineage_df.reset_index(drop=True),
+                                      check_column_type=False)
+
+
 def filter_dag_for_nodes_with_ids(inspector_result, node_ids, total_expected_node_num):
     """
     Filter for DAG Nodes relevant for this test
