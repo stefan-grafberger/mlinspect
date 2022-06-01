@@ -55,10 +55,8 @@ class SklearnBackend(Backend):
         """The return value of some function"""
         if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage) and \
                 singleton.fast_lineage is True:
-            print("optimized mode")
             return_value = SklearnBackend.lineage_only_after_call(input_infos, operator_context, return_value)
         else:
-            print("unoptimized mode")
             if operator_context.operator == OperatorType.DATA_SOURCE:
                 return_value = execute_inspection_visits_data_source(operator_context, return_value,
                                                                      non_data_function_args)
