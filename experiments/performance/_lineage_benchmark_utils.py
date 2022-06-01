@@ -115,7 +115,10 @@ def get_multiple_dfs_creation_str_mlinspect_lineage(data_frame_rows, fast_lineag
         from mlinspect.inspections import RowLineage
         from mlinspect.instrumentation._pipeline_executor import singleton
         
-        singleton.inspections = [RowLineage(10)]
+        singleton.inspections = [RowLineage(RowLineage.ALL_ROWS, [OperatorType.DATA_SOURCE, OperatorType.TRAIN_DATA,
+                                                                  OperatorType.TRAIN_LABELS, OperatorType.TEST_DATA,
+                                                                  OperatorType.TEST_LABELS, OperatorType.SCORE,
+                                                                  OperatorType.JOIN])]
         singleton.fast_lineage = {fast_lineage}
         
         function_info = FunctionInfo('...', 'get_multiple_dfs')
@@ -219,7 +222,10 @@ def get_dropna_df_creation_str_mlinspect_lineage(data_frame_rows, fast_lineage):
         from mlinspect import OperatorType, DagNode, BasicCodeLocation, DagNodeDetails, FunctionInfo, OperatorContext
         from mlinspect.inspections import RowLineage
         from mlinspect.instrumentation._pipeline_executor import singleton
-        singleton.inspections = [RowLineage(10)]
+        singleton.inspections = [RowLineage(RowLineage.ALL_ROWS, [OperatorType.DATA_SOURCE, OperatorType.TRAIN_DATA,
+                                                                  OperatorType.TRAIN_LABELS, OperatorType.TEST_DATA,
+                                                                  OperatorType.TEST_LABELS, OperatorType.SCORE,
+                                                                  OperatorType.JOIN])]
         singleton.fast_lineage = {fast_lineage}
         function_info = FunctionInfo('...', 'get_multiple_dfs')
         operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
@@ -295,7 +301,10 @@ def get_one_hot_df_creation_str_mlinspect_lineage(data_frame_rows, fast_lineage)
         from mlinspect.inspections import RowLineage
         from mlinspect.instrumentation._pipeline_executor import singleton
         
-        singleton.inspections = [RowLineage(10)]
+        singleton.inspections = [RowLineage(RowLineage.ALL_ROWS, [OperatorType.DATA_SOURCE, OperatorType.TRAIN_DATA,
+                                                                  OperatorType.TRAIN_LABELS, OperatorType.TEST_DATA,
+                                                                  OperatorType.TEST_LABELS, OperatorType.SCORE,
+                                                                  OperatorType.JOIN])]
         singleton.fast_lineage = {fast_lineage}
         
         function_info = FunctionInfo('...', 'get_multiple_dfs')
