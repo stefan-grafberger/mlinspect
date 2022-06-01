@@ -134,9 +134,67 @@ class SklearnCallInfo:
     transformer_optional_code_reference: CodeReference or None = None
     transformer_optional_source_code: str or None = None
     column_transformer_active: bool = False
+    param_search_active: bool = False
 
 
 call_info_singleton = SklearnCallInfo()
+
+
+@gorilla.patches(model_selection.GridSearchCV)
+class SklearnGridSearchCVPatching:
+    """ Patches for sklearn GridSearchCV"""
+
+    # pylint: disable=too-few-public-methods
+
+    @gorilla.name('__init__')
+    @gorilla.settings(allow_hit=True)
+    def patched__init__(self, estimator, param_grid, *, scoring=None,
+                        n_jobs=None, iid='deprecated', refit=True, cv=None,
+                        verbose=0, pre_dispatch='2*n_jobs',
+                        error_score=numpy.nan, return_train_score=False):
+        """ Patch for ('sklearn.compose.model_selection._search', 'GridSearchCV') """
+        # pylint: disable=no-method-argument,invalid-name
+        original = gorilla.get_original_attribute(model_selection.GridSearchCV, '__init__')
+
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            # pylint: disable=attribute-defined-outside-init
+            original(self, estimator, param_grid, scoring=scoring, n_jobs=n_jobs,
+                     iid=iid, refit=refit, cv=cv, verbose=verbose, pre_dispatch=pre_dispatch,
+                     error_score=error_score, return_train_score=return_train_score)
+
+            self.mlinspect_filename = caller_filename
+            self.mlinspect_lineno = lineno
+            self.mlinspect_optional_code_reference = optional_code_reference
+            self.mlinspect_optional_source_code = optional_source_code
+
+        return execute_patched_func_indirect_allowed(execute_inspections)
+
+    @gorilla.name('_run_search')
+    @gorilla.settings(allow_hit=True)
+    def patched_fit_transform(self, *args, **kwargs):
+        """ Patch for ('sklearn.compose.model_selection._search', 'GridSearchCV') """
+        # pylint: disable=no-method-argument
+        supported_estimators = (tree.DecisionTreeClassifier, linear_model.SGDClassifier,
+                                linear_model.LogisticRegression, keras_sklearn_external.KerasClassifier)
+        if not isinstance(self.estimator, supported_estimators):  # pylint: disable=no-member
+            raise NotImplementedError(f"TODO: Estimator is an instance of "
+                                      f"{type(self.estimator)}, "  # pylint: disable=no-member
+                                      f"which is not supported yet!")
+
+        call_info_singleton.transformer_filename = self.mlinspect_filename
+        call_info_singleton.transformer_lineno = self.mlinspect_lineno
+        call_info_singleton.transformer_function_info = FunctionInfo('sklearn.compose.model_selection._search.GridSearchCV',
+                                                                     '_run_search')
+        call_info_singleton.transformer_optional_code_reference = self.mlinspect_optional_code_reference
+        call_info_singleton.transformer_optional_source_code = self.mlinspect_optional_source_code
+
+        call_info_singleton.param_search_active = True
+        original = gorilla.get_original_attribute(model_selection.GridSearchCV, '_run_search')
+        result = original(self, *args, **kwargs)
+        call_info_singleton.param_search_active = False
+
+        return result
 
 
 @gorilla.patches(compose.ColumnTransformer)
@@ -913,30 +971,33 @@ class SklearnDecisionTreePatching:
         """ Patch for ('sklearn.tree._classes.DecisionTreeClassifier', 'fit') """
         # pylint: disable=no-method-argument, too-many-locals
         original = gorilla.get_original_attribute(tree.DecisionTreeClassifier, 'fit')
-        function_info = FunctionInfo('sklearn.tree._classes', 'DecisionTreeClassifier')
+        if not call_info_singleton.param_search_active:
+            function_info = FunctionInfo('sklearn.tree._classes', 'DecisionTreeClassifier')
 
-        data_backend_result, train_data_node, train_data_result = add_train_data_node(self, args[0], function_info)
-        label_backend_result, train_labels_node, train_labels_result = add_train_label_node(self, args[1],
-                                                                                            function_info)
+            data_backend_result, train_data_node, train_data_result = add_train_data_node(self, args[0], function_info)
+            label_backend_result, train_labels_node, train_labels_result = add_train_label_node(self, args[1],
+                                                                                                function_info)
 
-        # Estimator
-        operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
-        input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
-        input_infos = SklearnBackend.before_call(operator_context, input_dfs)
-        original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
-        estimator_backend_result = SklearnBackend.after_call(operator_context,
-                                                             input_infos,
-                                                             None,
-                                                             self.mlinspect_non_data_func_args)
+            # Estimator
+            operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
+            input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+            input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+            original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
+            estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                                 input_infos,
+                                                                 None,
+                                                                 self.mlinspect_non_data_func_args)
 
-        self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
-        dag_node = DagNode(self.mlinspect_estimator_node_id,
-                           BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
-                           operator_context,
-                           DagNodeDetails("Decision Tree", []),
-                           get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
-                                                          self.mlinspect_optional_source_code))
-        add_dag_node(dag_node, [train_data_node, train_labels_node], estimator_backend_result)
+            self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
+            dag_node = DagNode(self.mlinspect_estimator_node_id,
+                               BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                               operator_context,
+                               DagNodeDetails("Decision Tree", []),
+                               get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                              self.mlinspect_optional_source_code))
+            add_dag_node(dag_node, [train_data_node, train_labels_node], estimator_backend_result)
+        else:
+            original(self, *args, **kwargs)
         return self
 
     @gorilla.name('score')
@@ -984,8 +1045,12 @@ class SklearnDecisionTreePatching:
             add_dag_node(dag_node, [estimator_dag_node, test_data_node, test_labels_node],
                          estimator_backend_result)
             return result
-
-        return execute_patched_func_indirect_allowed(execute_inspections)
+        if not call_info_singleton.param_search_active:
+            new_result = execute_patched_func_indirect_allowed(execute_inspections)
+        else:
+            original = gorilla.get_original_attribute(tree.DecisionTreeClassifier, 'score')
+            new_result = original(self, *args, **kwargs)
+        return new_result
 
 
 @gorilla.patches(linear_model.SGDClassifier)
@@ -1042,28 +1107,31 @@ class SklearnSGDClassifierPatching:
         """ Patch for ('sklearn.linear_model._stochastic_gradient', 'fit') """
         # pylint: disable=no-method-argument, too-many-locals
         original = gorilla.get_original_attribute(linear_model.SGDClassifier, 'fit')
-        function_info = FunctionInfo('sklearn.linear_model._stochastic_gradient', 'SGDClassifier')
+        if not call_info_singleton.param_search_active:
+            function_info = FunctionInfo('sklearn.linear_model._stochastic_gradient', 'SGDClassifier')
 
-        data_backend_result, train_data_node, train_data_result = add_train_data_node(self, args[0], function_info)
-        label_backend_result, train_labels_node, train_labels_result = add_train_label_node(self, args[1],
-                                                                                            function_info)
-        # Estimator
-        operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
-        input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
-        input_infos = SklearnBackend.before_call(operator_context, input_dfs)
-        original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
-        estimator_backend_result = SklearnBackend.after_call(operator_context,
-                                                             input_infos,
-                                                             None,
-                                                             self.mlinspect_non_data_func_args)
-        self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
-        dag_node = DagNode(self.mlinspect_estimator_node_id,
-                           BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
-                           operator_context,
-                           DagNodeDetails("SGD Classifier", []),
-                           get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
-                                                          self.mlinspect_optional_source_code))
-        add_dag_node(dag_node, [train_data_node, train_labels_node], estimator_backend_result)
+            data_backend_result, train_data_node, train_data_result = add_train_data_node(self, args[0], function_info)
+            label_backend_result, train_labels_node, train_labels_result = add_train_label_node(self, args[1],
+                                                                                                function_info)
+            # Estimator
+            operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
+            input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+            input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+            original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
+            estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                                 input_infos,
+                                                                 None,
+                                                                 self.mlinspect_non_data_func_args)
+            self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
+            dag_node = DagNode(self.mlinspect_estimator_node_id,
+                               BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                               operator_context,
+                               DagNodeDetails("SGD Classifier", []),
+                               get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                              self.mlinspect_optional_source_code))
+            add_dag_node(dag_node, [train_data_node, train_labels_node], estimator_backend_result)
+        else:
+            original(self, *args, **kwargs)
         return self
 
     @gorilla.name('score')
@@ -1116,7 +1184,12 @@ class SklearnSGDClassifierPatching:
                          estimator_backend_result)
             return result
 
-        return execute_patched_func_indirect_allowed(execute_inspections)
+        if not call_info_singleton.param_search_active:
+            new_result = execute_patched_func_indirect_allowed(execute_inspections)
+        else:
+            original = gorilla.get_original_attribute(linear_model.SGDClassifier, 'score')
+            new_result = original(self, *args, **kwargs)
+        return new_result
 
 
 @gorilla.patches(linear_model.LogisticRegression)
@@ -1168,29 +1241,32 @@ class SklearnLogisticRegressionPatching:
         """ Patch for ('sklearn.linear_model._logistic.LogisticRegression', 'fit') """
         # pylint: disable=no-method-argument, too-many-locals
         original = gorilla.get_original_attribute(linear_model.LogisticRegression, 'fit')
-        function_info = FunctionInfo('sklearn.linear_model._logistic', 'LogisticRegression')
+        if not call_info_singleton.param_search_active:
+            function_info = FunctionInfo('sklearn.linear_model._logistic', 'LogisticRegression')
 
-        data_backend_result, train_data_node, train_data_result = add_train_data_node(self, args[0], function_info)
-        label_backend_result, train_labels_node, train_labels_result = add_train_label_node(self, args[1],
-                                                                                            function_info)
+            data_backend_result, train_data_node, train_data_result = add_train_data_node(self, args[0], function_info)
+            label_backend_result, train_labels_node, train_labels_result = add_train_label_node(self, args[1],
+                                                                                                function_info)
 
-        # Estimator
-        operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
-        input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
-        input_infos = SklearnBackend.before_call(operator_context, input_dfs)
-        original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
-        estimator_backend_result = SklearnBackend.after_call(operator_context,
-                                                             input_infos,
-                                                             None,
-                                                             self.mlinspect_non_data_func_args)
-        self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
-        dag_node = DagNode(self.mlinspect_estimator_node_id,
-                           BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
-                           operator_context,
-                           DagNodeDetails("Logistic Regression", []),
-                           get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
-                                                          self.mlinspect_optional_source_code))
-        add_dag_node(dag_node, [train_data_node, train_labels_node], estimator_backend_result)
+            # Estimator
+            operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
+            input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+            input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+            original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
+            estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                                 input_infos,
+                                                                 None,
+                                                                 self.mlinspect_non_data_func_args)
+            self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
+            dag_node = DagNode(self.mlinspect_estimator_node_id,
+                               BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                               operator_context,
+                               DagNodeDetails("Logistic Regression", []),
+                               get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                              self.mlinspect_optional_source_code))
+            add_dag_node(dag_node, [train_data_node, train_labels_node], estimator_backend_result)
+        else:
+            original(self, *args, **kwargs)
         return self
 
     @gorilla.name('score')
@@ -1243,7 +1319,12 @@ class SklearnLogisticRegressionPatching:
                          estimator_backend_result)
             return result
 
-        return execute_patched_func_indirect_allowed(execute_inspections)
+        if not call_info_singleton.param_search_active:
+            new_result = execute_patched_func_indirect_allowed(execute_inspections)
+        else:
+            original = gorilla.get_original_attribute(linear_model.LogisticRegression, 'score')
+            new_result = original(self, *args, **kwargs)
+        return new_result
 
 
 class SklearnKerasClassifierPatching:
@@ -1282,29 +1363,32 @@ class SklearnKerasClassifierPatching:
         """ Patch for ('tensorflow.python.keras.wrappers.scikit_learn.KerasClassifier', 'fit') """
         # pylint: disable=no-method-argument, too-many-locals
         original = gorilla.get_original_attribute(keras_sklearn_external.KerasClassifier, 'fit')
-        function_info = FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')
+        if not call_info_singleton.param_search_active:
+            function_info = FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')
 
-        data_backend_result, train_data_dag_node, train_data_result = add_train_data_node(self, args[0], function_info)
-        label_backend_result, train_labels_dag_node, train_labels_result = add_train_label_node(self, args[1],
-                                                                                                function_info)
+            data_backend_result, train_data_dag_node, train_data_result = add_train_data_node(self, args[0], function_info)
+            label_backend_result, train_labels_dag_node, train_labels_result = add_train_label_node(self, args[1],
+                                                                                                    function_info)
 
-        # Estimator
-        operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
-        input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
-        input_infos = SklearnBackend.before_call(operator_context, input_dfs)
-        original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
-        estimator_backend_result = SklearnBackend.after_call(operator_context,
-                                                             input_infos,
-                                                             None,
-                                                             self.mlinspect_non_data_func_args)
-        self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
-        dag_node = DagNode(self.mlinspect_estimator_node_id,
-                           BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
-                           operator_context,
-                           DagNodeDetails("Neural Network", []),
-                           get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
-                                                          self.mlinspect_optional_source_code))
-        add_dag_node(dag_node, [train_data_dag_node, train_labels_dag_node], estimator_backend_result)
+            # Estimator
+            operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
+            input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+            input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+            original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
+            estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                                 input_infos,
+                                                                 None,
+                                                                 self.mlinspect_non_data_func_args)
+            self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
+            dag_node = DagNode(self.mlinspect_estimator_node_id,
+                               BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                               operator_context,
+                               DagNodeDetails("Neural Network", []),
+                               get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                              self.mlinspect_optional_source_code))
+            add_dag_node(dag_node, [train_data_dag_node, train_labels_dag_node], estimator_backend_result)
+        else:
+            original(self, *args, **kwargs)
         return self
 
     @gorilla.patch(keras_sklearn_external.KerasClassifier, name='score', settings=gorilla.Settings(allow_hit=True))
@@ -1357,4 +1441,9 @@ class SklearnKerasClassifierPatching:
                          estimator_backend_result)
             return result
 
-        return execute_patched_func_indirect_allowed(execute_inspections)
+        if not call_info_singleton.param_search_active:
+            new_result = execute_patched_func_indirect_allowed(execute_inspections)
+        else:
+            original = gorilla.get_original_attribute(keras_sklearn_external.KerasClassifier, 'score')
+            new_result = original(self, *args, **kwargs)
+        return new_result
