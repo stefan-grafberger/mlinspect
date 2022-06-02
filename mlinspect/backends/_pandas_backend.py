@@ -265,12 +265,17 @@ class PandasBackend(Backend):
         materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
                                         (operator_context.operator
                                          in lineage_inspection.operator_type_restriction)
-        if operator_context.operator == OperatorType.DATA_SOURCE:
+        if isinstance(return_value, (pandas.DataFrame, pandas.Series)) \
+                and operator_context.operator == OperatorType.DATA_SOURCE:
             return_value.reset_index(drop=True, inplace=True)
-        else:
+            data_df = return_value
+        elif isinstance(return_value, (pandas.DataFrame, pandas.Series)):
             return_value.reset_index(drop=False, inplace=True)
+            data_df = return_value
+        else:
+            data_df = pandas.DataFrame({'array': return_value})
         if materialize_for_this_operator:
-            lineage_dag_annotation = pandas.concat([return_value, annotations_df], axis=1)
+            lineage_dag_annotation = pandas.concat([data_df, annotations_df], axis=1)
             if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                 lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
             lineage_dag_annotation = lineage_dag_annotation.rename(

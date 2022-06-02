@@ -12,7 +12,7 @@ from ._backend import Backend, AnnotatedDfObject, BackendResult
 from ._backend_utils import create_wrapper_with_annotations
 from ._iter_creation import iter_input_annotation_output_sink_op, iter_input_annotation_output_nary_op
 from ._pandas_backend import execute_inspection_visits_unary_operator, store_inspection_outputs, \
-    execute_inspection_visits_data_source
+    execute_inspection_visits_data_source, PandasBackend
 from .. import OperatorType
 from ..inspections import RowLineage
 from ..instrumentation._pipeline_executor import singleton
@@ -113,7 +113,7 @@ class SklearnBackend(Backend):
         """
         if operator_context.operator == OperatorType.DATA_SOURCE:
             # inspection annotation
-            return_value = SklearnBackend.lineage_only_after_call_data_source(operator_context, return_value)
+            return_value = PandasBackend.lineage_only_after_call_data_source_groupby_agg(operator_context, return_value)
         elif operator_context.operator in {OperatorType.PROJECTION, OperatorType.PROJECTION_MODIFY,
                                            OperatorType.TRANSFORMER, OperatorType.TRAIN_DATA,
                                            OperatorType.TRAIN_LABELS, OperatorType.TEST_DATA,
@@ -319,35 +319,6 @@ class SklearnBackend(Backend):
                 pandas_return_value = pandas.DataFrame(return_value)
             else:
                 assert False
-            lineage_dag_annotation = pandas.concat([pandas_return_value, annotations_df], axis=1)
-            if lineage_inspection.row_count != RowLineage.ALL_ROWS:
-                lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
-            lineage_dag_annotation = lineage_dag_annotation.rename(
-                columns={inspection_name: 'mlinspect_lineage'})
-        else:
-            lineage_dag_annotation = None
-        inspection_outputs[lineage_inspection] = lineage_dag_annotation
-        # inspection output
-        return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
-        return_value = BackendResult(return_value_with_annotation, inspection_outputs)
-        return return_value
-
-    @staticmethod
-    def lineage_only_after_call_data_source(operator_context, return_value):
-        """
-        Optimised lineage inspection handling if only the lineage inspection is used
-        """
-        lineage_inspection = singleton.inspections[0]
-        inspection_name = str(lineage_inspection)
-        current_data_source = singleton.next_op_id - 1
-        lineage_id_list_a = [f'({current_data_source},{row_id})' for row_id in range(len(return_value))]
-        annotations_df = pandas.DataFrame({inspection_name: pandas.Series(lineage_id_list_a, dtype="object")})
-        inspection_outputs = {}
-        materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
-                                        (operator_context.operator
-                                         in lineage_inspection.operator_type_restriction)
-        if materialize_for_this_operator:
-            pandas_return_value = pandas.DataFrame({'array': return_value})
             lineage_dag_annotation = pandas.concat([pandas_return_value, annotations_df], axis=1)
             if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                 lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
