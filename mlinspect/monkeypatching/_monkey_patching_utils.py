@@ -12,8 +12,9 @@ from pandas import DataFrame, Series
 from scipy.sparse import csr_matrix
 
 from mlinspect.backends._backend import AnnotatedDfObject, BackendResult
-from mlinspect.backends._pandas_backend import execute_inspection_visits_data_source
+from mlinspect.backends._pandas_backend import execute_inspection_visits_data_source, PandasBackend
 from mlinspect.backends._sklearn_backend import SklearnBackend
+from mlinspect.inspections import RowLineage
 from mlinspect.inspections._inspection_input import OperatorContext, OperatorType
 from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import DagNode, CodeReference, BasicCodeLocation, DagNodeDetails, \
@@ -143,7 +144,11 @@ def get_input_info(df_object, caller_filename, lineno, function_info, optional_c
         input_info = InputInfo(input_dag_node, AnnotatedDfObject(df_object, annotation_df))
     else:
         operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
-        backend_result = execute_inspection_visits_data_source(operator_context, df_object, {})
+        if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage) \
+                and singleton.fast_lineage is True:
+            backend_result = execute_inspection_visits_data_source(operator_context, df_object, {})
+        else:
+            backend_result = PandasBackend.lineage_only_after_call_data_source_groupby_agg(df_object, operator_context)
         if optional_code_reference:
             code_reference = "({})".format(optional_source_code)
         else:
