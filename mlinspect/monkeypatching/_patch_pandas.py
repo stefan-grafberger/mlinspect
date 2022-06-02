@@ -95,7 +95,7 @@ class DataFramePatching:
                                         optional_source_code)
             operator_context = OperatorContext(OperatorType.SELECTION, function_info)
             if 'subset' not in kwargs:
-                kwargs['subset'] = list(self.columns)
+                kwargs['subset'] = list(self.columns)  # pylint: disable=no-member
             input_infos = PandasBackend.before_call(operator_context, [input_info.annotated_dfobject])
             # No input_infos copy needed because it's only a selection and the rows not being removed don't change
             result = original(input_infos[0].result_data, *args[1:], **kwargs)
