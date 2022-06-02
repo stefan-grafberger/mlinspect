@@ -127,9 +127,12 @@ class PandasBackend(Backend):
             return_value = PandasBackend.lineage_only_after_call_map(input_infos, operator_context, return_value)
         elif operator_context.operator in {OperatorType.SELECTION}:
             return_value = PandasBackend.lineage_only_after_call_filter(operator_context, return_value)
+            input_infos[0].result_data.drop("mlinspect_lineage", axis=1, inplace=True)
         elif operator_context.operator == OperatorType.JOIN:
             return_value = PandasBackend.lineage_only_after_call_join(non_data_function_args, operator_context,
                                                                       return_value)
+            input_infos[0].result_data.drop("mlinspect_lineage_x", axis=1, inplace=True)
+            input_infos[1].result_data.drop("mlinspect_lineage_y", axis=1, inplace=True)
         else:
             raise NotImplementedError()
         return return_value
@@ -262,11 +265,11 @@ class PandasBackend(Backend):
         materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
                                         (operator_context.operator
                                          in lineage_inspection.operator_type_restriction)
+        if operator_context.operator == OperatorType.DATA_SOURCE:
+            return_value.reset_index(drop=True, inplace=True)
+        else:
+            return_value.reset_index(drop=False, inplace=True)
         if materialize_for_this_operator:
-            if operator_context.operator == OperatorType.DATA_SOURCE:
-                return_value.reset_index(drop=True, inplace=True)
-            else:
-                return_value.reset_index(drop=False, inplace=True)
             lineage_dag_annotation = pandas.concat([return_value, annotations_df], axis=1)
             if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                 lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
