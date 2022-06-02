@@ -183,7 +183,7 @@ class PandasBackend(Backend):
             lineage_dag_annotation = None
         inspection_outputs[lineage_inspection] = lineage_dag_annotation
         # inspection annotation
-        annotations_df = pandas.DataFrame(return_value.pop('mlinspect_lineage'))
+        annotations_df = pandas.DataFrame(return_value.pop('mlinspect_lineage').reset_index(drop=True))
         annotations_df = annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
         # inspection output
         return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
@@ -210,7 +210,7 @@ class PandasBackend(Backend):
             lineage_dag_annotation = None
         inspection_outputs[lineage_inspection] = lineage_dag_annotation
         # inspection annotation
-        annotations_df = pandas.DataFrame(return_value.pop('mlinspect_lineage'))
+        annotations_df = pandas.DataFrame(return_value.pop('mlinspect_lineage').reset_index(drop=True))
         annotations_df = annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
         # inspection output
         return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
