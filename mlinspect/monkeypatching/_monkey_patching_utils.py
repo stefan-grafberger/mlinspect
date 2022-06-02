@@ -146,9 +146,9 @@ def get_input_info(df_object, caller_filename, lineno, function_info, optional_c
         operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
         if len(singleton.inspections) == 1 and isinstance(singleton.inspections[0], RowLineage) \
                 and singleton.fast_lineage is True:
-            backend_result = execute_inspection_visits_data_source(operator_context, df_object, {})
-        else:
             backend_result = PandasBackend.lineage_only_after_call_data_source_groupby_agg(df_object, operator_context)
+        else:
+            backend_result = execute_inspection_visits_data_source(operator_context, df_object, {})
         if optional_code_reference:
             code_reference = "({})".format(optional_source_code)
         else:
