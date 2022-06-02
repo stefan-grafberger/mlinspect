@@ -215,8 +215,8 @@ class SklearnBackend(Backend):
             lineage_dag_annotation = pandas.concat([pandas_return_value, annotations_df], axis=1)
             if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                 lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
-                lineage_dag_annotation = lineage_dag_annotation.rename(
-                    columns={inspection_name: 'mlinspect_lineage'})
+            lineage_dag_annotation = lineage_dag_annotation.rename(
+                columns={inspection_name: 'mlinspect_lineage'})
         else:
             lineage_dag_annotation = None
         inspection_outputs[lineage_inspection] = lineage_dag_annotation
@@ -242,8 +242,8 @@ class SklearnBackend(Backend):
             lineage_dag_annotation = annotations_df
             if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                 lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
-                lineage_dag_annotation = lineage_dag_annotation.rename(
-                    columns={inspection_name: 'mlinspect_lineage'})
+            lineage_dag_annotation = lineage_dag_annotation.rename(
+                columns={inspection_name: 'mlinspect_lineage'})
         else:
             lineage_dag_annotation = None
         inspection_outputs[lineage_inspection] = lineage_dag_annotation
