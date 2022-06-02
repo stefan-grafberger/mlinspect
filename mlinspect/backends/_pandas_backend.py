@@ -174,16 +174,17 @@ class PandasBackend(Backend):
         #     .apply(lambda value: ';'.join(set(value.split(';'))))
         return_value.drop('mlinspect_lineage_x', inplace=True, axis=1)
         return_value.drop('mlinspect_lineage_y', inplace=True, axis=1)
+        return_value = return_value.reset_index(drop=True)
         if materialize_for_this_operator:
-            reset_index_return_value = return_value.reset_index(drop=True)
-            lineage_dag_annotation = reset_index_return_value
             if lineage_inspection.row_count != RowLineage.ALL_ROWS:
-                lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
+                lineage_dag_annotation = return_value.head(lineage_inspection.row_count)
+            else:
+                lineage_dag_annotation = return_value
         else:
             lineage_dag_annotation = None
         inspection_outputs[lineage_inspection] = lineage_dag_annotation
         # inspection annotation
-        annotations_df = pandas.DataFrame(return_value.pop('mlinspect_lineage').reset_index(drop=True))
+        annotations_df = pandas.DataFrame(return_value.pop('mlinspect_lineage'))
         annotations_df = annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
         # inspection output
         return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
@@ -201,16 +202,17 @@ class PandasBackend(Backend):
         materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
                                         (operator_context.operator
                                          in lineage_inspection.operator_type_restriction)
+        return_value = return_value.reset_index(drop=True)
         if materialize_for_this_operator:
-            reset_index_return_value = return_value.reset_index(drop=True)
-            lineage_dag_annotation = reset_index_return_value
             if lineage_inspection.row_count != RowLineage.ALL_ROWS:
-                lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
+                lineage_dag_annotation = return_value.head(lineage_inspection.row_count)
+            else:
+                lineage_dag_annotation = return_value
         else:
             lineage_dag_annotation = None
         inspection_outputs[lineage_inspection] = lineage_dag_annotation
         # inspection annotation
-        annotations_df = pandas.DataFrame(return_value.pop('mlinspect_lineage').reset_index(drop=True))
+        annotations_df = pandas.DataFrame(return_value.pop('mlinspect_lineage'))
         annotations_df = annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
         # inspection output
         return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
