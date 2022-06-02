@@ -279,9 +279,11 @@ class SklearnBackend(Backend):
         test_inspection_outputs[lineage_inspection] = test_lineage_dag_annotation
         # inspection annotation
         train_annotations_df = pandas.DataFrame(train_data.pop('mlinspect_lineage'))
-        train_annotations_df = train_annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
+        train_annotations_df = train_annotations_df.rename(columns={'mlinspect_lineage': inspection_name})\
+            .reset_index(drop=True)
         test_annotations_df = pandas.DataFrame(test_data.pop('mlinspect_lineage'))
-        test_annotations_df = test_annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
+        test_annotations_df = test_annotations_df.rename(columns={'mlinspect_lineage': inspection_name})\
+            .reset_index(drop=True)
         # inspection output
         train_return_value_data_with_annotation = create_wrapper_with_annotations(train_annotations_df,
                                                                                   train_data)
