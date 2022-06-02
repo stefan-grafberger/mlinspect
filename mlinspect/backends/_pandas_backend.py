@@ -179,7 +179,7 @@ class PandasBackend(Backend):
             if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                 lineage_dag_annotation = return_value.head(lineage_inspection.row_count)
             else:
-                lineage_dag_annotation = return_value
+                lineage_dag_annotation = pandas.DataFrame(return_value)
         else:
             lineage_dag_annotation = None
         inspection_outputs[lineage_inspection] = lineage_dag_annotation
@@ -207,7 +207,7 @@ class PandasBackend(Backend):
             if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                 lineage_dag_annotation = return_value.head(lineage_inspection.row_count)
             else:
-                lineage_dag_annotation = return_value
+                lineage_dag_annotation = pandas.DataFrame(return_value)
         else:
             lineage_dag_annotation = None
         inspection_outputs[lineage_inspection] = lineage_dag_annotation
