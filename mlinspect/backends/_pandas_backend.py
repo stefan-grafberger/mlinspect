@@ -47,6 +47,7 @@ class PandasBackend(Backend):
         """
         Optimised lineage inspection handling if only the lineage inspection is used
         """
+        # pylint: disable=too-many-locals
         if operator_context.operator == OperatorType.SELECTION:
             pandas_df = input_infos[0].result_data
             assert isinstance(pandas_df, pandas.DataFrame)
@@ -148,7 +149,6 @@ class PandasBackend(Backend):
         Optimised lineage inspection handling if only the lineage inspection is used
         """
         lineage_inspection = singleton.inspections[0]
-        inspection_name = str(lineage_inspection)
         inspection_outputs = {}
         materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
                                         (operator_context.operator

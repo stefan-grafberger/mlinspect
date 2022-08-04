@@ -174,6 +174,7 @@ class SklearnBackend(Backend):
         """
         Optimised lineage inspection handling if only the lineage inspection is used
         """
+        # pylint: disable=too-many-locals
         # inspection annotation
         lineage_inspection = singleton.inspections[0]
         annotations_df_data = input_infos[0].result_annotation

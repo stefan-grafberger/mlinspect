@@ -38,8 +38,8 @@ def test_numpy_random():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[extracted_node]
     lineage_output = inspection_results_data_source[RowLineage(2)]
-    expected_lineage_df = DataFrame([[0.5, '(0,0)'],
-                                     [0.5, '(0,1)']],
-                                    columns=['array', 'mlinspect_lineage'])
+    expected_lineage_df = DataFrame([[0.5, 0],
+                                     [0.5, 1]],
+                                    columns=['array', 'mlinspect_lineage_0_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       atol=1)
