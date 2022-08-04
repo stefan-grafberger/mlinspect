@@ -14,7 +14,6 @@ from mlinspect.instrumentation import _pipeline_executor
 from mlinspect.instrumentation._dag_node import DagNode, CodeReference, BasicCodeLocation, DagNodeDetails, \
     OptionalCodeInfo
 from mlinspect.inspections._lineage import RowLineage
-from mlinspect.testing._testing_helper_utils import do_lineage_dedup_and_sort
 
 
 def test_read_csv():
@@ -87,9 +86,9 @@ def test_frame__init__():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[extracted_node]
     lineage_output = inspection_results_data_source[RowLineage(2)]
-    expected_lineage_df = DataFrame([[0, '(0,0)'],
-                                     [1, '(0,1)']],
-                                    columns=['A', 'mlinspect_lineage'])
+    expected_lineage_df = DataFrame([[0, 0],
+                                     [1, 1]],
+                                    columns=['A', 'mlinspect_lineage_0_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
@@ -210,9 +209,9 @@ def test_frame__getitem__frame():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_project]
     lineage_output = inspection_results_data_source[RowLineage(2)]
-    expected_lineage_df = DataFrame([[0, 2, '(0,0)'],
-                                     [1, 3, '(0,1)']],
-                                    columns=['A', 'C', 'mlinspect_lineage'])
+    expected_lineage_df = DataFrame([[0, 2, 0],
+                                     [1, 3, 1]],
+                                    columns=['A', 'C', 'mlinspect_lineage_0_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
@@ -259,9 +258,9 @@ def test_frame__getitem__selection():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_selection]
     lineage_output = inspection_results_data_source[RowLineage(2)]
-    expected_lineage_df = DataFrame([[4, 4., '(0,2)'],
-                                     [8, 11., '(0,3)']],
-                                    columns=['A', 'B', 'mlinspect_lineage'])
+    expected_lineage_df = DataFrame([[4, 4., 2],
+                                     [8, 11., 3]],
+                                    columns=['A', 'B', 'mlinspect_lineage_0_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
@@ -319,9 +318,9 @@ def test_frame__setitem__():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_project_modify]
     lineage_output = inspection_results_data_source[RowLineage(2)]
-    expected_lineage_df = DataFrame([['one', 'A', 2, 'x', '(0,0)'],
-                                     ['one', 'B', 3, 'y', '(0,1)']],
-                                    columns=['foo', 'bar', 'baz', 'zoo', 'mlinspect_lineage'])
+    expected_lineage_df = DataFrame([['one', 'A', 2, 'x', 0],
+                                     ['one', 'B', 3, 'y', 1]],
+                                    columns=['foo', 'bar', 'baz', 'zoo', 'mlinspect_lineage_0_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
@@ -361,9 +360,9 @@ def test_frame_replace():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_modify]
     lineage_output = inspection_results_data_source[RowLineage(2)]
-    expected_lineage_df = DataFrame([['Low', '(0,0)'],
-                                     ['Low', '(0,1)']],
-                                    columns=['A', 'mlinspect_lineage'])
+    expected_lineage_df = DataFrame([['Low', 0],
+                                     ['Low', 1]],
+                                    columns=['A', 'mlinspect_lineage_0_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
@@ -601,9 +600,9 @@ def test_groupby_agg():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_groupby_agg]
     lineage_output = inspection_results_data_source[RowLineage(2)]
-    expected_lineage_df = DataFrame([["A", 1, '(1,0)'],
-                                     ['B', 3, '(1,1)']],
-                                    columns=['group', 'mean_value', 'mlinspect_lineage'])
+    expected_lineage_df = DataFrame([["A", 1, 0],
+                                     ['B', 3, 1]],
+                                    columns=['group', 'mean_value', 'mlinspect_lineage_1_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
@@ -630,7 +629,7 @@ def test_series__init__():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_node]
     lineage_output = inspection_results_data_source[RowLineage(2)]
-    expected_lineage_df = DataFrame([[0., '(0,0)'],
-                                     [2., '(0,1)']],
-                                    columns=['A', 'mlinspect_lineage'])
+    expected_lineage_df = DataFrame([[0., 0],
+                                     [2., 1]],
+                                    columns=['A', 'mlinspect_lineage_0_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
