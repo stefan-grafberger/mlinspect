@@ -13,7 +13,7 @@ from ._backend_utils import create_wrapper_with_annotations
 from ._iter_creation import iter_input_annotation_output_sink_op, iter_input_annotation_output_nary_op
 from ._pandas_backend import execute_inspection_visits_unary_operator, store_inspection_outputs, \
     execute_inspection_visits_data_source, PandasBackend
-from .. import OperatorType
+from .. import OperatorType, FunctionInfo
 from ..inspections import RowLineage
 from ..instrumentation._pipeline_executor import singleton
 
@@ -137,24 +137,12 @@ class SklearnBackend(Backend):
         Optimised lineage inspection handling if only the lineage inspection is used
         """
         # inspection annotation
+        if operator_context.function_info != FunctionInfo('sklearn.compose._column_transformer', 'ColumnTransformer'):
+            raise Exception("TODO: Implement general concat analogous to lineage_only_after_call_score.")
         lineage_inspection = singleton.inspections[0]
-        inspection_name = str(lineage_inspection)
-        annotations = [input_info.result_annotation for input_info in input_infos]
-        annotations = [annotation_df.rename(columns={inspection_name: f'mlinspect_lineage_{index}'})
-                       for index, annotation_df in enumerate(annotations)]
-        annotations_df = pandas.concat(annotations, axis=1)
-        if len(annotations) == 1:
-            annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage_0']
-        else:
-            annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage_0'] + ';' + \
-                                                  annotations_df['mlinspect_lineage_1']
-            for index in range(1, len(annotations)):
-                annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage'] + ';' + \
-                                                      annotations_df[f'mlinspect_lineage_{index}']
-            # annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage']\
-            #     .apply(lambda value: ';'.join(set(value.split(';'))))
-        for index in range(len(annotations)):
-            annotations_df.drop(f'mlinspect_lineage_{index}', inplace=True, axis=1)
+        # In the case of the ColumnTransformer, all columns are guaranteed to have the same provenance
+        annotations_df = input_infos[0].result_annotation
+
         inspection_outputs = {}
         materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
                                         (operator_context.operator
@@ -177,7 +165,6 @@ class SklearnBackend(Backend):
             lineage_dag_annotation = None
         inspection_outputs[lineage_inspection] = lineage_dag_annotation
         # inspection output
-        annotations_df = annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
         return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
         return_value = BackendResult(return_value_with_annotation, inspection_outputs)
         return return_value
@@ -189,7 +176,6 @@ class SklearnBackend(Backend):
         """
         # inspection annotation
         lineage_inspection = singleton.inspections[0]
-        inspection_name = str(lineage_inspection)
         annotations_df_data = input_infos[0].result_annotation
         annotations_df_labels = input_infos[1].result_annotation
 
@@ -306,7 +292,6 @@ class SklearnBackend(Backend):
         """
         # inspection annotation
         lineage_inspection = singleton.inspections[0]
-        inspection_name = str(lineage_inspection)
         annotations_df = input_infos[0].result_annotation
         inspection_outputs = {}
         materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
@@ -328,8 +313,6 @@ class SklearnBackend(Backend):
             lineage_dag_annotation = pandas.concat([pandas_return_value, annotations_df], axis=1)
             if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                 lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
-            lineage_dag_annotation = lineage_dag_annotation.rename(
-                columns={inspection_name: 'mlinspect_lineage'})
         else:
             lineage_dag_annotation = None
         inspection_outputs[lineage_inspection] = lineage_dag_annotation
