@@ -153,11 +153,6 @@ class PandasBackend(Backend):
         materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
                                         (operator_context.operator
                                          in lineage_inspection.operator_type_restriction)
-        if 'how' in non_data_function_args and non_data_function_args['how'] == 'outer':
-            columns_with_potential_nones = [column for column in list(return_value.columns)
-                                            if column.startswith('mlinspect_lineage')]
-            for column in columns_with_potential_nones:
-                return_value[column] = return_value[column].replace({numpy.nan: ''})
         # return_value['mlinspect_order_index'] = range(len(return_value))
         # singleton.con.register('lineage_df', return_value)
         # lineage_column = singleton.con.execute("""
