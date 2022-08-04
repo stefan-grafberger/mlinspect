@@ -51,14 +51,14 @@ def test_read_csv():
     lineage_output = inspection_results_data_source[RowLineage(2)]
     expected_lineage_df = DataFrame([[46, 'Private', 128645, 'Some-college', 10, 'Divorced', 'Prof-specialty',
                                       'Not-in-family', 'White', 'Female', 0, 0, 40, 'United-States', '<=50K',
-                                      '(0,0)'],
+                                      0],
                                      [29, 'Local-gov', 115585, 'Some-college', 10, 'Never-married', 'Handlers-cleaners',
                                       'Not-in-family', 'White', 'Male', 0, 0, 50, 'United-States', '<=50K',
-                                      '(0,1)']],
+                                      1]],
                                     columns=['age', 'workclass', 'fnlwgt', 'education', 'education-num',
                                              'marital-status', 'occupation', 'relationship', 'race', 'sex',
                                              'capital-gain', 'capital-loss', 'hours-per-week', 'native-country',
-                                             'income-per-year', 'mlinspect_lineage'])
+                                             'income-per-year', 'mlinspect_lineage_0'])
 
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -166,9 +166,9 @@ def test_frame__getitem__series():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_project]
     lineage_output = inspection_results_data_source[RowLineage(2)]
-    expected_lineage_df = DataFrame([[0., '(0,0)'],
-                                     [2., '(0,1)']],
-                                    columns=['A', 'mlinspect_lineage'])
+    expected_lineage_df = DataFrame([[0., 0],
+                                     [2., 1]],
+                                    columns=['A', 'mlinspect_lineage_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 

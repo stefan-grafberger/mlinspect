@@ -18,4 +18,4 @@ astunparse==1.6.3
 setuptools==57.0.0
 scipy==1.7.0
 statsmodels==0.12.2
-duckdb==0.3.4
+duckdb==0.4.0

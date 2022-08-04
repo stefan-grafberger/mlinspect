@@ -113,15 +113,15 @@ def test_train_test_split():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[5, '(0,3)'],
-                                     [2, '(0,1)'],
-                                     [1, '(0,0)']],
-                                    columns=['A', 'mlinspect_lineage'])
+    expected_lineage_df = DataFrame([[5, 3],
+                                     [2, 1],
+                                     [1, 0]],
+                                    columns=['A', 'mlinspect_lineage_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[10, '(0,2)']], columns=['A', 'mlinspect_lineage'])
+    expected_lineage_df = DataFrame([[10, 2]], columns=['A', 'mlinspect_lineage_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 

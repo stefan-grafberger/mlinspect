@@ -44,9 +44,8 @@ class SklearnBackend(Backend):
         if operator_context.operator == OperatorType.TRAIN_TEST_SPLIT:
             pandas_df = input_infos[0].result_data
             assert isinstance(pandas_df, pandas.DataFrame)
-            lineage_inspection = singleton.inspections[0]
-            inspection_name = str(lineage_inspection)
-            input_infos[0].result_data['mlinspect_lineage'] = input_infos[0].result_annotation[inspection_name]
+            annotations_df = input_infos[0].result_annotation
+            input_infos[0].result_data[list(annotations_df.columns)] = annotations_df
 
     @staticmethod
     def after_call(operator_context, input_infos: List[AnnotatedDfObject], return_value,
@@ -259,7 +258,6 @@ class SklearnBackend(Backend):
         """
         # inspection annotation
         lineage_inspection = singleton.inspections[0]
-        inspection_name = str(lineage_inspection)
         train_inspection_outputs = {}
         test_inspection_outputs = {}
         materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
@@ -278,12 +276,13 @@ class SklearnBackend(Backend):
         train_inspection_outputs[lineage_inspection] = train_lineage_dag_annotation
         test_inspection_outputs[lineage_inspection] = test_lineage_dag_annotation
         # inspection annotation
-        train_annotations_df = pandas.DataFrame(train_data.pop('mlinspect_lineage'))
-        train_annotations_df = train_annotations_df.rename(columns={'mlinspect_lineage': inspection_name})\
-            .reset_index(drop=True)
-        test_annotations_df = pandas.DataFrame(test_data.pop('mlinspect_lineage'))
-        test_annotations_df = test_annotations_df.rename(columns={'mlinspect_lineage': inspection_name})\
-            .reset_index(drop=True)
+        columns_to_drop = [column for column in list(train_data.columns) if column.startswith('mlinspect_lineage')]
+        # TODO: Maybe a .reset_index(drop=True) necessary?
+        train_annotations_df = pandas.DataFrame(train_data[columns_to_drop])
+        train_data.drop(columns_to_drop, axis=1, inplace=True)
+        # TODO: Maybe a .reset_index(drop=True) necessary?
+        test_annotations_df = pandas.DataFrame(test_data[columns_to_drop])
+        test_data.drop(columns_to_drop, axis=1, inplace=True)
         # inspection output
         train_return_value_data_with_annotation = create_wrapper_with_annotations(train_annotations_df,
                                                                                   train_data)

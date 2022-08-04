@@ -228,8 +228,8 @@ class PandasBackend(Backend):
         Optimised lineage inspection handling if only the lineage inspection is used
         """
         # inspection annotation
+        assert len(singleton.inspections) == 1
         lineage_inspection = singleton.inspections[0]
-        inspection_name = str(lineage_inspection)
         annotations_df = input_infos[0].result_annotation
         inspection_outputs = {}
         materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
@@ -240,8 +240,6 @@ class PandasBackend(Backend):
             lineage_dag_annotation = pandas.concat([reset_index_return_value, annotations_df], axis=1)
             if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                 lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
-            lineage_dag_annotation = lineage_dag_annotation.rename(
-                columns={inspection_name: 'mlinspect_lineage'})
         else:
             lineage_dag_annotation = None
         inspection_outputs[lineage_inspection] = lineage_dag_annotation
@@ -256,11 +254,11 @@ class PandasBackend(Backend):
         Optimised lineage inspection handling if only the lineage inspection is used
         """
         # inspection annotation
+        assert len(singleton.inspections) == 1
         lineage_inspection = singleton.inspections[0]
-        inspection_name = str(lineage_inspection)
         current_data_source = singleton.next_op_id - 1
-        lineage_id_list_a = [f'({current_data_source},{row_id})' for row_id in range(len(return_value))]
-        annotations_df = pandas.DataFrame({inspection_name: pandas.Series(lineage_id_list_a, dtype="object")})
+        lineage_column_name = f"mlinspect_lineage_{current_data_source}"
+        annotations_df = pandas.DataFrame({lineage_column_name: range(len(return_value))})
         inspection_outputs = {}
         materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
                                         (operator_context.operator
@@ -278,8 +276,6 @@ class PandasBackend(Backend):
             lineage_dag_annotation = pandas.concat([data_df, annotations_df], axis=1)
             if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                 lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
-            lineage_dag_annotation = lineage_dag_annotation.rename(
-                columns={inspection_name: 'mlinspect_lineage'})
         else:
             lineage_dag_annotation = None
         inspection_outputs[lineage_inspection] = lineage_dag_annotation
