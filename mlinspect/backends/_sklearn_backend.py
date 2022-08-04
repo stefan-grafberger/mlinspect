@@ -191,16 +191,26 @@ class SklearnBackend(Backend):
         lineage_inspection = singleton.inspections[0]
         inspection_name = str(lineage_inspection)
         annotations_df_data = input_infos[0].result_annotation
-        annotations_df_data = annotations_df_data.rename(columns={inspection_name: 'mlinspect_lineage_x'})
         annotations_df_labels = input_infos[1].result_annotation
-        annotations_df_labels = annotations_df_labels.rename(columns={inspection_name: 'mlinspect_lineage_y'})
+
+        annotations_data_columns = set(annotations_df_data.columns)
+        annotations_label_columns = set(annotations_df_labels.columns)
+        column_clashes = annotations_data_columns.intersection(annotations_label_columns)
+        for column_clash in column_clashes:
+            if column_clash.count('_') == 3:
+                data_source, duplicate_index = column_clash.rsplit('_', 1)
+                new_duplicate_index = int(duplicate_index) + 1
+                new_col_name = f"{data_source}_{new_duplicate_index}"
+                annotations_df_labels = annotations_df_labels.rename(columns={column_clash: new_col_name})
+            else:
+                new_data_col_name = f"{column_clash}_0"
+                new_label_col_name = f"{column_clash}_1"
+                annotations_df_data = annotations_df_data.rename(columns={column_clash: new_data_col_name})
+                annotations_df_labels = annotations_df_labels.rename(columns={column_clash: new_label_col_name})
+
         annotations_df = pandas.concat([annotations_df_data, annotations_df_labels], axis=1)
-        annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage_x'] + ';' + \
-                                              annotations_df['mlinspect_lineage_y']
         # annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage'] \
         #     .apply(lambda value: ';'.join(set(value.split(';'))))
-        annotations_df.drop('mlinspect_lineage_x', inplace=True, axis=1)
-        annotations_df.drop('mlinspect_lineage_y', inplace=True, axis=1)
         inspection_outputs = {}
         materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
                                         (operator_context.operator
@@ -214,8 +224,6 @@ class SklearnBackend(Backend):
             lineage_dag_annotation = pandas.concat([pandas_return_value, annotations_df], axis=1)
             if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                 lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
-            lineage_dag_annotation = lineage_dag_annotation.rename(
-                columns={inspection_name: 'mlinspect_lineage'})
         else:
             lineage_dag_annotation = None
         inspection_outputs[lineage_inspection] = lineage_dag_annotation
@@ -231,7 +239,6 @@ class SklearnBackend(Backend):
         """
         # inspection annotation
         lineage_inspection = singleton.inspections[0]
-        inspection_name = str(lineage_inspection)
         annotations_df = input_infos[0].result_annotation
         inspection_outputs = {}
         materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
@@ -241,8 +248,6 @@ class SklearnBackend(Backend):
             lineage_dag_annotation = annotations_df
             if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                 lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
-            lineage_dag_annotation = lineage_dag_annotation.rename(
-                columns={inspection_name: 'mlinspect_lineage'})
         else:
             lineage_dag_annotation = None
         inspection_outputs[lineage_inspection] = lineage_dag_annotation
