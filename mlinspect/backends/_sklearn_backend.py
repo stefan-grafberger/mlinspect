@@ -183,16 +183,12 @@ class SklearnBackend(Backend):
         annotations_label_columns = set(annotations_df_labels.columns)
         column_clashes = annotations_data_columns.intersection(annotations_label_columns)
         for column_clash in column_clashes:
-            if column_clash.count('_') == 3:
-                data_source, duplicate_index = column_clash.rsplit('_', 1)
-                new_duplicate_index = int(duplicate_index) + 1
-                new_col_name = f"{data_source}_{new_duplicate_index}"
-                annotations_df_labels = annotations_df_labels.rename(columns={column_clash: new_col_name})
-            else:
-                new_data_col_name = f"{column_clash}_0"
-                new_label_col_name = f"{column_clash}_1"
-                annotations_df_data = annotations_df_data.rename(columns={column_clash: new_data_col_name})
-                annotations_df_labels = annotations_df_labels.rename(columns={column_clash: new_label_col_name})
+            data_source, duplicate_index = column_clash.rsplit('_', 1)
+            num_occurrences_in_data_columns = len([column for column in annotations_data_columns
+                                                  if column.startswith(data_source)])
+            new_duplicate_index = int(duplicate_index) + num_occurrences_in_data_columns
+            new_col_name = f"{data_source}_{new_duplicate_index}"
+            annotations_df_labels = annotations_df_labels.rename(columns={column_clash: new_col_name})
 
         annotations_df = pandas.concat([annotations_df_data, annotations_df_labels], axis=1)
         # annotations_df['mlinspect_lineage'] = annotations_df['mlinspect_lineage'] \

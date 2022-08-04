@@ -58,7 +58,7 @@ def test_read_csv():
                                     columns=['age', 'workclass', 'fnlwgt', 'education', 'education-num',
                                              'marital-status', 'occupation', 'relationship', 'race', 'sex',
                                              'capital-gain', 'capital-loss', 'hours-per-week', 'native-country',
-                                             'income-per-year', 'mlinspect_lineage_0'])
+                                             'income-per-year', 'mlinspect_lineage_0_0'])
 
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -126,9 +126,9 @@ def test_frame_dropna():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
     lineage_output = inspection_results_data_source[RowLineage(2)]
-    expected_lineage_df = DataFrame([[0., '(0,0)'],
-                                     [2., '(0,1)']],
-                                    columns=['A', 'mlinspect_lineage'])
+    expected_lineage_df = DataFrame([[0., 0],
+                                     [2., 1]],
+                                    columns=['A', 'mlinspect_lineage_0_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
@@ -168,7 +168,7 @@ def test_frame__getitem__series():
     lineage_output = inspection_results_data_source[RowLineage(2)]
     expected_lineage_df = DataFrame([[0., 0],
                                      [2., 1]],
-                                    columns=['A', 'mlinspect_lineage_0'])
+                                    columns=['A', 'mlinspect_lineage_0_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 

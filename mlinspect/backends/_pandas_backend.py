@@ -50,9 +50,8 @@ class PandasBackend(Backend):
         if operator_context.operator == OperatorType.SELECTION:
             pandas_df = input_infos[0].result_data
             assert isinstance(pandas_df, pandas.DataFrame)
-            lineage_inspection = singleton.inspections[0]
-            inspection_name = str(lineage_inspection)
-            input_infos[0].result_data['mlinspect_lineage'] = input_infos[0].result_annotation[inspection_name]
+            annotations_df = input_infos[0].result_annotation
+            input_infos[0].result_data[list(annotations_df.columns)] = annotations_df
         elif operator_context.function_info == FunctionInfo('pandas.core.frame', 'merge'):
             pandas_df_x = input_infos[0].result_data
             assert isinstance(pandas_df_x, pandas.DataFrame)
@@ -127,7 +126,6 @@ class PandasBackend(Backend):
             return_value = PandasBackend.lineage_only_after_call_map(input_infos, operator_context, return_value)
         elif operator_context.operator in {OperatorType.SELECTION}:
             return_value = PandasBackend.lineage_only_after_call_filter(operator_context, return_value)
-            input_infos[0].result_data.drop("mlinspect_lineage", axis=1, inplace=True)
         elif operator_context.operator == OperatorType.JOIN:
             return_value = PandasBackend.lineage_only_after_call_join(non_data_function_args, operator_context,
                                                                       return_value)
@@ -200,7 +198,6 @@ class PandasBackend(Backend):
         Optimised lineage inspection handling if only the lineage inspection is used
         """
         lineage_inspection = singleton.inspections[0]
-        inspection_name = str(lineage_inspection)
         inspection_outputs = {}
         materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
                                         (operator_context.operator
@@ -215,8 +212,10 @@ class PandasBackend(Backend):
             lineage_dag_annotation = None
         inspection_outputs[lineage_inspection] = lineage_dag_annotation
         # inspection annotation
-        annotations_df = pandas.DataFrame(return_value.pop('mlinspect_lineage'))
-        annotations_df = annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
+        columns_to_drop = [column for column in list(return_value.columns) if column.startswith('mlinspect_lineage')]
+        # TODO: Maybe a .reset_index(drop=True) necessary?
+        annotations_df = pandas.DataFrame(return_value[columns_to_drop])
+        return_value.drop(columns_to_drop, axis=1, inplace=True)
         # inspection output
         return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
         return_value = BackendResult(return_value_with_annotation, inspection_outputs)
@@ -257,7 +256,7 @@ class PandasBackend(Backend):
         assert len(singleton.inspections) == 1
         lineage_inspection = singleton.inspections[0]
         current_data_source = singleton.next_op_id - 1
-        lineage_column_name = f"mlinspect_lineage_{current_data_source}"
+        lineage_column_name = f"mlinspect_lineage_{current_data_source}_0"
         annotations_df = pandas.DataFrame({lineage_column_name: range(len(return_value))})
         inspection_outputs = {}
         materialize_for_this_operator = (lineage_inspection.operator_type_restriction is None) or \
