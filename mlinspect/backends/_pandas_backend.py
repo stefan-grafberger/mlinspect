@@ -53,17 +53,26 @@ class PandasBackend(Backend):
             annotations_df = input_infos[0].result_annotation
             input_infos[0].result_data[list(annotations_df.columns)] = annotations_df
         elif operator_context.function_info == FunctionInfo('pandas.core.frame', 'merge'):
-            pandas_df_x = input_infos[0].result_data
-            assert isinstance(pandas_df_x, pandas.DataFrame)
-            lineage_inspection = singleton.inspections[0]
-            inspection_name = str(lineage_inspection)
-            input_infos[0].result_data['mlinspect_lineage_x'] = input_infos[0].result_annotation[inspection_name]
+            first_annotation_df = input_infos[0].result_annotation
+            second_annotation_df = input_infos[1].result_annotation
 
-            pandas_df_y = input_infos[1].result_data
-            assert isinstance(pandas_df_y, pandas.DataFrame)
-            # if len(input_infos[1].result_data.axes) == 2:  # find wayZ
-            #     input_infos[1].result_data.reset_index(drop=False, inplace=True)
-            input_infos[1].result_data['mlinspect_lineage_y'] = input_infos[1].result_annotation[inspection_name]
+            annotations_data_columns = set(first_annotation_df.columns)
+            annotations_label_columns = set(second_annotation_df.columns)
+            column_clashes = annotations_data_columns.intersection(annotations_label_columns)
+            for column_clash in column_clashes:
+                data_source, duplicate_index = column_clash.rsplit('_', 1)
+                num_occurrences_in_data_columns = len([column for column in annotations_data_columns
+                                                       if column.startswith(data_source)])
+                new_duplicate_index = int(duplicate_index) + num_occurrences_in_data_columns
+                new_col_name = f"{data_source}_{new_duplicate_index}"
+                second_annotation_df = second_annotation_df.rename(columns={column_clash: new_col_name})
+
+            first_pandas_df = input_infos[0].result_data
+            assert isinstance(first_pandas_df, pandas.DataFrame)
+            first_pandas_df[list(first_annotation_df.columns)] = first_annotation_df
+            second_pandas_df = input_infos[1].result_data
+            assert isinstance(second_pandas_df, pandas.DataFrame)
+            second_pandas_df[list(second_annotation_df.columns)] = second_annotation_df
 
     @staticmethod
     def after_call(operator_context, input_infos: List[AnnotatedDfObject], return_value,
@@ -129,8 +138,6 @@ class PandasBackend(Backend):
         elif operator_context.operator == OperatorType.JOIN:
             return_value = PandasBackend.lineage_only_after_call_join(non_data_function_args, operator_context,
                                                                       return_value)
-            input_infos[0].result_data.drop("mlinspect_lineage_x", axis=1, inplace=True)
-            input_infos[1].result_data.drop("mlinspect_lineage_y", axis=1, inplace=True)
         else:
             raise NotImplementedError()
         return return_value
@@ -147,10 +154,10 @@ class PandasBackend(Backend):
                                         (operator_context.operator
                                          in lineage_inspection.operator_type_restriction)
         if 'how' in non_data_function_args and non_data_function_args['how'] == 'outer':
-            return_value['mlinspect_lineage_x'] = return_value['mlinspect_lineage_x'].replace({numpy.nan: ''})
-            return_value['mlinspect_lineage_y'] = return_value['mlinspect_lineage_y'].replace({numpy.nan: ''})
-        return_value['mlinspect_lineage'] = return_value['mlinspect_lineage_x'] + ';' + \
-                                            return_value['mlinspect_lineage_y']
+            columns_with_potential_nones = [column for column in list(return_value.columns)
+                                            if column.startswith('mlinspect_lineage')]
+            for column in columns_with_potential_nones:
+                return_value[column] = return_value[column].replace({numpy.nan: ''})
         # return_value['mlinspect_order_index'] = range(len(return_value))
         # singleton.con.register('lineage_df', return_value)
         # lineage_column = singleton.con.execute("""
@@ -173,8 +180,6 @@ class PandasBackend(Backend):
         # return_value.drop('mlinspect_order_index', inplace=True, axis=1)
         # return_value['mlinspect_lineage'] = return_value['mlinspect_lineage'] \
         #     .apply(lambda value: ';'.join(set(value.split(';'))))
-        return_value.drop('mlinspect_lineage_x', inplace=True, axis=1)
-        return_value.drop('mlinspect_lineage_y', inplace=True, axis=1)
         return_value = return_value.reset_index(drop=True)
         if materialize_for_this_operator:
             if lineage_inspection.row_count != RowLineage.ALL_ROWS:
@@ -185,8 +190,9 @@ class PandasBackend(Backend):
             lineage_dag_annotation = None
         inspection_outputs[lineage_inspection] = lineage_dag_annotation
         # inspection annotation
-        annotations_df = pandas.DataFrame(return_value.pop('mlinspect_lineage'))
-        annotations_df = annotations_df.rename(columns={'mlinspect_lineage': inspection_name})
+        columns_to_drop = [column for column in list(return_value.columns) if column.startswith('mlinspect_lineage')]
+        annotations_df = pandas.DataFrame(return_value[columns_to_drop])
+        return_value.drop(columns_to_drop, axis=1, inplace=True)
         # inspection output
         return_value_with_annotation = create_wrapper_with_annotations(annotations_df, return_value)
         return_value = BackendResult(return_value_with_annotation, inspection_outputs)

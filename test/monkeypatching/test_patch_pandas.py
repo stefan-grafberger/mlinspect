@@ -408,10 +408,9 @@ def test_frame_merge_on():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_join]
     lineage_output = inspection_results_data_source[RowLineage(2)]
-    do_lineage_dedup_and_sort(lineage_output)
-    expected_lineage_df = DataFrame([[0, 1, 1., '(0,0);(1,0)'],
-                                     [2, 2, 5., '(0,1);(1,1)']],
-                                    columns=['A', 'B', 'C', 'mlinspect_lineage'])
+    expected_lineage_df = DataFrame([[0, 1, 0, 1., 0],
+                                     [2, 2, 1, 5., 1]],
+                                    columns=['A', 'B', 'mlinspect_lineage_0_0',  'C', 'mlinspect_lineage_1_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
@@ -457,10 +456,9 @@ def test_frame_merge_left_right_on():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_join]
     lineage_output = inspection_results_data_source[RowLineage(2)]
-    do_lineage_dedup_and_sort(lineage_output)
-    expected_lineage_df = DataFrame([[0, 1, 1, 1., '(0,0);(1,0)'],
-                                     [2, 2, 2, 5., '(0,1);(1,1)']],
-                                    columns=['A', 'B', 'C', 'D', 'mlinspect_lineage'])
+    expected_lineage_df = DataFrame([[0, 1, 0, 1, 1., 0],
+                                     [2, 2, 1, 2, 5., 1]],
+                                    columns=['A', 'B', 'mlinspect_lineage_0_0', 'C', 'D', 'mlinspect_lineage_1_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
@@ -508,11 +506,11 @@ def test_frame_merge_index():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_join]
     lineage_output = inspection_results_data_source[RowLineage(2)]
-    do_lineage_dedup_and_sort(lineage_output)
-    expected_lineage_df = DataFrame([[0, 1, 1., 1., '(0,0);(1,0)'],
-                                     [2, 2, 2., 5., '(0,1);(1,1)']],
-                                    columns=['A', 'B', 'C', 'D', 'mlinspect_lineage'])
-    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+    expected_lineage_df = DataFrame([[0, 1, 0, 1., 1., 0],
+                                     [2, 2, 1, 2., 5., 1]],
+                                    columns=['A', 'B', 'mlinspect_lineage_0_0', 'C', 'D', 'mlinspect_lineage_1_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
+                                      check_dtype=False)
 
 
 def test_frame_merge_sorted():
@@ -556,12 +554,11 @@ def test_frame_merge_sorted():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_join]
     lineage_output = inspection_results_data_source[RowLineage(5)]
-    do_lineage_dedup_and_sort(lineage_output)
-    expected_lineage_df = DataFrame([[5, 1, 1.,       '(0,4);(1,0)'],
-                                     [8, 2, 11.,      '(0,3);(1,3)'],
-                                     [4, 4, 5.,       '(0,2);(1,1)'],
-                                     [2, 5, math.nan, '(0,1);(1,4)']],
-                                    columns=['A', 'B', 'C', 'mlinspect_lineage'])
+    expected_lineage_df = DataFrame([[5, 1, 4, 1.,       0],
+                                     [8, 2, 3, 11.,      3],
+                                     [4, 4, 2, 5.,       1],
+                                     [2, 5, 1, math.nan, 4]],
+                                    columns=['A', 'B', 'mlinspect_lineage_0_0', 'C', 'mlinspect_lineage_1_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
