@@ -2506,6 +2506,95 @@ def test_count_vectorizer():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
+def test_tfidf_vectorizer():
+    """
+    Tests whether the monkey patching of ('sklearn.compose._column_transformer', 'ColumnTransformer') works with
+    multiple transformers with dense output
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+                from sklearn.feature_extraction.text import  CountVectorizer, TfidfTransformer
+                import numpy
+                from scipy.sparse import csr_matrix
+                df = CountVectorizer().fit_transform(
+                    pd.Series(['cat_a', 'cat_b', 'cat_a', 'cat_c'], name='A').to_numpy())
+                transformer = TfidfTransformer()
+                transformed_data = transformer.fit_transform(df)
+                test_transform_function = transformer.transform(df)
+                print(transformed_data)
+                expected = numpy.array([[1., 0., 0.],
+                                        [0., 1., 0.],
+                                        [1., 0., 0.],
+                                        [0., 0., 1.]])
+                expected = csr_matrix([[1., 0., 0.], [0., 1., 0.], [1., 0., 0.], [0., 0., 1.]])
+                assert numpy.allclose(transformed_data.A, expected.A) and isinstance(transformed_data, csr_matrix)
+                assert numpy.allclose(test_transform_function.A, expected.A) and isinstance(test_transform_function, 
+                    csr_matrix)
+                """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(3)])
+    expected_dag = networkx.DiGraph()
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 6),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.series', 'Series')),
+                                   DagNodeDetails(None, ['A']),
+                                   OptionalCodeInfo(CodeReference(6, 4, 6, 61),
+                                                    "pd.Series(['cat_a', 'cat_b', 'cat_a', 'cat_c'], name='A')"))
+    expected_project = DagNode(1,
+                               BasicCodeLocation('<string-source>', 6),
+                               OperatorContext(OperatorType.PROJECTION,
+                                               FunctionInfo('pandas.core.series.Series', 'to_numpy')),
+                               DagNodeDetails('numpy conversion', ['array']),
+                               OptionalCodeInfo(CodeReference(6, 4, 6, 72),
+                                                "pd.Series(['cat_a', 'cat_b', 'cat_a', 'cat_c'], name='A').to_numpy()"))
+    expected_dag.add_edge(expected_data_source, expected_project)
+    expected_count_vectorizer = DagNode(2,
+                                        BasicCodeLocation("<string-source>", 5),
+                                        OperatorContext(OperatorType.TRANSFORMER,
+                                                        FunctionInfo('sklearn.feature_extraction.text',
+                                                                     'CountVectorizer')),
+                                        DagNodeDetails('Count Vectorizer: fit_transform', ['array']),
+                                        OptionalCodeInfo(CodeReference(5, 5, 5, 22),
+                                                         'CountVectorizer()'))
+    expected_dag.add_edge(expected_project, expected_count_vectorizer)
+    expected_transformer = DagNode(3,
+                                   BasicCodeLocation("<string-source>", 7),
+                                   OperatorContext(OperatorType.TRANSFORMER,
+                                                   FunctionInfo('sklearn.feature_extraction.text', 'TfidfTransformer')),
+                                   DagNodeDetails('Tfidf Transformer: fit_transform', ['array']),
+                                   OptionalCodeInfo(CodeReference(7, 14, 7, 32),
+                                                    'TfidfTransformer()'))
+    expected_dag.add_edge(expected_count_vectorizer, expected_transformer)
+    expected_transform_test = DagNode(4,
+                                      BasicCodeLocation("<string-source>", 7),
+                                      OperatorContext(OperatorType.TRANSFORMER,
+                                                      FunctionInfo('sklearn.feature_extraction.text',
+                                                                   'TfidfTransformer')),
+                                      DagNodeDetails('Tfidf Transformer: transform', ['array']),
+                                      OptionalCodeInfo(CodeReference(7, 14, 7, 32),
+                                                       'TfidfTransformer()'))
+    expected_dag.add_edge(expected_count_vectorizer, expected_transform_test)
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([1, 0, 0]), 0],
+                                     [numpy.array([0, 1, 0]), 1],
+                                     [numpy.array([1, 0, 0]), 2]],
+                                    columns=['array', 'mlinspect_lineage_0_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transform_test]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([1, 0, 0]), 0],
+                                     [numpy.array([0, 1, 0]), 1],
+                                     [numpy.array([1, 0, 0]), 2]],
+                                    columns=['array', 'mlinspect_lineage_0_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
 def test_feature_union():
     """
     Tests whether the monkey patching of ('sklearn.preprocessing._data', 'StandardScaler') works
