@@ -131,6 +131,41 @@ def test_frame_dropna():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
+def test_frame_dropna_lineage_nans():
+    """
+    Tests whether the monkey patching of ('pandas.core.frame', 'dropna') works
+    """
+    test_code = cleandoc("""
+        import math
+        import pandas as pd
+
+        df_a = pd.DataFrame({'A': [math.nan, 2, 4, 8, 5], 'B': [1, 2, 4, 5, 7]})
+        df_b = pd.DataFrame({'C': [1, 2, 3, 4], 'D': [1, 5, 4, 11]})
+        df = df_a.merge(right=df_b, left_index=True, right_index=True, how='outer')
+        assert len(df) == 5
+        df = df[['A', 'B']]
+        df = df.dropna()
+        assert len(df) == 4  # Would be 3 if lineage is not excluded from dropna subset
+        """)
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(5)])
+
+    expected_select = DagNode(4,
+                              BasicCodeLocation("<string-source>", 9),
+                              OperatorContext(OperatorType.SELECTION, FunctionInfo('pandas.core.frame', 'dropna')),
+                              DagNodeDetails('dropna', ['A', 'B']),
+                              OptionalCodeInfo(CodeReference(9, 5, 9, 16), 'df.dropna()'))
+    compare(list(inspector_result.dag.nodes)[4], expected_select)
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_select]
+    lineage_output = inspection_results_data_source[RowLineage(5)]
+    expected_lineage_df = DataFrame({'A': [2., 4., 8., 5.],
+                                     'B': [2, 4, 5, 7],
+                                     'mlinspect_lineage_0_0': [1, 2, 3, 4],
+                                     'mlinspect_lineage_1_0': [1., 2., 3., math.nan]})
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
 def test_frame__getitem__series():
     """
     Tests whether the monkey patching of ('pandas.core.frame', '__getitem__') works for a single string argument
@@ -477,7 +512,7 @@ def test_frame_merge_index():
         pd.testing.assert_frame_equal(df_merged.reset_index(drop=True), df_expected.reset_index(drop=True))
         """)
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
-                                                        inspections=[RowLineage(2)])
+                                                        inspections=[RowLineage(5)])
     inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[3])
 
     expected_dag = networkx.DiGraph()
@@ -504,12 +539,14 @@ def test_frame_merge_index():
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_join]
-    lineage_output = inspection_results_data_source[RowLineage(2)]
-    expected_lineage_df = DataFrame([[0, 1, 0, 1., 1., 0],
-                                     [2, 2, 1, 2., 5., 1]],
-                                    columns=['A', 'B', 'mlinspect_lineage_0_0', 'C', 'D', 'mlinspect_lineage_1_0'])
-    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
-                                      check_dtype=False)
+    lineage_output = inspection_results_data_source[RowLineage(5)]
+    expected_lineage_df = DataFrame({'A': [0, 2, 4, 8, 5],
+                                     'B': [1, 2, 4, 5, 7],
+                                     'mlinspect_lineage_0_0': [0, 1, 2, 3, 4],
+                                     'C': [1., 2., 3., 4., math.nan],
+                                     'D': [1., 5., 4., 11., math.nan],
+                                     'mlinspect_lineage_1_0': [0., 1., 2., 3., math.nan]})
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
 def test_frame_merge_sorted():
