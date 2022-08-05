@@ -2690,7 +2690,7 @@ def test_random_forest_classifier_score():
     expected_test_data = DagNode(12,
                                  BasicCodeLocation("<string-source>", 16),
                                  OperatorContext(OperatorType.TEST_DATA,
-                                                 FunctionInfo('sklearn.tree._classes.DecisionTreeClassifier', 'score')),
+                                                 FunctionInfo('sklearn.ensemble._forest.RandomForestClassifier', 'score')),
                                  DagNodeDetails(None, ['A', 'B']),
                                  OptionalCodeInfo(CodeReference(16, 13, 16, 56),
                                                   "clf.score(test_df[['A', 'B']], test_labels)"))
