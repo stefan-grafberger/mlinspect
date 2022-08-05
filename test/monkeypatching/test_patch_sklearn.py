@@ -742,8 +742,8 @@ def test_column_transformer_one_transformer_single_column_projection():
                               DagNodeDetails(None, ['array']),
                               OptionalCodeInfo(CodeReference(8, 21, 10, 2),
                                                "ColumnTransformer(transformers=[\n"
-                                                   "    ('hashing', HashingVectorizer(ngram_range=(1, 3), "
-                                                   "n_features=2**2), 'A')\n])"))
+                                               "    ('hashing', HashingVectorizer(ngram_range=(1, 3), "
+                                               "n_features=2**2), 'A')\n])"))
     expected_dag.add_edge(expected_vectorizer, expected_concat)
 
     expected_transform = DagNode(6,
@@ -752,7 +752,7 @@ def test_column_transformer_one_transformer_single_column_projection():
                                                  FunctionInfo('sklearn.feature_extraction.text', 'HashingVectorizer')),
                                  DagNodeDetails('Hashing Vectorizer: transform', ['array']),
                                  OptionalCodeInfo(CodeReference(9, 16, 9, 70), 'HashingVectorizer(ngram_range=(1, 3), '
-                                                                                'n_features=2**2)'))
+                                                                               'n_features=2**2)'))
     expected_dag.add_node(expected_transform)
 
     compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
@@ -1702,7 +1702,7 @@ def test_sgd_classifier_score():
     lineage_output = inspection_results_data_source[RowLineage(3)]
     expected_lineage_df = DataFrame([[0, 0, 0],
                                      [1, 1, 1]],
-                                    columns=['array', 'mlinspect_lineage_8_0',  'mlinspect_lineage_8_1'])
+                                    columns=['array', 'mlinspect_lineage_8_0', 'mlinspect_lineage_8_1'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       check_column_type=False)
 
@@ -1923,7 +1923,7 @@ def test_logistic_regression_score():
     lineage_output = inspection_results_data_source[RowLineage(3)]
     expected_lineage_df = DataFrame([[0, 0, 0],
                                      [1, 1, 1]],
-                                    columns=['array', 'mlinspect_lineage_8_0',  'mlinspect_lineage_8_1'])
+                                    columns=['array', 'mlinspect_lineage_8_0', 'mlinspect_lineage_8_1'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       check_column_type=False)
 
@@ -2176,6 +2176,95 @@ def test_keras_wrapper_score():
     lineage_output = inspection_results_data_source[RowLineage(3)]
     expected_lineage_df = DataFrame([[0, 0, 0],
                                      [1, 1, 1]],
-                                    columns=['array', 'mlinspect_lineage_8_0',  'mlinspect_lineage_8_1'])
+                                    columns=['array', 'mlinspect_lineage_8_0', 'mlinspect_lineage_8_1'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       check_column_type=False)
+
+
+def test_truncated_svd():
+    """
+    Tests whether the monkey patching of ('sklearn.compose._column_transformer', 'ColumnTransformer') works with
+    multiple transformers with dense output
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+                from sklearn.preprocessing import label_binarize, StandardScaler, OneHotEncoder
+                from sklearn.compose import ColumnTransformer
+                from sklearn.decomposition import TruncatedSVD
+                from scipy.sparse import csr_matrix
+                import numpy
+                
+                df = pd.DataFrame({'A': [1, 2, 10, 5], 'B': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})
+                column_transformer = ColumnTransformer(transformers=[
+                    ('numeric', StandardScaler(), ['A']),
+                    ('categorical', OneHotEncoder(sparse=False), ['B'])
+                ])
+                encoded_data = column_transformer.fit_transform(df)
+                transformer = TruncatedSVD(n_iter=1, random_state=42)
+                reduced_data = transformer.fit_transform(encoded_data)
+                test_transform_function = transformer.transform(encoded_data)
+                expected = numpy.array([[-0.7135186,   1.16732311],
+                                        [-0.88316363,  0.30897343],
+                                        [ 1.72690506,  0.64664575],
+                                        [ 0.17663273, -0.06179469]])
+                assert numpy.allclose(reduced_data, expected)
+                assert numpy.allclose(test_transform_function, expected)
+                """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(3)])
+    filter_dag_for_nodes_with_ids(inspector_result, [5, 6, 7], 8)
+
+    expected_dag = networkx.DiGraph()
+    expected_concat = DagNode(5,
+                              BasicCodeLocation("<string-source>", 9),
+                              OperatorContext(OperatorType.CONCATENATION,
+                                              FunctionInfo('sklearn.compose._column_transformer', 'ColumnTransformer')),
+                              DagNodeDetails(None, ['array']),
+                              OptionalCodeInfo(CodeReference(9, 21, 12, 2),
+                                               "ColumnTransformer(transformers=[\n"
+                                               "    ('numeric', StandardScaler(), ['A']),\n"
+                                               "    ('categorical', OneHotEncoder(sparse=False), ['B'])\n])"))
+    expected_transformer = DagNode(6,
+                                   BasicCodeLocation("<string-source>", 14),
+                                   OperatorContext(OperatorType.TRANSFORMER,
+                                                   FunctionInfo('sklearn.decomposition._truncated_svd',
+                                                                'TruncatedSVD')),
+                                   DagNodeDetails('Truncated SVD: fit_transform', ['array']),
+                                   OptionalCodeInfo(CodeReference(14, 14, 14, 53),
+                                                    'TruncatedSVD(n_iter=1, random_state=42)'))
+    expected_dag.add_edge(expected_concat, expected_transformer)
+    expected_transform_test = DagNode(7,
+                                      BasicCodeLocation("<string-source>", 14),
+                                      OperatorContext(OperatorType.TRANSFORMER,
+                                                      FunctionInfo('sklearn.decomposition._truncated_svd',
+                                                                   'TruncatedSVD')),
+                                      DagNodeDetails('Truncated SVD: transform', ['array']),
+                                      OptionalCodeInfo(CodeReference(14, 14, 14, 53),
+                                                       'TruncatedSVD(n_iter=1, random_state=42)'))
+    expected_dag.add_edge(expected_concat, expected_transform_test)
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_concat]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([-1.0, 1.0, 0.0, 0.0]), 0],
+                                     [numpy.array([-0.7142857142857143, 0.0, 1.0, 0.0]), 1],
+                                     [numpy.array([1.5714285714285714, 1.0, 0.0, 0.0]), 2]],
+                                    columns=['array', 'mlinspect_lineage_0_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([-0.7135186035929223, 1.1673231103767618]), 0],
+                                     [numpy.array([-0.8831636310316658, 0.3089734250515106]), 1],
+                                     [numpy.array([1.7269050556839787, 0.6466457479069083]), 2]],
+                                    columns=['array', 'mlinspect_lineage_0_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transform_test]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([-0.7135186035929223, 1.1673231103767618]), 0],
+                                     [numpy.array([-0.8831636310316658, 0.3089734250515106]), 1],
+                                     [numpy.array([1.7269050556839787, 0.6466457479069083]), 2]],
+                                    columns=['array', 'mlinspect_lineage_0_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
