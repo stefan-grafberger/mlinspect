@@ -7,8 +7,8 @@ import warnings
 import gorilla
 import numpy
 import pandas
+import scipy
 from joblib import Parallel, delayed
-from scipy import sparse
 from sklearn import preprocessing, compose, tree, impute, linear_model, model_selection, decomposition, pipeline
 from sklearn.feature_extraction import text
 from sklearn.linear_model._stochastic_gradient import DEFAULT_EPSILON
@@ -353,21 +353,14 @@ class SklearnFeatureUnionPatching:
     @gorilla.settings(allow_hit=True)
     def patched_fit_transform(self, X, y=None, **fit_params):
         """ Patch for ('sklearn.pipeline.FeatureUnion', 'fit_transform') """
-        # pylint: disable=no-method-argument
+        # pylint: disable=no-method-argument,invalid-name,too-many-locals
         # First part up to concat of the original fit_transform
-        results = self._parallel_func(X, y, fit_params, _fit_transform_one)
-        if not results:
-            # All transformers are None
-            raise Exception("TODO: Implement support for FeatureUnion without transformers")
-            # return numpy.zeros((X.shape[0], 0))
-
-        Xs, transformers = zip(*results)
-        self._update_transformer_list(transformers)
+        transformer_outputs = self.feature_union_fit_transform_part_one(X, fit_params, y)
 
         self.mlinspect_fit_transform_active = True  # pylint: disable=attribute-defined-outside-init
         function_info = FunctionInfo('sklearn.pipeline', 'FeatureUnion')
         input_infos = []
-        for input_df_obj in Xs:
+        for input_df_obj in transformer_outputs:
             input_info = get_input_info(input_df_obj, self.mlinspect_caller_filename, self.mlinspect_lineno,
                                         function_info, self.mlinspect_optional_code_reference,
                                         self.mlinspect_optional_source_code)
@@ -378,10 +371,7 @@ class SklearnFeatureUnionPatching:
         backend_input_infos = SklearnBackend.before_call(operator_context, input_annotated_dfs)
 
         # Rest of orignal fit_transform
-        if any(sparse.issparse(f) for f in Xs):
-            result = sparse.hstack(Xs).tocsr()
-        else:
-            result = numpy.hstack(Xs)
+        result = self.feature_union_concat(transformer_outputs)
 
         backend_result = SklearnBackend.after_call(operator_context,
                                                    backend_input_infos,
@@ -400,35 +390,33 @@ class SklearnFeatureUnionPatching:
         self.mlinspect_fit_transform_active = False  # pylint: disable=attribute-defined-outside-init
         return new_return_value
 
+    def feature_union_fit_transform_part_one(self, X, fit_params, y):
+        """First part of the fit_transform implementation"""
+        # pylint: disable=no-member,invalid-name
+        results = self._parallel_func(X, y, fit_params, _fit_transform_one)
+        if not results:
+            # All transformers are None
+            raise Exception("TODO: Implement support for FeatureUnion without transformers")
+            # return numpy.zeros((X.shape[0], 0))
+        Xs, transformers = zip(*results)
+        self._update_transformer_list(transformers)
+        return Xs
+
     @gorilla.name('transform')
     @gorilla.settings(allow_hit=True)
-    def patched_transform(self, X):
+    def patched_transform(self, data):
         """ Patch for ('sklearn.pipeline.FeatureUnion', 'transform') """
-        # pylint: disable=no-method-argument
+        # pylint: disable=no-method-argument,too-many-locals,no-self-use
         original = gorilla.get_original_attribute(pipeline.FeatureUnion, 'transform')
 
         if not self.mlinspect_fit_transform_active:
             # First part up to concat of the original transform
-            for _, t in self.transformer_list:
-                # TODO: Remove in 0.24 when None is removed
-                if t is None:
-                    warnings.warn("Using None as a transformer is deprecated "
-                                  "in version 0.22 and will be removed in "
-                                  "version 0.24. Please use 'drop' instead.",
-                                  FutureWarning)
-                    continue
-            Xs = Parallel(n_jobs=self.n_jobs)(
-                delayed(_transform_one)(trans, X, None, weight)
-                for name, trans, weight in self._iter())
-            if not Xs:
-                # All transformers are None
-                raise Exception("TODO: Implement support for FeatureUnion without transformers")
-                # return numpy.zeros((X.shape[0], 0))
+            transformer_outputs = self.feature_union_transform_part_one(data)
 
             function_info = FunctionInfo('sklearn.pipeline', 'FeatureUnion')
             operator_context = OperatorContext(OperatorType.CONCATENATION, function_info)
             input_infos = []
-            for input_df_obj in Xs:
+            for input_df_obj in transformer_outputs:
                 input_info = get_input_info(input_df_obj, self.mlinspect_caller_filename, self.mlinspect_lineno,
                                             function_info, self.mlinspect_optional_code_reference,
                                             self.mlinspect_optional_source_code)
@@ -436,10 +424,7 @@ class SklearnFeatureUnionPatching:
             input_annotated_dfs = [input_info.annotated_dfobject for input_info in input_infos]
             backend_input_infos = SklearnBackend.before_call(operator_context, input_annotated_dfs)
 
-            if any(sparse.issparse(f) for f in Xs):
-                result = sparse.hstack(Xs).tocsr()
-            else:
-                result = numpy.hstack(Xs)
+            result = self.feature_union_concat(transformer_outputs)
 
             backend_result = SklearnBackend.after_call(operator_context,
                                                        backend_input_infos,
@@ -456,8 +441,37 @@ class SklearnFeatureUnionPatching:
             input_dag_nodes = [input_info.dag_node for input_info in input_infos]
             add_dag_node(dag_node, input_dag_nodes, backend_result)
         else:
-            new_return_value = original(self, X)
+            new_return_value = original(self, data)
         return new_return_value
+
+    def feature_union_transform_part_one(self, X):
+        """First part of the transform implementation"""
+        # pylint: disable=no-member,invalid-name
+        for _, t in self.transformer_list:
+            # TODO: Remove in 0.24 when None is removed
+            if t is None:
+                warnings.warn("Using None as a transformer is deprecated "
+                              "in version 0.22 and will be removed in "
+                              "version 0.24. Please use 'drop' instead.",
+                              FutureWarning)
+                continue
+        Xs = Parallel(n_jobs=self.n_jobs)(
+            delayed(_transform_one)(trans, X, None, weight)
+            for name, trans, weight in self._iter())
+        if not Xs:
+            # All transformers are None
+            raise Exception("TODO: Implement support for FeatureUnion without transformers")
+            # return numpy.zeros((X.shape[0], 0))
+        return Xs
+
+    def feature_union_concat(self, Xs):
+        """The concat used internally in the FeatureUnion functions"""
+        # pylint: disable=no-member,invalid-name,no-self-use
+        if any(scipy.sparse.issparse(f) for f in Xs):
+            result = scipy.sparse.hstack(Xs).tocsr()
+        else:
+            result = numpy.hstack(Xs)
+        return result
 
 
 @gorilla.patches(preprocessing.StandardScaler)
