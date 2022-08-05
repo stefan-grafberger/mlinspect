@@ -9,7 +9,6 @@ import numpy
 import pandas
 import scipy
 from joblib import Parallel, delayed
-from scipy.sparse import csr_matrix
 from sklearn import preprocessing, compose, tree, impute, linear_model, model_selection, decomposition, pipeline, \
     ensemble, svm
 from sklearn.feature_extraction import text
@@ -694,7 +693,7 @@ class SklearnCountVectorizerPatching:
                         mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None,
                         mlinspect_fit_transform_active=False):
         """ Patch for ('sklearn.feature_extraction.text', 'CountVectorizer') """
-        # pylint: disable=no-method-argument, attribute-defined-outside-init
+        # pylint: disable=no-method-argument, attribute-defined-outside-init,redefined-builtin,too-many-locals
         original = gorilla.get_original_attribute(text.CountVectorizer, '__init__')
 
         self.mlinspect_caller_filename = mlinspect_caller_filename
