@@ -1443,7 +1443,7 @@ class SklearnSVCPatching:
                         mlinspect_lineno=None, mlinspect_optional_code_reference=None,
                         mlinspect_optional_source_code=None, mlinspect_estimator_node_id=None):
         """ Patch for ('sklearn.svm._classes', 'SVC') """
-        # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals
+        # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals, invalid-name
         original = gorilla.get_original_attribute(svm.SVC, '__init__')
 
         self.mlinspect_caller_filename = mlinspect_caller_filename
