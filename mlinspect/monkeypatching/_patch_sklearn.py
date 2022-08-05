@@ -9,7 +9,8 @@ import numpy
 import pandas
 import scipy
 from joblib import Parallel, delayed
-from sklearn import preprocessing, compose, tree, impute, linear_model, model_selection, decomposition, pipeline
+from sklearn import preprocessing, compose, tree, impute, linear_model, model_selection, decomposition, pipeline, \
+    ensemble
 from sklearn.feature_extraction import text
 from sklearn.linear_model._stochastic_gradient import DEFAULT_EPSILON
 from sklearn.metrics import accuracy_score
@@ -139,6 +140,7 @@ class SklearnCallInfo:
     transformer_optional_source_code: str or None = None
     column_transformer_active: bool = False
     param_search_active: bool = False
+    random_forest_active: bool = False
 
 
 call_info_singleton = SklearnCallInfo()
@@ -188,8 +190,9 @@ class SklearnGridSearchCVPatching:
 
         call_info_singleton.transformer_filename = self.mlinspect_filename
         call_info_singleton.transformer_lineno = self.mlinspect_lineno
-        call_info_singleton.transformer_function_info = FunctionInfo('sklearn.compose.model_selection._search.GridSearchCV',
-                                                                     '_run_search')
+        call_info_singleton.transformer_function_info = FunctionInfo(
+            'sklearn.compose.model_selection._search.GridSearchCV',
+            '_run_search')
         call_info_singleton.transformer_optional_code_reference = self.mlinspect_optional_code_reference
         call_info_singleton.transformer_optional_source_code = self.mlinspect_optional_source_code
 
@@ -1340,7 +1343,7 @@ class SklearnDecisionTreePatching:
         """ Patch for ('sklearn.tree._classes.DecisionTreeClassifier', 'fit') """
         # pylint: disable=no-method-argument, too-many-locals
         original = gorilla.get_original_attribute(tree.DecisionTreeClassifier, 'fit')
-        if not call_info_singleton.param_search_active:
+        if not call_info_singleton.param_search_active and not call_info_singleton.random_forest_active:
             function_info = FunctionInfo('sklearn.tree._classes', 'DecisionTreeClassifier')
 
             data_backend_result, train_data_node, train_data_result = add_train_data_node(self, args[0], function_info)
@@ -1414,6 +1417,156 @@ class SklearnDecisionTreePatching:
             add_dag_node(dag_node, [estimator_dag_node, test_data_node, test_labels_node],
                          estimator_backend_result)
             return result
+
+        if not call_info_singleton.param_search_active and not call_info_singleton.random_forest_active:
+            new_result = execute_patched_func_indirect_allowed(execute_inspections)
+        else:
+            original = gorilla.get_original_attribute(tree.DecisionTreeClassifier, 'score')
+            new_result = original(self, *args, **kwargs)
+        return new_result
+
+
+@gorilla.patches(ensemble.RandomForestClassifier)
+class SklearnRandomForestClassifierPatching:
+    """ Patches for sklearn DecisionTree"""
+
+    # pylint: disable=too-few-public-methods
+
+    @gorilla.name('__init__')
+    @gorilla.settings(allow_hit=True)
+    def patched__init__(self, n_estimators=100, *, criterion="gini", max_depth=None, min_samples_split=2,
+                        min_samples_leaf=1, min_weight_fraction_leaf=0., max_features="auto", max_leaf_nodes=None,
+                        min_impurity_decrease=0., min_impurity_split=None, bootstrap=True, oob_score=False,
+                        n_jobs=None, random_state=None, verbose=0, warm_start=False, class_weight=None,
+                        ccp_alpha=0.0, max_samples=None, mlinspect_caller_filename=None,
+                        mlinspect_lineno=None, mlinspect_optional_code_reference=None,
+                        mlinspect_optional_source_code=None, mlinspect_estimator_node_id=None):
+        """ Patch for ('sklearn.tree._classes', 'DecisionTreeClassifier') """
+        # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals
+        original = gorilla.get_original_attribute(ensemble.RandomForestClassifier, '__init__')
+
+        self.mlinspect_caller_filename = mlinspect_caller_filename
+        self.mlinspect_lineno = mlinspect_lineno
+        self.mlinspect_optional_code_reference = mlinspect_optional_code_reference
+        self.mlinspect_optional_source_code = mlinspect_optional_source_code
+        self.mlinspect_estimator_node_id = mlinspect_estimator_node_id
+
+        self.mlinspect_non_data_func_args = {'n_estimators': n_estimators, 'criterion': criterion, 'max_depth': max_depth,
+                                             'min_samples_split': min_samples_split,
+                                             'min_samples_leaf': min_samples_leaf,
+                                             'min_weight_fraction_leaf': min_weight_fraction_leaf,
+                                             'max_features': max_features,
+                                             'max_leaf_nodes': max_leaf_nodes,
+                                             'min_impurity_decrease': min_impurity_decrease,
+                                             'min_impurity_split': min_impurity_split,
+                                             'bootstrap': bootstrap,
+                                             'oob_score': oob_score,
+                                             'n_jobs': n_jobs,
+                                             'random_state': random_state,
+                                             'verbose': verbose,
+                                             'warm_start': warm_start,
+                                             'class_weight': class_weight,
+                                             'ccp_alpha': ccp_alpha,
+                                             'max_samples': max_samples}
+
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            original(self, **self.mlinspect_non_data_func_args)
+
+            self.mlinspect_caller_filename = caller_filename
+            self.mlinspect_lineno = lineno
+            self.mlinspect_optional_code_reference = optional_code_reference
+            self.mlinspect_optional_source_code = optional_source_code
+            self.mlinspect_estimator_node_id = None
+
+        return execute_patched_func_no_op_id(original, execute_inspections, self,
+                                             **self.mlinspect_non_data_func_args)
+
+    @gorilla.name('fit')
+    @gorilla.settings(allow_hit=True)
+    def patched_fit(self, *args, **kwargs):
+        """ Patch for ('sklearn.ensemble._forest.RandomForestClassifier', 'fit') """
+        # pylint: disable=no-method-argument, too-many-locals
+        original = gorilla.get_original_attribute(ensemble.RandomForestClassifier, 'fit')
+        if not call_info_singleton.param_search_active:
+            call_info_singleton.random_forest_active = True
+            function_info = FunctionInfo('sklearn.ensemble._forest', 'RandomForestClassifier')
+
+            data_backend_result, train_data_node, train_data_result = add_train_data_node(self, args[0], function_info)
+            label_backend_result, train_labels_node, train_labels_result = add_train_label_node(self, args[1],
+                                                                                                function_info)
+
+            # Estimator
+            operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
+            input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+            input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+            original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
+            estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                                 input_infos,
+                                                                 None,
+                                                                 self.mlinspect_non_data_func_args)
+
+            self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
+            dag_node = DagNode(self.mlinspect_estimator_node_id,
+                               BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                               operator_context,
+                               DagNodeDetails("Random Forest", []),
+                               get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                              self.mlinspect_optional_source_code))
+            add_dag_node(dag_node, [train_data_node, train_labels_node], estimator_backend_result)
+            call_info_singleton.random_forest_active = False
+        else:
+            original(self, *args, **kwargs)
+        return self
+
+    @gorilla.name('score')
+    @gorilla.settings(allow_hit=True)
+    def patched_score(self, *args, **kwargs):
+        """ Patch for ('sklearn.ensemble._forest.RandomForestClassifier', 'score') """
+
+        # pylint: disable=no-method-argument
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            # pylint: disable=too-many-locals
+            call_info_singleton.random_forest_active = True
+            function_info = FunctionInfo('sklearn.ensemble._forest.RandomForestClassifier', 'score')
+            data_backend_result, test_data_node, test_data_result = add_test_data_dag_node(args[0],
+                                                                                           function_info,
+                                                                                           lineno,
+                                                                                           optional_code_reference,
+                                                                                           optional_source_code,
+                                                                                           caller_filename)
+            label_backend_result, test_labels_node, test_labels_result = add_test_label_node(args[1],
+                                                                                             caller_filename,
+                                                                                             function_info,
+                                                                                             lineno,
+                                                                                             optional_code_reference,
+                                                                                             optional_source_code)
+
+            operator_context = OperatorContext(OperatorType.SCORE, function_info)
+            input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+            input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+
+            # Same as original, but captures the test set predictions
+            predictions = self.predict(test_data_result)  # pylint: disable=no-member
+            result = accuracy_score(test_labels_result, predictions, **kwargs)
+
+            estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                                 input_infos,
+                                                                 predictions,
+                                                                 self.mlinspect_non_data_func_args)
+
+            dag_node = DagNode(singleton.get_next_op_id(),
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails("Random Forest", []),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
+            estimator_dag_node = get_dag_node_for_id(self.mlinspect_estimator_node_id)
+            add_dag_node(dag_node, [estimator_dag_node, test_data_node, test_labels_node],
+                         estimator_backend_result)
+            call_info_singleton.random_forest_active = False
+            return result
+
         if not call_info_singleton.param_search_active:
             new_result = execute_patched_func_indirect_allowed(execute_inspections)
         else:
@@ -1735,7 +1888,8 @@ class SklearnKerasClassifierPatching:
         if not call_info_singleton.param_search_active:
             function_info = FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')
 
-            data_backend_result, train_data_dag_node, train_data_result = add_train_data_node(self, args[0], function_info)
+            data_backend_result, train_data_dag_node, train_data_result = add_train_data_node(self, args[0],
+                                                                                              function_info)
             label_backend_result, train_labels_dag_node, train_labels_result = add_train_label_node(self, args[1],
                                                                                                     function_info)
 

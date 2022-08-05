@@ -2529,3 +2529,227 @@ def test_feature_union():
                                       2]],
                                     columns=['array', 'mlinspect_lineage_0_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
+def test_random_forest_classifier():
+    """
+    Tests whether the monkey patching of ('sklearn.tree._classes', 'DecisionTreeClassifier') works
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+                from sklearn.preprocessing import label_binarize, StandardScaler
+                from sklearn.ensemble import RandomForestClassifier
+                import numpy as np
+
+                df = pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], 'target': ['no', 'no', 'yes', 'yes']})
+
+                train = StandardScaler().fit_transform(df[['A', 'B']])
+                target = label_binarize(df['target'], classes=['no', 'yes'])
+
+                clf = RandomForestClassifier(random_state=42)
+                clf = clf.fit(train, target)
+
+                test_predict = clf.predict([[0., 0.], [0.6, 0.6]])
+                expected = np.array([0., 1.])
+                assert np.allclose(test_predict, expected)
+                """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(3)])
+
+    expected_dag = networkx.DiGraph()
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 6),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A', 'B', 'target']),
+                                   OptionalCodeInfo(CodeReference(6, 5, 6, 95),
+                                                    "pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], "
+                                                    "'target': ['no', 'no', 'yes', 'yes']})"))
+    expected_data_projection = DagNode(1,
+                                       BasicCodeLocation("<string-source>", 8),
+                                       OperatorContext(OperatorType.PROJECTION,
+                                                       FunctionInfo('pandas.core.frame', '__getitem__')),
+                                       DagNodeDetails("to ['A', 'B']", ['A', 'B']),
+                                       OptionalCodeInfo(CodeReference(8, 39, 8, 53), "df[['A', 'B']]"))
+    expected_standard_scaler = DagNode(2,
+                                       BasicCodeLocation("<string-source>", 8),
+                                       OperatorContext(OperatorType.TRANSFORMER,
+                                                       FunctionInfo('sklearn.preprocessing._data', 'StandardScaler')),
+                                       DagNodeDetails('Standard Scaler: fit_transform', ['array']),
+                                       OptionalCodeInfo(CodeReference(8, 8, 8, 24), 'StandardScaler()'))
+    expected_dag.add_edge(expected_data_source, expected_data_projection)
+    expected_dag.add_edge(expected_data_projection, expected_standard_scaler)
+    expected_label_projection = DagNode(3,
+                                        BasicCodeLocation("<string-source>", 9),
+                                        OperatorContext(OperatorType.PROJECTION,
+                                                        FunctionInfo('pandas.core.frame', '__getitem__')),
+                                        DagNodeDetails("to ['target']", ['target']),
+                                        OptionalCodeInfo(CodeReference(9, 24, 9, 36), "df['target']"))
+    expected_dag.add_edge(expected_data_source, expected_label_projection)
+    expected_label_encode = DagNode(4,
+                                    BasicCodeLocation("<string-source>", 9),
+                                    OperatorContext(OperatorType.PROJECTION_MODIFY,
+                                                    FunctionInfo('sklearn.preprocessing._label', 'label_binarize')),
+                                    DagNodeDetails("label_binarize, classes: ['no', 'yes']", ['array']),
+                                    OptionalCodeInfo(CodeReference(9, 9, 9, 60),
+                                                     "label_binarize(df['target'], classes=['no', 'yes'])"))
+    expected_dag.add_edge(expected_label_projection, expected_label_encode)
+    expected_train_data = DagNode(5,
+                                  BasicCodeLocation("<string-source>", 11),
+                                  OperatorContext(OperatorType.TRAIN_DATA,
+                                                  FunctionInfo('sklearn.ensemble._forest',
+                                                               'RandomForestClassifier')),
+                                  DagNodeDetails(None, ['array']),
+                                  OptionalCodeInfo(CodeReference(11, 6, 11, 45),
+                                                   'RandomForestClassifier(random_state=42)'))
+    expected_dag.add_edge(expected_standard_scaler, expected_train_data)
+    expected_train_labels = DagNode(6,
+                                    BasicCodeLocation("<string-source>", 11),
+                                    OperatorContext(OperatorType.TRAIN_LABELS,
+                                                    FunctionInfo('sklearn.ensemble._forest',
+                                                                 'RandomForestClassifier')),
+                                    DagNodeDetails(None, ['array']),
+                                    OptionalCodeInfo(CodeReference(11, 6, 11, 45),
+                                                     'RandomForestClassifier(random_state=42)'))
+    expected_dag.add_edge(expected_label_encode, expected_train_labels)
+    expected_decision_tree = DagNode(7,
+                                     BasicCodeLocation("<string-source>", 11),
+                                     OperatorContext(OperatorType.ESTIMATOR,
+                                                     FunctionInfo('sklearn.ensemble._forest',
+                                                                  'RandomForestClassifier')),
+                                     DagNodeDetails('Random Forest', []),
+                                     OptionalCodeInfo(CodeReference(11, 6, 11, 45),
+                                                      'RandomForestClassifier(random_state=42)'))
+    expected_dag.add_edge(expected_train_data, expected_decision_tree)
+    expected_dag.add_edge(expected_train_labels, expected_decision_tree)
+
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_data]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([-1.3416407864998738, -1.3416407864998738]), 0],
+                                     [numpy.array([-0.4472135954999579, -0.4472135954999579]), 1],
+                                     [numpy.array([0.4472135954999579, 0.4472135954999579]), 2]],
+                                    columns=['array', 'mlinspect_lineage_0_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_labels]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([0]), 0],
+                                     [numpy.array([0]), 1],
+                                     [numpy.array([1]), 2]],
+                                    columns=['array', 'mlinspect_lineage_0_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_decision_tree]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[0],
+                                     [1],
+                                     [2]],
+                                    columns=['mlinspect_lineage_0_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
+                                      check_column_type=False)
+
+
+def test_random_forest_classifier_score():
+    """
+    Tests whether the monkey patching of ('sklearn.tree._classes.DecisionTreeClassifier', 'score') works
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+                from sklearn.preprocessing import label_binarize, StandardScaler
+                from sklearn.ensemble import RandomForestClassifier
+                import numpy as np
+
+                df = pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], 'target': ['no', 'no', 'yes', 'yes']})
+
+                train = StandardScaler().fit_transform(df[['A', 'B']])
+                target = label_binarize(df['target'], classes=['no', 'yes'])
+
+                clf = RandomForestClassifier(random_state=42)
+                clf = clf.fit(train, target)
+
+                test_df = pd.DataFrame({'A': [0., 0.6], 'B':  [0., 0.6], 'target': ['no', 'yes']})
+                test_labels = label_binarize(test_df['target'], classes=['no', 'yes'])
+                test_score = clf.score(test_df[['A', 'B']], test_labels)
+                assert test_score == 1.0
+                """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(3)])
+    filter_dag_for_nodes_with_ids(inspector_result, {7, 10, 11, 12, 13, 14}, 15)
+
+    expected_dag = networkx.DiGraph()
+    expected_data_projection = DagNode(11,
+                                       BasicCodeLocation("<string-source>", 16),
+                                       OperatorContext(OperatorType.PROJECTION,
+                                                       FunctionInfo('pandas.core.frame', '__getitem__')),
+                                       DagNodeDetails("to ['A', 'B']", ['A', 'B']),
+                                       OptionalCodeInfo(CodeReference(16, 23, 16, 42), "test_df[['A', 'B']]"))
+    expected_test_data = DagNode(12,
+                                 BasicCodeLocation("<string-source>", 16),
+                                 OperatorContext(OperatorType.TEST_DATA,
+                                                 FunctionInfo('sklearn.tree._classes.DecisionTreeClassifier', 'score')),
+                                 DagNodeDetails(None, ['A', 'B']),
+                                 OptionalCodeInfo(CodeReference(16, 13, 16, 56),
+                                                  "clf.score(test_df[['A', 'B']], test_labels)"))
+    expected_dag.add_edge(expected_data_projection, expected_test_data)
+    expected_label_encode = DagNode(10,
+                                    BasicCodeLocation("<string-source>", 15),
+                                    OperatorContext(OperatorType.PROJECTION_MODIFY,
+                                                    FunctionInfo('sklearn.preprocessing._label', 'label_binarize')),
+                                    DagNodeDetails("label_binarize, classes: ['no', 'yes']", ['array']),
+                                    OptionalCodeInfo(CodeReference(15, 14, 15, 70),
+                                                     "label_binarize(test_df['target'], classes=['no', 'yes'])"))
+    expected_test_labels = DagNode(13,
+                                   BasicCodeLocation("<string-source>", 16),
+                                   OperatorContext(OperatorType.TEST_LABELS,
+                                                   FunctionInfo('sklearn.ensemble._forest.RandomForestClassifier',
+                                                                'score')),
+                                   DagNodeDetails(None, ['array']),
+                                   OptionalCodeInfo(CodeReference(16, 13, 16, 56),
+                                                    "clf.score(test_df[['A', 'B']], test_labels)"))
+    expected_dag.add_edge(expected_label_encode, expected_test_labels)
+    expected_classifier = DagNode(7,
+                                  BasicCodeLocation("<string-source>", 11),
+                                  OperatorContext(OperatorType.ESTIMATOR,
+                                                  FunctionInfo('sklearn.ensemble._forest',
+                                                               'RandomForestClassifier')),
+                                  DagNodeDetails('Random Forest', []),
+                                  OptionalCodeInfo(CodeReference(11, 6, 11, 45),
+                                                   'RandomForestClassifier(random_state=42)'))
+    expected_score = DagNode(14,
+                             BasicCodeLocation("<string-source>", 16),
+                             OperatorContext(OperatorType.SCORE,
+                                             FunctionInfo('sklearn.ensemble._forest.RandomForestClassifier', 'score')),
+                             DagNodeDetails('Random Forest', []),
+                             OptionalCodeInfo(CodeReference(16, 13, 16, 56),
+                                              "clf.score(test_df[['A', 'B']], test_labels)"))
+    expected_dag.add_edge(expected_classifier, expected_score)
+    expected_dag.add_edge(expected_test_data, expected_score)
+    expected_dag.add_edge(expected_test_labels, expected_score)
+
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test_data]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[0, 0, 0],
+                                     [0.6, 0.6, 1]],
+                                    columns=['A', 'B', 'mlinspect_lineage_8_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test_labels]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([0.]), 0],
+                                     [numpy.array([1.]), 1]],
+                                    columns=['array', 'mlinspect_lineage_8_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_score]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[0, 0, 0],
+                                     [1, 1, 1]],
+                                    columns=['array', 'mlinspect_lineage_8_0', 'mlinspect_lineage_8_1'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
+                                      check_column_type=False)
