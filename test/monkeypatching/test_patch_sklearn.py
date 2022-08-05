@@ -2360,6 +2360,73 @@ def test_pca():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
+def test_robust_scaler():
+    """
+    Tests whether the monkey patching of ('sklearn.compose._column_transformer', 'ColumnTransformer') works with
+    multiple transformers with dense output
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+                from sklearn.preprocessing import RobustScaler
+                import numpy
+
+                df = pd.DataFrame({'A': [1, 2, 10, 5]})
+                transformer = RobustScaler()
+                transformed_data = transformer.fit_transform(df)
+                test_transform_function = transformer.transform(df)
+                print(transformed_data)
+                expected = numpy.array([[-0.55555556],
+                                        [-0.33333333],
+                                        [ 1.44444444],
+                                        [ 0.33333333]])
+                assert numpy.allclose(transformed_data, expected)
+                assert numpy.allclose(test_transform_function, expected)
+                """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(3)])
+    expected_dag = networkx.DiGraph()
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 5),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.frame', 'DataFrame')),
+                                   DagNodeDetails(None, ['A']),
+                                   OptionalCodeInfo(CodeReference(5, 5, 5, 39), "pd.DataFrame({'A': [1, 2, 10, 5]})"))
+    expected_transformer = DagNode(1,
+                                   BasicCodeLocation("<string-source>", 6),
+                                   OperatorContext(OperatorType.TRANSFORMER,
+                                                   FunctionInfo('sklearn.preprocessing._data', 'RobustScaler')),
+                                   DagNodeDetails('Robust Scaler: fit_transform', ['array']),
+                                   OptionalCodeInfo(CodeReference(6, 14, 6, 28),
+                                                    'RobustScaler()'))
+    expected_dag.add_edge(expected_data_source, expected_transformer)
+    expected_transform_test = DagNode(2,
+                                      BasicCodeLocation("<string-source>", 6),
+                                      OperatorContext(OperatorType.TRANSFORMER,
+                                                      FunctionInfo('sklearn.preprocessing._data', 'RobustScaler')),
+                                      DagNodeDetails('Robust Scaler: transform', ['array']),
+                                      OptionalCodeInfo(CodeReference(6, 14, 6, 28),
+                                                       'RobustScaler()'))
+    expected_dag.add_edge(expected_data_source, expected_transform_test)
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([-0.5555555555555556]), 0],
+                                     [numpy.array([-0.3333333333333333]), 1],
+                                     [numpy.array([1.4444444444444444]), 2]],
+                                    columns=['array', 'mlinspect_lineage_0_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transform_test]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([-0.5555555555555556]), 0],
+                                     [numpy.array([-0.3333333333333333]), 1],
+                                     [numpy.array([1.4444444444444444]), 2]],
+                                    columns=['array', 'mlinspect_lineage_0_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
 def test_feature_union():
     """
     Tests whether the monkey patching of ('sklearn.preprocessing._data', 'StandardScaler') works
