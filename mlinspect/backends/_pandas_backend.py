@@ -6,6 +6,7 @@ from typing import List, Dict
 
 import numpy
 import pandas
+from scipy.sparse import csr_matrix
 
 from ._backend import Backend, AnnotatedDfObject, BackendResult
 from ._backend_utils import build_annotation_df_from_iters, \
@@ -144,7 +145,7 @@ class PandasBackend(Backend):
         return return_value
 
     @staticmethod
-    def lineage_only_after_call_join(non_data_function_args, operator_context, return_value):
+    def lineage_only_after_call_join(_, operator_context, return_value):
         """
         Optimised lineage inspection handling if only the lineage inspection is used
         """
@@ -236,8 +237,19 @@ class PandasBackend(Backend):
                                         (operator_context.operator
                                          in lineage_inspection.operator_type_restriction)
         if materialize_for_this_operator:
-            reset_index_return_value = return_value.reset_index(drop=True)
-            lineage_dag_annotation = pandas.concat([reset_index_return_value, annotations_df], axis=1)
+            if isinstance(return_value, numpy.ndarray):
+                pd_series = pandas.Series(list(return_value))
+                pandas_return_value = pandas.DataFrame({'array': pd_series})
+            elif isinstance(return_value, csr_matrix):
+                pd_series = pandas.Series(list(return_value.toarray()))
+                pandas_return_value = pandas.DataFrame({'array': pd_series})
+            elif isinstance(return_value, pandas.DataFrame):
+                pandas_return_value = return_value.reset_index(drop=True)
+            elif isinstance(return_value, pandas.Series):
+                pandas_return_value = pandas.DataFrame(return_value)
+            else:
+                assert False
+            lineage_dag_annotation = pandas.concat([pandas_return_value, annotations_df], axis=1)
             if lineage_inspection.row_count != RowLineage.ALL_ROWS:
                 lineage_dag_annotation = lineage_dag_annotation.head(lineage_inspection.row_count)
         else:

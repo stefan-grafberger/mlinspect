@@ -468,3 +468,33 @@ class SeriesPatching:
             add_dag_node(dag_node, [], backend_result)
 
         execute_patched_func(original, execute_inspections, self, *args, **kwargs)
+
+    @gorilla.name('to_numpy')
+    @gorilla.settings(allow_hit=True)
+    def patched_to_numpy(self, *args, **kwargs):
+        """ Patch for ('pandas.core.frame', 'replace') """
+        original = gorilla.get_original_attribute(pandas.Series, 'to_numpy')
+
+        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            function_info = FunctionInfo('pandas.core.series.Series', 'to_numpy')
+            input_info = get_input_info(self, caller_filename, lineno, function_info, optional_code_reference,
+                                        optional_source_code)
+            operator_context = OperatorContext(OperatorType.PROJECTION, function_info)
+            input_infos = PandasBackend.before_call(operator_context, [input_info.annotated_dfobject])
+            result = original(input_infos[0].result_data, *args, **kwargs)
+            backend_result = PandasBackend.after_call(operator_context,
+                                                      input_infos,
+                                                      result)
+            result = backend_result.annotated_dfobject.result_data
+            description = "numpy conversion"
+            dag_node = DagNode(op_id,
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails(description, ['array']),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
+            add_dag_node(dag_node, [input_info.dag_node], backend_result)
+
+            return result
+
+        return execute_patched_func(original, execute_inspections, self, *args, **kwargs)

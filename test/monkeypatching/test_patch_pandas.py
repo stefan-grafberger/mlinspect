@@ -444,7 +444,7 @@ def test_frame_merge_on():
     lineage_output = inspection_results_data_source[RowLineage(2)]
     expected_lineage_df = DataFrame([[0, 1, 0, 1., 0],
                                      [2, 2, 1, 5., 1]],
-                                    columns=['A', 'B', 'mlinspect_lineage_0_0',  'C', 'mlinspect_lineage_1_0'])
+                                    columns=['A', 'B', 'mlinspect_lineage_0_0', 'C', 'mlinspect_lineage_1_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
@@ -590,9 +590,9 @@ def test_frame_merge_sorted():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_join]
     lineage_output = inspection_results_data_source[RowLineage(5)]
-    expected_lineage_df = DataFrame([[5, 1, 4, 1.,       0],
-                                     [8, 2, 3, 11.,      3],
-                                     [4, 4, 2, 5.,       1],
+    expected_lineage_df = DataFrame([[5, 1, 4, 1., 0],
+                                     [8, 2, 3, 11., 3],
+                                     [4, 4, 2, 5., 1],
                                      [2, 5, 1, math.nan, 4]],
                                     columns=['A', 'B', 'mlinspect_lineage_0_0', 'C', 'mlinspect_lineage_1_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
@@ -669,4 +669,43 @@ def test_series__init__():
     expected_lineage_df = DataFrame([[0., 0],
                                      [2., 1]],
                                     columns=['A', 'mlinspect_lineage_0_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
+def test_series_as_numpy():
+    """
+    Tests whether the monkey patching of ('pandas.core.series', 'Series') works
+    """
+    test_code = cleandoc("""
+        import pandas as pd
+
+        pd_series = pd.Series([0, 2, 4, None], name='A')
+        as_numpy = pd_series.to_numpy() 
+        assert len(as_numpy) == 4
+        """)
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(2)])
+
+    expected_dag = networkx.DiGraph()
+    expected_data_source = DagNode(0,
+                                   BasicCodeLocation("<string-source>", 3),
+                                   OperatorContext(OperatorType.DATA_SOURCE,
+                                                   FunctionInfo('pandas.core.series', 'Series')),
+                                   DagNodeDetails(None, ['A']),
+                                   OptionalCodeInfo(CodeReference(3, 12, 3, 48),
+                                                    "pd.Series([0, 2, 4, None], name='A')"))
+    expected_project = DagNode(1,
+                               BasicCodeLocation("<string-source>", 4),
+                               OperatorContext(OperatorType.PROJECTION,
+                                               FunctionInfo('pandas.core.series.Series', 'to_numpy')),
+                               DagNodeDetails('numpy conversion', ['array']),
+                               OptionalCodeInfo(CodeReference(4, 11, 4, 31), 'pd_series.to_numpy()'))
+    expected_dag.add_edge(expected_data_source, expected_project)
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_project]
+    lineage_output = inspection_results_data_source[RowLineage(2)]
+    expected_lineage_df = DataFrame([[0., 0],
+                                     [2., 1]],
+                                    columns=['array', 'mlinspect_lineage_0_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
