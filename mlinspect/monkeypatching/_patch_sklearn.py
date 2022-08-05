@@ -131,7 +131,7 @@ class SklearnModelSelectionPatching:
 
 class SklearnCallInfo:
     """ Contains info like lineno from the current Transformer so indirect utility function calls can access it """
-    # pylint: disable=too-few-public-methods
+    # pylint: disable=too-few-public-methods,too-many-instance-attributes
 
     transformer_filename: str or None = None
     transformer_lineno: int or None = None
