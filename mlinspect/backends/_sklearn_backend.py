@@ -137,7 +137,10 @@ class SklearnBackend(Backend):
         Optimised lineage inspection handling if only the lineage inspection is used
         """
         # inspection annotation
-        if operator_context.function_info != FunctionInfo('sklearn.compose._column_transformer', 'ColumnTransformer'):
+        if operator_context.function_info not in {
+            FunctionInfo('sklearn.compose._column_transformer', 'ColumnTransformer'),
+            FunctionInfo('sklearn.pipeline', 'FeatureUnion')
+        }:
             raise Exception("TODO: Implement general concat analogous to lineage_only_after_call_score.")
         lineage_inspection = singleton.inspections[0]
         # In the case of the ColumnTransformer, all columns are guaranteed to have the same provenance
