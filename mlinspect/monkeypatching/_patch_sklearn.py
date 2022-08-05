@@ -10,7 +10,7 @@ import pandas
 import scipy
 from joblib import Parallel, delayed
 from sklearn import preprocessing, compose, tree, impute, linear_model, model_selection, decomposition, pipeline, \
-    ensemble
+    ensemble, svm
 from sklearn.feature_extraction import text
 from sklearn.linear_model._stochastic_gradient import DEFAULT_EPSILON
 from sklearn.metrics import accuracy_score
@@ -1426,6 +1426,142 @@ class SklearnDecisionTreePatching:
         return new_result
 
 
+@gorilla.patches(svm.SVC)
+class SklearnSVCPatching:
+    """ Patches for sklearn DecisionTree"""
+
+    # pylint: disable=too-few-public-methods
+
+    @gorilla.name('__init__')
+    @gorilla.settings(allow_hit=True)
+    def patched__init__(self, *, C=1.0, kernel='rbf', degree=3, gamma='scale',
+                        coef0=0.0, shrinking=True, probability=False,
+                        tol=1e-3, cache_size=200, class_weight=None,
+                        verbose=False, max_iter=-1, decision_function_shape='ovr',
+                        break_ties=False,
+                        random_state=None, mlinspect_caller_filename=None,
+                        mlinspect_lineno=None, mlinspect_optional_code_reference=None,
+                        mlinspect_optional_source_code=None, mlinspect_estimator_node_id=None):
+        """ Patch for ('sklearn.svm._classes', 'SVC') """
+        # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals
+        original = gorilla.get_original_attribute(svm.SVC, '__init__')
+
+        self.mlinspect_caller_filename = mlinspect_caller_filename
+        self.mlinspect_lineno = mlinspect_lineno
+        self.mlinspect_optional_code_reference = mlinspect_optional_code_reference
+        self.mlinspect_optional_source_code = mlinspect_optional_source_code
+        self.mlinspect_estimator_node_id = mlinspect_estimator_node_id
+
+        self.mlinspect_non_data_func_args = {'C': C, 'kernel': kernel, 'degree': degree, 'gamma': gamma,
+                                             'coef0': coef0, 'shrinking': shrinking, 'probability': probability,
+                                             'tol': tol, 'cache_size': cache_size, 'class_weight': class_weight,
+                                             'verbose': verbose, 'max_iter': max_iter,
+                                             'decision_function_shape': decision_function_shape,
+                                             'break_ties': break_ties, 'random_state': random_state
+                                             }
+
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            original(self, **self.mlinspect_non_data_func_args)
+
+            self.mlinspect_caller_filename = caller_filename
+            self.mlinspect_lineno = lineno
+            self.mlinspect_optional_code_reference = optional_code_reference
+            self.mlinspect_optional_source_code = optional_source_code
+            self.mlinspect_estimator_node_id = None
+
+        return execute_patched_func_no_op_id(original, execute_inspections, self,
+                                             **self.mlinspect_non_data_func_args)
+
+    @gorilla.name('fit')
+    @gorilla.settings(allow_hit=True)
+    def patched_fit(self, *args, **kwargs):
+        """ Patch for ('sklearn.svm._classes.SVC', 'fit') """
+        # pylint: disable=no-method-argument, too-many-locals
+        original = gorilla.get_original_attribute(svm.SVC, 'fit')
+        if not call_info_singleton.param_search_active and not call_info_singleton.random_forest_active:
+            function_info = FunctionInfo('sklearn.svm._classes', 'SVC')
+
+            data_backend_result, train_data_node, train_data_result = add_train_data_node(self, args[0], function_info)
+            label_backend_result, train_labels_node, train_labels_result = add_train_label_node(self, args[1],
+                                                                                                function_info)
+
+            # Estimator
+            operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
+            input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+            input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+            original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
+            estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                                 input_infos,
+                                                                 None,
+                                                                 self.mlinspect_non_data_func_args)
+
+            self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
+            dag_node = DagNode(self.mlinspect_estimator_node_id,
+                               BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                               operator_context,
+                               DagNodeDetails("SVC", []),
+                               get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                              self.mlinspect_optional_source_code))
+            add_dag_node(dag_node, [train_data_node, train_labels_node], estimator_backend_result)
+        else:
+            original(self, *args, **kwargs)
+        return self
+
+    @gorilla.name('score')
+    @gorilla.settings(allow_hit=True)
+    def patched_score(self, *args, **kwargs):
+        """ Patch for ('sklearn.svm._classes.SVC', 'score') """
+
+        # pylint: disable=no-method-argument
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            # pylint: disable=too-many-locals
+            function_info = FunctionInfo('sklearn.svm._classes.SVC', 'score')
+            data_backend_result, test_data_node, test_data_result = add_test_data_dag_node(args[0],
+                                                                                           function_info,
+                                                                                           lineno,
+                                                                                           optional_code_reference,
+                                                                                           optional_source_code,
+                                                                                           caller_filename)
+            label_backend_result, test_labels_node, test_labels_result = add_test_label_node(args[1],
+                                                                                             caller_filename,
+                                                                                             function_info,
+                                                                                             lineno,
+                                                                                             optional_code_reference,
+                                                                                             optional_source_code)
+
+            operator_context = OperatorContext(OperatorType.SCORE, function_info)
+            input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+            input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+
+            # Same as original, but captures the test set predictions
+            predictions = self.predict(test_data_result)  # pylint: disable=no-member
+            result = accuracy_score(test_labels_result, predictions, **kwargs)
+
+            estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                                 input_infos,
+                                                                 predictions,
+                                                                 self.mlinspect_non_data_func_args)
+
+            dag_node = DagNode(singleton.get_next_op_id(),
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails("SVC", []),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
+            estimator_dag_node = get_dag_node_for_id(self.mlinspect_estimator_node_id)
+            add_dag_node(dag_node, [estimator_dag_node, test_data_node, test_labels_node],
+                         estimator_backend_result)
+            return result
+
+        if not call_info_singleton.param_search_active and not call_info_singleton.random_forest_active:
+            new_result = execute_patched_func_indirect_allowed(execute_inspections)
+        else:
+            original = gorilla.get_original_attribute(svm.SVC, 'score')
+            new_result = original(self, *args, **kwargs)
+        return new_result
+
+
 @gorilla.patches(ensemble.RandomForestClassifier)
 class SklearnRandomForestClassifierPatching:
     """ Patches for sklearn DecisionTree"""
@@ -1451,7 +1587,8 @@ class SklearnRandomForestClassifierPatching:
         self.mlinspect_optional_source_code = mlinspect_optional_source_code
         self.mlinspect_estimator_node_id = mlinspect_estimator_node_id
 
-        self.mlinspect_non_data_func_args = {'n_estimators': n_estimators, 'criterion': criterion, 'max_depth': max_depth,
+        self.mlinspect_non_data_func_args = {'n_estimators': n_estimators, 'criterion': criterion,
+                                             'max_depth': max_depth,
                                              'min_samples_split': min_samples_split,
                                              'min_samples_leaf': min_samples_leaf,
                                              'min_weight_fraction_leaf': min_weight_fraction_leaf,
