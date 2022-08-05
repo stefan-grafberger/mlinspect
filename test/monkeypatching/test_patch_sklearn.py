@@ -2268,3 +2268,93 @@ def test_truncated_svd():
                                      [numpy.array([1.7269050556839787, 0.6466457479069083]), 2]],
                                     columns=['array', 'mlinspect_lineage_0_0'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
+def test_pca():
+    """
+    Tests whether the monkey patching of ('sklearn.compose._column_transformer', 'ColumnTransformer') works with
+    multiple transformers with dense output
+    """
+    test_code = cleandoc("""
+                import pandas as pd
+                from sklearn.preprocessing import label_binarize, StandardScaler, OneHotEncoder
+                from sklearn.compose import ColumnTransformer
+                from sklearn.decomposition import PCA
+                from scipy.sparse import csr_matrix
+                import numpy
+
+                df = pd.DataFrame({'A': [1, 2, 10, 5], 'B': ['cat_a', 'cat_b', 'cat_a', 'cat_c']})
+                column_transformer = ColumnTransformer(transformers=[
+                    ('numeric', StandardScaler(), ['A']),
+                    ('categorical', OneHotEncoder(sparse=False), ['B'])
+                ])
+                encoded_data = column_transformer.fit_transform(df)
+                transformer = PCA(n_components=2, random_state=42)
+                reduced_data = transformer.fit_transform(encoded_data)
+                test_transform_function = transformer.transform(encoded_data)
+                print(reduced_data)
+                expected = numpy.array([[-0.80795996, -0.75406407],
+                                        [-0.953227,    0.23384447],
+                                        [ 1.64711991, -0.29071836],
+                                        [ 0.11406705,  0.81093796]])
+                assert numpy.allclose(reduced_data, expected)
+                assert numpy.allclose(test_transform_function, expected)
+                """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(3)])
+    filter_dag_for_nodes_with_ids(inspector_result, [5, 6, 7], 8)
+
+    expected_dag = networkx.DiGraph()
+    expected_concat = DagNode(5,
+                              BasicCodeLocation("<string-source>", 9),
+                              OperatorContext(OperatorType.CONCATENATION,
+                                              FunctionInfo('sklearn.compose._column_transformer', 'ColumnTransformer')),
+                              DagNodeDetails(None, ['array']),
+                              OptionalCodeInfo(CodeReference(9, 21, 12, 2),
+                                               "ColumnTransformer(transformers=[\n"
+                                               "    ('numeric', StandardScaler(), ['A']),\n"
+                                               "    ('categorical', OneHotEncoder(sparse=False), ['B'])\n])"))
+    expected_transformer = DagNode(6,
+                                   BasicCodeLocation("<string-source>", 14),
+                                   OperatorContext(OperatorType.TRANSFORMER,
+                                                   FunctionInfo('sklearn.decomposition._pca',
+                                                                'PCA')),
+                                   DagNodeDetails('PCA: fit_transform', ['array']),
+                                   OptionalCodeInfo(CodeReference(14, 14, 14, 50),
+                                                    'PCA(n_components=2, random_state=42)'))
+    expected_dag.add_edge(expected_concat, expected_transformer)
+    expected_transform_test = DagNode(7,
+                                      BasicCodeLocation("<string-source>", 14),
+                                      OperatorContext(OperatorType.TRANSFORMER,
+                                                      FunctionInfo('sklearn.decomposition._pca',
+                                                                   'PCA')),
+                                      DagNodeDetails('PCA: transform', ['array']),
+                                      OptionalCodeInfo(CodeReference(14, 14, 14, 50),
+                                                       'PCA(n_components=2, random_state=42)'))
+    expected_dag.add_edge(expected_concat, expected_transform_test)
+    compare(networkx.to_dict_of_dicts(inspector_result.dag), networkx.to_dict_of_dicts(expected_dag))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_concat]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([-1.0, 1.0, 0.0, 0.0]), 0],
+                                     [numpy.array([-0.7142857142857143, 0.0, 1.0, 0.0]), 1],
+                                     [numpy.array([1.5714285714285714, 1.0, 0.0, 0.0]), 2]],
+                                    columns=['array', 'mlinspect_lineage_0_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([-0.80795996, -0.75406407]), 0],
+                                     [numpy.array([-0.953227,    0.23384447]), 1],
+                                     [numpy.array([ 1.64711991, -0.29071836]), 2]],
+                                    columns=['array', 'mlinspect_lineage_0_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transform_test]
+    lineage_output = inspection_results_data_source[RowLineage(3)]
+    expected_lineage_df = DataFrame([[numpy.array([-0.80795996, -0.75406407]), 0],
+                                     [numpy.array([-0.953227, 0.23384447]), 1],
+                                     [numpy.array([1.64711991, -0.29071836]), 2]],
+                                    columns=['array', 'mlinspect_lineage_0_0'])
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
