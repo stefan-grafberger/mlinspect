@@ -13,7 +13,7 @@ from sklearn import preprocessing, compose, tree, impute, linear_model, model_se
     ensemble, svm
 from sklearn.feature_extraction import text
 from sklearn.linear_model._stochastic_gradient import DEFAULT_EPSILON
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, r2_score
 from sklearn.pipeline import _fit_transform_one, _transform_one
 from tensorflow.keras.wrappers import scikit_learn as keras_sklearn_external  # pylint: disable=no-name-in-module
 from tensorflow.python.keras.wrappers import scikit_learn as keras_sklearn_internal  # pylint: disable=no-name-in-module
@@ -2141,6 +2141,146 @@ class SklearnSGDClassifierPatching:
                                BasicCodeLocation(caller_filename, lineno),
                                operator_context,
                                DagNodeDetails("SGD Classifier", []),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
+            estimator_dag_node = get_dag_node_for_id(self.mlinspect_estimator_node_id)
+            add_dag_node(dag_node, [estimator_dag_node, test_data_node, test_labels_node],
+                         estimator_backend_result)
+            return result
+
+        if not call_info_singleton.param_search_active:
+            new_result = execute_patched_func_indirect_allowed(execute_inspections)
+        else:
+            original = gorilla.get_original_attribute(linear_model.SGDClassifier, 'score')
+            new_result = original(self, *args, **kwargs)
+        return new_result
+
+
+@gorilla.patches(linear_model.SGDRegressor)
+class SklearnSGDRegressorPatching:
+    """ Patches for sklearn SGDRegressor"""
+
+    # pylint: disable=too-few-public-methods
+
+    @gorilla.name('__init__')
+    @gorilla.settings(allow_hit=True)
+    def patched__init__(self, loss="squared_loss", *, penalty="l2", alpha=0.0001,
+                        l1_ratio=0.15, fit_intercept=True, max_iter=1000, tol=1e-3,
+                        shuffle=True, verbose=0, epsilon=DEFAULT_EPSILON,
+                        random_state=None, learning_rate="invscaling", eta0=0.01,
+                        power_t=0.25, early_stopping=False, validation_fraction=0.1,
+                        n_iter_no_change=5, warm_start=False, average=False, mlinspect_caller_filename=None,
+                        mlinspect_lineno=None, mlinspect_optional_code_reference=None,
+                        mlinspect_optional_source_code=None, mlinspect_estimator_node_id=None):
+        """ Patch for ('sklearn.linear_model._stochastic_gradient', 'SGDRegressor') """
+        # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals
+        original = gorilla.get_original_attribute(linear_model.SGDRegressor, '__init__')
+
+        self.mlinspect_caller_filename = mlinspect_caller_filename
+        self.mlinspect_lineno = mlinspect_lineno
+        self.mlinspect_optional_code_reference = mlinspect_optional_code_reference
+        self.mlinspect_optional_source_code = mlinspect_optional_source_code
+        self.mlinspect_estimator_node_id = mlinspect_estimator_node_id
+
+        self.mlinspect_non_data_func_args = {'loss': loss, 'penalty': penalty, 'alpha': alpha, 'l1_ratio': l1_ratio,
+                                             'fit_intercept': fit_intercept, 'max_iter': max_iter, 'tol': tol,
+                                             'shuffle': shuffle, 'verbose': verbose, 'epsilon': epsilon,
+                                             'random_state': random_state,
+                                             'learning_rate': learning_rate, 'eta0': eta0, 'power_t': power_t,
+                                             'early_stopping': early_stopping,
+                                             'validation_fraction': validation_fraction,
+                                             'n_iter_no_change': n_iter_no_change,
+                                             'warm_start': warm_start, 'average': average}
+
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            original(self, **self.mlinspect_non_data_func_args)
+
+            self.mlinspect_caller_filename = caller_filename
+            self.mlinspect_lineno = lineno
+            self.mlinspect_optional_code_reference = optional_code_reference
+            self.mlinspect_optional_source_code = optional_source_code
+            self.mlinspect_estimator_node_id = None
+
+        return execute_patched_func_no_op_id(original, execute_inspections, self,
+                                             **self.mlinspect_non_data_func_args)
+
+    @gorilla.name('fit')
+    @gorilla.settings(allow_hit=True)
+    def patched_fit(self, *args, **kwargs):
+        """ Patch for ('sklearn.linear_model._stochastic_gradient', 'fit') """
+        # pylint: disable=no-method-argument, too-many-locals
+        original = gorilla.get_original_attribute(linear_model.SGDRegressor, 'fit')
+        if not call_info_singleton.param_search_active:
+            function_info = FunctionInfo('sklearn.linear_model._stochastic_gradient', 'SGDRegressor')
+
+            data_backend_result, train_data_node, train_data_result = add_train_data_node(self, args[0], function_info)
+            label_backend_result, train_labels_node, train_labels_result = add_train_label_node(self, args[1],
+                                                                                                function_info)
+            # Estimator
+            operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
+            input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+            input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+            original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
+            estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                                 input_infos,
+                                                                 None,
+                                                                 self.mlinspect_non_data_func_args)
+            self.mlinspect_estimator_node_id = singleton.get_next_op_id()  # pylint: disable=attribute-defined-outside-init
+            dag_node = DagNode(self.mlinspect_estimator_node_id,
+                               BasicCodeLocation(self.mlinspect_caller_filename, self.mlinspect_lineno),
+                               operator_context,
+                               DagNodeDetails("SGD Regressor", []),
+                               get_optional_code_info_or_none(self.mlinspect_optional_code_reference,
+                                                              self.mlinspect_optional_source_code))
+            add_dag_node(dag_node, [train_data_node, train_labels_node], estimator_backend_result)
+        else:
+            original(self, *args, **kwargs)
+        return self
+
+    @gorilla.name('score')
+    @gorilla.settings(allow_hit=True)
+    def patched_score(self, *args, **kwargs):
+        """ Patch for ('sklearn.linear_model._stochastic_gradient.SGDRegressor', 'score') """
+
+        # pylint: disable=no-method-argument
+        def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            # pylint: disable=too-many-locals
+            function_info = FunctionInfo('sklearn.linear_model._stochastic_gradient.SGDRegressor', 'score')
+            # Test data
+            data_backend_result, test_data_node, test_data_result = add_test_data_dag_node(args[0],
+                                                                                           function_info,
+                                                                                           lineno,
+                                                                                           optional_code_reference,
+                                                                                           optional_source_code,
+                                                                                           caller_filename)
+
+            # Test labels
+            label_backend_result, test_labels_node, test_labels_result = add_test_label_node(args[1],
+                                                                                             caller_filename,
+                                                                                             function_info,
+                                                                                             lineno,
+                                                                                             optional_code_reference,
+                                                                                             optional_source_code)
+
+            # Score
+            operator_context = OperatorContext(OperatorType.SCORE, function_info)
+            input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
+            input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+
+            # Same as original, but captures the test set predictions
+            predictions = self.predict(test_data_result)  # pylint: disable=no-member
+            result = r2_score(test_labels_result, predictions, **kwargs)
+
+            estimator_backend_result = SklearnBackend.after_call(operator_context,
+                                                                 input_infos,
+                                                                 predictions,
+                                                                 self.mlinspect_non_data_func_args)
+
+            dag_node = DagNode(singleton.get_next_op_id(),
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails("SGD Regressor", []),
                                get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             estimator_dag_node = get_dag_node_for_id(self.mlinspect_estimator_node_id)
             add_dag_node(dag_node, [estimator_dag_node, test_data_node, test_labels_node],
