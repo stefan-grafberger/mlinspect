@@ -51,6 +51,35 @@ class PandasPatching:
 
         return execute_patched_func(original, execute_inspections, *args, **kwargs)
 
+    @gorilla.name('read_parquet')
+    @gorilla.settings(allow_hit=True)
+    def patched_read_parquet(*args, **kwargs):
+        """ Patch for ('pandas.io.parsers', 'read_csv') """
+        # pylint: disable=no-method-argument
+        original = gorilla.get_original_attribute(pandas, 'read_parquet')
+
+        def execute_inspections(op_id, caller_filename, lineno, optional_code_reference, optional_source_code):
+            """ Execute inspections, add DAG node """
+            function_info = FunctionInfo('pandas.io.parquet', 'read_parquet')
+
+            operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
+            input_infos = PandasBackend.before_call(operator_context, [])
+            result = original(*args, **kwargs)
+            backend_result = PandasBackend.after_call(operator_context,
+                                                      input_infos,
+                                                      result)
+
+            description = "{}".format(args[0].split(os.path.sep)[-1])
+            dag_node = DagNode(op_id,
+                               BasicCodeLocation(caller_filename, lineno),
+                               operator_context,
+                               DagNodeDetails(description, list(result.columns)),
+                               get_optional_code_info_or_none(optional_code_reference, optional_source_code))
+            add_dag_node(dag_node, [], backend_result)
+            return result
+
+        return execute_patched_func(original, execute_inspections, *args, **kwargs)
+
 
 @gorilla.patches(pandas.DataFrame)
 class DataFramePatching:

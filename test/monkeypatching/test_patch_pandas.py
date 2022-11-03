@@ -62,6 +62,54 @@ def test_read_csv():
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
 
+def test_read_parquet():
+    """
+    Tests whether the monkey patching of ('pandas.io.parsers', 'read_csv') works
+    """
+    test_code = cleandoc("""
+        import os
+        import pandas as pd
+        from mlinspect.utils import get_project_root
+
+        train_file = os.path.join(str(get_project_root()), "example_pipelines", "adult_complex", "adult_train.parquet.gzip")
+        raw_data = pd.read_parquet(train_file)
+        
+        assert len(raw_data) == 22792
+        """)
+
+    inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
+                                                        inspections=[RowLineage(2)])
+
+    extracted_node: DagNode = list(inspector_result.dag.nodes)[0]
+    expected_node = DagNode(0,
+                            BasicCodeLocation("<string-source>", 6),
+                            OperatorContext(OperatorType.DATA_SOURCE,
+                                            FunctionInfo('pandas.io.parquet', 'read_parquet')),
+                            DagNodeDetails(StringComparison(r".*\.parquet.gzip"),
+                                           ['age', 'workclass', 'fnlwgt', 'education', 'education-num',
+                                            'marital-status',
+                                            'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss',
+                                            'hours-per-week', 'native-country', 'income-per-year']),
+                            OptionalCodeInfo(CodeReference(6, 11, 6, 38),
+                                             "pd.read_parquet(train_file)"))
+    compare(extracted_node, expected_node)
+
+    inspection_results_data_source = inspector_result.dag_node_to_inspection_results[extracted_node]
+    lineage_output = inspection_results_data_source[RowLineage(2)]
+    expected_lineage_df = DataFrame([[46, 'Private', 128645, 'Some-college', 10, 'Divorced', 'Prof-specialty',
+                                      'Not-in-family', 'White', 'Female', 0, 0, 40, 'United-States', '<=50K',
+                                      0],
+                                     [29, 'Local-gov', 115585, 'Some-college', 10, 'Never-married', 'Handlers-cleaners',
+                                      'Not-in-family', 'White', 'Male', 0, 0, 50, 'United-States', '<=50K',
+                                      1]],
+                                    columns=['age', 'workclass', 'fnlwgt', 'education', 'education-num',
+                                             'marital-status', 'occupation', 'relationship', 'race', 'sex',
+                                             'capital-gain', 'capital-loss', 'hours-per-week', 'native-country',
+                                             'income-per-year', 'mlinspect_lineage_0_0'])
+
+    pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
+
+
 def test_frame__init__():
     """
     Tests whether the monkey patching of ('pandas.core.frame', 'DataFrame') works

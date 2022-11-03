@@ -19,3 +19,4 @@ setuptools==57.0.0
 scipy==1.7.0
 statsmodels==0.12.2
 duckdb==0.4.0
+pyarrow==10.0.0
