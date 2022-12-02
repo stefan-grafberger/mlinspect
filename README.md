@@ -26,7 +26,7 @@ Prerequisite: Python 3.9
 	
 4. Install pip dependencies 
 
-    `pip install -e .[dev]` <br>
+    `SETUPTOOLS_USE_DISTUTILS=stdlib pip install -e .[dev]` <br>
 
 5. To ensure everything works, you can run the tests (without graphviz, the visualisation test will fail)
 
