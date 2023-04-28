@@ -1,0 +1,59 @@
+[tool.poetry]
+name = "mlinspect"
+version = "0.0.1.dev0"
+description = "Inspect ML Pipelines in the form of a DAG"
+authors = ["Stefan Grafberger <stefangrafberger@gmail.com>"]
+readme = "README.md"
+license = "Apache License 2.0"
+classifiers=[
+        'License :: OSI Approved :: Apache Software License',
+        'Programming Language :: Python :: 3 :: Only',
+        'Programming Language :: Python :: 3.9'
+    ]
+
+[tool.poetry.dependencies]
+python = "3.9.16"
+scikit-learn = "0.23.2"
+protobuf = "3.20.1"
+pandas = "1.2.3"
+numpy = "1.19.5"
+six = "1.15.0"
+nbformat = "5.0.8"
+nbconvert = "6.4.5"
+ipython = "7.25.0"
+astpretty = "2.0.0"
+astmonkey = "0.3.6"
+networkx = "2.5"
+more-itertools = "8.6.0"
+pygraphviz = "1.7"
+testfixtures = "6.17.1"
+matplotlib = "3.4.2"
+gorilla = "0.4.0"
+astunparse = "1.6.3"
+setuptools = "57.0.0"
+scipy = "1.7.0"
+statsmodels = "0.12.2"
+
+[tool.poetry.group.dev.dependencies]
+pylint = "2.6.0"
+pytest = "6.1.2"
+pytest-pylint = "0.17.0"
+pytest-runner = "5.2"
+pytest-cov = "2.10.1"
+pytest-pycharm = "0.7.0"
+pytest-mock = "3.3.1"
+gensim = "3.8.3"
+tensorflow = "2.5.0"
+keras = "2.4.3"
+jupyter = "1.0.0"
+importnb = "0.6.2"
+seaborn = "0.11.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.pytest.ini_options]
+addopts = "--pylint --pylint-rcfile=./pylintrc --cov=mlinspect --cov-report=xml"
+testpaths = ["test"]
