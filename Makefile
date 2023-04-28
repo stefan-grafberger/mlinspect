@@ -28,7 +28,7 @@ teardown:
 recreate: teardown run
 
 test:
-	docker exec -it mlinspect pytest $(target)
+	docker run ${exec_args} --rm --name mlinspect mlinspect pytest $(target)
 
 
 .PHONY: \
