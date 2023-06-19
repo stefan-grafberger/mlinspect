@@ -5,8 +5,8 @@ FROM python:${PYTHON_VERSION}-slim-bullseye as base
 RUN apt-get clean  \
   && apt-get update \
   #  psycopg2 dependencies
-  && apt-get install -y libpq5=13.9-0+deb11u1 --no-install-recommends \
-  && apt-get install -y libpq-dev=13.9-0+deb11u1 --no-install-recommends \
+  && apt-get install -y libpq5=13.10-0+deb11u1 --no-install-recommends \
+  && apt-get install -y libpq-dev=13.10-0+deb11u1 --no-install-recommends \
   # dependencies for building Python packages
   && apt-get install -y build-essential --no-install-recommends \
   # for visualization purposes
