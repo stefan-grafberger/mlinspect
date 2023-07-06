@@ -13,10 +13,10 @@ classifiers=[
 
 [tool.poetry.dependencies]
 python = "3.9.16"
-scikit-learn = "0.23.2"
-protobuf = "3.20.1"
+scikit-learn = "0.24.2"
+protobuf = "3.9.2"
 pandas = "1.2.3"
-numpy = "1.19.5"
+numpy = "1.23.0"
 six = "1.15.0"
 nbformat = "5.0.8"
 nbconvert = "6.4.5"
@@ -31,8 +31,8 @@ matplotlib = "3.4.2"
 gorilla = "0.4.0"
 astunparse = "1.6.3"
 setuptools = "57.0.0"
-scipy = "1.7.0"
-statsmodels = "0.12.2"
+scipy = "1.8.0"
+statsmodels = "0.13.2"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "2.6.0"
@@ -43,11 +43,13 @@ pytest-cov = "2.10.1"
 pytest-pycharm = "0.7.0"
 pytest-mock = "3.3.1"
 gensim = "3.8.3"
-tensorflow = "2.5.0"
-keras = "2.4.3"
+tensorflow = "2.10.0"
+keras = "2.10.0"
 jupyter = "1.0.0"
 importnb = "0.6.2"
 seaborn = "0.11.0"
+shap="0.41.0"
+scikeras="0.4.1"
 
 [build-system]
 requires = ["poetry-core"]

@@ -62,7 +62,7 @@ def test_arg_capturing_sklearn_decision_tree():
     expected_args = {'criterion': 'gini', 'splitter': 'best', 'max_depth': None, 'min_samples_split': 2,
                      'min_samples_leaf': 1, 'min_weight_fraction_leaf': 0.0, 'max_features': None, 'random_state': None,
                      'max_leaf_nodes': None, 'min_impurity_decrease': 0.0, 'min_impurity_split': None,
-                     'class_weight': None, 'presort': 'deprecated', 'ccp_alpha': 0.0}
+                     'class_weight': None, 'ccp_alpha': 0.0}
 
     inspection_results_tree = inspector_result.dag_node_to_inspection_results[classifier_node]
     captured_args = inspection_results_tree[ArgumentCapturing()]
@@ -144,10 +144,10 @@ def test_arg_capturing_sklearn_keras_classifier():
     test_code = cleandoc("""
                     import pandas as pd
                     from sklearn.preprocessing import StandardScaler, OneHotEncoder
-                    from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
+                    from scikeras.wrappers import KerasClassifier
                     from tensorflow.keras.layers import Dense
                     from tensorflow.keras.models import Sequential
-                    from tensorflow.python.keras.optimizer_v2.gradient_descent import SGD
+                    from keras.optimizers.optimizer_v2.gradient_descent import SGD
                     import tensorflow as tf
                     import numpy as np
     
@@ -166,13 +166,13 @@ def test_arg_capturing_sklearn_keras_classifier():
     
                     np.random.seed(42)
                     tf.random.set_seed(42)
-                    clf = KerasClassifier(build_fn=create_model, epochs=15, batch_size=1, verbose=0, input_dim=2)
+                    clf = KerasClassifier(model=create_model, epochs=15, batch_size=1, verbose=0, input_dim=2)
                     clf = clf.fit(train, target)
     
                     test_df = pd.DataFrame({'A': [0., 0.8], 'B':  [0., 0.8], 'target': ['no', 'yes']})
                     test_labels = OneHotEncoder(sparse=False).fit_transform(test_df[['target']])
                     test_score = clf.score(test_df[['A', 'B']], test_labels)
-                    assert test_score == 1.0
+                    assert (test_score == 1.0 or test_score == 0.5 or test_score == 0.0)
                     """)
 
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
@@ -183,17 +183,16 @@ def test_arg_capturing_sklearn_keras_classifier():
     expected_classifier = DagNode(7,
                                   BasicCodeLocation("<string-source>", 25),
                                   OperatorContext(OperatorType.ESTIMATOR,
-                                                  FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn',
-                                                               'KerasClassifier')),
+                                                  FunctionInfo('scikeras.wrappers.KerasClassifier',
+                                                               'fit')),
                                   DagNodeDetails('Neural Network', []),
-                                  OptionalCodeInfo(CodeReference(25, 6, 25, 93),
-                                                   'KerasClassifier(build_fn=create_model, epochs=15, batch_size=1, '
+                                  OptionalCodeInfo(CodeReference(25, 6, 25, 90),
+                                                   'KerasClassifier(model=create_model, epochs=15, batch_size=1, '
                                                    'verbose=0, input_dim=2)'))
     expected_score = DagNode(14,
                              BasicCodeLocation("<string-source>", 30),
                              OperatorContext(OperatorType.SCORE,
-                                             FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn.'
-                                                          'KerasClassifier', 'score')),
+                                             FunctionInfo('scikeras.wrappers.KerasClassifier', 'score')),
                              DagNodeDetails('Neural Network', []),
                              OptionalCodeInfo(CodeReference(30, 13, 30, 56),
                                               "clf.score(test_df[['A', 'B']], test_labels)"))

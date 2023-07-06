@@ -65,22 +65,22 @@ compare(networkx.to_dict_of_dicts(extracted_dag), networkx.to_dict_of_dicts(expe
 * The [tests](../../test/monkeypatching/test_patch_sklearn.py) are probably more useful to look at 
 * Currently supported functions: 
 
-| Function Call        | Operator        
-| ------------- |:-------------:|
-| `('sklearn.compose._column_transformer', 'ColumnTransformer')`, column selection      | Projection |
-| `('sklearn.preprocessing._label', 'label_binarize')` | Projection (Mod)      |
-| `('sklearn.compose._column_transformer', 'ColumnTransformer')`, concatenation      | Concatenation      |
-| `('sklearn.model_selection._split', 'train_test_split')` | Split (Train/Test) 
-| `('sklearn.preprocessing._encoders', 'OneHotEncoder')`, arg type: strings | Transformer |
-| `('sklearn.preprocessing._data', 'StandardScaler')` | Transformer      |
-| `('sklearn.impute._base’, 'SimpleImputer')` | Transformer      |
-| `('sklearn.feature_extraction.text’, 'HashingVectorizer')` | Transformer      |
-| `('sklearn.preprocessing._discretization', 'KBinsDiscretizer')` | Transformer      |
-| `('sklearn.preprocessing_function_transformer','FunctionTransformer')` | Transformer      |
-| `('sklearn.tree._classes', 'DecisionTreeClassifier')` | Estimator      |
-| `('sklearn.linear_model._stochastic_gradient', 'SGDClassifier')` | Estimator      |
-| `('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')` | Estimator      |
-| `('sklearn.linear_model._logistic', 'LogisticRegression')` | Estimator      |
+| Function Call                                                                    | Operator        
+|----------------------------------------------------------------------------------|:-------------:|
+| `('sklearn.compose._column_transformer', 'ColumnTransformer')`, column selection | Projection |
+| `('sklearn.preprocessing._label', 'label_binarize')`                             | Projection (Mod)      |
+| `('sklearn.compose._column_transformer', 'ColumnTransformer')`, concatenation    | Concatenation      |
+| `('sklearn.model_selection._split', 'train_test_split')`                         | Split (Train/Test) 
+| `('sklearn.preprocessing._encoders', 'OneHotEncoder')`, arg type: strings        | Transformer |
+| `('sklearn.preprocessing._data', 'StandardScaler')`                              | Transformer      |
+| `('sklearn.impute._base’, 'SimpleImputer')`                                      | Transformer      |
+| `('sklearn.feature_extraction.text’, 'HashingVectorizer')`                       | Transformer      |
+| `('sklearn.preprocessing._discretization', 'KBinsDiscretizer')`                  | Transformer      |
+| `('sklearn.preprocessing_function_transformer','FunctionTransformer')`           | Transformer      |
+| `('sklearn.tree._classes', 'DecisionTreeClassifier')`                            | Estimator      |
+| `('sklearn.linear_model._stochastic_gradient', 'SGDClassifier')`                 | Estimator      |
+| `('scikeras.wrappers', 'KerasClassifier')`                                       | Estimator      |
+| `('sklearn.linear_model._logistic', 'LogisticRegression')`                       | Estimator      |
 
 
 ## Numpy 

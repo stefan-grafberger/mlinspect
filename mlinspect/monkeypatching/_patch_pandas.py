@@ -269,7 +269,7 @@ class DataFramePatching:
                                                       input_infos,
                                                       result)
             result = backend_result.annotated_dfobject.result_data
-            description = self.get_merge_description(**kwargs)
+            description = get_merge_description(**kwargs)
             dag_node = DagNode(op_id,
                                BasicCodeLocation(caller_filename, lineno),
                                operator_context,
@@ -280,30 +280,6 @@ class DataFramePatching:
             return result
 
         return execute_patched_func(original, execute_inspections, self, *args, **kwargs)
-
-    @staticmethod
-    def get_merge_description(**kwargs):
-        """Get the description for a pd.merge call"""
-        if 'on' in kwargs:
-            description = f"on '{kwargs['on']}'"
-        elif ('left_on' in kwargs or kwargs['left_index'] is True) and ('right_on' in kwargs or
-                                                                        kwargs['right_index'] is True):
-            if 'left_on' in kwargs:
-                left_column = f"'{kwargs['left_on']}'"
-            else:
-                left_column = 'left_index'
-            if 'right_on' in kwargs:
-                right_column = f"'{kwargs['right_on']}'"
-            else:
-                right_column = 'right_index'
-            description = f"on {left_column} == {right_column}"
-        else:
-            description = None
-        if 'how' in kwargs and description is not None:
-            description += f" ({kwargs['how']})"
-        elif 'how' in kwargs:
-            description = f"({kwargs['how']})"
-        return description
 
     @gorilla.name('groupby')
     @gorilla.settings(allow_hit=True)
@@ -325,6 +301,28 @@ class DataFramePatching:
 
         return execute_patched_func_no_op_id(original, execute_inspections, self, *args, **kwargs)
 
+def get_merge_description(**kwargs):
+    """Get the description for a pd.merge call"""
+    if 'on' in kwargs:
+        description = f"on '{kwargs['on']}'"
+    elif ('left_on' in kwargs or kwargs['left_index'] is True) and ('right_on' in kwargs or
+                                                                    kwargs['right_index'] is True):
+        if 'left_on' in kwargs:
+            left_column = f"'{kwargs['left_on']}'"
+        else:
+            left_column = 'left_index'
+        if 'right_on' in kwargs:
+            right_column = f"'{kwargs['right_on']}'"
+        else:
+            right_column = 'right_index'
+        description = f"on {left_column} == {right_column}"
+    else:
+        description = None
+    if 'how' in kwargs and description is not None:
+        description += f" ({kwargs['how']})"
+    elif 'how' in kwargs:
+        description = f"({kwargs['how']})"
+    return description
 
 @gorilla.patches(pandas.core.groupby.generic.DataFrameGroupBy)
 class DataFrameGroupByPatching:

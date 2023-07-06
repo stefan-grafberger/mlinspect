@@ -9,26 +9,22 @@ help:
 	@echo "  recreate               to teardown and run the docker container again."
 	@echo "  test               	to run the tests. Use the 'target' arg if you want to limit the tests that will run."
 
-build:
-	docker build -t mlinspect .
-
-run: build
-	docker run --rm -p 8888:8888 -v $(shell pwd)/examples:/project/examples --name mlinspect -d -t mlinspect
+run:
+	docker compose up -d --build
 
 notebook:
-	docker exec -it mlinspect jupyter notebook --no-browser --allow-root --ip="0.0.0.0"
+	docker compose run ${exec_args} --rm mlinspect jupyter notebook --no-browser --allow-root --ip="0.0.0.0"
 
 logs:
-	docker logs mlinspect -f
+	docker compose logs -f
 
 teardown:
-	docker stop mlinspect
-	docker rmi mlinspect
+	docker compose down -v
 
 recreate: teardown run
 
 test:
-	docker run ${exec_args} --rm --name mlinspect mlinspect pytest $(target)
+	docker compose run ${exec_args} --rm mlinspect pytest $(target) -x
 
 
 .PHONY: \

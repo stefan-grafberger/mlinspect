@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  mlinspect:
+    image: mlinspect
+    container_name: mlinspect
+    restart: unless-stopped
+    build:
+      context: .
+      target: final
+    ports:
+      - 8888:8888
+    volumes:
+      - ./examples:/project/examples
+      - .:/project

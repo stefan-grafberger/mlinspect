@@ -21,11 +21,12 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV JUPYTER_PLATFORM_DIRS 1
 ENV SETUPTOOLS_USE_DISTUTILS stdlib
+ENV POETRY_VIRTUALENVS_CREATE false
 
 # create virtual environment
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-
+RUN /opt/venv/bin/pip install wheel
 
 FROM base as builder
 
@@ -34,7 +35,7 @@ WORKDIR /project
 
 # install poetry
 COPY poetry-requirements.txt poetry-requirements.txt
-RUN pip install -r poetry-requirements.txt --no-cache-dir
+RUN /opt/venv/bin/pip install -r poetry-requirements.txt --no-cache-dir
 
 COPY pyproject.toml pyproject.toml
 COPY poetry.lock poetry.lock
@@ -46,7 +47,7 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 COPY mlinspect/ mlinspect/
 COPY README.md README.md
 RUN poetry build
-RUN pip install dist/*.whl
+RUN /opt/venv/bin/pip install dist/*.whl
 
 FROM builder as final
 
@@ -59,6 +60,7 @@ COPY example_pipelines/ example_pipelines/
 COPY demo/ demo/
 COPY test/ test/
 COPY .pylintrc .pylintrc
+COPY codecov.yml codecov.yml
 
 ENV PYTHONPATH /project
 

@@ -3,10 +3,11 @@ Tests whether the healthcare demo works
 """
 import ast
 import pandas as pd
+from scikeras.wrappers import KerasClassifier
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 from example_pipelines.healthcare import custom_monkeypatching
-from example_pipelines.healthcare.healthcare_utils import MyKerasClassifier, create_model, MyW2VTransformer
+from example_pipelines.healthcare.healthcare_utils import MyW2VTransformer, create_model_with_input
 from example_pipelines import HEALTHCARE_PY, HEALTHCARE_PNG
 from mlinspect.testing._testing_helper_utils import run_and_assert_all_op_outputs_inspected
 
@@ -30,11 +31,11 @@ def test_my_keras_classifier():
     train = StandardScaler().fit_transform(pandas_df[['A', 'B']])
     target = OneHotEncoder(sparse=False).fit_transform(pandas_df[['target']])
 
-    clf = MyKerasClassifier(build_fn=create_model, epochs=2, batch_size=1, verbose=0)
+    clf = KerasClassifier(model=create_model_with_input, epochs=2, batch_size=1, verbose=0, input_dim=train.shape[1])
     clf.fit(train, target)
 
     test_predict = clf.predict([[0., 0.], [0.6, 0.6]])
-    assert test_predict.shape == (2,)
+    assert test_predict.shape == (2, 2)
 
 
 def test_py_pipeline_runs():
