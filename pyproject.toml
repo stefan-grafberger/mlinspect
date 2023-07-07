@@ -14,7 +14,7 @@ classifiers=[
 [tool.poetry.dependencies]
 python = "3.9.16"
 scikit-learn = "0.24.2"
-protobuf = "3.9.2"
+protobuf = "3.19.6"
 pandas = "1.2.3"
 numpy = "1.23.0"
 six = "1.15.0"
