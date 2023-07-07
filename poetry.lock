@@ -2344,12 +2344,12 @@ plugins = ["importlib-metadata"]
 
 [[package]]
 name = "pygraphviz"
-version = "1.7"
+version = "1.11"
 description = "Python interface to Graphviz"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "pygraphviz-1.7.zip", hash = "sha256:a7bec6609f37cf1e64898c59f075afd659106cf9356c5f387cecaa2e0cdb2304"},
+    {file = "pygraphviz-1.11.zip", hash = "sha256:a97eb5ced266f45053ebb1f2c6c6d29091690503e3a5c14be7f908b37b06f2d4"},
 ]
 
 [[package]]
@@ -3501,5 +3501,5 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 
 [metadata]
 lock-version = "2.0"
-python-versions = "3.9.16"
-content-hash = "a34aceda725a4a6617dc012d0ca291f02396c2f23d90680d27e1d4ef4fb1ea70"
+python-versions = "~3.9"
+content-hash = "0a1cff962af80285cd588db7e615a6736eccb65db569772c238b33884d72fc0e"
