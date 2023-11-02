@@ -1,5 +1,5 @@
 scikit-learn==0.23.2
-protobuf==3.20.1
+protobuf==3.20.2
 pandas==1.2.3
 numpy==1.19.5
 six==1.15.0
