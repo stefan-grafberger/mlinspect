@@ -929,7 +929,7 @@ class SklearnDecisionTreePatching:
     def patched__init__(self, *, criterion="gini", splitter="best", max_depth=None, min_samples_split=2,
                         min_samples_leaf=1, min_weight_fraction_leaf=0., max_features=None, random_state=None,
                         max_leaf_nodes=None, min_impurity_decrease=0., min_impurity_split=None, class_weight=None,
-                        presort='deprecated', ccp_alpha=0.0, mlinspect_caller_filename=None,
+                        ccp_alpha=0.0, mlinspect_caller_filename=None,
                         mlinspect_lineno=None, mlinspect_optional_code_reference=None,
                         mlinspect_optional_source_code=None, mlinspect_estimator_node_id=None):
         """ Patch for ('sklearn.tree._classes', 'DecisionTreeClassifier') """
