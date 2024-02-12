@@ -950,7 +950,7 @@ class SklearnDecisionTreePatching:
                                              'max_leaf_nodes': max_leaf_nodes,
                                              'min_impurity_decrease': min_impurity_decrease,
                                              'min_impurity_split': min_impurity_split, 'class_weight': class_weight,
-                                             'presort': presort, 'ccp_alpha': ccp_alpha}
+                                             'ccp_alpha': ccp_alpha}
 
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
