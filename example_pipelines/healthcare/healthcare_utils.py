@@ -3,18 +3,19 @@ Some useful utils for the project
 """
 import numpy
 from sklearn.exceptions import NotFittedError
-from gensim.sklearn_api import W2VTransformer
 from tensorflow.keras.layers import Dense  # pylint: disable=no-name-in-module
 from tensorflow.keras.models import Sequential  # pylint: disable=no-name-in-module
 from tensorflow.python.keras.optimizer_v2.gradient_descent import SGD  # pylint: disable=no-name-in-module
 from tensorflow.python.keras.wrappers.scikit_learn import KerasClassifier  # pylint: disable=no-name-in-module
 
+from example_pipelines.healthcare._gensim_wrapper import W2VTransformer
+
 
 class MyW2VTransformer(W2VTransformer):
     """Some custom w2v transformer."""
+    # pylint: disable-all
 
     def partial_fit(self, X):
-        # pylint: disable=useless-super-delegation
         super().partial_fit([X])
 
     def fit(self, X, y=None):
