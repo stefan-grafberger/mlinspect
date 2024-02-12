@@ -62,7 +62,7 @@ def test_arg_capturing_sklearn_decision_tree():
     expected_args = {'criterion': 'gini', 'splitter': 'best', 'max_depth': None, 'min_samples_split': 2,
                      'min_samples_leaf': 1, 'min_weight_fraction_leaf': 0.0, 'max_features': None, 'random_state': None,
                      'max_leaf_nodes': None, 'min_impurity_decrease': 0.0, 'min_impurity_split': None,
-                     'class_weight': None, 'presort': 'deprecated', 'ccp_alpha': 0.0}
+                     'class_weight': None, 'ccp_alpha': 0.0}
 
     inspection_results_tree = inspector_result.dag_node_to_inspection_results[classifier_node]
     captured_args = inspection_results_tree[ArgumentCapturing()]

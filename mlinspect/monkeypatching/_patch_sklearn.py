@@ -149,7 +149,7 @@ class SklearnGridSearchCVPatching:
     @gorilla.name('__init__')
     @gorilla.settings(allow_hit=True)
     def patched__init__(self, estimator, param_grid, *, scoring=None,
-                        n_jobs=None, iid='deprecated', refit=True, cv=None,
+                        n_jobs=None, refit=True, cv=None,
                         verbose=0, pre_dispatch='2*n_jobs',
                         error_score=numpy.nan, return_train_score=False):
         """ Patch for ('sklearn.compose.model_selection._search', 'GridSearchCV') """
@@ -160,7 +160,7 @@ class SklearnGridSearchCVPatching:
             """ Execute inspections, add DAG node """
             # pylint: disable=attribute-defined-outside-init
             original(self, estimator, param_grid, scoring=scoring, n_jobs=n_jobs,
-                     iid=iid, refit=refit, cv=cv, verbose=verbose, pre_dispatch=pre_dispatch,
+                     refit=refit, cv=cv, verbose=verbose, pre_dispatch=pre_dispatch,
                      error_score=error_score, return_train_score=return_train_score)
 
             self.mlinspect_filename = caller_filename
@@ -929,7 +929,7 @@ class SklearnDecisionTreePatching:
     def patched__init__(self, *, criterion="gini", splitter="best", max_depth=None, min_samples_split=2,
                         min_samples_leaf=1, min_weight_fraction_leaf=0., max_features=None, random_state=None,
                         max_leaf_nodes=None, min_impurity_decrease=0., min_impurity_split=None, class_weight=None,
-                        presort='deprecated', ccp_alpha=0.0, mlinspect_caller_filename=None,
+                        ccp_alpha=0.0, mlinspect_caller_filename=None,
                         mlinspect_lineno=None, mlinspect_optional_code_reference=None,
                         mlinspect_optional_source_code=None, mlinspect_estimator_node_id=None):
         """ Patch for ('sklearn.tree._classes', 'DecisionTreeClassifier') """
@@ -950,7 +950,7 @@ class SklearnDecisionTreePatching:
                                              'max_leaf_nodes': max_leaf_nodes,
                                              'min_impurity_decrease': min_impurity_decrease,
                                              'min_impurity_split': min_impurity_split, 'class_weight': class_weight,
-                                             'presort': presort, 'ccp_alpha': ccp_alpha}
+                                             'ccp_alpha': ccp_alpha}
 
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
