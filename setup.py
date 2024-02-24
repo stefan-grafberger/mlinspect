@@ -6,13 +6,13 @@ from setuptools import setup, find_packages
 
 ROOT = os.path.dirname(__file__)
 
-with open(os.path.join(ROOT, "requirements", "requirements.txt")) as f:
+with open(os.path.join(ROOT, "requirements", "requirements.txt"), encoding="utf-8") as f:
     required = f.read().splitlines()
 
-with open(os.path.join(ROOT, "requirements", "requirements.dev.txt")) as f:
+with open(os.path.join(ROOT, "requirements", "requirements.dev.txt"), encoding="utf-8") as f:
     test_required = f.read().splitlines()
 
-with open("README.md", "r") as fh:
+with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
@@ -29,10 +29,10 @@ setup(
     tests_require=test_required,
     extras_require={'dev': test_required},
     license='Apache License 2.0',
-    python_requires='==3.9.*',
+    python_requires='==3.10.*',
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.9'
+        'Programming Language :: Python :: 3.10'
     ]
 )

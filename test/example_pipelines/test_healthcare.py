@@ -3,10 +3,11 @@ Tests whether the healthcare demo works
 """
 import ast
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from scikeras.wrappers import KerasClassifier
+from sklearn.preprocessing import StandardScaler, label_binarize
 
 from example_pipelines.healthcare import custom_monkeypatching
-from example_pipelines.healthcare.healthcare_utils import MyKerasClassifier, create_model, MyW2VTransformer
+from example_pipelines.healthcare.healthcare_utils import create_model, MyW2VTransformer
 from example_pipelines import HEALTHCARE_PY, HEALTHCARE_PNG
 from mlinspect.testing._testing_helper_utils import run_and_assert_all_op_outputs_inspected
 
@@ -28,20 +29,21 @@ def test_my_keras_classifier():
     pandas_df = pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], 'target': ['no', 'no', 'yes', 'yes']})
 
     train = StandardScaler().fit_transform(pandas_df[['A', 'B']])
-    target = OneHotEncoder(sparse=False).fit_transform(pandas_df[['target']])
+    target = label_binarize(pandas_df[['target']], classes=['no', 'yes'])
 
-    clf = MyKerasClassifier(build_fn=create_model, epochs=2, batch_size=1, verbose=0)
+    clf = KerasClassifier(build_fn=create_model, epochs=2, batch_size=1, verbose=0,
+                          hidden_layer_sizes=(9, 9,), loss="binary_crossentropy")
     clf.fit(train, target)
 
     test_predict = clf.predict([[0., 0.], [0.6, 0.6]])
-    assert test_predict.shape == (2,)
+    assert test_predict.shape == (2, 1)
 
 
 def test_py_pipeline_runs():
     """
     Tests whether the pipeline works without instrumentation
     """
-    with open(HEALTHCARE_PY) as file:
+    with open(HEALTHCARE_PY, encoding="utf-8") as file:
         healthcare_code = file.read()
         parsed_ast = ast.parse(healthcare_code)
         exec(compile(parsed_ast, filename="<ast>", mode="exec"))

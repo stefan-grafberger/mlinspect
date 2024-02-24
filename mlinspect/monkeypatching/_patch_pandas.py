@@ -5,6 +5,7 @@ import copy
 import os
 
 import gorilla
+import numpy
 import pandas
 
 from mlinspect import OperatorType, DagNode, BasicCodeLocation, DagNodeDetails
@@ -20,7 +21,7 @@ from mlinspect.monkeypatching._patch_sklearn import call_info_singleton
 class PandasPatching:
     """ Patches for pandas """
 
-    # pylint: disable=too-few-public-methods
+    # pylint: disable=too-few-public-methods,no-self-argument
 
     @gorilla.name('read_csv')
     @gorilla.settings(allow_hit=True)
@@ -40,7 +41,7 @@ class PandasPatching:
                                                       input_infos,
                                                       result)
 
-            description = "{}".format(args[0].split(os.path.sep)[-1])
+            description = f"{args[0].split(os.path.sep)[-1]}"
             dag_node = DagNode(op_id,
                                BasicCodeLocation(caller_filename, lineno),
                                operator_context,
@@ -131,7 +132,7 @@ class DataFramePatching:
                 dag_node = DagNode(op_id,
                                    BasicCodeLocation(caller_filename, lineno),
                                    operator_context,
-                                   DagNodeDetails("to {}".format(columns), columns),
+                                   DagNodeDetails(f"to {columns}", columns),
                                    get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             elif isinstance(args[0], list) and isinstance(args[0][0], str):  # Projection to DF
                 columns = args[0]
@@ -139,13 +140,13 @@ class DataFramePatching:
                 dag_node = DagNode(op_id,
                                    BasicCodeLocation(caller_filename, lineno),
                                    operator_context,
-                                   DagNodeDetails("to {}".format(columns), columns),
+                                   DagNodeDetails(f"to {columns}", columns),
                                    get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             elif isinstance(args[0], pandas.Series):  # Selection
                 operator_context = OperatorContext(OperatorType.SELECTION, function_info)
                 columns = list(self.columns)  # pylint: disable=no-member
                 if optional_source_code:
-                    description = "Select by Series: {}".format(optional_source_code)
+                    description = f"Select by Series: {optional_source_code}"
                 else:
                     description = "Select by Series"
                 dag_node = DagNode(op_id,
@@ -190,9 +191,9 @@ class DataFramePatching:
                                                           input_infos,
                                                           self)
                 columns = list(self.columns)  # pylint: disable=no-member
-                description = "modifies {}".format([args[0]])
+                description = f"modifies {[args[0]]}"
             else:
-                raise NotImplementedError("TODO: Handling __setitem__ for key type {}".format(type(args[0])))
+                raise NotImplementedError(f"TODO: Handling __setitem__ for key type {type(args[0])}")
             dag_node = DagNode(op_id,
                                BasicCodeLocation(caller_filename, lineno),
                                operator_context,
@@ -226,7 +227,7 @@ class DataFramePatching:
             result = backend_result.annotated_dfobject.result_data
             if isinstance(args[0], dict):
                 raise NotImplementedError("TODO: Add support for replace with dicts")
-            description = "Replace '{}' with '{}'".format(args[0], args[1])
+            description = f"Replace '{args[0]}' with '{args[1]}'"
             dag_node = DagNode(op_id,
                                BasicCodeLocation(caller_filename, lineno),
                                operator_context,
@@ -354,9 +355,9 @@ class DataFrameGroupByPatching:
                                                       result)
 
             if len(args) > 0:
-                description = "Groupby '{}', Aggregate: '{}'".format(result.index.name, args)
+                description = f"Groupby '{result.index.name}', Aggregate: '{args}'"
             else:
-                description = "Groupby '{}', Aggregate: '{}'".format(result.index.name, kwargs)
+                description = f"Groupby '{result.index.name}', Aggregate: '{kwargs}'"
             columns = [result.index.name] + list(result.columns)
             dag_node = DagNode(op_id,
                                BasicCodeLocation(caller_filename, lineno),
@@ -393,9 +394,9 @@ class LocIndexerPatching:
             optional_source_code = call_info_singleton.transformer_optional_source_code
 
             if isinstance(args[0], tuple) and not args[0][0].start and not args[0][0].stop \
-                    and isinstance(args[0][1], list) and isinstance(args[0][1][0], str):
+                    and isinstance(args[0][1], (list, numpy.ndarray)) and isinstance(args[0][1][0], str):
                 # Projection to one or multiple columns, return value is df
-                columns = args[0][1]
+                columns = list(args[0][1])
             elif isinstance(args[0], tuple) and not args[0][0].start and not args[0][0].stop \
                     and isinstance(args[0][1], str):
                 # Projection to one column with str syntax, e.g., for HashingVectorizer
@@ -416,7 +417,7 @@ class LocIndexerPatching:
             dag_node = DagNode(op_id,
                                BasicCodeLocation(caller_filename, lineno),
                                operator_context,
-                               DagNodeDetails("to {}".format(columns), columns),
+                               DagNodeDetails(f"to {columns}", columns),
                                get_optional_code_info_or_none(optional_code_reference, optional_source_code))
             add_dag_node(dag_node, [input_info.dag_node], backend_result)
         else:

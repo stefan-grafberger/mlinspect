@@ -34,8 +34,8 @@ class PipelineExecutor:
     next_op_id = 0
     next_missing_op_id = -1
     track_code_references = True
-    op_id_to_dag_node = dict()
-    inspection_results = InspectionResult(networkx.DiGraph(), dict())
+    op_id_to_dag_node = {}
+    inspection_results = InspectionResult(networkx.DiGraph(), {})
     inspections = []
     custom_monkey_patching = []
 
@@ -82,7 +82,7 @@ class PipelineExecutor:
         """
         Instrument and execute the pipeline
         """
-        # pylint: disable=no-self-use, too-many-locals
+        # pylint: disable=too-many-locals
         self.source_code, self.source_code_path = self.load_source_code(notebook_path, python_path, python_code)
         parsed_ast = ast.parse(self.source_code)
         parsed_modified_ast = self.instrument_pipeline(parsed_ast, self.track_code_references)
@@ -118,8 +118,8 @@ class PipelineExecutor:
         self.next_op_id = 0
         self.next_missing_op_id = -1
         self.track_code_references = True
-        self.op_id_to_dag_node = dict()
-        self.inspection_results = InspectionResult(networkx.DiGraph(), dict())
+        self.op_id_to_dag_node = {}
+        self.inspection_results = InspectionResult(networkx.DiGraph(), {})
         self.inspections = []
         self.custom_monkey_patching = []
 
@@ -168,11 +168,11 @@ class PipelineExecutor:
         sources = [notebook_path, python_path, python_code]
         assert sum(source is not None for source in sources) == 1
         if python_path is not None:
-            with open(python_path) as file:
+            with open(python_path, encoding="utf-8") as file:
                 source_code = file.read()
             source_code_path = python_path
         elif notebook_path is not None:
-            with open(notebook_path) as file:
+            with open(notebook_path, encoding="utf-8") as file:
                 notebook = nbformat.reads(file.read(), nbformat.NO_CONVERT)
                 exporter = PythonExporter()
                 source_code, _ = exporter.from_notebook_node(notebook)

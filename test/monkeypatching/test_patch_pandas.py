@@ -571,7 +571,7 @@ def test_groupby_agg():
         df = pd.DataFrame({'group': ['A', 'B', 'A', 'C', 'B'], 'value': [1, 2, 1, 3, 4]})
         df_groupby_agg = df.groupby('group').agg(mean_value=('value', 'mean'))
         
-        df_expected = pd.DataFrame({'group': ['A', 'B', 'C'], 'mean_value': [1, 3, 3]})
+        df_expected = pd.DataFrame({'group': ['A', 'B', 'C'], 'mean_value': [1., 3., 3.]})
         pd.testing.assert_frame_equal(df_groupby_agg.reset_index(drop=False), df_expected.reset_index(drop=True))
         """)
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
@@ -599,8 +599,8 @@ def test_groupby_agg():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_groupby_agg]
     lineage_output = inspection_results_data_source[RowLineage(2)]
-    expected_lineage_df = DataFrame([["A", 1, {LineageId(1, 0)}],
-                                     ['B', 3, {LineageId(1, 1)}]],
+    expected_lineage_df = DataFrame([["A", 1., {LineageId(1, 0)}],
+                                     ['B', 3., {LineageId(1, 1)}]],
                                     columns=['group', 'mean_value', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 

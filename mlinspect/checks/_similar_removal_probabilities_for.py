@@ -78,10 +78,9 @@ class SimilarRemovalProbabilitiesFor(Check):
                 column_result = self.get_histograms_for_node_and_column(column, histograms, node, parents)
                 column_results[column] = column_result
                 if not column_result.acceptable_probability_difference:
-                    issue = "A {} causes a max_probability_difference of '{}' by {}, a value above the " \
-                            "configured maximum threshold {}!" \
-                        .format(node.operator_info.operator.value, column, column_result.max_probability_difference,
-                                self.max_allowed_probability_difference)
+                    issue = f"A {node.operator_info.operator.value} causes a max_probability_difference of " \
+                            f"'{column}' by {column_result.max_probability_difference}, a value above the " \
+                            f"configured maximum threshold {self.max_allowed_probability_difference}!"
                     issue_list.append(issue)
                     check_status = CheckStatus.FAILURE
 
@@ -224,8 +223,8 @@ class SimilarRemovalProbabilitiesFor(Check):
         assert isinstance(removal_probab_check_result.check, SimilarRemovalProbabilitiesFor)
         sensitive_column_names = []
         for name in removal_probab_check_result.check.sensitive_columns:
-            removal_probability_column_name = "'{}' probability difference below the configured maximum test " \
-                                              "threshold".format(name)
+            removal_probability_column_name = f"'{name}' probability difference below the configured maximum test " \
+                                              "threshold"
             sensitive_column_names.append(removal_probability_column_name)
 
         sensitive_columns = []

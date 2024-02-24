@@ -30,15 +30,18 @@ class Backend(metaclass=abc.ABCMeta):
     The Interface for the different instrumentation backends
     """
 
+    @staticmethod
     @abc.abstractmethod
-    def before_call(self, operator_context, input_infos: List[AnnotatedDfObject]) \
+    def before_call(operator_context, input_infos: List[AnnotatedDfObject]) \
             -> List[AnnotatedDfObject]:
         """The value or module a function may be called on"""
         # pylint: disable=too-many-arguments, unused-argument
         raise NotImplementedError
 
+
+    @staticmethod
     @abc.abstractmethod
-    def after_call(self, operator_context, input_infos: List[AnnotatedDfObject], return_value,
+    def after_call(operator_context, input_infos: List[AnnotatedDfObject], return_value,
                    non_data_function_args: Dict[str, any] = MappingProxyType({})) -> BackendResult:
         """The return value of some function"""
         # pylint: disable=too-many-arguments, unused-argument

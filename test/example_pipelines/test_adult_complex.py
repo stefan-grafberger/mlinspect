@@ -11,7 +11,7 @@ def test_py_pipeline_runs():
     """
     Tests whether the .py version of the pipeline works
     """
-    with open(ADULT_COMPLEX_PY) as file:
+    with open(ADULT_COMPLEX_PY, encoding="utf-8") as file:
         text = file.read()
         parsed_ast = ast.parse(text)
         exec(compile(parsed_ast, filename="<ast>", mode="exec"))

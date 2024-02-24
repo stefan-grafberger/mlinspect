@@ -69,7 +69,7 @@ def test_inspector_adult_easy_str_pipeline():
     """
     Tests whether the str version of the inspector works
     """
-    with open(ADULT_SIMPLE_PY) as file:
+    with open(ADULT_SIMPLE_PY, encoding="utf-8") as file:
         code = file.read()
 
         inspector_result = PipelineInspector\

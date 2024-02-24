@@ -78,8 +78,8 @@ class SklearnBackend(Backend):
             return_value = execute_inspection_visits_nary_op(operator_context, input_infos, return_value,
                                                              non_data_function_args)
         else:
-            raise NotImplementedError("SklearnBackend doesn't know any operations of type '{}' yet!"
-                                      .format(operator_context.operator))
+            raise NotImplementedError(f"SklearnBackend doesn't know any operations of type "
+                                      f"'{operator_context.operator}' yet!")
         return return_value
 
 

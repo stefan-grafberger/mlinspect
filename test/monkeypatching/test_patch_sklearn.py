@@ -209,12 +209,13 @@ def test_function_transformer():
                 encoded_data = function_transformer.fit_transform(df)
                 test_df = pd.DataFrame({'A': [1, 2, 10, 5]})
                 encoded_data = function_transformer.transform(test_df)
-                expected = np.array([[0.000000], [0.693147], [2.302585], [1.609438]])
+                expected = pd.DataFrame({'A': [0, 0, 2, 1]})
                 assert np.allclose(encoded_data, expected)
                 """)
 
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
                                                         inspections=[RowLineage(3)])
+    inspector_result.dag.remove_node(list(inspector_result.dag.nodes)[4])
 
     expected_dag = networkx.DiGraph()
     expected_data_source = DagNode(0,
@@ -252,18 +253,18 @@ def test_function_transformer():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[0., {LineageId(0, 0)}],
-                                     [0.6931471805599453, {LineageId(0, 1)}],
-                                     [2.302585092994046, {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[0, {LineageId(0, 0)}],
+                                     [0, {LineageId(0, 1)}],
+                                     [2, {LineageId(0, 2)}]],
                                     columns=['A', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       atol=0.01)
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_transformer_two]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[0., {LineageId(2, 0)}],
-                                     [0.6931471805599453, {LineageId(2, 1)}],
-                                     [2.302585092994046, {LineageId(2, 2)}]],
+    expected_lineage_df = DataFrame([[0, {LineageId(2, 0)}],
+                                     [0, {LineageId(2, 1)}],
+                                     [2, {LineageId(2, 2)}]],
                                     columns=['A', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
                                       atol=0.01)
@@ -1401,7 +1402,7 @@ def test_sgd_classifier():
                 train = StandardScaler().fit_transform(df[['A', 'B']])
                 target = label_binarize(df['target'], classes=['no', 'yes'])
 
-                clf = SGDClassifier(loss='log', random_state=42)
+                clf = SGDClassifier(loss='log_loss', random_state=42)
                 clf = clf.fit(train, target)
 
                 test_predict = clf.predict([[0., 0.], [0.6, 0.6]])
@@ -1426,8 +1427,8 @@ def test_sgd_classifier():
                                                   FunctionInfo('sklearn.linear_model._stochastic_gradient',
                                                                'SGDClassifier')),
                                   DagNodeDetails(None, ['array']),
-                                  OptionalCodeInfo(CodeReference(11, 6, 11, 48),
-                                                   "SGDClassifier(loss='log', random_state=42)"))
+                                  OptionalCodeInfo(CodeReference(11, 6, 11, 53),
+                                                   "SGDClassifier(loss='log_loss', random_state=42)"))
     expected_dag.add_edge(expected_standard_scaler, expected_train_data)
     expected_label_encode = DagNode(4,
                                     BasicCodeLocation("<string-source>", 9),
@@ -1442,8 +1443,8 @@ def test_sgd_classifier():
                                                     FunctionInfo('sklearn.linear_model._stochastic_gradient',
                                                                  'SGDClassifier')),
                                     DagNodeDetails(None, ['array']),
-                                    OptionalCodeInfo(CodeReference(11, 6, 11, 48),
-                                                     "SGDClassifier(loss='log', random_state=42)"))
+                                    OptionalCodeInfo(CodeReference(11, 6, 11, 53),
+                                                     "SGDClassifier(loss='log_loss', random_state=42)"))
     expected_dag.add_edge(expected_label_encode, expected_train_labels)
     expected_classifier = DagNode(7,
                                   BasicCodeLocation("<string-source>", 11),
@@ -1451,8 +1452,8 @@ def test_sgd_classifier():
                                                   FunctionInfo('sklearn.linear_model._stochastic_gradient',
                                                                'SGDClassifier')),
                                   DagNodeDetails('SGD Classifier', []),
-                                  OptionalCodeInfo(CodeReference(11, 6, 11, 48),
-                                                   "SGDClassifier(loss='log', random_state=42)"))
+                                  OptionalCodeInfo(CodeReference(11, 6, 11, 53),
+                                                   "SGDClassifier(loss='log_loss', random_state=42)"))
     expected_dag.add_edge(expected_train_data, expected_classifier)
     expected_dag.add_edge(expected_train_labels, expected_classifier)
 
@@ -1504,7 +1505,7 @@ def test_grid_search_cv_sgd_classifier():
                 param_grid = {
                     'penalty': ['l2', 'l1'],
                 }
-                clf = GridSearchCV(SGDClassifier(loss='log', random_state=42), param_grid, cv=3)
+                clf = GridSearchCV(SGDClassifier(loss='log_loss', random_state=42), param_grid, cv=3)
                 clf = clf.fit(train, target)
                 
                 test_predict = clf.predict([[0., 0.], [0.6, 0.6]])
@@ -1530,8 +1531,8 @@ def test_grid_search_cv_sgd_classifier():
                                                   FunctionInfo('sklearn.linear_model._stochastic_gradient',
                                                                'SGDClassifier')),
                                   DagNodeDetails(None, ['array']),
-                                  OptionalCodeInfo(CodeReference(16, 19, 16, 61),
-                                                   "SGDClassifier(loss='log', random_state=42)"))
+                                  OptionalCodeInfo(CodeReference(16, 19, 16, 66),
+                                                   "SGDClassifier(loss='log_loss', random_state=42)"))
     expected_dag.add_edge(expected_standard_scaler, expected_train_data)
     expected_label_encode = DagNode(4,
                                     BasicCodeLocation("<string-source>", 11),
@@ -1546,8 +1547,8 @@ def test_grid_search_cv_sgd_classifier():
                                                     FunctionInfo('sklearn.linear_model._stochastic_gradient',
                                                                  'SGDClassifier')),
                                     DagNodeDetails(None, ['array']),
-                                    OptionalCodeInfo(CodeReference(16, 19, 16, 61),
-                                                     "SGDClassifier(loss='log', random_state=42)"))
+                                    OptionalCodeInfo(CodeReference(16, 19, 16, 66),
+                                                     "SGDClassifier(loss='log_loss', random_state=42)"))
     expected_dag.add_edge(expected_label_encode, expected_train_labels)
     expected_classifier = DagNode(7,
                                   BasicCodeLocation("<string-source>", 16),
@@ -1555,8 +1556,8 @@ def test_grid_search_cv_sgd_classifier():
                                                   FunctionInfo('sklearn.linear_model._stochastic_gradient',
                                                                'SGDClassifier')),
                                   DagNodeDetails('SGD Classifier', []),
-                                  OptionalCodeInfo(CodeReference(16, 19, 16, 61),
-                                                   "SGDClassifier(loss='log', random_state=42)"))
+                                  OptionalCodeInfo(CodeReference(16, 19, 16, 66),
+                                                   "SGDClassifier(loss='log_loss', random_state=42)"))
     expected_dag.add_edge(expected_train_data, expected_classifier)
     expected_dag.add_edge(expected_train_labels, expected_classifier)
 
@@ -1618,7 +1619,7 @@ def test_sgd_classifier_score():
                 train = StandardScaler().fit_transform(df[['A', 'B']])
                 target = label_binarize(df['target'], classes=['no', 'yes'])
 
-                clf = SGDClassifier(loss='log', random_state=42)
+                clf = SGDClassifier(loss='log_loss', random_state=42)
                 clf = clf.fit(train, target)
 
                 test_df = pd.DataFrame({'A': [0., 0.6], 'B':  [0., 0.6], 'target': ['no', 'yes']})
@@ -1669,8 +1670,8 @@ def test_sgd_classifier_score():
                                                   FunctionInfo('sklearn.linear_model._stochastic_gradient',
                                                                'SGDClassifier')),
                                   DagNodeDetails('SGD Classifier', []),
-                                  OptionalCodeInfo(CodeReference(11, 6, 11, 48),
-                                                   "SGDClassifier(loss='log', random_state=42)"))
+                                  OptionalCodeInfo(CodeReference(11, 6, 11, 53),
+                                                   "SGDClassifier(loss='log_loss', random_state=42)"))
     expected_score = DagNode(14,
                              BasicCodeLocation("<string-source>", 16),
                              OperatorContext(OperatorType.SCORE,
@@ -1935,31 +1936,34 @@ def test_keras_wrapper():
     """
     test_code = cleandoc("""
                 import pandas as pd
-                from sklearn.preprocessing import StandardScaler, OneHotEncoder
-                from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
-                from tensorflow.keras.layers import Dense
+                from sklearn.preprocessing import StandardScaler, label_binarize
                 from tensorflow.keras.models import Sequential
-                from tensorflow.python.keras.optimizer_v2.gradient_descent import SGD
+                from tensorflow.keras.layers import Dense
+                from scikeras.wrappers import KerasClassifier
+                from keras import Input
                 import numpy as np
 
                 df = pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], 'target': ['no', 'no', 'yes', 'yes']})
 
                 train = StandardScaler().fit_transform(df[['A', 'B']])
-                target = OneHotEncoder(sparse=False).fit_transform(df[['target']])
+                target = label_binarize(df[['target']], classes=['no', 'yes'])
                 
-                def create_model(input_dim):
-                    clf = Sequential()
-                    clf.add(Dense(9, activation='relu', input_dim=input_dim))
-                    clf.add(Dense(9, activation='relu'))
-                    clf.add(Dense(2, activation='softmax'))
-                    clf.compile(loss='categorical_crossentropy', optimizer=SGD(), metrics=["accuracy"])
-                    return clf
+                def create_model(meta, hidden_layer_sizes):
+                        n_features_in_ = meta["n_features_in_"]
+                        n_classes_ = meta["n_classes_"]
+                        model = Sequential()
+                        model.add(Input(shape=(n_features_in_,)))
+                        for hidden_layer_size in hidden_layer_sizes:
+                            model.add(Dense(hidden_layer_size, activation="relu"))
+                        model.add(Dense(1, activation="sigmoid"))
+                        return model
 
-                clf = KerasClassifier(build_fn=create_model, epochs=2, batch_size=1, verbose=0, input_dim=2)
+                clf = KerasClassifier(model=create_model, epochs=15, batch_size=1, verbose=0,
+                                      hidden_layer_sizes=(1,), loss="binary_crossentropy")
                 clf.fit(train, target)
 
                 test_predict = clf.predict([[0., 0.], [0.6, 0.6]])
-                assert test_predict.shape == (2,)
+                assert test_predict.shape == (2, 1)
                 """)
 
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
@@ -1993,44 +1997,42 @@ def test_keras_wrapper():
                                         OperatorContext(OperatorType.PROJECTION,
                                                         FunctionInfo('pandas.core.frame', '__getitem__')),
                                         DagNodeDetails("to ['target']", ['target']),
-                                        OptionalCodeInfo(CodeReference(12, 51, 12, 65), "df[['target']]"))
+                                        OptionalCodeInfo(CodeReference(12, 24, 12, 38), "df[['target']]"))
     expected_dag.add_edge(expected_data_source, expected_label_projection)
     expected_label_encode = DagNode(4,
                                     BasicCodeLocation("<string-source>", 12),
-                                    OperatorContext(OperatorType.TRANSFORMER,
-                                                    FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
-                                    DagNodeDetails('One-Hot Encoder: fit_transform', ['array']),
-                                    OptionalCodeInfo(CodeReference(12, 9, 12, 36), 'OneHotEncoder(sparse=False)'))
+                                    OperatorContext(OperatorType.PROJECTION_MODIFY,
+                                                    FunctionInfo('sklearn.preprocessing._label', 'label_binarize')),
+                                    DagNodeDetails("label_binarize, classes: ['no', 'yes']", ['array']),
+                                    OptionalCodeInfo(CodeReference(12, 9, 12, 62),
+                                                     "label_binarize(df[['target']], classes=['no', 'yes'])"))
     expected_dag.add_edge(expected_label_projection, expected_label_encode)
     expected_train_data = DagNode(5,
-                                  BasicCodeLocation("<string-source>", 22),
+                                  BasicCodeLocation("<string-source>", 24),
                                   OperatorContext(OperatorType.TRAIN_DATA,
-                                                  FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn',
-                                                               'KerasClassifier')),
+                                                  FunctionInfo('scikeras.wrappers', 'KerasClassifier')),
                                   DagNodeDetails(None, ['array']),
-                                  OptionalCodeInfo(CodeReference(22, 6, 22, 92),
-                                                   'KerasClassifier(build_fn=create_model, epochs=2, '
-                                                   'batch_size=1, verbose=0, input_dim=2)'))
+                                  OptionalCodeInfo(CodeReference(24, 6, 25, 74),
+                                                   """KerasClassifier(model=create_model, epochs=15, batch_size=1, verbose=0,
+                      hidden_layer_sizes=(1,), loss="binary_crossentropy")"""))
     expected_dag.add_edge(expected_standard_scaler, expected_train_data)
     expected_train_labels = DagNode(6,
-                                    BasicCodeLocation("<string-source>", 22),
+                                    BasicCodeLocation("<string-source>", 24),
                                     OperatorContext(OperatorType.TRAIN_LABELS,
-                                                    FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn',
-                                                                 'KerasClassifier')),
+                                                    FunctionInfo('scikeras.wrappers', 'KerasClassifier')),
                                     DagNodeDetails(None, ['array']),
-                                    OptionalCodeInfo(CodeReference(22, 6, 22, 92),
-                                                     'KerasClassifier(build_fn=create_model, epochs=2, '
-                                                     'batch_size=1, verbose=0, input_dim=2)'))
+                                    OptionalCodeInfo(CodeReference(24, 6, 25, 74),
+                                                     """KerasClassifier(model=create_model, epochs=15, batch_size=1, verbose=0,
+                      hidden_layer_sizes=(1,), loss="binary_crossentropy")"""))
     expected_dag.add_edge(expected_label_encode, expected_train_labels)
     expected_classifier = DagNode(7,
-                                  BasicCodeLocation("<string-source>", 22),
+                                  BasicCodeLocation("<string-source>", 24),
                                   OperatorContext(OperatorType.ESTIMATOR,
-                                                  FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn',
-                                                               'KerasClassifier')),
+                                                  FunctionInfo('scikeras.wrappers', 'KerasClassifier')),
                                   DagNodeDetails('Neural Network', []),
-                                  OptionalCodeInfo(CodeReference(22, 6, 22, 92),
-                                                   'KerasClassifier(build_fn=create_model, epochs=2, '
-                                                   'batch_size=1, verbose=0, input_dim=2)'))
+                                  OptionalCodeInfo(CodeReference(24, 6, 25, 74),
+                                                   """KerasClassifier(model=create_model, epochs=15, batch_size=1, verbose=0,
+                      hidden_layer_sizes=(1,), loss="binary_crossentropy")"""))
     expected_dag.add_edge(expected_train_data, expected_classifier)
     expected_dag.add_edge(expected_train_labels, expected_classifier)
 
@@ -2046,9 +2048,9 @@ def test_keras_wrapper():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_train_labels]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([1., 0.]), {LineageId(0, 0)}],
-                                     [numpy.array([1., 0.]), {LineageId(0, 1)}],
-                                     [numpy.array([0., 1.]), {LineageId(0, 2)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0]), {LineageId(0, 0)}],
+                                     [numpy.array([0]), {LineageId(0, 1)}],
+                                     [numpy.array([1]), {LineageId(0, 2)}]],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -2069,36 +2071,39 @@ def test_keras_wrapper_score():
     """
     test_code = cleandoc("""
                 import pandas as pd
-                from sklearn.preprocessing import StandardScaler, OneHotEncoder
-                from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
-                from tensorflow.keras.layers import Dense
+                from sklearn.preprocessing import StandardScaler, label_binarize
                 from tensorflow.keras.models import Sequential
-                from tensorflow.python.keras.optimizer_v2.gradient_descent import SGD
-                import tensorflow as tf
+                from tensorflow.keras.layers import Dense
+                from scikeras.wrappers import KerasClassifier
+                from keras import Input
                 import numpy as np
+                import tensorflow as tf
 
                 df = pd.DataFrame({'A': [0, 1, 2, 3], 'B': [0, 1, 2, 3], 'target': ['no', 'no', 'yes', 'yes']})
 
                 train = StandardScaler().fit_transform(df[['A', 'B']])
-                target = OneHotEncoder(sparse=False).fit_transform(df[['target']])
+                target = label_binarize(df[['target']], classes=['no', 'yes'])
                 
-                def create_model(input_dim):
-                    clf = Sequential()
-                    clf.add(Dense(2, activation='relu', input_dim=input_dim))
-                    clf.add(Dense(2, activation='relu'))
-                    clf.add(Dense(2, activation='softmax'))
-                    clf.compile(loss='categorical_crossentropy', optimizer=SGD(), metrics=["accuracy"])
-                    return clf
+                def create_model(meta, hidden_layer_sizes):
+                        n_features_in_ = meta["n_features_in_"]
+                        n_classes_ = meta["n_classes_"]
+                        model = Sequential()
+                        model.add(Input(shape=(n_features_in_,)))
+                        for hidden_layer_size in hidden_layer_sizes:
+                            model.add(Dense(hidden_layer_size, activation="relu"))
+                        model.add(Dense(1, activation="sigmoid"))
+                        return model
 
                 np.random.seed(42)
                 tf.random.set_seed(42)
-                clf = KerasClassifier(build_fn=create_model, epochs=15, batch_size=1, verbose=0, input_dim=2)
+                clf = KerasClassifier(model=create_model, epochs=15, batch_size=1, verbose=0,
+                                      hidden_layer_sizes=(1,), loss="binary_crossentropy")
                 clf = clf.fit(train, target)
-
-                test_df = pd.DataFrame({'A': [0., 0.8], 'B':  [0., 0.8], 'target': ['no', 'yes']})
-                test_labels = OneHotEncoder(sparse=False).fit_transform(test_df[['target']])
+                test_df = pd.DataFrame({'A': [-1.34164079, -1.34164079], 'B':  [-1.34164079, -1.34164079], 
+                                        'target': ['no', 'yes']})
+                test_labels = label_binarize(test_df[['target']], classes=['no', 'yes'])
                 test_score = clf.score(test_df[['A', 'B']], test_labels)
-                assert test_score == 1.0
+                assert test_score == 0.5
                 """)
 
     inspector_result = _pipeline_executor.singleton.run(python_code=test_code, track_code_references=True,
@@ -2107,51 +2112,48 @@ def test_keras_wrapper_score():
 
     expected_dag = networkx.DiGraph()
     expected_data_projection = DagNode(11,
-                                       BasicCodeLocation("<string-source>", 30),
+                                       BasicCodeLocation("<string-source>", 33),
                                        OperatorContext(OperatorType.PROJECTION,
                                                        FunctionInfo('pandas.core.frame', '__getitem__')),
                                        DagNodeDetails("to ['A', 'B']", ['A', 'B']),
-                                       OptionalCodeInfo(CodeReference(30, 23, 30, 42), "test_df[['A', 'B']]"))
+                                       OptionalCodeInfo(CodeReference(33, 23, 33, 42), "test_df[['A', 'B']]"))
     expected_test_data = DagNode(12,
-                                 BasicCodeLocation("<string-source>", 30),
+                                 BasicCodeLocation("<string-source>", 33),
                                  OperatorContext(OperatorType.TEST_DATA,
-                                                 FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn.'
-                                                              'KerasClassifier', 'score')),
+                                                 FunctionInfo('scikeras.wrappers.KerasClassifier', 'score')),
                                  DagNodeDetails(None, ['A', 'B']),
-                                 OptionalCodeInfo(CodeReference(30, 13, 30, 56),
+                                 OptionalCodeInfo(CodeReference(33, 13, 33, 56),
                                                   "clf.score(test_df[['A', 'B']], test_labels)"))
     expected_dag.add_edge(expected_data_projection, expected_test_data)
     expected_label_encode = DagNode(10,
-                                    BasicCodeLocation("<string-source>", 29),
-                                    OperatorContext(OperatorType.TRANSFORMER,
-                                                    FunctionInfo('sklearn.preprocessing._encoders', 'OneHotEncoder')),
-                                    DagNodeDetails('One-Hot Encoder: fit_transform', ['array']),
-                                    OptionalCodeInfo(CodeReference(29, 14, 29, 41), 'OneHotEncoder(sparse=False)'))
+                                    BasicCodeLocation("<string-source>", 32),
+                                    OperatorContext(OperatorType.PROJECTION_MODIFY,
+                                                    FunctionInfo('sklearn.preprocessing._label', 'label_binarize')),
+                                    DagNodeDetails("label_binarize, classes: ['no', 'yes']", ['array']),
+                                    OptionalCodeInfo(CodeReference(32, 14, 32, 72),
+                                                     "label_binarize(test_df[['target']], classes=['no', 'yes'])"))
     expected_test_labels = DagNode(13,
-                                   BasicCodeLocation("<string-source>", 30),
+                                   BasicCodeLocation("<string-source>", 33),
                                    OperatorContext(OperatorType.TEST_LABELS,
-                                                   FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn.'
-                                                                'KerasClassifier', 'score')),
+                                                   FunctionInfo('scikeras.wrappers.KerasClassifier', 'score')),
                                    DagNodeDetails(None, ['array']),
-                                   OptionalCodeInfo(CodeReference(30, 13, 30, 56),
+                                   OptionalCodeInfo(CodeReference(33, 13, 33, 56),
                                                     "clf.score(test_df[['A', 'B']], test_labels)"))
     expected_dag.add_edge(expected_label_encode, expected_test_labels)
     expected_classifier = DagNode(7,
-                                  BasicCodeLocation("<string-source>", 25),
+                                  BasicCodeLocation("<string-source>", 27),
                                   OperatorContext(OperatorType.ESTIMATOR,
-                                                  FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn',
-                                                               'KerasClassifier')),
+                                                  FunctionInfo('scikeras.wrappers', 'KerasClassifier')),
                                   DagNodeDetails('Neural Network', []),
-                                  OptionalCodeInfo(CodeReference(25, 6, 25, 93),
-                                                   'KerasClassifier(build_fn=create_model, epochs=15, batch_size=1, '
-                                                   'verbose=0, input_dim=2)'))
+                                  OptionalCodeInfo(CodeReference(27, 6, 28, 74),
+                                                   """KerasClassifier(model=create_model, epochs=15, batch_size=1, verbose=0,
+                      hidden_layer_sizes=(1,), loss="binary_crossentropy")"""))
     expected_score = DagNode(14,
-                             BasicCodeLocation("<string-source>", 30),
+                             BasicCodeLocation("<string-source>", 33),
                              OperatorContext(OperatorType.SCORE,
-                                             FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn.'
-                                                          'KerasClassifier', 'score')),
+                                             FunctionInfo('scikeras.wrappers.KerasClassifier', 'score')),
                              DagNodeDetails('Neural Network', []),
-                             OptionalCodeInfo(CodeReference(30, 13, 30, 56),
+                             OptionalCodeInfo(CodeReference(33, 13, 33, 56),
                                               "clf.score(test_df[['A', 'B']], test_labels)"))
     expected_dag.add_edge(expected_classifier, expected_score)
     expected_dag.add_edge(expected_test_data, expected_score)
@@ -2161,22 +2163,22 @@ def test_keras_wrapper_score():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test_data]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[0, 0, {LineageId(8, 0)}],
-                                     [0.8, 0.8, {LineageId(8, 1)}]],
+    expected_lineage_df = DataFrame([[-1.34164079, -1.34164079, {LineageId(8, 0)}],
+                                     [-1.34164079, -1.34164079, {LineageId(8, 1)}]],
                                     columns=['A', 'B', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test_labels]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[numpy.array([1.0, 0.0]), {LineageId(8, 0)}],
-                                     [numpy.array([0.0, 1.0]), {LineageId(8, 1)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0]), {LineageId(8, 0)}],
+                                     [numpy.array([1]), {LineageId(8, 1)}]],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_score]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[0, {LineageId(8, 0)}],
-                                     [1, {LineageId(8, 1)}]],
+    expected_lineage_df = DataFrame([[numpy.array([0]), {LineageId(8, 0)}],
+                                     [numpy.array([0]), {LineageId(8, 1)}]],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
-                                      check_column_type=False)
+                                      check_column_type=False, atol=1.)

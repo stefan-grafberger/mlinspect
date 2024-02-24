@@ -2,11 +2,10 @@
 Some useful utils for the project
 """
 import numpy
+from keras import Input
 from sklearn.exceptions import NotFittedError
-from tensorflow.keras.layers import Dense  # pylint: disable=no-name-in-module
-from tensorflow.keras.models import Sequential  # pylint: disable=no-name-in-module
-from tensorflow.python.keras.optimizer_v2.gradient_descent import SGD  # pylint: disable=no-name-in-module
-from tensorflow.python.keras.wrappers.scikit_learn import KerasClassifier  # pylint: disable=no-name-in-module
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
 
 from example_pipelines.healthcare._gensim_wrapper import W2VTransformer
 
@@ -39,20 +38,12 @@ class MyW2VTransformer(W2VTransformer):
         return numpy.reshape(numpy.array(vectors), (len(words), self.size))
 
 
-class MyKerasClassifier(KerasClassifier):
-    """A Keras Wrapper that sets input_dim on fit"""
-
-    def fit(self, x, y, **kwargs):
-        """Create and fit a simple neural network"""
-        self.sk_params['input_dim'] = x.shape[1]
-        super().fit(x, y, **kwargs)
-
-
-def create_model(input_dim=10):
-    """Create a simple neural network"""
-    clf = Sequential()
-    clf.add(Dense(9, activation='relu', input_dim=input_dim))
-    clf.add(Dense(9, activation='relu'))
-    clf.add(Dense(2, activation='softmax'))
-    clf.compile(loss='categorical_crossentropy', optimizer=SGD(), metrics=["accuracy"])
-    return clf
+def create_model(meta, hidden_layer_sizes):
+    n_features_in_ = meta["n_features_in_"]
+    n_classes_ = meta["n_classes_"]
+    model = Sequential()
+    model.add(Input(shape=(n_features_in_,)))
+    for hidden_layer_size in hidden_layer_sizes:
+        model.add(Dense(hidden_layer_size, activation="relu"))
+    model.add(Dense(1, activation="sigmoid"))
+    return model

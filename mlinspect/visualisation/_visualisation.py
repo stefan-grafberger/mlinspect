@@ -37,9 +37,9 @@ def get_dag_as_pretty_string(extracted_dag):
     def get_new_node_label(node: DagNode):
         description = ""
         if node.details.description:
-            description = "({})".format(node.details.description)
+            description = f"({node.details.description})"
 
-        label = "{}{}".format(node.operator_info.operator.value, description)
+        label = f"{node.operator_info.operator.value}{description}"
         return label
 
     # noinspection PyTypeChecker

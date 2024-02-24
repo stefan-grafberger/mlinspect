@@ -1,6 +1,7 @@
 """
 Some utility functions the different instrumentation backends
 """
+# pylint: disable=unnecessary-dunder-call
 import itertools
 
 import numpy
@@ -62,7 +63,7 @@ def get_iterator_for_type(data, np_nditer_with_refs=False, columns=None):
     elif isinstance(data, list):
         iterator = get_list_row_iterator(data, columns)
     else:
-        raise NotImplementedError("TODO: Support type {}!".format(type(data)))
+        raise NotImplementedError(f"TODO: Support type {type(data)}!")
     return iterator
 
 
@@ -89,7 +90,7 @@ def create_wrapper_with_annotations(annotations_df, return_value) -> AnnotatedDf
     elif return_value is None:
         new_return_value = AnnotatedDfObject(None, annotations_df)
     else:
-        raise NotImplementedError("A type that is still unsupported was found: {}".format(return_value))
+        raise NotImplementedError(f"A type that is still unsupported was found: {return_value}")
     return new_return_value
 
 
