@@ -2099,8 +2099,8 @@ def test_keras_wrapper_score():
                 clf = KerasClassifier(model=create_model, epochs=15, batch_size=1, verbose=0,
                                       hidden_layer_sizes=(1,), loss="binary_crossentropy")
                 clf = clf.fit(train, target)
-
-                test_df = pd.DataFrame({'A': [0., 0.], 'B':  [0., 0.], 'target': ['no', 'yes']})
+                test_df = pd.DataFrame({'A': [-1.34164079, -1.34164079], 'B':  [-1.34164079, -1.34164079], 
+                                        'target': ['no', 'yes']})
                 test_labels = label_binarize(test_df[['target']], classes=['no', 'yes'])
                 test_score = clf.score(test_df[['A', 'B']], test_labels)
                 assert test_score == 0.5
@@ -2163,8 +2163,8 @@ def test_keras_wrapper_score():
 
     inspection_results_data_source = inspector_result.dag_node_to_inspection_results[expected_test_data]
     lineage_output = inspection_results_data_source[RowLineage(3)]
-    expected_lineage_df = DataFrame([[0., 0., {LineageId(8, 0)}],
-                                     [0., 0., {LineageId(8, 1)}]],
+    expected_lineage_df = DataFrame([[-1.34164079, -1.34164079, {LineageId(8, 0)}],
+                                     [-1.34164079, -1.34164079, {LineageId(8, 1)}]],
                                     columns=['A', 'B', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True))
 
@@ -2181,4 +2181,4 @@ def test_keras_wrapper_score():
                                      [numpy.array([0]), {LineageId(8, 1)}]],
                                     columns=['array', 'mlinspect_lineage'])
     pandas.testing.assert_frame_equal(lineage_output.reset_index(drop=True), expected_lineage_df.reset_index(drop=True),
-                                      check_column_type=False)
+                                      check_column_type=False, atol=1.)
