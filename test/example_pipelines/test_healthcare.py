@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 from example_pipelines.healthcare import custom_monkeypatching
-from example_pipelines.healthcare.healthcare_utils import MyKerasClassifier, create_model, MyW2VTransformer
+from example_pipelines.healthcare.healthcare_utils import create_model, MyW2VTransformer
 from example_pipelines import HEALTHCARE_PY, HEALTHCARE_PNG
 from mlinspect.testing._testing_helper_utils import run_and_assert_all_op_outputs_inspected
 
