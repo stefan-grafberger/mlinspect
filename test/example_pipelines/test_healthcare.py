@@ -4,7 +4,7 @@ Tests whether the healthcare demo works
 import ast
 import pandas as pd
 from scikeras.wrappers import KerasClassifier
-from sklearn.preprocessing import StandardScaler, OneHotEncoder, label_binarize
+from sklearn.preprocessing import StandardScaler, label_binarize
 
 from example_pipelines.healthcare import custom_monkeypatching
 from example_pipelines.healthcare.healthcare_utils import create_model, MyW2VTransformer
