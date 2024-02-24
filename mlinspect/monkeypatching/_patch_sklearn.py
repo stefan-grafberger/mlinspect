@@ -27,7 +27,7 @@ from mlinspect.monkeypatching._monkey_patching_utils import execute_patched_func
 class SklearnPreprocessingPatching:
     """ Patches for sklearn """
 
-    # pylint: disable=too-few-public-methods
+    # pylint: disable=too-few-public-methods,no-self-argument
 
     @gorilla.name('label_binarize')
     @gorilla.settings(allow_hit=True)
@@ -52,7 +52,7 @@ class SklearnPreprocessingPatching:
             new_return_value = backend_result.annotated_dfobject.result_data
 
             classes = kwargs['classes']
-            description = "label_binarize, classes: {}".format(classes)
+            description = f"label_binarize, classes: {classes}"
             dag_node = DagNode(op_id,
                                BasicCodeLocation(caller_filename, lineno),
                                operator_context,
@@ -69,7 +69,7 @@ class SklearnPreprocessingPatching:
 class SklearnModelSelectionPatching:
     """ Patches for sklearn """
 
-    # pylint: disable=too-few-public-methods
+    # pylint: disable=too-few-public-methods,no-self-argument
 
     @gorilla.name('train_test_split')
     @gorilla.settings(allow_hit=True)
@@ -124,7 +124,7 @@ class SklearnModelSelectionPatching:
 
 class SklearnCallInfo:
     """ Contains info like lineno from the current Transformer so indirect utility function calls can access it """
-    # pylint: disable=too-few-public-methods
+    # pylint: disable=too-few-public-methods,too-many-instance-attributes
 
     transformer_filename: str or None = None
     transformer_lineno: int or None = None

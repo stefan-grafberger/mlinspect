@@ -18,7 +18,7 @@ from mlinspect.monkeypatching._monkey_patching_utils import execute_patched_func
 @gorilla.patches(api)
 class StatsmodelApiPatching:
     """ Patches for statsmodel """
-    # pylint: disable=too-few-public-methods
+    # pylint: disable=too-few-public-methods,no-self-argument
 
     @gorilla.name('add_constant')
     @gorilla.settings(allow_hit=True)
@@ -56,7 +56,7 @@ class StatsmodelApiPatching:
 class StatsmodelsDatasetPatching:
     """ Patches for pandas """
 
-    # pylint: disable=too-few-public-methods
+    # pylint: disable=too-few-public-methods,no-self-argument
 
     @gorilla.name('get_rdataset')
     @gorilla.settings(allow_hit=True)

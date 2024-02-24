@@ -78,10 +78,9 @@ class NoBiasIntroducedFor(Check):
                 column_result = self.get_histograms_for_node_and_column(column, histograms, node, parents)
                 column_results[column] = column_result
                 if not column_result.acceptable_change:
-                    issue = "A {} causes a min_relative_ratio_change of '{}' by {}, a value below the " \
-                            "configured minimum threshold {}!" \
-                        .format(node.operator_info.operator.value, column, column_result.min_relative_ratio_change,
-                                self.min_allowed_relative_ratio_change)
+                    issue = f"A {node.operator_info.operator.value} causes a min_relative_ratio_change of '{column}' " \
+                            f"by {column_result.min_relative_ratio_change}, a value below the " \
+                            f"configured minimum threshold {self.min_allowed_relative_ratio_change}!"
                     issue_list.append(issue)
                     check_status = CheckStatus.FAILURE
 
@@ -185,7 +184,7 @@ class NoBiasIntroducedFor(Check):
         descriptions = []
         assert isinstance(no_bias_check_result.check, NoBiasIntroducedFor)
         sensitive_column_names = no_bias_check_result.check.sensitive_columns
-        sensitive_column_names = ["'{}' distribution change below the configured minimum test threshold".format(name)
+        sensitive_column_names = [f"'{name}' distribution change below the configured minimum test threshold"
                                   for name in sensitive_column_names]
         sensitive_columns = []
         for _ in range(len(sensitive_column_names)):

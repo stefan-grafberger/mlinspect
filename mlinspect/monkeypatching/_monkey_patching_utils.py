@@ -145,11 +145,11 @@ def get_input_info(df_object, caller_filename, lineno, function_info, optional_c
         operator_context = OperatorContext(OperatorType.DATA_SOURCE, function_info)
         backend_result = execute_inspection_visits_data_source(operator_context, df_object, {})
         if optional_code_reference:
-            code_reference = "({})".format(optional_source_code)
+            code_reference = f"({optional_source_code})"
         else:
             code_reference = ""
-        description = "Warning! Operator {}:{} {} encountered a DataFrame resulting from an operation " \
-                      "without mlinspect support!".format(caller_filename, lineno, code_reference)
+        description = f"Warning! Operator {caller_filename}:{lineno} {code_reference} encountered a DataFrame resulting from an operation " \
+                      "without mlinspect support!"
         missing_op_id = singleton.get_next_missing_op_id()
         input_dag_node = DagNode(missing_op_id,
                                  BasicCodeLocation(caller_filename, lineno),
@@ -171,7 +171,7 @@ def get_column_names(df_object):
     elif isinstance(df_object, (csr_matrix, numpy.ndarray)):
         columns = ['array']
     else:
-        raise NotImplementedError("TODO: Type: '{}' still is not supported!".format(type(df_object)))
+        raise NotImplementedError(f"TODO: Type: '{type(df_object)}' still is not supported!")
     return columns
 
 

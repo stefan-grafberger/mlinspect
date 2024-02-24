@@ -77,8 +77,8 @@ class PandasBackend(Backend):
             input_infos[1].result_data.drop("mlinspect_index_y", axis=1, inplace=True)
 
         else:
-            raise NotImplementedError("PandasBackend doesn't know any operations of type '{}' yet!"
-                                      .format(operator_context.operator))
+            raise NotImplementedError(f"PandasBackend doesn't know any operations of type "
+                                      f"'{operator_context.operator}' yet!")
 
         return return_value
 

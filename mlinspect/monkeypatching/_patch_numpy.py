@@ -15,7 +15,7 @@ from mlinspect.monkeypatching._monkey_patching_utils import execute_patched_func
 class NumpyRandomPatching:
     """ Patches for sklearn """
 
-    # pylint: disable=too-few-public-methods
+    # pylint: disable=too-few-public-methods,no-self-argument
 
     @gorilla.name('random')
     @gorilla.settings(allow_hit=True)

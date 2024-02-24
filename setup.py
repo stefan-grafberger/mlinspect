@@ -6,13 +6,13 @@ from setuptools import setup, find_packages
 
 ROOT = os.path.dirname(__file__)
 
-with open(os.path.join(ROOT, "requirements", "requirements.txt")) as f:
+with open(os.path.join(ROOT, "requirements", "requirements.txt"), encoding="utf-8") as f:
     required = f.read().splitlines()
 
-with open(os.path.join(ROOT, "requirements", "requirements.dev.txt")) as f:
+with open(os.path.join(ROOT, "requirements", "requirements.dev.txt"), encoding="utf-8") as f:
     test_required = f.read().splitlines()
 
-with open("README.md", "r") as fh:
+with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(

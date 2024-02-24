@@ -63,4 +63,4 @@ class Check(metaclass=abc.ABCMeta):
 
     def __repr__(self):
         """Checks must have a str representation"""
-        return "{}({})".format(self.__class__.__name__, self.check_id or "")
+        return f"{self.__class__.__name__}({self.check_id or ''})"

@@ -43,7 +43,7 @@ class NoMissingEmbeddings(Check):
 
     def evaluate(self, inspection_result: InspectionResult) -> CheckResult:
         """Evaluate the check"""
-        dag_node_to_missing_embeddings = dict()
+        dag_node_to_missing_embeddings = {}
         for dag_node, dag_node_inspection_result in inspection_result.dag_node_to_inspection_results.items():
             if MissingEmbeddings(self.example_threshold) in dag_node_inspection_result:
                 missing_embedding_info = dag_node_inspection_result[MissingEmbeddings(self.example_threshold)]

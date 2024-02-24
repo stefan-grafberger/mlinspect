@@ -76,32 +76,32 @@ def get_code_for_op_benchmark(data_frame_rows, operator_type):
     if operator_type == OperatorBenchmarkType.PROJECTION:
         benchmark_setup = get_single_df_creation_str(data_frame_rows)
         benchmark_exec = get_test_projection_str()
-        benchmark_setup_func_str = "get_single_df_creation_str({})".format(data_frame_rows)
+        benchmark_setup_func_str = f"get_single_df_creation_str({data_frame_rows})"
         benchmark_exec_func_str = "get_test_projection_str()"
     elif operator_type == OperatorBenchmarkType.SELECTION:
         benchmark_setup = get_single_df_creation_str(data_frame_rows)
         benchmark_exec = get_test_selection_str()
-        benchmark_setup_func_str = "get_single_df_creation_str({})".format(data_frame_rows)
+        benchmark_setup_func_str = f"get_single_df_creation_str({data_frame_rows})"
         benchmark_exec_func_str = "get_test_selection_str()"
     elif operator_type == OperatorBenchmarkType.JOIN:
         benchmark_setup = get_multiple_dfs_creation_str(data_frame_rows)
         benchmark_exec = get_test_join_str()
-        benchmark_setup_func_str = "get_multiple_dfs_creation_str({})".format(data_frame_rows)
+        benchmark_setup_func_str = f"get_multiple_dfs_creation_str({data_frame_rows})"
         benchmark_exec_func_str = "get_test_join_str()"
     elif operator_type == OperatorBenchmarkType.ONE_HOT_ENCODER:
         benchmark_setup = get_np_cat_array_str(data_frame_rows)
         benchmark_exec = get_test_one_hot_encoder_str()
-        benchmark_setup_func_str = "get_np_cat_array_str({})".format(data_frame_rows)
+        benchmark_setup_func_str = f"get_np_cat_array_str({data_frame_rows})"
         benchmark_exec_func_str = "get_test_one_hot_encoder_str()"
     elif operator_type == OperatorBenchmarkType.STANDARD_SCALER:
         benchmark_setup = get_np_num_array_str(data_frame_rows)
         benchmark_exec = get_test_standard_scaler_str()
-        benchmark_setup_func_str = "get_np_num_array_str({})".format(data_frame_rows)
+        benchmark_setup_func_str = f"get_np_num_array_str({data_frame_rows})"
         benchmark_exec_func_str = "get_test_standard_scaler_str()"
     elif operator_type == OperatorBenchmarkType.DECISION_TREE:
         benchmark_setup = get_estimator_train_data_str(data_frame_rows)
         benchmark_exec = get_decision_tree_str()
-        benchmark_setup_func_str = "get_estimator_train_data_str({})".format(data_frame_rows)
+        benchmark_setup_func_str = f"get_estimator_train_data_str({data_frame_rows})"
         benchmark_exec_func_str = "get_decision_tree_str()"
     else:
         assert False
@@ -230,7 +230,7 @@ def prepare_benchmark_exec(benchmark_str, setup_str, inspections):
     """
     Get the setup str for timeit
     """
-    setup = cleandoc("""
+    setup = cleandoc(f"""
     from experiments.performance._empty_inspection import EmptyInspection
     from mlinspect.instrumentation._pipeline_executor import singleton
     from mlinspect.inspections import HistogramForColumns, RowLineage, MaterializeFirstOutputRows
@@ -239,10 +239,10 @@ def prepare_benchmark_exec(benchmark_str, setup_str, inspections):
         get_test_one_hot_encoder_str, get_np_num_array_str, get_test_standard_scaler_str, \
         get_estimator_train_data_str, get_decision_tree_str
 
-    test_code_setup = {}
-    inspector_result = singleton.run(python_code=test_code_setup, inspections={})
-    test_code_benchmark = {}
-    """.format(setup_str, inspections, benchmark_str))
+    test_code_setup = {setup_str}
+    inspector_result = singleton.run(python_code=test_code_setup, inspections={inspections})
+    test_code_benchmark = {benchmark_str}
+    """)
     return setup
 
 
@@ -250,9 +250,9 @@ def trigger_benchmark_exec(inspections_str):
     """
     Get the benchmark str for timeit
     """
-    benchmark = cleandoc("""
-    inspector_result_two = singleton.run(python_code=test_code_benchmark, inspections={}, reset_state=False)
-    """.format(inspections_str))
+    benchmark = cleandoc(f"""
+    inspector_result_two = singleton.run(python_code=test_code_benchmark, inspections={inspections_str}, reset_state=False)
+    """)
     return benchmark
 
 
@@ -260,12 +260,12 @@ def prepare_pipeline_benchmark_exec(test_code):
     """
     Get the benchmark str for timeit
     """
-    benchmark = cleandoc("""
+    benchmark = cleandoc(f"""
     from experiments.performance._benchmark_utils import get_adult_simple_py_str, get_adult_complex_py_str, \
         get_healthcare_py_str, get_compas_py_str
     
-    code = {}
-    """.format(test_code))
+    code = {test_code}
+    """)
     return benchmark
 
 
@@ -273,15 +273,15 @@ def trigger_pipeline_benchmark_exec(inspections_str):
     """
     Get the benchmark str for timeit
     """
-    benchmark = cleandoc("""
+    benchmark = cleandoc(f"""
     from experiments.performance._empty_inspection import EmptyInspection
     from mlinspect import PipelineInspector
     
     PipelineInspector\
             .on_pipeline_from_string(code)\
-            .add_required_inspections({}) \
+            .add_required_inspections({inspections_str}) \
             .execute()
-    """.format(inspections_str))
+    """)
     return benchmark
 
 
@@ -289,7 +289,7 @@ def get_single_df_creation_str(data_frame_rows):
     """
     Get a complete code str that creates a DF with random value
     """
-    test_code = cleandoc("""
+    test_code = cleandoc(f"""
         import pandas as pd
         import numpy as np
         from numpy.random import randint
@@ -305,7 +305,7 @@ def get_single_df_creation_str(data_frame_rows):
         group_col_3 = pd.Series(random.choices(categories, k={data_frame_rows}))
         df = pd.DataFrame(zip(a, b, c, d, group_col_1, group_col_2, group_col_3), columns=['A', 'B', 'C', 'D', 
             'group_col_1', 'group_col_2', 'group_col_3'])
-        """.format(data_frame_rows=data_frame_rows))
+        """)
     return test_code
 
 
@@ -339,7 +339,7 @@ def get_multiple_dfs_creation_str(data_frame_rows):
     assert sizes_before_join - start_with_offset == data_frame_rows
 
     # mlinspect does not support some ast nodes yet like *, /, and {}, so we need to avoid them
-    test_code = cleandoc("""
+    test_code = cleandoc(f"""
         import pandas as pd
         import numpy as np
         from numpy.random import randint, shuffle
@@ -362,8 +362,7 @@ def get_multiple_dfs_creation_str(data_frame_rows):
         df_a = pd.DataFrame(zip(id_a, a, b, group_col_1, group_col_2, group_col_3), columns=['id', 'A', 'B', 
             'group_col_1', 'group_col_2', 'group_col_3'])
         df_b = pd.DataFrame(zip(id_b, c, d), columns=['id', 'C', 'D'])
-        """.format(sizes_before_join=sizes_before_join, start_with_offset=start_with_offset,
-                   end_with_offset=end_with_offset))
+        """)
     return test_code
 
 
@@ -381,7 +380,7 @@ def get_np_cat_array_str(data_frame_rows):
     """
     Get a complete code str that creates a np array with random values
     """
-    test_code = cleandoc("""
+    test_code = cleandoc(f"""
         from sklearn.preprocessing import OneHotEncoder
         import pandas as pd
         import random
@@ -389,7 +388,7 @@ def get_np_cat_array_str(data_frame_rows):
         categories = ['cat_a', 'cat_b', 'cat_c']
         group_col_1 = pd.Series(random.choices(categories, k={data_frame_rows}))
         df = pd.DataFrame(zip(group_col_1), columns=["group_col_1"])
-        """.format(data_frame_rows=data_frame_rows))
+        """)
     return test_code
 
 
@@ -408,14 +407,14 @@ def get_np_num_array_str(data_frame_rows):
     """
     Get a complete code str that creates a np array with random values
     """
-    test_code = cleandoc("""
+    test_code = cleandoc(f"""
         from sklearn.preprocessing import StandardScaler
         import pandas as pd
         from numpy.random import randint
 
-        series = randint(0,100,size=({})) 
+        series = randint(0,100,size=({data_frame_rows})) 
         df = pd.DataFrame(series, columns=["num"])
-        """.format(data_frame_rows))
+        """)
     return test_code
 
 
@@ -434,7 +433,7 @@ def get_estimator_train_data_str(data_frame_rows):
     """
     Get a complete code str that creates a np array with random values
     """
-    test_code = cleandoc("""
+    test_code = cleandoc(f"""
         from sklearn.preprocessing import StandardScaler
         import pandas as pd
         from numpy.random import randint
@@ -447,7 +446,7 @@ def get_estimator_train_data_str(data_frame_rows):
 
         data_df = pd.DataFrame(data)
         target_df = pd.DataFrame(target)
-        """.format(data_frame_rows=data_frame_rows))
+        """)
     return test_code
 
 
@@ -466,7 +465,7 @@ def get_adult_simple_py_str():
     """
     Get the code str for the adult_easy pipeline
     """
-    with open(ADULT_SIMPLE_PY) as file:
+    with open(ADULT_SIMPLE_PY, encoding="utf-8") as file:
         test_code = file.read()
     return test_code
 
@@ -475,7 +474,7 @@ def get_adult_complex_py_str():
     """
     Get the code str for the adult_easy pipeline
     """
-    with open(ADULT_COMPLEX_PY) as file:
+    with open(ADULT_COMPLEX_PY, encoding="utf-8") as file:
         test_code = file.read()
     return test_code
 
@@ -484,7 +483,7 @@ def get_compas_py_str():
     """
     Get the code str for the adult_easy pipeline
     """
-    with open(COMPAS_PY) as file:
+    with open(COMPAS_PY, encoding="utf-8") as file:
         test_code = file.read()
     return test_code
 
@@ -493,6 +492,6 @@ def get_healthcare_py_str():
     """
     Get the code str for the adult_easy pipeline
     """
-    with open(HEALTHCARE_PY) as file:
+    with open(HEALTHCARE_PY, encoding="utf-8") as file:
         test_code = file.read()
     return test_code

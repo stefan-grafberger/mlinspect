@@ -41,4 +41,4 @@ class Inspection(metaclass=abc.ABCMeta):
 
     def __repr__(self):
         """Inspections must have a str representation"""
-        return "{}({})".format(self.__class__.__name__, self.inspection_id)
+        return f"{self.__class__.__name__}({self.inspection_id})"
