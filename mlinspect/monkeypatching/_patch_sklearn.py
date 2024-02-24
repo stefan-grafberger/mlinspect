@@ -1331,7 +1331,7 @@ class SklearnKerasClassifierPatching:
 
     # pylint: disable=too-few-public-methods
     @gorilla.patch(wrappers.KerasClassifier, name='__init__', settings=gorilla.Settings(allow_hit=True))
-    def patched__init__(self, build_fn=None, mlinspect_caller_filename=None, mlinspect_lineno=None,
+    def patched__init__(self, model=None, mlinspect_caller_filename=None, mlinspect_lineno=None,
                         mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None,
                         mlinspect_estimator_node_id=None, **sk_params):
         """ Patch for ('scikeras.wrappers', 'KerasClassifier') """
@@ -1348,14 +1348,14 @@ class SklearnKerasClassifierPatching:
 
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
-            original(self, build_fn=build_fn, **sk_params)
+            original(self, model=model, **sk_params)
 
             self.mlinspect_caller_filename = caller_filename
             self.mlinspect_lineno = lineno
             self.mlinspect_optional_code_reference = optional_code_reference
             self.mlinspect_optional_source_code = optional_source_code
 
-        return execute_patched_func_no_op_id(original, execute_inspections, self, build_fn=build_fn, **sk_params)
+        return execute_patched_func_no_op_id(original, execute_inspections, self, model=model, **sk_params)
 
     @gorilla.patch(wrappers.KerasClassifier, name='fit', settings=gorilla.Settings(allow_hit=True))
     def patched_fit(self, *args, **kwargs):
@@ -1447,6 +1447,19 @@ class SklearnKerasClassifierPatching:
         if not call_info_singleton.param_search_active:
             new_result = execute_patched_func_indirect_allowed(execute_inspections)
         else:
-            original = gorilla.get_original_attribute(keras_sklearn_external.KerasClassifier, 'score')
+            original = gorilla.get_original_attribute(wrappers.KerasClassifier, 'score')
             new_result = original(self, *args, **kwargs)
         return new_result
+
+    @gorilla.patch(wrappers.KerasClassifier, name='predict', settings=gorilla.Settings(allow_hit=True))
+    def patched_predict(self, *args, **kwargs):
+        """ Patch for ('scikeras.wrappers.KerasClassifier', 'predict') """
+        # pylint: disable=no-method-argument
+        # Currently we do not instrument predicts in mlinspect, thus, this is not a real patch
+        # It is only because in some version the classifier started to use a FunctionTransformer internally,
+        # that would throw an error without this
+        original = gorilla.get_original_attribute(wrappers.KerasClassifier, 'predict')
+        call_info_singleton.scikeras_classifier_active = True
+        result = original(self, *args, **kwargs)
+        call_info_singleton.scikeras_classifier_active = False
+        return result
