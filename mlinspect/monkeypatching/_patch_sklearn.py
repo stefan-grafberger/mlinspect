@@ -10,9 +10,7 @@ from sklearn import preprocessing, compose, tree, impute, linear_model, model_se
 from sklearn.feature_extraction import text
 from sklearn.linear_model._stochastic_gradient import DEFAULT_EPSILON
 from sklearn.metrics import accuracy_score
-from tensorflow.keras.wrappers import scikit_learn as keras_sklearn_external  # pylint: disable=no-name-in-module
-from tensorflow.python.keras.wrappers import scikit_learn as keras_sklearn_internal  # pylint: disable=no-name-in-module
-
+from scikeras import BaseWrapper
 from mlinspect.backends._backend import BackendResult
 from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.inspections._inspection_input import OperatorContext, FunctionInfo, OperatorType
@@ -1331,13 +1329,13 @@ class SklearnKerasClassifierPatching:
     """ Patches for tensorflow KerasClassifier"""
 
     # pylint: disable=too-few-public-methods
-    @gorilla.patch(keras_sklearn_internal.BaseWrapper, name='__init__', settings=gorilla.Settings(allow_hit=True))
+    @gorilla.patch(wrappers.BaseWrapper, name='__init__', settings=gorilla.Settings(allow_hit=True))
     def patched__init__(self, build_fn=None, mlinspect_caller_filename=None, mlinspect_lineno=None,
                         mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None,
                         mlinspect_estimator_node_id=None, **sk_params):
         """ Patch for ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier') """
         # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals, too-many-arguments
-        original = gorilla.get_original_attribute(keras_sklearn_internal.BaseWrapper, '__init__')
+        original = gorilla.get_original_attribute(wrappers.BaseWrapper, '__init__')
 
         self.mlinspect_caller_filename = mlinspect_caller_filename
         self.mlinspect_lineno = mlinspect_lineno
