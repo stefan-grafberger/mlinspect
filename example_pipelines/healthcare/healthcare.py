@@ -2,12 +2,13 @@
 import warnings
 import os
 import pandas as pd
+from scikeras.wrappers import KerasClassifier
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from example_pipelines.healthcare.healthcare_utils import MyW2VTransformer, MyKerasClassifier, \
+from example_pipelines.healthcare.healthcare_utils import MyW2VTransformer, \
     create_model
 from mlinspect.utils import get_project_root
 
@@ -40,7 +41,7 @@ featurisation = ColumnTransformer(transformers=[
     ('numeric', StandardScaler(), ['num_children', 'income']),
 ], remainder='drop')
 neural_net = KerasClassifier(model=create_model, epochs=10, batch_size=1, verbose=0,
-                                hidden_layer_sizes=(9, 9,), loss="binary_crossentropy")
+                             hidden_layer_sizes=(9, 9,), loss="binary_crossentropy")
 pipeline = Pipeline([
     ('features', featurisation),
     ('learner', neural_net)])

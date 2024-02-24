@@ -3,6 +3,7 @@ Tests whether the healthcare demo works
 """
 import ast
 import pandas as pd
+from scikeras.wrappers import KerasClassifier
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 from example_pipelines.healthcare import custom_monkeypatching
@@ -30,7 +31,8 @@ def test_my_keras_classifier():
     train = StandardScaler().fit_transform(pandas_df[['A', 'B']])
     target = OneHotEncoder(sparse=False).fit_transform(pandas_df[['target']])
 
-    clf = MyKerasClassifier(build_fn=create_model, epochs=2, batch_size=1, verbose=0)
+    clf = KerasClassifier(build_fn=create_model, epochs=2, batch_size=1, verbose=0,
+                          hidden_layer_sizes=(9, 9,), loss="binary_crossentropy")
     clf.fit(train, target)
 
     test_predict = clf.predict([[0., 0.], [0.6, 0.6]])

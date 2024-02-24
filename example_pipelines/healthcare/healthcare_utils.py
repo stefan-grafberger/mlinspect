@@ -2,6 +2,7 @@
 Some useful utils for the project
 """
 import numpy
+from keras import Input
 from sklearn.exceptions import NotFittedError
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense

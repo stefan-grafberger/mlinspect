@@ -10,7 +10,7 @@ from sklearn import preprocessing, compose, tree, impute, linear_model, model_se
 from sklearn.feature_extraction import text
 from sklearn.linear_model._stochastic_gradient import DEFAULT_EPSILON
 from sklearn.metrics import accuracy_score
-from scikeras import BaseWrapper
+from scikeras import wrappers
 from mlinspect.backends._backend import BackendResult
 from mlinspect.backends._sklearn_backend import SklearnBackend
 from mlinspect.inspections._inspection_input import OperatorContext, FunctionInfo, OperatorType
@@ -133,6 +133,7 @@ class SklearnCallInfo:
     transformer_optional_source_code: str or None = None
     column_transformer_active: bool = False
     param_search_active: bool = False
+    scikeras_classifier_active: bool = False
 
 
 call_info_singleton = SklearnCallInfo()
@@ -174,7 +175,7 @@ class SklearnGridSearchCVPatching:
         """ Patch for ('sklearn.compose.model_selection._search', 'GridSearchCV') """
         # pylint: disable=no-method-argument
         supported_estimators = (tree.DecisionTreeClassifier, linear_model.SGDClassifier,
-                                linear_model.LogisticRegression, keras_sklearn_external.KerasClassifier)
+                                linear_model.LogisticRegression, wrappers.KerasClassifier)
         if not isinstance(self.estimator, supported_estimators):  # pylint: disable=no-member
             raise NotImplementedError(f"TODO: Estimator is an instance of "
                                       f"{type(self.estimator)}, "  # pylint: disable=no-member
@@ -709,7 +710,7 @@ class SklearnSimpleImputerPatching:
     @gorilla.name('__init__')
     @gorilla.settings(allow_hit=True)
     def patched__init__(self, *, missing_values=numpy.nan, strategy="mean",
-                        fill_value=None, verbose=0, copy=True, add_indicator=False,
+                        fill_value=None, copy=True, add_indicator=False, keep_empty_features=False,
                         mlinspect_caller_filename=None, mlinspect_lineno=None,
                         mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None,
                         mlinspect_fit_transform_active=False):
@@ -724,8 +725,8 @@ class SklearnSimpleImputerPatching:
         self.mlinspect_fit_transform_active = mlinspect_fit_transform_active
 
         self.mlinspect_non_data_func_args = {'missing_values': missing_values, 'strategy': strategy,
-                                             'fill_value': fill_value, 'verbose': verbose, 'copy': copy,
-                                             'add_indicator': add_indicator}
+                                             'fill_value': fill_value, 'copy': copy, 'add_indicator': add_indicator,
+                                             'keep_empty_features': keep_empty_features}
 
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
@@ -886,7 +887,7 @@ class SklearnFunctionTransformerPatching:
         """ Patch for ('sklearn.preprocessing_function_transformer.FunctionTransformer', 'transform') """
         # pylint: disable=no-method-argument
         original = gorilla.get_original_attribute(preprocessing.FunctionTransformer, 'transform')
-        if not self.mlinspect_fit_transform_active:
+        if not self.mlinspect_fit_transform_active and not call_info_singleton.scikeras_classifier_active:
             function_info = FunctionInfo('sklearn.preprocessing_function_transformer', 'FunctionTransformer')
             input_info = get_input_info(args[0], self.mlinspect_caller_filename, self.mlinspect_lineno, function_info,
                                         self.mlinspect_optional_code_reference, self.mlinspect_optional_source_code)
@@ -926,7 +927,7 @@ class SklearnDecisionTreePatching:
     @gorilla.settings(allow_hit=True)
     def patched__init__(self, *, criterion="gini", splitter="best", max_depth=None, min_samples_split=2,
                         min_samples_leaf=1, min_weight_fraction_leaf=0., max_features=None, random_state=None,
-                        max_leaf_nodes=None, min_impurity_decrease=0., min_impurity_split=None, class_weight=None,
+                        max_leaf_nodes=None, min_impurity_decrease=0., class_weight=None,
                         ccp_alpha=0.0, mlinspect_caller_filename=None,
                         mlinspect_lineno=None, mlinspect_optional_code_reference=None,
                         mlinspect_optional_source_code=None, mlinspect_estimator_node_id=None):
@@ -947,7 +948,7 @@ class SklearnDecisionTreePatching:
                                              'max_features': max_features, 'random_state': random_state,
                                              'max_leaf_nodes': max_leaf_nodes,
                                              'min_impurity_decrease': min_impurity_decrease,
-                                             'min_impurity_split': min_impurity_split, 'class_weight': class_weight,
+                                             'class_weight': class_weight,
                                              'ccp_alpha': ccp_alpha}
 
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
@@ -1329,13 +1330,13 @@ class SklearnKerasClassifierPatching:
     """ Patches for tensorflow KerasClassifier"""
 
     # pylint: disable=too-few-public-methods
-    @gorilla.patch(wrappers.BaseWrapper, name='__init__', settings=gorilla.Settings(allow_hit=True))
+    @gorilla.patch(wrappers.KerasClassifier, name='__init__', settings=gorilla.Settings(allow_hit=True))
     def patched__init__(self, build_fn=None, mlinspect_caller_filename=None, mlinspect_lineno=None,
                         mlinspect_optional_code_reference=None, mlinspect_optional_source_code=None,
                         mlinspect_estimator_node_id=None, **sk_params):
-        """ Patch for ('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier') """
+        """ Patch for ('scikeras.wrappers', 'KerasClassifier') """
         # pylint: disable=no-method-argument, attribute-defined-outside-init, too-many-locals, too-many-arguments
-        original = gorilla.get_original_attribute(wrappers.BaseWrapper, '__init__')
+        original = gorilla.get_original_attribute(wrappers.KerasClassifier, '__init__')
 
         self.mlinspect_caller_filename = mlinspect_caller_filename
         self.mlinspect_lineno = mlinspect_lineno
@@ -1356,13 +1357,13 @@ class SklearnKerasClassifierPatching:
 
         return execute_patched_func_no_op_id(original, execute_inspections, self, build_fn=build_fn, **sk_params)
 
-    @gorilla.patch(keras_sklearn_external.KerasClassifier, name='fit', settings=gorilla.Settings(allow_hit=True))
+    @gorilla.patch(wrappers.KerasClassifier, name='fit', settings=gorilla.Settings(allow_hit=True))
     def patched_fit(self, *args, **kwargs):
-        """ Patch for ('tensorflow.python.keras.wrappers.scikit_learn.KerasClassifier', 'fit') """
+        """ Patch for ('scikeras.wrappers.KerasClassifier', 'fit') """
         # pylint: disable=no-method-argument, too-many-locals
-        original = gorilla.get_original_attribute(keras_sklearn_external.KerasClassifier, 'fit')
+        original = gorilla.get_original_attribute(wrappers.KerasClassifier, 'fit')
         if not call_info_singleton.param_search_active:
-            function_info = FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn', 'KerasClassifier')
+            function_info = FunctionInfo('scikeras.wrappers', 'KerasClassifier')
 
             data_backend_result, train_data_dag_node, train_data_result = add_train_data_node(self, args[0], function_info)
             label_backend_result, train_labels_dag_node, train_labels_result = add_train_label_node(self, args[1],
@@ -1372,7 +1373,9 @@ class SklearnKerasClassifierPatching:
             operator_context = OperatorContext(OperatorType.ESTIMATOR, function_info)
             input_dfs = [data_backend_result.annotated_dfobject, label_backend_result.annotated_dfobject]
             input_infos = SklearnBackend.before_call(operator_context, input_dfs)
+            call_info_singleton.scikeras_classifier_active = True
             original(self, train_data_result, train_labels_result, *args[2:], **kwargs)
+            call_info_singleton.scikeras_classifier_active = False
             estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                                  input_infos,
                                                                  None,
@@ -1389,16 +1392,16 @@ class SklearnKerasClassifierPatching:
             original(self, *args, **kwargs)
         return self
 
-    @gorilla.patch(keras_sklearn_external.KerasClassifier, name='score', settings=gorilla.Settings(allow_hit=True))
+    @gorilla.patch(wrappers.KerasClassifier, name='score', settings=gorilla.Settings(allow_hit=True))
     def patched_score(self, *args, **kwargs):
-        """ Patch for ('tensorflow.python.keras.wrappers.scikit_learn.KerasClassifier', 'score') """
+        """ Patch for ('scikeras.wrappers.KerasClassifier', 'score') """
         # pylint: disable=no-method-argument
-        original = gorilla.get_original_attribute(keras_sklearn_external.KerasClassifier, 'score')
+        original = gorilla.get_original_attribute(wrappers.KerasClassifier, 'score')
 
         def execute_inspections(_, caller_filename, lineno, optional_code_reference, optional_source_code):
             """ Execute inspections, add DAG node """
             # pylint: disable=too-many-locals
-            function_info = FunctionInfo('tensorflow.python.keras.wrappers.scikit_learn.KerasClassifier', 'score')
+            function_info = FunctionInfo('scikeras.wrappers.KerasClassifier', 'score')
             # Test data
             data_backend_result, test_data_node, test_data_result = add_test_data_dag_node(args[0],
                                                                                            function_info,
@@ -1421,8 +1424,10 @@ class SklearnKerasClassifierPatching:
             input_infos = SklearnBackend.before_call(operator_context, input_dfs)
 
             # This currently calls predict twice, but patching here is complex. Maybe revisit this in future work
+            call_info_singleton.scikeras_classifier_active = True
             predictions = self.predict(test_data_result)  # pylint: disable=no-member
             result = original(self, test_data_result, test_labels_result, *args[2:], **kwargs)
+            call_info_singleton.scikeras_classifier_active = False
 
             estimator_backend_result = SklearnBackend.after_call(operator_context,
                                                                  input_infos,
